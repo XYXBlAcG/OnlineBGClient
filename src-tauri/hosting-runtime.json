@@ -1,0 +1,34 @@
+{
+  "targets": {
+    "macos-aarch64": {
+      "platform": "macos",
+      "arch": "aarch64",
+      "node": {
+        "url": "https://nodejs.org/dist/v24.21.0/node-v24.21.0-darwin-arm64.tar.gz",
+        "sha256": "bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057",
+        "entry": "node-v24.21.0-darwin-arm64/bin/node",
+        "format": "tar.gz"
+      },
+      "cloudflared": {
+        "version": "2026.9.3",
+        "asset": "cloudflared-darwin-arm64.tgz",
+        "sha256": "5472c1a01c84bc31b3021056a73b4e5774ddddefc572124ea8fdf6c340639f32"
+      }
+    },
+    "windows-x86_64": {
+      "platform": "windows",
+      "arch": "x86_64",
+      "node": {
+        "url": "https://nodejs.org/dist/v24.21.0/node-v24.21.0-win-x64.zip",
+        "sha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+        "entry": "node-v24.21.0-win-x64/node.exe",
+        "format": "zip"
+      },
+      "cloudflared": {
+        "version": "2026.9.3",
+        "asset": "cloudflared-windows-amd64.exe",
+        "sha256": "f096265ec2fcbe9bb6e2d64268db167ced3fcbb83d894bdb9e2fcdb26f2ea7e2"
+      }
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "origin": "https://game.hullqin.cn/",
+  "captured": "2026-10-04",
+  "sources": [
+    {
+      "path": "upstream/raw/vendor.js",
+      "sha256": "55ca075c78c644013e7a39d0bd935bf97d23b84270e7b861fe8c22784782d94a"
+    },
+    {
+      "path": "upstream/raw/app.js",
+      "sha256": "4fa99e5e0910a3fcb4803736914f72408d720dfe09c3d2962b58ad0fd525e7cb"
+    },
+    {
+      "path": "upstream/raw/uno.js",
+      "sha256": "abf414dda1cd4b25ea68a6a2e00fe1b915b95fb544add6b39ba9d8fc0cd0a4e7"
+    },
+    {
+      "path": "upstream/raw/sgs.js",
+      "sha256": "5398c2afb95cc39084ef910065df099b5cb48725f7c839582e775e5ed796e9c6"
+    },
+    {
+      "path": "upstream/raw/fxq.js",
+      "sha256": "a1c8bc72655f4054e54f8ec2b804cbe6094a3f2f74de544aea750a597973cf30"
+    },
+    {
+      "path": "upstream/raw/tq.js",
+      "sha256": "3ec7004b386cfb17c1218dbe00585d582251f8b68e9ad4ee33f979586d1cf3f7"
+    },
+    {
+      "path": "upstream/raw/ddz.js",
+      "sha256": "60a102f3ccfc43fc0ba2caa93c4fa62a00bc1308cc40c1607456bd27a7ae3884"
+    }
+  ],
+  "modules": [
+    6544,
+    5982,
+    9474,
+    7710,
+    9488,
+    8050,
+    9716,
+    7223,
+    1938,
+    6597,
+    2678,
+    7640,
+    2842,
+    110,
+    6112,
+    2149,
+    2422,
+    4148,
+    7523,
+    1331,
+    3107,
+    6139,
+    885,
+    181,
+    907,
+    7762,
+    2982,
+    5911,
+    1413,
+    4942,
+    7992,
+    3299,
+    4595,
+    7890,
+    5216,
+    9466,
+    3861,
+    6135,
+    7707,
+    6435,
+    8410,
+    6350,
+    5385,
+    6749,
+    8655,
+    8467,
+    1983,
+    8280,
+    5051,
+    3329,
+    575,
+    7002,
+    6359,
+    5042,
+    7448,
+    6630,
+    4929,
+    4062,
+    4591,
+    1621,
+    1529,
+    5328,
+    4962,
+    1817
+  ]
+}

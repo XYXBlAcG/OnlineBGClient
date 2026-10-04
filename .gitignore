@@ -1,0 +1,16 @@
+node_modules/
+dist/
+dist-server/
+src-tauri/target/
+.tmp/
+*.log
+.env
+
+artifacts/
+
+src-tauri/resources/hosting/
+
+.DS_Store
+
+.data/
+OnlineBGClient-*.zip

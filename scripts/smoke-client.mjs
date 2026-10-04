@@ -1,0 +1,87 @@
+import { chromium, expect } from '@playwright/test';
+import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
+
+const endpoint = process.env.TEST_SERVICE || 'http://127.0.0.1:8899';
+const chrome = process.env.CHROME_PATH || (existsSync('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome') ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined);
+const browser = await chromium.launch({ executablePath: chrome, headless: true });
+const errors = [];
+const contexts = [];
+const createPage = async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } }); contexts.push(context);
+  const page = await context.newPage(); page.on('pageerror', error => errors.push(String(error))); await page.goto(endpoint); return page;
+};
+const choose = async (page, label, text) => { await page.getByRole('combobox', { name: label, exact: true }).click(); await page.getByRole('option', { name: text, exact: true }).click(); };
+try {
+  await mkdir('.tmp/screenshots', { recursive: true });
+  const page = await createPage();
+  await expect(page.locator('.game-card')).toHaveCount(5);
+  await page.getByRole('button', { name: '收藏UNO', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
+  await expect(page.locator('.game-card')).toHaveCount(1);
+  await page.getByRole('button', { name: '全部', exact: true }).click();
+  const slider = page.getByRole('slider', { name: 'AI 动作间隔' }); await slider.focus(); await slider.press('ArrowRight'); await expect(slider).toHaveAttribute('aria-valuenow', '1750');
+  await page.getByRole('button', { name: '打开设置', exact: true }).click();
+  await choose(page, '外观主题', '深色');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.screenshot({ path: '.tmp/screenshots/client-dark.png', fullPage: true });
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: '创建房间', exact: true }).click();
+  await choose(page, '席位 2 类型', '真人');
+  await expect(page.getByRole('combobox', { name: '当前本地玩家', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '开始对局', exact: true }).click();
+  await page.getByRole('button', { name: '我先出牌', exact: true }).waitFor();
+  await page.keyboard.press('F2');
+  await page.keyboard.press('Enter');
+  await page.locator('.uno').first().waitFor();
+  await page.reload();
+  await page.getByRole('button', { name: '恢复本地对局', exact: true }).click();
+  await page.locator('.uno').first().waitFor();
+  await page.getByRole('button', { name: '结束游戏', exact: true }).click();
+  await page.getByRole('button', { name: '确认结束', exact: true }).click();
+  await page.getByRole('heading', { name: '等待开局', exact: true }).waitFor();
+  await page.getByRole('button', { name: '对局记录', exact: true }).click();
+  await page.locator('.record-row').first().waitFor();
+  await page.locator('.record-row > button').first().click();
+  await page.getByRole('slider', { name: '回放进度' }).waitFor();
+  await expect(page.locator('.ui-panel-wide .uno').first()).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: '关闭房间', exact: true }).click();
+  await page.locator('dialog').getByRole('button', { name: '关闭房间', exact: true }).click();
+  await page.getByRole('heading', { name: '一起玩一局' }).waitFor();
+
+  const host = await createPage();
+  await host.getByRole('button', { name: /地主与农民/ }).click();
+  await expect(host.getByText('三名真人对局 · AI 尚未接入')).toBeVisible();
+  await expect(host.getByRole('slider', { name: 'AI 动作间隔' })).toHaveCount(0);
+  await host.getByRole('button', { name: '跨网络联机', exact: true }).click();
+  await host.getByRole('button', { name: '创建房间', exact: true }).click();
+  const header = host.locator('.room-toolbar > strong'); await header.waitFor();
+  const room = (await header.innerText()).split('·')[1].trim();
+  const guests = [];
+  for (const name of ['甲', '乙']) {
+    const guest = await createPage(); await guest.goto(`${endpoint}/?room=${room}`); await guest.getByLabel('昵称', { exact: true }).fill(name);
+    await guest.getByRole('button', { name: '加入 / 恢复房间', exact: true }).click();
+    await guest.getByRole('button', { name: '准备', exact: true }).click(); guests.push(guest);
+  }
+  await expect(host.getByRole('button', { name: '开始对局', exact: true })).toBeEnabled();
+  await host.getByRole('button', { name: '开始对局', exact: true }).click();
+  await host.getByRole('button', { name: '抢地主', exact: true }).click();
+  await expect(host.locator('.ddz-poker[draggable=true]')).toHaveCount(20);
+  const card = host.locator('.ddz-poker[draggable=true]').first(); await card.focus(); await card.press('Space');
+  await host.getByRole('button', { name: /😎 出牌/ }).click();
+  await host.getByRole('button', { name: '聊天', exact: true }).click();
+  await guests[0].getByLabel('消息', { exact: true }).fill('输入法与聊天不会触发游戏快捷键'); await guests[0].getByRole('button', { name: '发送', exact: true }).click();
+  await host.getByRole('button', { name: '聊天 · 1', exact: true }).waitFor();
+  await host.getByRole('button', { name: '聊天 · 1', exact: true }).click();
+  await host.getByText('输入法与聊天不会触发游戏快捷键', { exact: true }).waitFor();
+  await guests[0].reload(); await guests[0].getByRole('button', { name: '加入 / 恢复房间', exact: true }).click();
+  await guests[0].locator('.original-game').waitFor();
+  await host.screenshot({ path: '.tmp/screenshots/client-ddz.png', fullPage: true });
+  await host.getByRole('button', { name: '结束游戏', exact: true }).click(); await host.getByRole('button', { name: '确认结束', exact: true }).click();
+  await guests[0].getByRole('button', { name: '离开房间', exact: true }).click(); await guests[0].getByRole('heading', { name: '一起玩一局' }).waitFor();
+  await host.getByRole('button', { name: '关闭房间', exact: true }).click(); await host.locator('dialog').getByRole('button', { name: '关闭房间', exact: true }).click();
+  await guests[1].getByRole('heading', { name: '一起玩一局' }).waitFor();
+  if (errors.length) throw new Error(errors.join('\n'));
+  console.log('PASS: controls, dark theme, favorites, keyboard action, local recovery, replay, three-human DDZ, chat, reconnect, leave and close');
+} finally { await browser.close(); }
