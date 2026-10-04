@@ -1,3 +1,10 @@
+import {
+  assetIdSchema,
+  interactionSchema,
+  type InteractionEvent,
+} from "./social";
+export type { ChatMessage } from "./social";
+import type { ChatMessage } from "./social";
 import { actionSchema } from "./actions";
 export { actionSchema } from "./actions";
 import type { ReplayRecord } from "./replay";
@@ -75,6 +82,11 @@ export const commandSchema = z.discriminatedUnion("type", [
     token: z.string(),
     delayMs: z.number().int().min(0).max(5000),
   }),
+  z.object({
+    type: z.literal("game"),
+    token: z.string(),
+    kind: z.enum(gameKinds),
+  }),
   z.object({ type: z.literal("end"), token: z.string() }),
   z.object({
     type: z.literal("action"),
@@ -89,15 +101,23 @@ export const commandSchema = z.discriminatedUnion("type", [
     id: z.string().min(1).max(100),
     text: z.string().trim().min(1).max(500),
   }),
+  z.object({
+    type: z.literal("sticker"),
+    token: z.string(),
+    id: z.string().min(1).max(100),
+    asset: assetIdSchema,
+    text: z.string().trim().min(1).max(48),
+  }),
+  z.object({
+    type: z.literal("interaction"),
+    token: z.string(),
+    id: z.string().min(1).max(100),
+    target: z.number().int().min(0).max(7),
+    kind: interactionSchema,
+  }),
   z.object({ type: z.literal("snapshot"), token: z.string() }),
 ]);
 export type Command = z.infer<typeof commandSchema>;
-export interface ChatMessage {
-  id: string;
-  name: string;
-  text: string;
-  time: number;
-}
 export interface DecisionSummary {
   actor: number;
   label: string;
@@ -105,7 +125,7 @@ export interface DecisionSummary {
   simulations: number;
   version: number;
 }
-export const protocolVersion = 1;
+export const protocolVersion = 2;
 export interface Snapshot {
   apiVersion: number;
   rulesVersion: string;
@@ -115,6 +135,7 @@ export interface Snapshot {
   version: number;
   actor: number;
   seats: {
+    id: string;
     name: string;
     difficulty: Difficulty | null;
     online: boolean;
@@ -123,6 +144,8 @@ export interface Snapshot {
   state: GameState | null;
   candidates: Candidate[];
   chat: ChatMessage[];
+  chatSequence: number;
+  chatTotals: Record<string, number>;
   decisions: Decision[];
   summaries: DecisionSummary[];
   finished: boolean;
@@ -135,6 +158,7 @@ export type Response =
   | { type: "session"; room: string; token: string; localTokens?: string[] }
   | { type: "snapshot"; snapshot: Snapshot }
   | { type: "error"; message: string }
+  | { type: "interaction"; event: InteractionEvent }
   | { type: "ack"; id: string }
   | { type: "left" }
   | { type: "closed"; replay?: ReplayRecord | null };

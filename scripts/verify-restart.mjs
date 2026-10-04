@@ -1,6 +1,6 @@
 import { TestService } from './service-harness.mjs';
 import { WebSocket } from 'ws';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -37,8 +37,17 @@ try {
   const dealt = (await first.wait(response => response.type === 'snapshot' && response.snapshot.version > initial.version)).snapshot;
   first.send({ type: 'chat', token: owner.token, id: 'chat', text: '重启后仍保留' });
   await second.wait(response => response.type === 'snapshot' && response.snapshot.chat.length);
+  const png = await readFile('tests/fixtures/sticker.png');
+  const upload = await fetch(`${endpoint}/stickers?room=${owner.room}&name=持久图片`, {method:'POST',headers:{Authorization:`Bearer ${owner.token}`},body:png});
+  assert.equal(upload.status,201); const asset=await upload.json();
+  first.send({type:'sticker',token:owner.token,id:'image',asset:asset.id,text:'持久图片'});
+  await second.wait(response=>response.type==='snapshot'&&response.snapshot.chat.some(message=>message.asset===asset.id));
+  const denied=await fetch(`${endpoint}/stickers`,{method:'OPTIONS',headers:{Origin:'https://unrelated.example'}}); assert.equal(denied.status,403);
+  const allowed=await fetch(`${endpoint}/stickers`,{method:'OPTIONS',headers:{Origin:'tauri://localhost'}}); assert.equal(allowed.headers.get('access-control-allow-origin'),'tauri://localhost');
   first.close(); second.close(); await server.stop();
-  endpoint = await server.start(); first = new Player(endpoint); second = new Player(endpoint); await Promise.all([first.open(), second.open()]);
+  endpoint = await server.start();
+  const restoredImage=await fetch(`${endpoint}/stickers/${asset.id}`);assert.deepEqual(Buffer.from(await restoredImage.arrayBuffer()),png);
+  first = new Player(endpoint); second = new Player(endpoint); await Promise.all([first.open(), second.open()]);
   first.send({ type: 'join', name: '甲', room: owner.room, token: owner.token });
   const paused = (await first.wait(response => response.type === 'snapshot')).snapshot;
   assert.equal(paused.paused, true); assert.deepEqual(paused.state, dealt.state); assert.equal(paused.chat[0].text, '重启后仍保留');

@@ -2,7 +2,7 @@ name: Desktop packages
 on:
   push:
     branches: [main, master]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -39,7 +39,7 @@ jobs:
       - run: npm ci
       - run: npm run upstream:build
       - if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        run: npm test -- --run tests/commands.test.ts tests/themes.test.ts tests/strategies.test.ts tests/ddz.test.ts tests/ddz-renderer.test.tsx tests/engine.test.ts tests/room-lifecycle.test.ts tests/storage.test.ts tests/replay.test.ts tests/connection.test.ts
+        run: npm test -- --run tests/commands.test.ts tests/themes.test.ts tests/strategies.test.ts tests/ddz.test.ts tests/ddz-renderer.test.tsx tests/engine.test.ts tests/room-lifecycle.test.ts tests/storage.test.ts tests/replay.test.ts tests/connection.test.ts tests/room-game-switch.test.ts tests/social.test.ts tests/assets.test.ts tests/hero-guide.test.ts tests/chat-read.test.ts tests/archive-upgrade.test.ts tests/sgs-renderer.test.tsx tests/desktop-context-menu.test.ts
       - if: startsWith(github.ref, 'refs/tags/')
         run: npm test
       - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
@@ -48,10 +48,13 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           args: ${{ matrix.args }}
+      - if: runner.os == 'Windows'
+        run: cargo test --release --manifest-path src-tauri/Cargo.toml --features tauri/custom-protocol --lib hosting::tests::background_process_has_no_console
       - run: npm run server:build
       - run: npx playwright install chromium
       - run: node scripts/verify-restart.mjs
       - run: node scripts/verify-client.mjs
+      - run: node scripts/verify-social.mjs
       - if: runner.os == 'macOS'
         run: ditto -c -k --sequesterRsrc --keepParent src-tauri/target/release/bundle/macos/OnlineBGClient.app OnlineBGClient-macOS-arm64.zip
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

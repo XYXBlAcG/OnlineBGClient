@@ -25,6 +25,13 @@
     await waitFor(() => button("创建房间"));
     if (document.querySelectorAll(".game-card").length !== 5)
       throw new Error("Missing games");
+    const contextMenu = new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+    });
+    if (document.querySelector(".app-mark").dispatchEvent(contextMenu))
+      throw new Error("Desktop context menu is enabled");
+    if (button("策略审核")) throw new Error("Audit visible by default");
     button("设置").click();
     await waitFor(() => document.querySelector('[aria-label="外观主题"]'));
     await choose("外观主题", "深色");
@@ -59,14 +66,24 @@
     [...document.querySelectorAll(".game-card button")]
       .find((button) => button.textContent.includes("身份与武将"))
       .click();
-    await waitFor(() => document.querySelector(".game-card.active")?.textContent.includes("身份与武将"));
+    await waitFor(() =>
+      document
+        .querySelector(".game-card.active")
+        ?.textContent.includes("身份与武将"),
+    );
     button("创建房间").click();
     await waitFor(() => button("开始对局"));
     button("开始对局").click();
     await waitFor(() => document.querySelectorAll(".sgs-hero").length > 0);
+    const detail = await waitFor(() =>
+      document.querySelector(".hero-detail-button"),
+    );
+    detail.click();
+    await waitFor(() => document.querySelector(".ui-panel .hero-description"));
+    document.querySelector('.ui-panel [aria-label="关闭"]').click();
     await window.__TAURI_INTERNALS__.invoke("report", {
       result:
-        "PASS: native WebView, five-game lobby, unified dark controls, local worker, UNO, Sanguosha, confirmation, waiting room, replay, restart and close",
+        "PASS: native WebView, suppressed context menu, hidden audit, hero details, five-game lobby, unified dark controls, local worker, UNO, Sanguosha, confirmation, waiting room, replay, restart and close",
     });
   } catch (error) {
     await window.__TAURI_INTERNALS__.invoke("report", {

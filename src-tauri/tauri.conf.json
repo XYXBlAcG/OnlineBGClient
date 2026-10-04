@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "cn.hullqin.companion",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run desktop:prepare && npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build && npm run hosting:build",
+    "beforeBuildCommand": "npm run desktop:prepare",
     "frontendDist": "../dist"
   },
   "app": {

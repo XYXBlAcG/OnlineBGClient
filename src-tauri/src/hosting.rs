@@ -161,12 +161,11 @@ fn executable(path: &Path) -> Result<(), String> {
     Ok(())
 }
 fn spawn(mut command: Command) -> Result<(Process, mpsc::Receiver<String>), String> {
-    #[cfg(windows)] {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(0x08000000);
-    }
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
-    let mut child = Process(command.group_spawn().map_err(|e| e.to_string())?);
+    let mut group = command.group();
+    #[cfg(windows)]
+    group.creation_flags(0x08000000);
+    let mut child = Process(group.spawn().map_err(|e| e.to_string())?);
     let (sender, receiver) = mpsc::channel();
     let stdout = child.0.inner().stdout.take().unwrap();
     let stderr = child.0.inner().stderr.take().unwrap();
@@ -184,3 +183,17 @@ pub async fn start_host(app: tauri::AppHandle, state: tauri::State<'_, Arc<Hosti
 }
 #[tauri::command]
 pub fn stop_host(state: tauri::State<'_, Arc<Hosting>>) { state.stop(); }
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn background_process_has_no_console() {
+        let mut command = Command::new("powershell.exe");
+        command.args(["-NoProfile", "-NonInteractive", "-Command", r#"Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class ConsoleProbe { [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow(); }'; [ConsoleProbe]::GetConsoleWindow().ToInt64()"#]);
+        let (mut process, output) = spawn(command).expect("cannot spawn background process");
+        assert!(process.0.wait().expect("cannot wait for background process").success());
+        assert!(output.iter().any(|line| line.trim() == "0"));
+    }
+}

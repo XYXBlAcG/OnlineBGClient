@@ -50,37 +50,61 @@ export class NetworkConnection implements Connection {
       const saved = localStorage.getItem(`room:${url.origin}:${initial.room}`);
       if (saved) this.initial = { ...initial, token: saved };
     }
+    document.addEventListener("visibilitychange", this.resume);
+    window.addEventListener("online", this.resume);
     this.connect();
   }
 
   send(command: Command): void {
-    if (command.type === "action" || command.type === "chat")
+    if (
+      command.type === "action" ||
+      command.type === "chat" ||
+      command.type === "sticker"
+    )
       this.pending.set(command.id, command);
     if (this.socket?.readyState === WebSocket.OPEN)
       this.socket.send(JSON.stringify(command));
-    else if (command.type !== "action" && command.type !== "chat")
+    else if (
+      command.type !== "action" &&
+      command.type !== "chat" &&
+      command.type !== "sticker"
+    )
       this.receive({ type: "error", message: "连接尚未恢复，请稍后操作" });
   }
 
   close(): void {
     this.stopped = true;
+    document.removeEventListener("visibilitychange", this.resume);
+    window.removeEventListener("online", this.resume);
     clearTimeout(this.timer);
     this.socket?.close();
   }
 
+  private resume = (): void => {
+    if (this.stopped || document.hidden) return;
+    if (this.socket?.readyState === WebSocket.OPEN && this.session) {
+      this.status("正在恢复");
+      this.send({ type: "snapshot", token: this.session.token });
+    } else if (this.socket?.readyState !== WebSocket.CONNECTING) {
+      clearTimeout(this.timer);
+      this.connect();
+    }
+  };
   private connect(): void {
     this.status(this.attempts ? "重连中" : "连接中");
     const url = new URL("/connect", this.endpoint);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    this.socket = new WebSocket(url);
-    this.socket.onopen = () => {
+    const socket = new WebSocket(url);
+    this.socket = socket;
+    socket.onopen = () => {
+      if (this.stopped || socket !== this.socket) return;
       const command = this.session
         ? { type: "join", ...this.session, name: this.initial.name }
         : this.initial;
       this.socket!.send(JSON.stringify(command));
     };
-    this.socket.onmessage = (event) => {
-      if (this.stopped) return;
+    socket.onmessage = (event) => {
+      if (this.stopped || socket !== this.socket) return;
       const response: Response = JSON.parse(event.data);
       if (
         response.type === "snapshot" &&
@@ -92,10 +116,12 @@ export class NetworkConnection implements Connection {
         this.status("版本不兼容");
         this.receive({
           type: "error",
-          message: "房间规则或协议版本不兼容，请更新客户端",
+          message:
+            "房间规则或协议版本不兼容，请更新房主客户端并重启房间服务，参与者刷新页面",
         });
         return;
       }
+      if (response.type === "snapshot") this.status("已连接");
       if (response.type === "session") {
         this.session = { room: response.room, token: response.token };
         localStorage.setItem(
@@ -118,10 +144,10 @@ export class NetworkConnection implements Connection {
       if (response.type === "error") this.pending.clear();
       this.receive(response);
     };
-    this.socket.onclose = (event) => {
-      if (this.stopped) return;
+    socket.onclose = (event) => {
+      if (this.stopped || socket !== this.socket) return;
       if (event.code === 4001) {
-        this.stopped = true;
+        this.close();
         this.status("身份已在其他窗口恢复");
         return;
       }

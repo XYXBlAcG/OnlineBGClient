@@ -1,9 +1,9 @@
 import { spawn } from 'node:child_process';
 
 export class TestService {
-  constructor(directory) { this.directory = directory; }
+  constructor(directory, options = {}) { this.directory = directory; this.options = options; }
   async start() {
-    this.process = spawn(process.execPath, ['dist-server/main.mjs'], { env: { ...process.env, PORT: '0', DATA_ROOT: this.directory }, stdio: ['ignore', 'pipe', 'inherit'] });
+    this.process = spawn(process.execPath, [this.options.entry || 'dist-server/main.mjs'], { env: { ...process.env, PORT: '0', DATA_ROOT: this.directory, ...(this.options.staticRoot ? {STATIC_ROOT:this.options.staticRoot}: {}) }, stdio: ['ignore', 'pipe', 'inherit'] });
     const port = await new Promise((resolve, reject) => {
       let output = '';
       const timeout = setTimeout(() => reject(new Error('Room service did not start')), 30000);

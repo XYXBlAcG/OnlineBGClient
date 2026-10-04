@@ -101,6 +101,15 @@ traverse(gameAst, {
     }
   },
 });
+let heroSurfaces = 0;
+traverse(gameAst, { CallExpression(path) {
+ if (path.node.arguments[0]?.name !== 'N' || path.node.arguments[1]?.type !== 'ObjectExpression') return;
+ const card = generate(path.node).code;
+ const props = generate(path.node.arguments[1]).code;
+ path.replaceWith(parse(`companionBridge.heroCard ? (0,S.jsx)(companionBridge.heroCard,{...${props},children:${card}}) : ${card}`).program.body[0].expression);
+ path.skip(); heroSurfaces++;
+} });
+if (heroSurfaces !== 2) throw new Error('Upstream hero card boundary changed');
 if (fireAttackPredicates !== 1) throw new Error('Upstream fire attack boundary changed');
 if (!chooseHero || !resolveCounterspell) throw new Error('Upstream action boundaries changed');
 const facade = `
@@ -123,6 +132,20 @@ ke = function(view,position) {
 };`;
 gameAst.program.body[0].expression.body.body.push(...parse(facade).program.body);
 selected.set(6749, generate(gameAst.program.body[0].expression, { comments: false }).code);
+const avatarAst = parse(`(${selected.get(7992)})`);
+avatarAst.program.body[0].expression.body.body.unshift(...parse('var companionAvatarBridge = n.bridge;').program.body);
+let avatarInteractions = 0;
+traverse(avatarAst, { StringLiteral(path) { if(path.node.value === '送☕️') { path.node.value='送👍'; delete path.node.extra; } } });
+traverse(avatarAst, { FunctionExpression(path) {
+ const source = generate(path.node).code;
+ if (path.parentPath.isObjectProperty() && path.parentPath.node.key?.name === 'onClick' && source.includes('document.cookie.includes') && source.includes('PlayerInteraction') && source.length < 2500) {
+  path.node.body = parse('(function(){ K(false); companionAvatarBridge.interact?.(v,["flower","like","egg","slipper"][t]); })').program.body[0].expression.body;
+  path.skip();
+  avatarInteractions++;
+ }
+} });
+if (avatarInteractions !== 1) throw new Error('Upstream avatar interaction boundary changed');
+selected.set(7992, generate(avatarAst.program.body[0].expression,{comments:false}).code);
 const unoAst = parse(`(${selected.get(7707)})`);
 traverse(unoAst, { VariableDeclarator(path) {
   if (path.node.id.name !== 'S' || path.node.init?.type !== 'FunctionExpression') return;
@@ -177,6 +200,12 @@ traverse(checkersAst, { ObjectExpression(path) {
   label.value.value = '审核 AI 决策';
   delete label.value.extra;
   checkersReplay++;
+} });
+traverse(checkersAst, { CallExpression(path) {
+  const properties = path.node.arguments[1]?.properties;
+  if (!properties?.some(property => property.key?.name === 'onClick' && property.value?.type === 'MemberExpression' && property.value.object.name === 'e' && property.value.property.name === 'onReplay')) return;
+  path.replaceWith(parse(`e.onReplay && ${generate(path.node).code}`).program.body[0].expression);
+  path.skip();
 } });
 if (checkersViews !== 1 || checkersReplay !== 1) throw new Error('Upstream checkers UI boundary changed');
 selected.set(1621, generate(checkersAst.program.body[0].expression, { comments: false }).code);

@@ -16,12 +16,14 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 主题插件与外观变量 | [主题注册](../src/client/themes.ts)、[样式](../src/styles.css) |
 | 统一控件与弹窗 | [控件](../src/client/ui/Controls.tsx) |
 | 命令、绑定与游戏键盘操作 | [命令注册](../src/client/commands.ts)、[游戏操作](../src/client/GameCommands.tsx)、[原界面](../src/client/OriginalGame.tsx) |
+| 桌面浏览器菜单策略 | [菜单策略](../src/client/desktop-context-menu.ts)、[应用入口](../src/main.tsx) |
 | 设置与目录偏好 | [设置](../src/client/Settings.tsx)、[偏好](../src/client/preferences.ts) |
 | 大厅与游戏分类 | [大厅](../src/client/Lobby.tsx) |
 | 系统菜单、托盘和窗口退出 | [桌面](../src-tauri/src/desktop.rs)、[应用入口](../src-tauri/src/lib.rs) |
 | 服务存档 | [SQLite](../src/server/storage.ts) |
 | 本地存档与记录 | [IndexedDB](../src/client/storage.ts) |
-| 回放与导入导出 | [回放格式](../src/domain/replay.ts)、[记录界面](../src/client/Records.tsx)、[文件](../src/client/files.ts) |
+| 关于与作者主页 | [资料](../src/client/about.json)、[关于页](../src/client/About.tsx)、[原生菜单与链接](../src-tauri/src/desktop.rs) |
+| 回放播放与导入导出 | [回放格式](../src/domain/replay.ts)、[记录界面](../src/client/Records.tsx)、[文件](../src/client/files.ts) |
 | 斗地主真人规则 | [斗地主](../src/domain/ddz.ts) |
 | AI 名称派生 | [名称](../src/domain/names.ts) |
 | 确认交互 | [确认服务](../src/client/confirmation-controller.ts)、[确认框](../src/client/Confirmation.tsx) |
@@ -37,7 +39,9 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 重连与凭据恢复 | [连接](../src/client/connection.ts) |
 | 审核与后台重放 | [审核面板](../src/client/Audit.tsx)、[重放 Worker](../src/client/audit-worker.ts) |
 | 临时公网开房 | [运行说明](hosting.md) |
-| 桌面与未来移动端入口 | [Tauri](../src-tauri/) |
+| 手机核心界面与邀请 | [手机入口](mobile-browser-plan.md) |
+| 公共消息、表情、互动与武将说明 | [社交入口](social-experience-plan.md) |
+| 桌面原生入口 | [Tauri](../src-tauri/) |
 
 ## 边界
 

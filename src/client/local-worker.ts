@@ -51,6 +51,10 @@ onmessage = (event) => {
         session.token = command.token;
       const result = gateway.handle(command, session);
       session = result.session;
+      if (command.type === "interaction") {
+        if (result.response) send(result.response);
+        return;
+      }
       if (command.type === "create") {
         failedVersion = -1;
         const room = gateway.rooms.get(session.room)!;
@@ -59,6 +63,16 @@ onmessage = (event) => {
           const token = room.claim(`玩家 ${index + 1}`);
           room.setReady(token, true);
           tokens.push(token);
+        }
+        send({ type: "session", ...session, localTokens: tokens });
+      }
+      if (command.type === "game") {
+        const room = gateway.rooms.get(session.room)!;
+        for (let index = 0; index < room.seats.length; index++) {
+          const seat = room.seats[index];
+          if (seat.difficulty) continue;
+          if (!seat.token) tokens.push(room.claim(`玩家 ${index + 1}`));
+          room.setReady(room.seats[index].token!, true);
         }
         send({ type: "session", ...session, localTokens: tokens });
       }

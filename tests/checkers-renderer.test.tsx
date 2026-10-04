@@ -20,6 +20,9 @@ it('renders the original completed checkers board inside the client', () => {
   vi.stubGlobal('window', globalThis);
   vi.stubGlobal('document', { createElement: () => ({ setAttribute: () => {}, clientWidth: 16 }), body: { appendChild: () => {}, removeChild: () => {} } });
   try {
-    expect(renderToString(<OriginalGame snapshot={room.snapshot(tokens[0])} act={() => {}} end={() => {}} onReplay={() => {}} />)).toContain('胜利');
+    const hidden = renderToString(<OriginalGame snapshot={room.snapshot(tokens[0])} act={() => {}} end={() => {}} />);
+    expect(hidden).toContain('胜利');
+    expect(hidden).not.toContain('审核 AI 决策');
+    expect(renderToString(<OriginalGame snapshot={room.snapshot(tokens[0])} act={() => {}} end={() => {}} onReplay={() => {}} />)).toContain('审核 AI 决策');
   } finally { vi.unstubAllGlobals(); }
 });

@@ -1,3 +1,4 @@
+import type { ChatContent, InteractionEvent, InteractionKind } from "./social";
 import { gameCatalogue } from "./catalogue";
 import { Replay, type ReplayRecord } from "./replay";
 import { automaticNames, seatDisplayName } from "./names";
@@ -12,7 +13,7 @@ import {
   type Snapshot,
   type SeatConfig,
 } from "./protocol";
-import type { Action, Decision, GameState, Seat } from "./types";
+import type { Action, Decision, GameKind, GameState, Seat } from "./types";
 
 export class Room {
   readonly engine = new GameEngine();
@@ -21,6 +22,10 @@ export class Room {
   readonly seed: string;
   state: GameState | null = null;
   version = 0;
+  private messageSequence = 0;
+  private messageTotals: Record<string, number> = {};
+  private interactionTimes = new Map<string, number>();
+  private interactionIds = new Set<string>();
   private messages: ChatMessage[] = [];
   private decisions: Decision[] = [];
   private summaries: DecisionSummary[] = [];
@@ -40,14 +45,18 @@ export class Room {
   ) {
     this.seed = seed;
     this.config = configSchema.parse(config);
-    this.seats = [
-      ...Array.from({ length: this.config.humans }, () => ({
+    this.seats = Room.createSeats(this.config);
+  }
+
+  private static createSeats(config: RoomConfig): Seat[] {
+    return [
+      ...Array.from({ length: config.humans }, () => ({
         name: "",
         difficulty: null,
         online: false,
         ready: false,
       })),
-      ...this.config.ai.map((entry, index) => ({
+      ...config.ai.map((entry, index) => ({
         name: entry.name || automaticNames[index],
         automaticName: !entry.name,
         difficulty: entry.difficulty,
@@ -70,6 +79,7 @@ export class Room {
     );
     if (!seat) throw new Error("真人席位已满");
     seat.name = name;
+    seat.id = crypto.randomUUID();
     seat.token = crypto.randomUUID();
     seat.online = true;
     seat.ready = this.seats[0] === seat;
@@ -129,6 +139,48 @@ export class Room {
     this.version++;
   }
 
+  changeGame(token: string, kind: GameKind): void {
+    if (this.identity(token) !== 0) throw new Error("只有房主可以切换游戏");
+    if (kind === this.config.kind) return;
+    if (this.state && !this.ended && !this.engine.finished(this.state))
+      throw new Error("请先结束当前对局再切换游戏");
+    const game = gameCatalogue[kind];
+    const occupied = this.seats.filter((seat) => !!seat.token);
+    if (occupied.length > game.maxPlayers)
+      throw new Error("房间人数超过新游戏上限");
+    const total = Math.max(
+      game.minPlayers,
+      Math.min(this.seats.length, game.maxPlayers),
+    );
+    const humans = game.ai
+      ? Math.max(occupied.length, Math.min(this.config.humans, total))
+      : total;
+    const ai = game.ai ? this.config.ai.slice(0, total - humans) : [];
+    const next = configSchema.parse({
+      ...this.config,
+      kind,
+      humans: total - ai.length,
+      ai,
+      team: game.team && this.config.team,
+    });
+    const seats = Room.createSeats(next);
+    occupied.forEach((seat, index) => {
+      seats[index] = { ...seat, ready: index === 0 };
+    });
+    if (this.replay) this.records = [...this.records, this.replay].slice(-20);
+    Object.assign(this.config, next);
+    this.seats.splice(0, this.seats.length, ...seats);
+    this.state = null;
+    this.replay = null;
+    this.decisions = [];
+    this.summaries = [];
+    this.queued = null;
+    this.resolutionAt = 0;
+    this.ended = false;
+    this.version++;
+    this.roundVersion = this.version;
+  }
+
   act(token: string, id: string, version: number, action: Action): void {
     const actor = this.identity(token);
     const key = `${token}:${id}`;
@@ -165,19 +217,52 @@ export class Room {
   }
 
   chat(token: string, id: string, text: string): void {
+    this.addMessage(token, id, { type: "text", text });
+  }
+  sticker(token: string, id: string, asset: string, text: string): void {
+    this.addMessage(token, id, { type: "sticker", asset, text });
+  }
+  private addMessage(token: string, id: string, content: ChatContent): void {
     const actor = this.identity(token);
     const key = `${token}:chat:${id}`;
     if (this.accepted.has(key)) return;
+    const sender = this.seats[actor].id!;
+    this.messageTotals[sender] = (this.messageTotals[sender] || 0) + 1;
     this.messages.push({
+      ...content,
       id,
+      sequence: ++this.messageSequence,
+      sender: this.seats[actor].id!,
       name: seatDisplayName(this.seats[actor], actor, this.state),
-      text,
       time: Date.now(),
     });
     if (this.messages.length > 200) this.messages.shift();
     this.accepted.add(key);
     if (this.accepted.size > 2048)
       this.accepted.delete(this.accepted.values().next().value!);
+  }
+  interact(
+    token: string,
+    id: string,
+    target: number,
+    kind: InteractionKind,
+  ): InteractionEvent | undefined {
+    const from = this.identity(token);
+    if (
+      !this.seats[target] ||
+      (!this.seats[target].token && !this.seats[target].difficulty)
+    )
+      throw new Error("互动目标不存在");
+    const key = `${token}:${id}`;
+    if (this.interactionIds.has(key)) return;
+    const now = Date.now();
+    if (now - (this.interactionTimes.get(token) ?? 0) < 1200)
+      throw new Error("互动太快，请稍后再试");
+    this.interactionIds.add(key);
+    if (this.interactionIds.size > 2048)
+      this.interactionIds.delete(this.interactionIds.values().next().value!);
+    this.interactionTimes.set(token, now);
+    return { id, from, target, kind, time: now };
   }
 
   aiRequest(): {
@@ -282,6 +367,7 @@ export class Room {
       version: this.version,
       actor,
       seats: this.seats.map((seat, index) => ({
+        id: seat.id || `ai:${index}`,
         name: seatDisplayName(seat, index, this.state),
         difficulty: seat.difficulty,
         online: seat.online,
@@ -293,6 +379,8 @@ export class Room {
           ? this.engine.candidates(state, actor)
           : [],
       chat: this.messages,
+      chatSequence: this.messageSequence,
+      chatTotals: this.messageTotals,
       decisions: finished || this.config.training ? this.decisions : [],
       paused: this.paused,
       replay: finished ? this.replay : null,
@@ -352,6 +440,7 @@ export class Room {
     if (actor === 0) throw new Error("房主需要关闭房间");
     if (this.state && !this.ended && !this.engine.finished(this.state))
       throw new Error("请先结束对局再离开");
+    if (this.seats[actor].id) delete this.messageTotals[this.seats[actor].id!];
     this.seats[actor] = {
       name: "",
       difficulty: null,
@@ -398,6 +487,8 @@ export class Room {
       ended: this.ended,
       replay: this.replay,
       records: this.records,
+      messageSequence: this.messageSequence,
+      messageTotals: this.messageTotals,
       messages: this.messages,
       decisions: this.decisions,
       summaries: this.summaries,
@@ -406,6 +497,23 @@ export class Room {
   }
   static restore(archive: RoomArchive): Room {
     if (archive.format !== 1) throw new Error("房间存档版本不支持");
+    if (archive.messageSequence === undefined) {
+      archive = structuredClone(archive);
+      archive.seats.forEach((seat) => {
+        if (seat.token && !seat.id) seat.id = crypto.randomUUID();
+      });
+      archive.messages = archive.messages.map((message, index) => ({
+        id: message.id,
+        name: message.name,
+        text: message.text,
+        time: message.time,
+        sequence: index + 1,
+        sender: "history",
+        type: "text",
+      }));
+      archive.messageSequence = archive.messages.length;
+      archive.messageTotals = { history: archive.messages.length };
+    }
     const room = new Room(archive.id, archive.config, archive.seed);
     room.seats.splice(
       0,
@@ -418,6 +526,8 @@ export class Room {
     room.replay = archive.replay;
     room.records = archive.records;
     room.messages = archive.messages;
+    room.messageSequence = archive.messageSequence;
+    room.messageTotals = archive.messageTotals;
     room.decisions = archive.decisions;
     room.summaries = archive.summaries;
     room.accepted = new Set(archive.accepted);
@@ -447,6 +557,8 @@ export interface RoomArchive {
   ended: boolean;
   replay: ReplayRecord | null;
   records: ReplayRecord[];
+  messageSequence: number;
+  messageTotals: Record<string, number>;
   messages: ChatMessage[];
   decisions: Decision[];
   summaries: DecisionSummary[];

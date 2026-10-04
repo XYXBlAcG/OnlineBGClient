@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-浏览器打开 http://127.0.0.1:1420；桌面运行 `npm run desktop`。桌面开发测试公网开房前，执行 `npm run build && npm run hosting:build`。
+浏览器打开 http://127.0.0.1:1420；桌面运行 `npm run desktop`。桌面开发与打包自动准备游戏资源、前端和内置房间服务。单独准备资源使用 `npm run desktop:prepare`。
 
 ## 房间服务与桌面包
 

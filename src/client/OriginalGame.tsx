@@ -1,3 +1,4 @@
+import { HeroSurface } from "./HeroSurface";
 import { gameCatalogue } from "../domain/catalogue";
 import { useEffect, useMemo } from "react";
 import { UpstreamRuntime } from "../upstream/runtime";
@@ -10,20 +11,29 @@ export function OriginalGame({
   end,
   onReplay,
   restart,
+  onInteract,
 }: {
   snapshot: Snapshot;
   act: (action: Action) => void;
   end: () => void;
-  onReplay: () => void;
+  onReplay?: () => void;
   restart?: () => void;
+  onInteract?: (
+    target: number,
+    kind: import("../domain/social").InteractionKind,
+  ) => void;
 }) {
   const runtime = useMemo(() => new UpstreamRuntime(), []);
+  runtime.bridge.heroCard = HeroSurface;
+  runtime.bridge.interact = onInteract;
   runtime.bridge.sink = (action) => {
     if ((action as { type: string }).type === "round-restart") restart?.();
     else if (!snapshot.finished) act(action as Action);
   };
   useEffect(
     () => () => {
+      runtime.bridge.heroCard = undefined;
+      runtime.bridge.interact = undefined;
       runtime.bridge.sink = undefined;
     },
     [runtime],

@@ -1,6 +1,18 @@
+import { useMotion } from "./client/use-motion";
+import { HeroDescription } from "./client/HeroSurface";
+import { HeroGuides } from "./domain/hero-guide";
+import { useMobile } from "./client/use-mobile";
+import { MobileJoin } from "./client/MobileJoin";
+import { Invite } from "./client/Invite";
+import { ChatPanel } from "./client/ChatPanel";
+import { Avatars } from "./client/Avatars";
+import { Interactions } from "./client/Interactions";
+import type { InteractionEvent, InteractionKind } from "./domain/social";
+import { installContextMenuPolicy } from "./client/desktop-context-menu";
 import { applyTheme } from "./client/themes";
 import { Panel } from "./client/ui/Controls";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { About } from "./client/About";
 import { Records } from "./client/Records";
 import { ClientStore } from "./client/storage";
 import { Settings } from "./client/Settings";
@@ -10,7 +22,7 @@ import { loadPreferences } from "./client/preferences";
 import { Select } from "./client/ui/Controls";
 import { Confirmation } from "./client/Confirmation";
 import { confirmation } from "./client/confirmation-controller";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   LocalConnection,
@@ -26,7 +38,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Lobby, difficultyNames } from "./client/Lobby";
 import { gameCatalogue } from "./domain/catalogue";
-import { cardNames, heroNames, skillNames } from "./domain/terms";
+import { cardNames, skillNames } from "./domain/terms";
 import "./styles.css";
 
 const invited = new URLSearchParams(location.search);
@@ -39,6 +51,8 @@ const initialService =
     : "http://127.0.0.1:8787");
 
 function App() {
+  const mobile = useMobile();
+  const [inviteOpen, setInviteOpen] = useState(false);
   const connection = useRef<Connection | null>(null);
   const session = useRef<{ token: string; room: string } | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -50,22 +64,45 @@ function App() {
   const [busy, setBusy] = useState(false);
   const hosting = useRef(false);
   const launch = useRef(0);
-  const chatSeen = useRef({ room: "", count: 0 });
+  const [interactions, setInteractions] = useState<InteractionEvent[]>([]);
+  const finishInteraction = useCallback(
+    (id: string) =>
+      setInteractions((events) => events.filter((event) => event.id !== id)),
+    [],
+  );
   const [unread, setUnread] = useState(0);
   const quitting = useRef(false);
   const [closeIntent, setCloseIntent] = useState<"close" | "quit" | null>(null);
   const [service, setService] = useState(initialService);
   const [tokens, setTokens] = useState<string[]>([]);
   const [tab, setTab] = useState<"game" | "audit" | "rules">("game");
-  const [chat, setChat] = useState("");
+  const [heroGuides] = useState(() => new HeroGuides().all());
   const [dictionary] = useState(() => new UpstreamRuntime());
-  const [preferences, setPreferences] = useState(loadPreferences);
+  const [preferences, setPreferences] = useState(() => {
+    const value = loadPreferences();
+    return mobile
+      ? { ...value, chatVisible: false, auditVisible: false }
+      : value;
+  });
+  const motion = useMotion(preferences.motion);
+  const preferencesRef = useRef(preferences);
+  preferencesRef.current = preferences;
   const [store] = useState(() => new ClientStore());
   const [recordsOpen, setRecordsOpen] = useState(false);
   const [hasLocalSave, setHasLocalSave] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const registry = useRef(new CommandRegistry()).current;
-  const chatEnd = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setTab("game");
+  }, [snapshot?.kind]);
+
+  useEffect(() => installContextMenuPolicy(window, isTauri()), []);
+  useEffect(() => {
+    if ((mobile || !preferences.auditVisible) && tab === "audit")
+      setTab("game");
+  }, [mobile, preferences.auditVisible, tab]);
 
   useEffect(() => {
     if (!isTauri()) return;
@@ -86,6 +123,7 @@ function App() {
     if (!isTauri()) return;
     const unlisten = listen<string>("desktop-command", (event) => {
       if (event.payload === "settings") setSettingsOpen(true);
+      if (event.payload === "about") setAboutOpen(true);
       if (event.payload === "records") setRecordsOpen(true);
       if (event.payload === "close" || event.payload === "quit")
         setCloseIntent(event.payload);
@@ -103,10 +141,6 @@ function App() {
       connection.current?.close();
     };
   }, []);
-  useEffect(() => {
-    chatEnd.current?.scrollIntoView({ block: "nearest" });
-  }, [snapshot?.chat.length]);
-
   const receive = async (response: Response) => {
     if (response.type === "left" || response.type === "closed") {
       if (response.type === "closed" && response.replay)
@@ -131,6 +165,8 @@ function App() {
       void store.local().then((saved) => setHasLocalSave(!!saved));
       return;
     }
+    if (response.type === "interaction" && preferencesRef.current.interactions)
+      setInteractions((events) => [...events, response.event].slice(-8));
     if (response.type === "error") setNotice(response.message);
     if (response.type === "session") {
       session.current = { token: response.token, room: response.room };
@@ -151,19 +187,16 @@ function App() {
     }
   };
   useEffect(() => {
-    if (!snapshot || chatSeen.current.room !== snapshot.room) {
-      chatSeen.current = {
-        room: snapshot?.room || "",
-        count: snapshot?.chat.length || 0,
-      };
-      setUnread(0);
-      return;
-    }
-    const added = Math.max(0, snapshot.chat.length - chatSeen.current.count);
-    chatSeen.current.count = snapshot.chat.length;
-    if (preferences.chatVisible) setUnread(0);
-    else if (added) setUnread((value) => value + added);
-  }, [snapshot?.room, snapshot?.chat.length, preferences.chatVisible]);
+    setInteractions([]);
+  }, [snapshot?.room, snapshot?.kind]);
+  const interact = (target: number, kind: InteractionKind) =>
+    connection.current?.send({
+      type: "interaction",
+      token: session.current!.token,
+      id: crypto.randomUUID(),
+      target,
+      kind,
+    });
   const cancelConnect = async () => {
     launch.current++;
     connection.current?.close();
@@ -332,9 +365,13 @@ function App() {
     if (session.current)
       connection.current!.send({ type: "end", token: session.current.token });
   };
-  const invite = async () => {
+  const invitationUrl = () => {
     const url = new URL(service);
-    url.searchParams.set("room", snapshot!.room);
+    if (snapshot) url.searchParams.set("room", snapshot.room);
+    return url.href;
+  };
+  const invite = async () => {
+    const url = new URL(invitationUrl());
     try {
       await navigator.clipboard.writeText(url.href);
       setNotice("邀请链接已复制");
@@ -389,7 +426,8 @@ function App() {
         ...command,
         scope: "global",
         enabled: () =>
-          command.id !== "app.invite" || (!!snapshot && mode === "network"),
+          !(mobile && ["app.shortcuts", "app.settings"].includes(command.id)) &&
+          (command.id !== "app.invite" || (!!snapshot && mode === "network")),
         binding: preferences.bindings[command.id] ?? command.binding,
       }),
     );
@@ -428,7 +466,7 @@ function App() {
       stop.forEach((dispose) => dispose());
       window.removeEventListener("keydown", handle);
     };
-  }, [registry, snapshot, mode, preferences.bindings, settingsOpen]);
+  }, [registry, snapshot, mode, preferences.bindings, settingsOpen, mobile]);
   const bind = (id: string, binding: string) => {
     try {
       registry.bind(id, binding);
@@ -442,7 +480,7 @@ function App() {
   };
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${mobile ? "mobile-shell" : ""}`}>
       <Confirmation />
       <Panel
         open={!!closeIntent}
@@ -483,12 +521,29 @@ function App() {
           </button>
         </div>
       </Panel>
-      <Records
-        open={recordsOpen}
-        onOpenChange={setRecordsOpen}
-        snapshot={snapshot}
+      {preferences.interactions && (
+        <Interactions
+          events={interactions}
+          motion={motion}
+          sound={preferences.interactionSound}
+          onEnd={finishInteraction}
+        />
+      )}
+      <Invite
+        url={invitationUrl()}
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
         onError={setNotice}
       />
+      <About open={aboutOpen} onOpenChange={setAboutOpen} onError={setNotice} />
+      {!mobile && (
+        <Records
+          open={recordsOpen}
+          onOpenChange={setRecordsOpen}
+          snapshot={snapshot}
+          onError={setNotice}
+        />
+      )}
       <Settings
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
@@ -512,15 +567,23 @@ function App() {
           )}
         </div>
         <div>
-          <button onClick={() => setRecordsOpen(true)}>对局记录</button>
+          {!mobile && <button onClick={() => setAboutOpen(true)}>关于</button>}
+          {!mobile && (
+            <button onClick={() => setRecordsOpen(true)}>对局记录</button>
+          )}
           {snapshot && (
-            <button onClick={toggleChat}>
+            <button
+              className={unread ? "chat-unread" : ""}
+              onClick={toggleChat}
+            >
               聊天{unread ? ` · ${unread}` : ""}
             </button>
           )}
-          <button onClick={() => setSettingsOpen(true)} aria-label="打开设置">
-            设置
-          </button>
+          {!mobile && (
+            <button onClick={() => setSettingsOpen(true)} aria-label="打开设置">
+              设置
+            </button>
+          )}
           {snapshot && (
             <button onClick={leave}>
               {snapshot.actor === 0 ? "关闭房间" : "离开房间"}
@@ -536,7 +599,14 @@ function App() {
           </button>
         </div>
       )}
-      {!snapshot ? (
+      {!snapshot && mobile ? (
+        <MobileJoin
+          room={invited.get("room") || ""}
+          service={service}
+          busy={busy}
+          onJoin={join}
+        />
+      ) : !snapshot ? (
         <>
           <div className="recent-rooms">
             {isTauri() && localStorage.getItem("onlinebg.hosted-room") && (
@@ -588,8 +658,33 @@ function App() {
                   bindings={preferences.bindings}
                 />
                 {mode === "network" && (
-                  <button onClick={invite}>复制邀请</button>
+                  <>
+                    <button onClick={invite}>复制邀请</button>
+                    <button onClick={() => setInviteOpen(true)}>
+                      邀请二维码
+                    </button>
+                  </>
                 )}
+                {snapshot.actor === 0 &&
+                  (!snapshot.state || snapshot.finished) && (
+                    <Select
+                      aria-label="房间游戏"
+                      value={snapshot.kind}
+                      onValueChange={(kind) => {
+                        connection.current!.send({
+                          type: "game",
+                          token: session.current!.token,
+                          kind: kind as RoomConfig["kind"],
+                        });
+                      }}
+                    >
+                      {Object.entries(gameCatalogue).map(([kind, game]) => (
+                        <option key={kind} value={kind}>
+                          {game.name}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
                 {snapshot.actor === 0 && gameCatalogue[snapshot.kind].ai && (
                   <label className="room-tempo">
                     AI 间隔{" "}
@@ -648,6 +743,7 @@ function App() {
                 )}
               </div>
             </div>
+            <Avatars snapshot={snapshot} onInteract={interact} />
             <nav className="segmented">
               <button
                 className={tab === "game" ? "active" : ""}
@@ -655,14 +751,16 @@ function App() {
               >
                 对局
               </button>
-              {gameCatalogue[snapshot.kind].ai && (
-                <button
-                  className={tab === "audit" ? "active" : ""}
-                  onClick={() => setTab("audit")}
-                >
-                  策略审核
-                </button>
-              )}
+              {!mobile &&
+                preferences.auditVisible &&
+                gameCatalogue[snapshot.kind].ai && (
+                  <button
+                    className={tab === "audit" ? "active" : ""}
+                    onClick={() => setTab("audit")}
+                  >
+                    策略审核
+                  </button>
+                )}
               {snapshot.kind === "sgs" && (
                 <button
                   className={tab === "rules" ? "active" : ""}
@@ -767,14 +865,18 @@ function App() {
                     {snapshot.finished && (
                       <div className="finish-banner">
                         <strong>对局已结束</strong>
-                        {gameCatalogue[snapshot.kind].ai && (
-                          <button onClick={() => setTab("audit")}>
-                            审核 AI 决策
+                        {!mobile &&
+                          preferences.auditVisible &&
+                          gameCatalogue[snapshot.kind].ai && (
+                            <button onClick={() => setTab("audit")}>
+                              审核 AI 决策
+                            </button>
+                          )}
+                        {!mobile && (
+                          <button onClick={() => setRecordsOpen(true)}>
+                            查看回放
                           </button>
                         )}
-                        <button onClick={() => setRecordsOpen(true)}>
-                          查看回放
-                        </button>
                         {snapshot.actor === 0 && (
                           <button
                             onClick={() =>
@@ -804,31 +906,28 @@ function App() {
                       snapshot={snapshot}
                       act={act}
                       end={end}
-                      onReplay={() => setTab("audit")}
+                      onInteract={interact}
+                      onReplay={
+                        !mobile && preferences.auditVisible
+                          ? () => setTab("audit")
+                          : undefined
+                      }
                     />
                   </>
                 )}
               </>
             )}
-            {tab === "audit" && <Audit snapshot={snapshot} />}
+            {!mobile && preferences.auditVisible && tab === "audit" && (
+              <Audit snapshot={snapshot} />
+            )}
             {tab === "rules" && snapshot.kind === "sgs" && (
               <section className="dictionary">
                 <h2>三国杀术语</h2>
                 <details open>
                   <summary>武将</summary>
                   <div className="terms-grid">
-                    {heroNames.slice(1).map((hero, index) => (
-                      <div key={hero}>
-                        <strong>{hero}</strong>
-                        <span>
-                          {dictionary
-                            .load(8467)
-                            .V6[index + 1][4].map(
-                              (skill: number) => skillNames[skill],
-                            )
-                            .join("、")}
-                        </span>
-                      </div>
+                    {heroGuides.map((hero) => (
+                      <HeroDescription key={hero.id} hero={hero} />
                     ))}
                   </div>
                 </details>
@@ -851,56 +950,34 @@ function App() {
               </section>
             )}
           </section>
-          <aside className="chat-panel" hidden={!preferences.chatVisible}>
-            <h2>房间消息</h2>
-            <div className="members">
-              {snapshot.seats.map((seat, index) => (
-                <span key={index} className={seat.online ? "" : "offline"}>
-                  {seat.name || "空位"}
-                  {index === snapshot.actor ? " · 我" : ""}
-                </span>
-              ))}
-            </div>
-            <div className="chat-messages">
-              {snapshot.chat.map((message) => (
-                <div key={message.id} className="chat-message">
-                  <small>
-                    {message.name} ·{" "}
-                    {new Date(message.time).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </small>
-                  <p>{message.text}</p>
-                </div>
-              ))}
-              <div ref={chatEnd} />
-            </div>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!chat.trim()) return;
-                connection.current!.send({
-                  type: "chat",
-                  token: session.current!.token,
-                  id: crypto.randomUUID(),
-                  text: chat,
-                });
-                setChat("");
-              }}
-            >
-              <input
-                aria-label="消息"
-                placeholder="发消息"
-                maxLength={500}
-                value={chat}
-                onChange={(event) => setChat(event.target.value)}
-              />
-              <button type="submit" disabled={!chat.trim()}>
-                发送
-              </button>
-            </form>
-          </aside>
+          <ChatPanel
+            snapshot={snapshot}
+            compact={mobile}
+            token={session.current!.token}
+            endpoint={mode === "network" ? service : undefined}
+            preferences={preferences}
+            onPreferences={setPreferences}
+            onUnread={setUnread}
+            onClose={toggleChat}
+            onError={setNotice}
+            onText={(text) =>
+              connection.current!.send({
+                type: "chat",
+                token: session.current!.token,
+                id: crypto.randomUUID(),
+                text,
+              })
+            }
+            onSticker={(asset, text) =>
+              connection.current!.send({
+                type: "sticker",
+                token: session.current!.token,
+                id: crypto.randomUUID(),
+                asset,
+                text,
+              })
+            }
+          />
         </main>
       )}
     </div>

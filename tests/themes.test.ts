@@ -35,3 +35,11 @@ it("restores system theme when a saved plugin is unavailable without discarding 
   expect(saved.favorites).toEqual(["uno"]);
   vi.unstubAllGlobals();
 });
+
+it('hides strategy auditing by default and preserves an explicit saved opt-in', async () => {
+  const { preferencesSchema, loadPreferences } = await import('../src/client/preferences');
+  const { vi } = await import('vitest');
+  expect(preferencesSchema.parse({}).auditVisible).toBe(false);
+  vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ auditVisible: true }) });
+  try { expect(loadPreferences().auditVisible).toBe(true); } finally { vi.unstubAllGlobals(); }
+});

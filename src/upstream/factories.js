@@ -2810,6 +2810,7 @@ export default {
 7992: function (e, t, n) {
   "use strict";
 
+  var companionAvatarBridge = n.bridge;
   n.d(t, {
     Yw: function () {
       return m;
@@ -3030,7 +3031,7 @@ export default {
                 },
                 children: e
               }, t);
-            }) : [["\u9001\ud83c\udf39", 3], ["\u9001\u2615\ufe0f", 9], ["\u6254\ud83e\udd5a", 15], ["\u6254\ud83e\ude74", 15]].map(function (e, t) {
+            }) : [["\u9001\ud83c\udf39", 3], ["\u9001\uD83D\uDC4D", 9], ["\u6254\ud83e\udd5a", 15], ["\u6254\ud83e\ude74", 15]].map(function (e, t) {
               var n = (0, a.Z)(e, 2),
                 i = n[0],
                 r = n[1];
@@ -3038,15 +3039,8 @@ export default {
                 className: "block w-full leading-6",
                 noStyle: !0,
                 onClick: function () {
-                  var e;
-                  if (K(!1), !document.cookie.includes("gsid=")) return (0, u.Z)("\u70b9\u51fb\u4e0a\u9762\u7684 \u516d\u8fb9\u5f62Logo \u8bb8\u613f\uff0c\u5e76\u901a\u8fc7\u5fae\u4fe1\u767b\u9646\uff0c\u624d\u6709\u673a\u4f1a\u4f7f\u7528\u8be5\u529f\u80fd");
-                  if (!g.position) return (0, u.Z)("\u70b9\u51fb\u4e0a\u9762\u7684 \u516d\u8fb9\u5f62Logo \u8bb8\u613f\uff0c\u52a0\u5165\u5ea7\u4f4d\u540e\uff0c\u624d\u6709\u673a\u4f1a\u4f7f\u7528\u8be5\u529f\u80fd");
-                  if (((null === (e = g.playerList[g.position - 1]) || void 0 === e ? void 0 : e.wishCount) || 0) < r) return (0, u.Z)("\u6700\u8fd1\u51e0\u5929\u8bb8\u613f\u6b21\u6570\u4e0d\u591f\u591a\uff0c\u65e0\u6cd5\u4f7f\u7528".concat(i, "\uff0c\u70b9\u51fb\u4e0a\u9762\u7684 \u516d\u8fb9\u5f62Logo \u53bb\u8bb8\u613f\u5427\uff01"));
-                  if (!g.state) return (0, u.Z)("\u5f00\u59cb\u540e\u624d\u80fd\u7528\u8be5\u529f\u80fd");
-                  var n = +new Date();
-                  n > $.current + 1400 && ($.current = n, z(s.Z.PlayerInteraction, {
-                    payload: t << 5 | v
-                  }));
+                  K(false);
+                  companionAvatarBridge.interact?.(v, ["flower", "like", "egg", "slipper"][t]);
                 },
                 children: i
               }, t);
@@ -6113,7 +6107,44 @@ export default {
           children: "\u6211\u7684\u56DE\u5408"
         })]
       }),
-      f = (0, S.jsx)(N, {
+      f = companionBridge.heroCard ? (0, S.jsx)(companionBridge.heroCard, {
+        ...{
+          id: n.hero[a] || 0,
+          pid: a,
+          className: s.includes(a) ? "sgs-select" : "",
+          color: d,
+          roleName: u,
+          count: n.playerHandCard[a].length,
+          blood: n.playerBlood[a],
+          equip: n.playerEquip[a],
+          judge: n.playerJudge[a],
+          isConn: !!n.playerConn[a],
+          isBack: !!n.playerBack[a],
+          isDrunk: n.isDrunk === c.Sd.DRUNK,
+          onClick: i,
+          style: n.alivePlayerIds.includes(a) ? void 0 : {
+            filter: "grayscale(100%)"
+          }
+        },
+        children: (0, S.jsx)(N, {
+          id: n.hero[a] || 0,
+          pid: a,
+          className: s.includes(a) ? "sgs-select" : "",
+          color: d,
+          roleName: u,
+          count: n.playerHandCard[a].length,
+          blood: n.playerBlood[a],
+          equip: n.playerEquip[a],
+          judge: n.playerJudge[a],
+          isConn: !!n.playerConn[a],
+          isBack: !!n.playerBack[a],
+          isDrunk: n.isDrunk === c.Sd.DRUNK,
+          onClick: i,
+          style: n.alivePlayerIds.includes(a) ? void 0 : {
+            filter: "grayscale(100%)"
+          }
+        })
+      }) : (0, S.jsx)(N, {
         id: n.hero[a] || 0,
         pid: a,
         className: s.includes(a) ? "sgs-select" : "",
@@ -8937,7 +8968,56 @@ export default {
           var t = (0, I.eg)(n, p, y);
           return (0, S.jsx)("div", {
             className: "m-2",
-            children: (0, S.jsx)(N, {
+            children: companionBridge.heroCard ? (0, S.jsx)(companionBridge.heroCard, {
+              ...{
+                id: e,
+                pid: r,
+                color: 0,
+                roleName: t,
+                count: {
+                  "\u4e3b": 0,
+                  "\u5927\u5fe0": 0,
+                  "\u5fe0": 0,
+                  "\u53cd": 1,
+                  "\u5185": 2,
+                  "?": 2
+                }[t] || 0,
+                blood: u.V6[e][u.$.BLOOD] + ("\u4E3B" === t || "\u5927\u5FE0" === t ? 1 : 0),
+                onClick: function () {
+                  return f(e);
+                },
+                className: E === e ? "sgs-select" : "",
+                style: n.hero.findIndex(function (r) {
+                  return r === e;
+                }) >= 0 ? {
+                  filter: "grayscale(100%)"
+                } : void 0
+              },
+              children: (0, S.jsx)(N, {
+                id: e,
+                pid: r,
+                color: 0,
+                roleName: t,
+                count: {
+                  "\u4e3b": 0,
+                  "\u5927\u5fe0": 0,
+                  "\u5fe0": 0,
+                  "\u53cd": 1,
+                  "\u5185": 2,
+                  "?": 2
+                }[t] || 0,
+                blood: u.V6[e][u.$.BLOOD] + ("\u4E3B" === t || "\u5927\u5FE0" === t ? 1 : 0),
+                onClick: function () {
+                  return f(e);
+                },
+                className: E === e ? "sgs-select" : "",
+                style: n.hero.findIndex(function (r) {
+                  return r === e;
+                }) >= 0 ? {
+                  filter: "grayscale(100%)"
+                } : void 0
+              })
+            }) : (0, S.jsx)(N, {
               id: e,
               pid: r,
               color: 0,
@@ -12522,7 +12602,7 @@ export default {
         className: "text-center mt-2",
         children: [(0, d.jsx)("div", {
           children: "\ud83c\udf89\u606d\u559c".concat(I, "\u80dc\u5229")
-        }), (0, d.jsx)(o.Z, {
+        }), e.onReplay && (0, d.jsx)(o.Z, {
           className: "mt-2",
           small: !0,
           primary: !0,

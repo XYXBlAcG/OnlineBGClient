@@ -113,7 +113,9 @@ export function GameCommands({
         title="游戏操作"
       >
         <div className="command-picker">
-          <p className="muted">↑ ↓ 选择 · Enter 确认 · Esc 关闭</p>
+          <p className="muted command-keyboard-hint">
+            ↑ ↓ 选择 · Enter 确认 · Esc 关闭
+          </p>
           {snapshot.candidates.length ? (
             <>
               <div

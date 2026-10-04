@@ -73,6 +73,25 @@
     await waitFor(() => document.querySelector("dialog[open]"));
     button("确认结束").click();
     await waitFor(() => button("开始对局"));
+    document.querySelector('[role=combobox][aria-label="房间游戏"]').click();
+    (
+      await waitFor(() =>
+        [...document.querySelectorAll("[role=option]")].find(
+          (option) => option.textContent.trim() === "三国杀",
+        ),
+      )
+    ).click();
+    await waitFor(() =>
+      document
+        .querySelector(".room-toolbar > strong")
+        ?.textContent.includes("三国杀"),
+    );
+    if ((await window.__TAURI_INTERNALS__.invoke("start_host")) !== url)
+      throw new Error("Game switch restarted tunnel");
+    await waitFor(() => document.body.innerText.includes("切换验证通过"));
+    await waitFor(
+      () => document.querySelector('img[alt="公网表情"]')?.naturalWidth === 1,
+    );
     button("关闭房间").click();
     await waitFor(() => document.querySelector("dialog[open]"));
     button("取消").click();
@@ -90,7 +109,7 @@
     await new Promise((resolve) => setTimeout(resolve, 10000));
     await window.__TAURI_INTERNALS__.invoke("report", {
       result:
-        "PASS: native public host, game cancellation/end, exit cancellation/confirmation, managed shutdown",
+        "PASS: native public host, mobile browser, public stickers, unchanged tunnel game switch, game cancellation/end, exit cancellation/confirmation, managed shutdown",
     });
   } catch (error) {
     await window.__TAURI_INTERNALS__.invoke("stop_host");

@@ -11,10 +11,13 @@ const createPage = async () => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } }); contexts.push(context);
   const page = await context.newPage(); page.on('pageerror', error => errors.push(String(error))); await page.goto(endpoint); return page;
 };
-const choose = async (page, label, text) => { await page.getByRole('combobox', { name: label, exact: true }).click(); await page.getByRole('option', { name: text, exact: true }).click(); };
+const choose = async (page, label, text) => { await page.getByRole('combobox', { name: label, exact: true }).click(); await page.getByRole('option', { name: text, exact: true }).click(); await expect(page.getByRole('listbox')).toHaveCount(0); };
 try {
   await mkdir('.tmp/screenshots', { recursive: true });
   const page = await createPage();
+  await page.getByRole('button', { name: '关于', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'XYXBlAcG', exact: true })).toHaveAttribute('href', 'https://github.com/XYXBlAcG');
+  await page.keyboard.press('Escape');
   await expect(page.locator('.game-card')).toHaveCount(5);
   await page.getByRole('button', { name: '收藏UNO', exact: true }).click();
   await page.getByRole('button', { name: '收藏', exact: true }).click();
@@ -31,11 +34,22 @@ try {
   await expect(page.getByRole('combobox', { name: '当前本地玩家', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '开始对局', exact: true }).click();
   await page.getByRole('button', { name: '我先出牌', exact: true }).waitFor();
+  await expect(page.getByRole('button', { name: '策略审核', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '打开设置', exact: true }).click();
+  await page.getByRole('switch', { name: '显示策略审核', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: '策略审核', exact: true }).click();
+  await page.getByRole('button', { name: '打开设置', exact: true }).click();
+  await page.getByRole('switch', { name: '显示策略审核', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: '策略审核', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '我先出牌', exact: true }).waitFor();
   await page.keyboard.press('F2');
   await page.keyboard.press('Enter');
   await page.locator('.uno').first().waitFor();
   await page.reload();
   await page.getByRole('button', { name: '恢复本地对局', exact: true }).click();
+  await expect(page.getByRole('button', { name: '策略审核', exact: true })).toHaveCount(0);
   await page.locator('.uno').first().waitFor();
   await page.getByRole('button', { name: '结束游戏', exact: true }).click();
   await page.getByRole('button', { name: '确认结束', exact: true }).click();
@@ -43,9 +57,27 @@ try {
   await page.getByRole('button', { name: '对局记录', exact: true }).click();
   await page.locator('.record-row').first().waitFor();
   await page.locator('.record-row > button').first().click();
-  await page.getByRole('slider', { name: '回放进度' }).waitFor();
+  const progress = page.getByRole('slider', { name: '回放进度' }); await progress.waitFor();
+  await choose(page, '回放速度', '2×');
+  await page.getByRole('button', { name: '播放回放', exact: true }).click();
+  await expect(progress).toHaveAttribute('aria-valuenow', '1');
+  await page.getByRole('button', { name: '重新播放', exact: true }).click();
+  await page.getByRole('button', { name: '暂停回放', exact: true }).click();
+  await expect(progress).toHaveAttribute('aria-valuenow', '0');
+  await page.waitForTimeout(700);
+  await expect(progress).toHaveAttribute('aria-valuenow', '0');
   await expect(page.locator('.ui-panel-wide .uno').first()).toBeVisible();
   await page.keyboard.press('Escape');
+  await choose(page, '房间游戏', '斗地主');
+  await expect(page.locator('.room-toolbar > strong')).toContainText('斗地主');
+  await page.reload();
+  await page.getByRole('button', { name: '恢复本地对局', exact: true }).click();
+  await expect(page.locator('.room-toolbar > strong')).toContainText('斗地主');
+  await page.getByRole('button', { name: '开始对局', exact: true }).click();
+  await page.getByRole('button', { name: '抢地主', exact: true }).click();
+  await expect(page.locator('.ddz-poker[draggable=true]')).toHaveCount(20);
+  await page.getByRole('button', { name: '结束游戏', exact: true }).click();
+  await page.getByRole('button', { name: '确认结束', exact: true }).click();
   await page.getByRole('button', { name: '关闭房间', exact: true }).click();
   await page.locator('dialog').getByRole('button', { name: '关闭房间', exact: true }).click();
   await page.getByRole('heading', { name: '一起玩一局' }).waitFor();
@@ -79,9 +111,19 @@ try {
   await guests[0].locator('.original-game').waitFor();
   await host.screenshot({ path: '.tmp/screenshots/client-ddz.png', fullPage: true });
   await host.getByRole('button', { name: '结束游戏', exact: true }).click(); await host.getByRole('button', { name: '确认结束', exact: true }).click();
+  await choose(host, '房间游戏', '飞行棋');
+  for (const client of [host, ...guests]) {
+    await expect(client.locator('.room-toolbar > strong')).toHaveText(`飞行棋 · ${room}`);
+    await client.getByRole('heading', { name: '等待开局', exact: true }).waitFor();
+  }
+  for (const guest of guests) await guest.getByRole('button', { name: '准备', exact: true }).click();
+  await host.getByRole('button', { name: '开始对局', exact: true }).click();
+  await guests[0].locator('.original-game').waitFor();
+  await host.getByRole('button', { name: '结束游戏', exact: true }).click();
+  await host.getByRole('button', { name: '确认结束', exact: true }).click();
   await guests[0].getByRole('button', { name: '离开房间', exact: true }).click(); await guests[0].getByRole('heading', { name: '一起玩一局' }).waitFor();
   await host.getByRole('button', { name: '关闭房间', exact: true }).click(); await host.locator('dialog').getByRole('button', { name: '关闭房间', exact: true }).click();
   await guests[1].getByRole('heading', { name: '一起玩一局' }).waitFor();
   if (errors.length) throw new Error(errors.join('\n'));
-  console.log('PASS: controls, dark theme, favorites, keyboard action, local recovery, replay, three-human DDZ, chat, reconnect, leave and close');
+  console.log('PASS: audit visibility and persistence, controls, dark theme, favorites, keyboard action, local recovery, replay playback/pause/speed, local and three-client game switch, about, three-human DDZ, chat, reconnect, leave and close');
 } finally { await browser.close(); }

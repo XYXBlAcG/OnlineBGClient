@@ -8,7 +8,7 @@ type Exports = Record<string, any>;
 type Factory = (module: { exports: Exports }, exports: Exports, require: any) => void;
 
 export class UpstreamRuntime {
-  bridge: { sink?: (action: unknown) => void } = {};
+  bridge: { sink?: (action: unknown) => void; heroCard?: React.ComponentType<any>; interact?: (target:number,kind:any)=>void } = {};
   private cache = new Map<number, Exports>();
   random: () => number = Math.random;
 

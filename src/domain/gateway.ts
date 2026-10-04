@@ -41,13 +41,27 @@ export class Gateway {
       this.rooms.delete(room.id);
       return { session, response: { type: "closed", replay } };
     }
+    if (command.type === "interaction") {
+      const event = room.interact(
+        command.token,
+        command.id,
+        command.target,
+        command.kind,
+      );
+      return {
+        session,
+        response: event ? { type: "interaction", event } : undefined,
+      };
+    }
     this.execute(room, command);
     if (command.type === "leave")
       return { session, response: { type: "left" } };
     return {
       session,
       response:
-        command.type === "action" || command.type === "chat"
+        command.type === "action" ||
+        command.type === "chat" ||
+        command.type === "sticker"
           ? { type: "ack", id: command.id }
           : undefined,
     };
@@ -63,9 +77,12 @@ export class Gateway {
     if (command.type === "leave") room.leave(command.token);
     if (command.type === "start") room.start(command.token);
     if (command.type === "tempo") room.setTempo(command.token, command.delayMs);
+    if (command.type === "game") room.changeGame(command.token, command.kind);
     if (command.type === "end") room.end(command.token);
     if (command.type === "action")
       room.act(command.token, command.id, command.version, command.action);
+    if (command.type === "sticker")
+      room.sticker(command.token, command.id, command.asset, command.text);
     if (command.type === "chat")
       room.chat(command.token, command.id, command.text);
   }

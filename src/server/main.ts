@@ -1,3 +1,5 @@
+import { AssetStore } from "./assets";
+import { builtinStickers, stickerLimit } from "../domain/social";
 import { mkdirSync } from "node:fs";
 import { RoomStore } from "./storage";
 import { createServer } from "node:http";
@@ -7,13 +9,30 @@ import { Worker } from "node:worker_threads";
 import { WebSocketServer, WebSocket } from "ws";
 import { Gateway } from "../domain/gateway";
 import type { Decision } from "../domain/types";
-import type { Response } from "../domain/protocol";
+import { protocolVersion, type Response } from "../domain/protocol";
 
 const gateway = new Gateway();
 const dataRoot = resolve(process.env.DATA_ROOT || ".data");
 mkdirSync(dataRoot, { recursive: true });
 const store = new RoomStore(resolve(dataRoot, "rooms.sqlite"));
-for (const room of store.load()) gateway.rooms.set(room.id, room);
+for (const room of store.load()) {
+  gateway.rooms.set(room.id, room);
+  store.save(room);
+}
+const assets = new AssetStore(resolve(dataRoot, "assets"));
+const collectAssets = async () => {
+  const referenced = new Set<string>();
+  for (const room of gateway.rooms.values())
+    for (const message of room.export().messages)
+      if (message.asset) referenced.add(message.asset);
+  await assets.collect(referenced);
+};
+const assetMaintenance = setInterval(() => {
+  void collectAssets().catch((error) =>
+    console.error("Sticker cleanup failed", error),
+  );
+}, 3600000);
+assetMaintenance.unref();
 const root = resolve(process.env.STATIC_ROOT || "dist");
 const mime: Record<string, string> = {
   ".html": "text/html",
@@ -23,14 +42,96 @@ const mime: Record<string, string> = {
   ".png": "image/png",
   ".json": "application/json",
 };
+const desktopOrigins = new Set([
+  "tauri://localhost",
+  "http://tauri.localhost",
+  "https://tauri.localhost",
+  "http://localhost:1420",
+  "http://127.0.0.1:1420",
+]);
 const server = createServer(async (request, response) => {
+  const origin = request.headers.origin;
+  if (origin && desktopOrigins.has(origin)) {
+    response.setHeader("Access-Control-Allow-Origin", origin);
+    response.setHeader("Vary", "Origin");
+    response.setHeader(
+      "Access-Control-Allow-Headers",
+      "Authorization, Content-Type",
+    );
+    response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  }
+  if (request.method === "OPTIONS") {
+    response.writeHead(origin && desktopOrigins.has(origin) ? 204 : 403);
+    response.end();
+    return;
+  }
   if (request.url === "/health") {
     response.writeHead(200, { "Content-Type": "application/json" });
-    response.end(JSON.stringify({ ready: true, rooms: gateway.rooms.size }));
+    response.end(
+      JSON.stringify({
+        ready: true,
+        apiVersion: protocolVersion,
+        rooms: gateway.rooms.size,
+      }),
+    );
     return;
   }
   try {
     const url = new URL(request.url || "/", "http://localhost");
+    if (url.pathname === "/room-info") {
+      const room = gateway.rooms.get(url.searchParams.get("room") || "");
+      response.writeHead(room ? 200 : 404, {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      });
+      response.end(
+        JSON.stringify(
+          room
+            ? {
+                kind: room.config.kind,
+                seats: room.seats.length,
+                players: room.seats.filter(
+                  (seat) => seat.token || seat.difficulty,
+                ).length,
+              }
+            : { error: "房间不存在" },
+        ),
+      );
+      return;
+    }
+    if (url.pathname === "/stickers" && request.method === "POST") {
+      const room = gateway.rooms.get(url.searchParams.get("room") || "");
+      if (!room) throw new Error("房间不存在");
+      room.identity(
+        (request.headers.authorization || "").replace(/^Bearer /, ""),
+      );
+      const chunks: Buffer[] = [];
+      let length = 0;
+      for await (const chunk of request) {
+        length += chunk.length;
+        if (length > stickerLimit) throw new Error("表情包不能超过 5 MB");
+        chunks.push(chunk);
+      }
+      const asset = await assets.save(
+        Buffer.concat(chunks),
+        url.searchParams.get("name") || "表情",
+        url.searchParams.get("preview") || undefined,
+      );
+      response.writeHead(201, { "Content-Type": "application/json" });
+      response.end(JSON.stringify(asset));
+      return;
+    }
+    if (url.pathname.startsWith("/stickers/")) {
+      const id = url.pathname.slice(10).replace(/\.json$/, "");
+      const metadata = await assets.metadata(id);
+      const json = url.pathname.endsWith(".json");
+      response.writeHead(200, {
+        "Content-Type": json ? "application/json" : metadata.mime,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      });
+      response.end(json ? JSON.stringify(metadata) : await assets.bytes(id));
+      return;
+    }
     const path = resolve(
       root,
       `.${decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname)}`,
@@ -47,9 +148,11 @@ const server = createServer(async (request, response) => {
       "Content-Type": mime[extname(path)] || "application/octet-stream",
     });
     response.end(data);
-  } catch {
-    response.writeHead(404);
-    response.end("Not found");
+  } catch (error) {
+    response.writeHead(request.method === "POST" ? 400 : 404, {
+      "Content-Type": "application/json",
+    });
+    response.end(JSON.stringify({ error: String(error) }));
   }
 });
 const sockets = new WebSocketServer({
@@ -74,53 +177,77 @@ const publish = (roomId: string, socket?: WebSocket, response?: Response) => {
         snapshot: room.snapshot(session.token),
       });
 };
+const alive = new Set<WebSocket>();
+const heartbeat = setInterval(() => {
+  for (const socket of sockets.clients) {
+    if (!alive.delete(socket)) socket.terminate();
+    else socket.ping();
+  }
+}, 15000);
+heartbeat.unref();
 sockets.on("connection", (socket) => {
+  let serial = Promise.resolve();
   socket.on("message", (data) => {
-    try {
-      const result = gateway.handle(
-        JSON.parse(data.toString()),
-        sessions.get(socket),
-      );
-      for (const [other, session] of sessions)
+    serial = serial.then(async () => {
+      try {
+        const input = JSON.parse(data.toString());
         if (
-          other !== socket &&
-          session.token === result.session.token &&
-          session.room === result.session.room
-        ) {
-          sessions.delete(other);
-          other.close(4001, "Session resumed elsewhere");
-        }
-      sessions.set(socket, result.session);
-      if (result.response?.type === "closed") {
-        store.remove(result.session.room);
+          input.type === "sticker" &&
+          !builtinStickers.some((asset) => asset.id === input.asset)
+        )
+          await assets.metadata(input.asset);
+        const result = gateway.handle(input, sessions.get(socket));
         for (const [other, session] of sessions)
-          if (session.room === result.session.room) {
-            send(other, result.response);
+          if (
+            other !== socket &&
+            session.token === result.session.token &&
+            session.room === result.session.room
+          ) {
             sessions.delete(other);
-            other.close(4000, "Room closed");
+            other.close(4001, "Session resumed elsewhere");
           }
-        return;
+        sessions.set(socket, result.session);
+        if (result.response?.type === "closed") {
+          store.remove(result.session.room);
+          for (const [other, session] of sessions)
+            if (session.room === result.session.room) {
+              send(other, result.response);
+              sessions.delete(other);
+              other.close(4000, "Room closed");
+            }
+          return;
+        }
+        if (result.response?.type === "left") sessions.delete(socket);
+        if (input.type === "interaction") {
+          if (!result.response) return;
+          for (const [other, session] of sessions)
+            if (session.room === result.session.room)
+              send(other, result.response);
+          return;
+        }
+        publish(result.session.room, socket, result.response);
+        if (result.response?.type === "left") socket.close(4000, "Left room");
+      } catch (error) {
+        send(socket, {
+          type: "error",
+          message: error instanceof Error ? error.message : "操作失败",
+        });
+        const session = sessions.get(socket);
+        if (session) {
+          const room = gateway.rooms.get(session.room);
+          if (room)
+            send(socket, {
+              type: "snapshot",
+              snapshot: room.snapshot(session.token),
+            });
+        }
       }
-      if (result.response?.type === "left") sessions.delete(socket);
-      publish(result.session.room, socket, result.response);
-      if (result.response?.type === "left") socket.close(4000, "Left room");
-    } catch (error) {
-      send(socket, {
-        type: "error",
-        message: error instanceof Error ? error.message : "操作失败",
-      });
-      const session = sessions.get(socket);
-      if (session) {
-        const room = gateway.rooms.get(session.room);
-        if (room)
-          send(socket, {
-            type: "snapshot",
-            snapshot: room.snapshot(session.token),
-          });
-      }
-    }
+    });
   });
+  socket.on("pong", () => alive.add(socket));
+  alive.add(socket);
   socket.on("close", () => {
+    alive.delete(socket);
     const session = sessions.get(socket);
     sessions.delete(socket);
     if (session) {
@@ -166,6 +293,8 @@ setInterval(() => {
   }
 }, 100).unref();
 server.on("close", () => {
+  clearInterval(heartbeat);
+  clearInterval(assetMaintenance);
   store.close();
   void worker.terminate();
 });

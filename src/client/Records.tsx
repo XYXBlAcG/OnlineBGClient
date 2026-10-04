@@ -27,6 +27,8 @@ export function Records({
   const [frames, setFrames] = useState<GameState[]>([]);
   const [step, setStep] = useState(0);
   const [actor, setActor] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     if (open)
@@ -52,10 +54,6 @@ export function Records({
     const worker = new Worker(new URL("./replay-worker.ts", import.meta.url), {
       type: "module",
     });
-    setLoading(true);
-    setFrames([]);
-    setStep(0);
-    setActor(0);
     worker.onmessage = (event) => {
       setLoading(false);
       if (event.data.error) onError(event.data.error);
@@ -68,6 +66,18 @@ export function Records({
     worker.postMessage(selected);
     return () => worker.terminate();
   }, [selected]);
+  useEffect(() => {
+    if (!selected || loading || !playing || frames.length < 2) return;
+    if (step >= frames.length - 1) {
+      setPlaying(false);
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setStep((value) => Math.min(value + 1, frames.length - 1)),
+      1000 / speed,
+    );
+    return () => window.clearTimeout(timer);
+  }, [selected, loading, playing, frames.length, step, speed]);
   const preview: Snapshot | null =
     selected && frames[step]
       ? {
@@ -78,7 +88,8 @@ export function Records({
           config: selected.config,
           version: step,
           actor,
-          seats: selected.names.map((name) => ({
+          seats: selected.names.map((name, index) => ({
+            id: `replay:${index}`,
             name,
             difficulty: null,
             online: true,
@@ -87,6 +98,8 @@ export function Records({
           state: engine.project(frames[step], actor),
           candidates: [],
           chat: [],
+          chatSequence: 0,
+          chatTotals: {},
           decisions: [],
           summaries: [],
           finished: true,
@@ -125,6 +138,11 @@ export function Records({
           >
             <button
               onClick={() => {
+                setFrames([]);
+                setStep(0);
+                setActor(0);
+                setPlaying(false);
+                setLoading(true);
                 setSelected(record);
                 onOpenChange(false);
               }}
@@ -162,11 +180,38 @@ export function Records({
           className="ui-panel-wide"
           open={!!selected}
           onOpenChange={(value) => {
-            if (!value) setSelected(null);
+            if (!value) {
+              setPlaying(false);
+              setSelected(null);
+            }
           }}
           title={`${gameCatalogue[selected.config.kind].name} · 回放`}
         >
           <div className="replay-controls">
+            <button
+              disabled={loading || frames.length < 2}
+              onClick={() => {
+                if (!playing && step === frames.length - 1) setStep(0);
+                setPlaying((value) => !value);
+              }}
+            >
+              {playing
+                ? "暂停回放"
+                : step === frames.length - 1 && frames.length > 1
+                  ? "重新播放"
+                  : "播放回放"}
+            </button>
+            <Select
+              aria-label="回放速度"
+              value={speed}
+              onValueChange={(value) => setSpeed(Number(value))}
+            >
+              {[0.25, 0.5, 1, 2, 4].map((value) => (
+                <option key={value} value={value}>
+                  {value}×
+                </option>
+              ))}
+            </Select>
             <Select
               aria-label="回放视角"
               value={actor}
@@ -187,19 +232,17 @@ export function Records({
               min={0}
               max={Math.max(1, frames.length - 1)}
               step={1}
-              onValueChange={setStep}
+              onValueChange={(value) => {
+                setPlaying(false);
+                setStep(Math.min(value, Math.max(0, frames.length - 1)));
+              }}
             />
           </div>
           {loading ? (
             <p>正在重放…</p>
           ) : (
             preview && (
-              <OriginalGame
-                snapshot={preview}
-                act={() => {}}
-                end={() => {}}
-                onReplay={() => {}}
-              />
+              <OriginalGame snapshot={preview} act={() => {}} end={() => {}} />
             )
           )}
         </Panel>

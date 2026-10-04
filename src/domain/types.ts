@@ -143,6 +143,7 @@ export interface Candidate {
   label: string;
 }
 export interface Seat {
+  id?: string;
   name: string;
   difficulty: Difficulty | null;
   token?: string;

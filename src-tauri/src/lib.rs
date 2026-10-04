@@ -5,13 +5,13 @@ mod desktop;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init()).plugin(tauri_plugin_fs::init());
+    let builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init()).plugin(tauri_plugin_fs::init()).plugin(tauri_plugin_notification::init());
     #[cfg(not(mobile))]
     let builder = builder.manage(std::sync::Arc::new(hosting::Hosting::default()))
         .manage(desktop::Desktop::default())
         .setup(desktop::setup)
         .on_menu_event(desktop::menu)
-        .invoke_handler(tauri::generate_handler![hosting::start_host, hosting::stop_host, desktop::quit_app])
+        .invoke_handler(tauri::generate_handler![hosting::start_host, hosting::stop_host, desktop::quit_app, desktop::open_profile])
         .on_window_event(|window, event| {
             use tauri::{Emitter, Manager};
             let hosting = window.state::<std::sync::Arc<hosting::Hosting>>();

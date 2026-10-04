@@ -13,6 +13,7 @@ fn report(result: String, app: tauri::AppHandle) {
 }
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .manage(Arc::new(Hosting::default()))
         .invoke_handler(tauri::generate_handler![hosting::start_host, hosting::stop_host, report, report_stage])
         .on_page_load(|window, event| {

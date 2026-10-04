@@ -1,3 +1,4 @@
+import { enableNotifications } from "./notifications";
 import { themes } from "./themes";
 import { Panel, Select, Switch } from "./ui/Controls";
 import type { Preferences } from "./preferences";
@@ -49,6 +50,48 @@ export function Settings({
           checked={preferences.chatVisible}
           onCheckedChange={(chatVisible) =>
             onChange({ ...preferences, chatVisible })
+          }
+        />
+      </section>
+      <section className="settings-section">
+        <h3>消息与互动</h3>
+        <Switch
+          label="消息提示音"
+          checked={preferences.messageSound}
+          onCheckedChange={(messageSound) =>
+            onChange({ ...preferences, messageSound })
+          }
+        />
+        <Switch
+          label="桌面系统通知"
+          checked={preferences.systemNotifications}
+          onCheckedChange={async (enabled) => {
+            const granted = enabled ? await enableNotifications() : false;
+            onChange({ ...preferences, systemNotifications: granted });
+          }}
+        />
+        <Switch
+          label="显示头像互动"
+          checked={preferences.interactions}
+          onCheckedChange={(interactions) =>
+            onChange({ ...preferences, interactions })
+          }
+        />
+        <Switch
+          label="互动音效"
+          checked={preferences.interactionSound}
+          onCheckedChange={(interactionSound) =>
+            onChange({ ...preferences, interactionSound })
+          }
+        />
+      </section>
+      <section className="settings-section">
+        <h3>高级</h3>
+        <Switch
+          label="显示策略审核"
+          checked={preferences.auditVisible}
+          onCheckedChange={(auditVisible) =>
+            onChange({ ...preferences, auditVisible })
           }
         />
       </section>

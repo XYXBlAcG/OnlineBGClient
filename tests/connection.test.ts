@@ -1,6 +1,16 @@
-import { it, expect, vi } from "vitest";
+import { it, expect, vi, beforeEach } from "vitest";
 import { WebSocketServer } from "ws";
+import { protocolVersion } from "../src/domain/protocol";
+import { gameCatalogue } from "../src/domain/catalogue";
 import { NetworkConnection } from "../src/client/connection";
+
+beforeEach(() => {
+  vi.stubGlobal(
+    "document",
+    Object.assign(new EventTarget(), { hidden: false }),
+  );
+  vi.stubGlobal("window", new EventTarget());
+});
 
 it("detaches a closed connection before already queued server snapshots can restore the room", async () => {
   const storage = new Map<string, string>();
@@ -86,6 +96,58 @@ it("rejects a room using an unsupported rules version before rendering a snapsho
     expect(response.message).toContain("版本");
   } finally {
     connection?.close();
+    for (const socket of server.clients) socket.terminate();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    vi.unstubAllGlobals();
+  }
+});
+
+it("refreshes the authoritative snapshot on foreground resume and detaches lifecycle listeners on close", async () => {
+  vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} });
+  const server = new WebSocketServer({ port: 0, host: "127.0.0.1" });
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const commands: { type: string; token?: string }[] = [];
+  const statuses: string[] = [];
+  const responses: string[] = [];
+  server.on("connection", (socket) =>
+    socket.on("message", (data) => {
+      const command = JSON.parse(data.toString());
+      commands.push(command);
+      if (command.type === "join")
+        socket.send(
+          JSON.stringify({ type: "session", room: "test", token: "identity" }),
+        );
+      else
+        socket.send(
+          JSON.stringify({
+            type: "snapshot",
+            snapshot: {
+              kind: "uno",
+              apiVersion: protocolVersion,
+              rulesVersion: gameCatalogue.uno.version,
+            },
+          }),
+        );
+    }),
+  );
+  const connection = new NetworkConnection(
+    `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+    { type: "join", room: "test", name: "我" },
+    (response) => responses.push(response.type),
+    (status) => statuses.push(status),
+  );
+  try {
+    await vi.waitFor(() => expect(responses).toEqual(["session"]));
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.waitFor(() => expect(responses).toEqual(["session", "snapshot"]));
+    expect(commands[1]).toEqual({ type: "snapshot", token: "identity" });
+    expect(statuses.slice(-2)).toEqual(["正在恢复", "已连接"]);
+    connection.close();
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("online"));
+    expect(commands).toHaveLength(2);
+  } finally {
+    connection.close();
     for (const socket of server.clients) socket.terminate();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     vi.unstubAllGlobals();
