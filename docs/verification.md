@@ -26,3 +26,5 @@
 交付前完整回归：17 个测试文件、43 个测试通过。服务进程重启已验证牌局、聊天、原身份、暂停恢复与动作去重。
 
 macOS ARM64 正式应用包与原生 WebView 已通过大厅、深色控件、离线 Worker、UNO／三国杀、确认、等待室、回放、重开与关闭验证。原生临时公网房间与独立 Chrome 好友已通过邀请、对局、聊天、刷新身份恢复及取消／确认关闭、服务清理。
+
+[双平台构建记录](https://github.com/XYXBlAcG/OnlineBGClient/actions/runs/37185726938) 已通过 macOS ARM64 应用包、Windows x64 NSIS 安装器以及两个构建机上的服务重启、三玩家浏览器流程。Windows 构建机为 Windows Server 2022，Windows 11 实机交互仍待验证。
