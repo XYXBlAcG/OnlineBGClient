@@ -201,7 +201,7 @@ kbd { font-size: 11px; font-family: inherit; color: var(--muted); }
 .mobile-shell .recent-rooms { display:none; }
 .mobile-shell .room-layout { display:block;padding:12px; }
 .mobile-shell .game-area { min-width:0; }
-.mobile-shell .chat-panel { position:fixed;inset:auto 0 0;height:min(75dvh,620px);z-index:20;border-radius:20px 20px 0 0;box-shadow:0 -10px 40px #0003;padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
+.mobile-shell .chat-panel { min-height:0;position:fixed;inset:auto 0 0;height:min(75dvh,620px);z-index:20;border-radius:20px 20px 0 0;box-shadow:0 -10px 40px #0003;padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
 .mobile-shell .room-avatars { gap:5px; }
 .mobile-shell .player-avatar { padding:5px;flex-direction:column;font-size:11px;gap:2px; }
 .mobile-shell .original-game { overflow-x:auto;overscroll-behavior-x:contain; }

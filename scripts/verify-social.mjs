@@ -81,6 +81,13 @@ try {
   await expect(
     mobile.getByRole("button", { name: "打开设置", exact: true }),
   ).toHaveCount(0);
+  await mobile.setViewportSize({ width: 390, height: 280 });
+  await mobile.getByRole("button", { name: /^聊天/ }).tap();
+  await expect(mobile.locator(".chat-panel")).toBeVisible();
+  expect(
+    (await mobile.locator(".chat-panel").boundingBox()).y,
+  ).toBeGreaterThanOrEqual(0);
+  await mobile.getByRole("button", { name: "收起聊天", exact: true }).tap();
   await mobile.setViewportSize({ width: 390, height: 844 });
   await host.getByRole("button", { name: "邀请二维码", exact: true }).click();
   await expect(host.getByAltText("房间邀请二维码")).toBeVisible();
