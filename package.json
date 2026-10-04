@@ -9,11 +9,12 @@
     "test": "vitest run",
     "server": "npm run server:build && node dist-server/main.mjs",
     "server:build": "node scripts/build-server.mjs",
-    "desktop": "tauri dev",
-    "desktop:build": "tauri build",
+    "desktop": "npm run tauri -- dev",
+    "desktop:build": "npm run tauri -- build",
     "upstream:build": "node scripts/build-upstream.mjs",
     "hosting:build": "node scripts/build-hosting.mjs",
-    "verify:client": "node scripts/verify-client.mjs"
+    "verify:client": "node scripts/verify-client.mjs",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",
