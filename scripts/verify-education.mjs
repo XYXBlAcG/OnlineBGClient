@@ -80,7 +80,11 @@ try {
       return { x: r.x, width: r.width };
     });
   const before = await rect();
-  for (const name of ["打开设置", "关于", "对局记录"]) {
+  for (const name of [
+    ...Array.from({ length: 20 }, () => "打开设置"),
+    "关于",
+    "对局记录",
+  ]) {
     await page.getByRole("button", { name, exact: true }).click();
     await expect(page.locator("body")).toHaveAttribute(
       "data-scroll-locked",
@@ -96,8 +100,14 @@ try {
       ).toBeVisible();
       expect(await rect()).toEqual(before);
       await page.keyboard.press("Escape");
+      await expect(page.getByRole("listbox")).toHaveCount(0);
       await expect(page.getByRole("dialog")).toBeVisible();
       expect(await rect()).toEqual(before);
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      expect(await rect()).toEqual(before);
+      await page.getByRole("button", { name, exact: true }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
     }
     await page
       .getByRole("dialog")

@@ -1,5 +1,10 @@
 import { SurfaceResize } from "../SurfaceResize";
-import React, { Children, isValidElement, type ReactNode } from "react";
+import React, {
+  Children,
+  isValidElement,
+  type ReactNode,
+  useState,
+} from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import * as SwitchPrimitive from "@radix-ui/react-switch";
@@ -20,11 +25,14 @@ export function Select({
   disabled?: boolean;
   "aria-label"?: string;
 }) {
+  const [open, setOpen] = useState(false);
   const options = Children.toArray(children).filter(
     isValidElement,
   ) as React.ReactElement<{ value: string | number; children: ReactNode }>[];
   return (
     <SelectPrimitive.Root
+      open={open}
+      onOpenChange={setOpen}
       value={String(value)}
       onValueChange={onValueChange}
       disabled={disabled}
@@ -44,6 +52,10 @@ export function Select({
           className="ui-select-menu"
           position="popper"
           sideOffset={6}
+          onEscapeKeyDown={(event) => {
+            event.preventDefault();
+            setOpen(false);
+          }}
         >
           <SelectPrimitive.ScrollUpButton className="ui-scroll">
             ⌃
@@ -148,6 +160,13 @@ export function Panel({
         <DialogPrimitive.Content
           className={`ui-panel ${className}`}
           data-command-scope={scope}
+          onEscapeKeyDown={(event) => {
+            if (
+              event.target instanceof Element &&
+              event.target.closest('[role="listbox"]')
+            )
+              event.preventDefault();
+          }}
           onOpenAutoFocus={(event) => {
             if (initialFocus?.current) {
               event.preventDefault();

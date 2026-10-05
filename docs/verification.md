@@ -70,7 +70,7 @@ Windows 11 上两个服务进程的窗口行为、系统通知、高 DPI（125%�
 | 宝石选中与禁用时颜色、引导开启时真实出牌 | [verify-splendor.mjs](../scripts/verify-splendor.mjs) |
 | 五游戏引导、默认关闭、步骤导航、个人偏好与手机布局 | [契约测试](../tests/beginner-guide.test.ts)、[浏览器检查](../scripts/verify-beginner-guides.mjs) |
 | 原规则锦囊身份与全部十五种说明 | [锦囊内容测试](../tests/trick-guide.test.ts) |
-| 弹窗坐标、真实三国杀存档、锦囊悬停／键盘／触屏、牌桌定位与标记清理 | [交互检查](../scripts/verify-education.mjs) |
+| 弹窗坐标、嵌套菜单 Escape 隔离、真实三国杀存档、锦囊悬停／键盘／触屏、牌桌定位与标记清理 | [交互检查](../scripts/verify-education.mjs) |
 | 八款牌桌的低高度窗口、横竖屏、引导与聊天切换、专注模式 | [视口检查](../scripts/verify-viewport.mjs) |
 | 卡坦岛真实联机、缩放后 SVG 点击、热座与回放 | [verify-catan.mjs](../scripts/verify-catan.mjs) |
 | 六个困难跳棋 AI、真实计算统计、暂停恢复、缩小地图与尺寸保存 | [契约测试](../tests/ai-observation.test.ts)、[浏览器检查](../scripts/verify-ai-observation.mjs) |
