@@ -1,3 +1,4 @@
+import { openRoomSetup, chooseRoomOption } from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { TestService } from "./service-harness.mjs";
 import { existsSync } from "node:fs";
@@ -37,7 +38,7 @@ const page = async (mobile = false) => {
 };
 const choose = async (p, label, text) => {
   if (label === "房间游戏") {
-    await p.getByRole("button", { name: "游戏与人数", exact: true }).click();
+    await openRoomSetup(p);
     await choose(p, "下一局游戏", text);
     await p.getByRole("button", { name: "应用", exact: true }).click();
     const confirm = p.getByRole("button", { name: "应用配置", exact: true }),
@@ -103,7 +104,7 @@ try {
   ).toBeGreaterThanOrEqual(0);
   await mobile.getByRole("button", { name: "收起聊天", exact: true }).tap();
   await mobile.setViewportSize({ width: 390, height: 844 });
-  await host.getByRole("button", { name: "邀请二维码", exact: true }).click();
+  await chooseRoomOption(host,"邀请二维码");
   await expect(host.getByAltText("房间邀请二维码")).toBeVisible();
   await host
     .getByRole("dialog")
@@ -127,11 +128,11 @@ try {
       .locator(".interaction-layer")
       .evaluate((node) => node.closest(".original-game") !== null),
   ).toBe(true);
-  await host.getByRole("button", { name: "聊天", exact: true }).click();
+  await host.getByRole("banner").getByRole("button", { name: "聊天", exact: true }).click();
   await guest.getByLabel("消息", { exact: true }).fill("同名也要提醒");
   await guest.getByRole("button", { name: "发送", exact: true }).click();
-  await host.getByRole("button", { name: "聊天 · 1", exact: true }).waitFor();
-  await host.getByRole("button", { name: "聊天 · 1", exact: true }).click();
+  await host.getByRole("banner").getByRole("button", { name: "聊天 · 1", exact: true }).waitFor();
+  await host.getByRole("banner").getByRole("button", { name: "聊天 · 1", exact: true }).click();
   await expect(host.getByText("同名也要提醒", { exact: true })).toBeVisible();
   await guest.locator('[data-game-avatar="1"]').click();
   await guest
@@ -309,7 +310,7 @@ try {
     for (const p of [guest, mobile])
       await p.getByRole("button", { name: "准备", exact: true }).click();
     await host.getByRole("button", { name: "开始对局", exact: true }).click();
-    await mobile.getByRole("button", { name: /^游戏操作/ }).tap();
+    await chooseRoomOption(mobile, /^游戏操作/, "tap");
     await expect(
       mobile.getByRole("dialog", { name: "游戏操作", exact: true }),
     ).toBeVisible();
@@ -319,7 +320,7 @@ try {
       .tap();
     let acted = false;
     for (const p of [mobile, guest, host]) {
-      await p.getByRole("button", { name: /^游戏操作/ }).click();
+      await chooseRoomOption(p, /^游戏操作/);
       const choices = p.getByRole("option");
       if (await choices.count()) {
         await choices.first().click();
@@ -337,7 +338,7 @@ try {
     await host.getByRole("button", { name: "结束游戏", exact: true }).click();
     await host.getByRole("button", { name: "确认结束", exact: true }).click();
   }
-  await host.getByRole("button", { name: "游戏与人数", exact: true }).click();
+  await openRoomSetup(host);
   await choose(host, "下一局游戏", "三国杀");
   await choose(host, "下一局真人席位", "4");
   await host.getByRole("button", { name: "应用", exact: true }).click();
@@ -351,7 +352,7 @@ try {
   await expect(
     host.locator(".seat-row").filter({ hasText: "第四人" }),
   ).toBeVisible();
-  await host.getByRole("button", { name: "游戏与人数", exact: true }).click();
+  await openRoomSetup(host);
   await choose(host, "下一局游戏", "毒药");
   await choose(host, "下一局真人席位", "3");
   await host
@@ -374,7 +375,7 @@ try {
     .waitFor();
   if (errors.length) throw new Error(errors.join("\n"));
   console.log(
-    "PASS: packaged hosting service, three-client interactions, same-name unread, avatar quick phrases, game-surface effects, history reading, QR, mobile core UI, hero details, recovery, seven-game room switch, custom phrases, timestamps and resizable chat",
+    "PASS: packaged hosting service, three-client interactions, same-name unread, avatar quick phrases, game-surface effects, history reading, QR, mobile core UI, hero details, recovery, room game switch, custom phrases, timestamps and resizable chat",
   );
 } catch (error) {
   console.error(errors);

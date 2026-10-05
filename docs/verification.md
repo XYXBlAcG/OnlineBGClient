@@ -64,6 +64,7 @@ Windows 11 上两个服务进程的窗口行为、系统通知、高 DPI（125%�
 | 图标、卡坦岛背景边界、璀璨宝石规则与投影 | [game-expansion.test.ts](../tests/game-expansion.test.ts) |
 | 两款 AI 完整对局、公开报价约束与种子重现 | [economic-ai.test.ts](../tests/economic-ai.test.ts) |
 | 真实 Worker、预算、取消与审核样本重现 | [compute.test.ts](../tests/compute.test.ts) |
+| 浏览器房间菜单交互 | [交互入口](../scripts/browser-controls.mjs) |
 | 双平台文件、版本标签与 SHA-256 | [release-assets.test.ts](../tests/release-assets.test.ts) |
 | 璀璨宝石真实桌面／手机点击、联机、回放与本地 AI | [verify-splendor.mjs](../scripts/verify-splendor.mjs) |
 | 宝石选中与禁用时颜色、引导开启时真实出牌 | [verify-splendor.mjs](../scripts/verify-splendor.mjs) |

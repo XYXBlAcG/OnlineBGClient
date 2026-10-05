@@ -5,7 +5,7 @@ import {
   mkdir,
   writeFile,
 } from "node:fs/promises";
-import { resolve, join, extname } from "node:path";
+import { resolve, join, extname, sep } from "node:path";
 import { createHash } from "node:crypto";
 export async function prepareRelease(input, output, version, tag) {
   if (!/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(version))
@@ -19,7 +19,7 @@ export async function prepareRelease(input, output, version, tag) {
     names = await readdir(root, { recursive: true });
   const paths = names
     .map((name) => join(root, name))
-    .filter((path) => !path.startsWith(out + "/"));
+    .filter((path) => !path.startsWith(out + sep));
   const windows = paths.filter((path) => extname(path) === ".exe"),
     mac = paths.filter((path) =>
       path.endsWith("OnlineBGClient-macOS-arm64.zip"),

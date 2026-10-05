@@ -1,7 +1,10 @@
+import { openRoomSetup } from './browser-controls.mjs';
+import { tsImport } from 'tsx/esm/api';
 import { chromium, expect } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
+const { gameKinds } = await tsImport("../src/domain/catalogue.ts", import.meta.url);
 const endpoint = process.env.TEST_SERVICE || 'http://127.0.0.1:8899';
 const chrome = process.env.CHROME_PATH || (existsSync('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome') ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined);
 const browser = await chromium.launch({ executablePath: chrome, headless: true });
@@ -11,7 +14,7 @@ const createPage = async () => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } }); contexts.push(context);
   const page = await context.newPage(); page.on('pageerror', error => errors.push(String(error))); await page.goto(endpoint); return page;
 };
-const choose = async (page, label, text) => { if(label==='房间游戏'){await page.getByRole('button',{name:'游戏与人数',exact:true}).click();await choose(page,'下一局游戏',text);await page.getByRole('button',{name:'应用',exact:true}).click();return;} await page.getByRole('combobox', { name: label, exact: true }).click(); await page.getByRole('option', { name: text, exact: true }).click(); await expect(page.getByRole('listbox')).toHaveCount(0); };
+const choose = async (page, label, text) => { if(label==='房间游戏'){await openRoomSetup(page);await choose(page,'下一局游戏',text);await page.getByRole('button',{name:'应用',exact:true}).click();return;} await page.getByRole('combobox', { name: label, exact: true }).click(); await page.getByRole('option', { name: text, exact: true }).click(); await expect(page.getByRole('listbox')).toHaveCount(0); };
 try {
   await mkdir('.tmp/screenshots', { recursive: true });
   const page = await createPage();
@@ -19,7 +22,7 @@ try {
   await expect(page.getByRole('link', { name: '链接', exact: true })).toHaveAttribute('href', 'https://github.com/XYXBlAcG');
   await expect(page.getByRole('link',{name:'game',exact:true})).toHaveAttribute('href','https://game.hullqin.cn/');
   await page.keyboard.press('Escape');
-  await expect(page.locator('.game-card')).toHaveCount(7);
+  await expect(page.locator('.game-card')).toHaveCount(gameKinds.length);
   await page.getByRole('button', { name: '收藏UNO', exact: true }).click();
   await page.getByRole('button', { name: '收藏', exact: true }).click();
   await expect(page.locator('.game-card')).toHaveCount(1);
@@ -70,6 +73,8 @@ try {
   await expect(progress).toHaveAttribute('aria-valuenow', '0');
   await expect(page.locator('.ui-panel-wide .uno').first()).toBeVisible();
   await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await choose(page, '房间游戏', '斗地主');
   await expect(page.locator('.room-toolbar > strong')).toContainText('斗地主');
   await page.reload();
@@ -104,10 +109,10 @@ try {
   await expect(host.locator('.ddz-poker[draggable=true]')).toHaveCount(20);
   const card = host.locator('.ddz-poker[draggable=true]').first(); await card.focus(); await card.press('Space');
   await host.getByRole('button', { name: /😎 出牌/ }).click();
-  await host.getByRole('button', { name: '聊天', exact: true }).click();
+  await host.getByRole('banner').getByRole('button', { name: '聊天', exact: true }).click();
   await guests[0].getByLabel('消息', { exact: true }).fill('输入法与聊天不会触发游戏快捷键'); await guests[0].getByRole('button', { name: '发送', exact: true }).click();
-  await host.getByRole('button', { name: '聊天 · 1', exact: true }).waitFor();
-  await host.getByRole('button', { name: '聊天 · 1', exact: true }).click();
+  await host.getByRole('banner').getByRole('button', { name: '聊天 · 1', exact: true }).waitFor();
+  await host.getByRole('banner').getByRole('button', { name: '聊天 · 1', exact: true }).click();
   await host.getByText('输入法与聊天不会触发游戏快捷键', { exact: true }).waitFor();
   await guests[0].reload(); await guests[0].getByRole('button', { name: '加入 / 恢复房间', exact: true }).click();
   await guests[0].locator('.original-game').waitFor();

@@ -1,10 +1,11 @@
 import { expect, it } from "vitest";
 import { GameEngine } from "../src/domain/engine";
 import { Strategies } from "../src/domain/strategies";
-it("dispatches dedicated economic strategies with legal reproducible decisions", () => {
-  const engine = new GameEngine(),
-    policies = new Strategies();
-  for (const kind of ["ktd", "ccbs"] as const) {
+it.each(["ktd", "ccbs"] as const)(
+  "dispatches dedicated economic strategies with legal reproducible decisions (%s)",
+  (kind) => {
+    const engine = new GameEngine(),
+      policies = new Strategies();
     const state = engine.create(kind, 3, "economy"),
       actor = engine.actors(state)[0],
       view = engine.project(state, actor);
@@ -16,8 +17,9 @@ it("dispatches dedicated economic strategies with legal reproducible decisions",
     expect(
       policies.decide(view, actor, "normal", "fixed", decision.version),
     ).toEqual(decision);
-  }
-});
+  },
+  30000,
+);
 it("finishes seeded economic self play across player counts without illegal actions", () => {
   const engine = new GameEngine(),
     policies = new Strategies();

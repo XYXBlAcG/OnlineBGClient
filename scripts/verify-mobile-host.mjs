@@ -1,3 +1,4 @@
+import { openRoomSetup } from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { createServer, request } from "node:http";
 import { existsSync } from "node:fs";
@@ -207,7 +208,7 @@ try {
   await first.evaluate(() => {
     window.structuredClone = window.originalClone;
   });
-  await first.getByRole("button", { name: "游戏与人数", exact: true }).click();
+  await openRoomSetup(first);
   await choose(first, "下一局游戏", "卡坦岛");
   await first.getByRole("button", { name: "应用", exact: true }).click();
   await first.getByRole("button", { name: "应用配置", exact: true }).click();

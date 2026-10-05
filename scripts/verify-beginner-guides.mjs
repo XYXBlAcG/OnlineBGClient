@@ -1,3 +1,4 @@
+import { openRoomSetup } from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, mkdir } from "node:fs/promises";
@@ -153,11 +154,7 @@ try {
       host.getByRole("button", { name: "新手引导", exact: true }),
     ).toHaveAttribute("aria-pressed", "false");
     for (const target of ["UNO", name]) {
-      if ((await host.locator(".room-options").getAttribute("open")) === null)
-        await host.locator(".room-options summary").click();
-      await host
-        .getByRole("button", { name: "游戏与人数", exact: true })
-        .click();
+      await openRoomSetup(host);
       await choose(host, "下一局游戏", target);
       await host.getByRole("button", { name: "应用", exact: true }).click();
       await expect(phone.locator(".room-toolbar > strong")).toContainText(
