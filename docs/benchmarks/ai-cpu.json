@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-04",
+  "platform": "darwin",
+  "processor": "Apple M1",
+  "strategy": "weighted-search-2",
+  "seed": "fixed-benchmark",
+  "results": [
+    {
+      "cores": 8,
+      "game": "tq",
+      "difficulty": "hard"
+    },
+    {
+      "threads": 1,
+      "milliseconds": [
+        3272,
+        3110,
+        3102
+      ],
+      "action": {
+        "type": "tq-move",
+        "route": [
+          0,
+          3,
+          62,
+          73
+        ]
+      },
+      "simulations": 120
+    },
+    {
+      "threads": 4,
+      "milliseconds": [
+        1012,
+        940,
+        895
+      ],
+      "action": {
+        "type": "tq-move",
+        "route": [
+          0,
+          3,
+          62,
+          73
+        ]
+      },
+      "simulations": 120
+    },
+    {
+      "threads": 8,
+      "milliseconds": [
+        931,
+        824,
+        821
+      ],
+      "action": {
+        "type": "tq-move",
+        "route": [
+          0,
+          3,
+          62,
+          73
+        ]
+      },
+      "simulations": 120
+    },
+    {
+      "audit": false,
+      "milliseconds": 838
+    },
+    {
+      "audit": true,
+      "milliseconds": 829
+    }
+  ]
+}

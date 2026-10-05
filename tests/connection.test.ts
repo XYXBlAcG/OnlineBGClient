@@ -7,7 +7,11 @@ import { NetworkConnection } from "../src/client/connection";
 beforeEach(() => {
   vi.stubGlobal(
     "document",
-    Object.assign(new EventTarget(), { hidden: false }),
+    Object.assign(new EventTarget(), {
+      hidden: false,
+      createElement: () => ({ setAttribute: () => {}, clientWidth: 16 }),
+      body: { appendChild: () => {}, removeChild: () => {} },
+    }),
   );
   vi.stubGlobal("window", new EventTarget());
 });
@@ -148,6 +152,83 @@ it("refreshes the authoritative snapshot on foreground resume and detaches lifec
     expect(commands).toHaveLength(2);
   } finally {
     connection.close();
+    for (const socket of server.clients) socket.terminate();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    vi.unstubAllGlobals();
+  }
+});
+
+it("merges incremental updates and acknowledges a single outstanding game action after the new state", async () => {
+  vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} });
+  const { Room } = await import("../src/domain/room");
+  const { SnapshotStream } = await import("../src/domain/sync");
+  const room = new Room("pending", {
+    kind: "uno",
+    humans: 1,
+    ai: [{ difficulty: "easy", name: "" }],
+    team: false,
+    training: false,
+  });
+  const token = room.claim("我");
+  room.start(token);
+  const stream = new SnapshotStream(),
+    server = new WebSocketServer({ port: 0, host: "127.0.0.1" });
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const commands: any[] = [],
+    events: any[] = [];
+  let connection: NetworkConnection | undefined;
+  server.on("connection", (socket) =>
+    socket.on("message", (data) => {
+      const command = JSON.parse(data.toString());
+      if (command.type === "join") {
+        socket.send(JSON.stringify({ type: "session", room: room.id, token }));
+        socket.send(JSON.stringify(stream.next(room.snapshot(token))));
+      } else if (command.type === "action") {
+        commands.push(command);
+        setTimeout(() => {
+          room.act(token, command.id, command.version, command.action);
+          socket.send(JSON.stringify({ type: "ack", id: command.id }));
+          socket.send(JSON.stringify(stream.next(room.snapshot(token))));
+        }, 80);
+      }
+    }),
+  );
+  try {
+    connection = new NetworkConnection(
+      `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+      { type: "join", room: room.id, name: "我" },
+      (response) => events.push(response),
+      () => {},
+    );
+    await vi.waitFor(() =>
+      expect(events.some((event) => event.type === "snapshot")).toBe(true),
+    );
+    connection.send({
+      type: "action",
+      token,
+      id: "first",
+      version: room.version,
+      action: { type: "uno-start" },
+    });
+    expect(events.at(-1)).toMatchObject({ type: "activity", pending: true });
+    connection.send({
+      type: "action",
+      token,
+      id: "duplicate",
+      version: room.version,
+      action: { type: "uno-start" },
+    });
+    await vi.waitFor(() =>
+      expect(events.at(-1)).toMatchObject({ type: "activity", pending: false }),
+    );
+    expect(commands).toHaveLength(1);
+    expect(events.at(-1).latencyMs).toBeGreaterThanOrEqual(70);
+    expect(events.at(-2)).toMatchObject({
+      type: "snapshot",
+      snapshot: { version: room.version },
+    });
+  } finally {
+    connection?.close();
     for (const socket of server.clients) socket.terminate();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     vi.unstubAllGlobals();

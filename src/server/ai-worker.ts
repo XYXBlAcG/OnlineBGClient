@@ -1,29 +1,17 @@
-import { parentPort } from "node:worker_threads";
 import { Strategies } from "../domain/strategies";
-import type { Difficulty, GameState } from "../domain/types";
-
-const strategy = new Strategies();
-parentPort!.on(
-  "message",
-  (request: {
-    observation: GameState;
-    actor: number;
-    difficulty: Difficulty;
-    seed: string;
-  }) => {
-    try {
-      parentPort!.postMessage({
-        decision: strategy.decide(
-          request.observation,
-          request.actor,
-          request.difficulty,
-          request.seed,
-        ),
-      });
-    } catch (error) {
-      parentPort!.postMessage({
-        error: error instanceof Error ? error.message : "AI 决策失败",
-      });
-    }
-  },
-);
+import { parentPort } from "node:worker_threads";
+import { executeSearchTask } from "../domain/strategy";
+import type { ComputeInput, ComputeOutput } from "../domain/compute";
+const strategies = new Strategies();
+parentPort!.on("message", ({ id, task }: ComputeInput) => {
+  let response: ComputeOutput;
+  try {
+    response = { id, output: executeSearchTask(strategies.select(task.request.observation.kind), task) };
+  } catch (error) {
+    response = {
+      id,
+      error: error instanceof Error ? error.message : "AI 计算失败",
+    };
+  }
+  parentPort!.postMessage(response);
+});

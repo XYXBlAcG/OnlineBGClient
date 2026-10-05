@@ -15,7 +15,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .manage(Arc::new(Hosting::default()))
-        .invoke_handler(tauri::generate_handler![hosting::start_host, hosting::stop_host, report, report_stage])
+        .invoke_handler(tauri::generate_handler![hosting::start_host, hosting::stop_host, hosting::clear_cache, report, report_stage])
         .on_page_load(|window, event| {
             if matches!(event.event(), tauri::webview::PageLoadEvent::Finished) {
                 window.eval(include_str!("../../scripts/native-hosting-smoke.js")).expect("cannot start native smoke");

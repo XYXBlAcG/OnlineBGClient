@@ -1,6 +1,15 @@
+import { splendorMoveSchema } from "./splendor-actions";
+import { catanMoveSchema } from "./catan-actions";
 import { z } from "zod";
 const ids = z.array(z.number().int().min(-160).max(160)).max(160);
 export const actionSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("ccbs-action"), move: splendorMoveSchema }),
+  z.object({ type: z.literal("ktd-action"), move: catanMoveSchema }),
+  z.object({
+    type: z.literal("dy-play"),
+    card: z.number().int().min(0).max(49),
+    pot: z.number().int().min(0).max(2),
+  }),
   z.object({ type: z.literal("ddz-claim") }),
   z.object({ type: z.literal("ddz-pass") }),
   z.object({

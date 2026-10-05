@@ -1,3 +1,6 @@
+import { SplendorRules } from "./splendor";
+import { CatanRules } from "./catan";
+import { PoisonRules } from "./poison";
 import { GameAdapter } from "./plugin";
 import { UpstreamRuntime } from "../upstream/runtime";
 import { UnoRules } from "./uno";
@@ -57,4 +60,16 @@ export function flightPlugin(runtime: UpstreamRuntime) {
     }),
     project: (state) => structuredClone(state),
   });
+}
+
+export function poisonPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter("dy", new PoisonRules(runtime));
+}
+
+export function catanPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter("ktd", new CatanRules(runtime));
+}
+
+export function splendorPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter("ccbs", new SplendorRules(runtime));
 }

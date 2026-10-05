@@ -11,6 +11,7 @@ self.onmessage = (event: MessageEvent<Decision>) => {
       decision.difficulty,
       decision.seed,
       decision.version,
+      { search: decision.search, tradeEnabled: decision.tradeEnabled },
     );
     self.postMessage(
       JSON.stringify(replay) === JSON.stringify(decision)

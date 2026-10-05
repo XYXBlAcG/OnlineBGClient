@@ -1,8 +1,6 @@
-import {
-  assetIdSchema,
-  interactionSchema,
-  type InteractionEvent,
-} from "./social";
+import type { AiComputation } from "./performance";
+import { performanceSchema } from "./performance";
+import { interactionSchema, type InteractionEvent } from "./social";
 export type { ChatMessage } from "./social";
 import type { ChatMessage } from "./social";
 import { actionSchema } from "./actions";
@@ -21,7 +19,7 @@ import type {
 export const configSchema = z
   .object({
     kind: z.enum(gameKinds),
-    humans: z.number().int().min(1).max(8),
+    humans: z.number().int().min(0).max(8),
     ai: z
       .array(
         z.object({
@@ -29,10 +27,13 @@ export const configSchema = z
           name: z.string().trim().max(24).default(""),
         }),
       )
-      .max(7),
+      .max(8),
     aiDelayMs: z.number().int().min(0).max(5000).default(1500),
     team: z.boolean(),
     training: z.boolean(),
+    auditEnabled: z.boolean().default(false),
+    catanTrades: z.boolean().default(true),
+    performance: performanceSchema.default({ mode: "auto", threads: 8 }),
   })
   .refine(
     (value) =>
@@ -41,10 +42,21 @@ export const configSchema = z
     "总席位超出该游戏人数范围",
   )
   .refine(
+    (value) => value.humans > 0 || value.kind === "tq",
+    "仅跳棋支持全 AI 对战",
+  )
+  .refine(
     (value) => gameCatalogue[value.kind].ai || !value.ai.length,
     "该游戏 AI 尚未接入",
   );
 export type RoomConfig = z.infer<typeof configSchema>;
+export const roomSetupSchema = z.object({
+  config: configSchema,
+  retain: z.array(z.string()).max(8),
+  members: z.array(z.string()).max(8),
+  endCurrent: z.boolean(),
+});
+export type RoomSetup = z.infer<typeof roomSetupSchema>;
 export const seatConfigSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("human") }),
   z.object({
@@ -58,6 +70,7 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("restore-local") }),
   z.object({
     type: z.literal("create"),
+    hostOnly: z.boolean().optional(),
     config: configSchema,
     name: z.string().trim().min(1).max(24),
   }),
@@ -85,7 +98,18 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("game"),
     token: z.string(),
-    kind: z.enum(gameKinds),
+    setup: roomSetupSchema,
+  }),
+  z.object({
+    type: z.literal("computation"),
+    token: z.string(),
+    audit: z.boolean(),
+    performance: performanceSchema,
+  }),
+  z.object({
+    type: z.literal("ai-run"),
+    token: z.string(),
+    enabled: z.boolean(),
   }),
   z.object({ type: z.literal("end"), token: z.string() }),
   z.object({
@@ -100,13 +124,6 @@ export const commandSchema = z.discriminatedUnion("type", [
     token: z.string(),
     id: z.string().min(1).max(100),
     text: z.string().trim().min(1).max(500),
-  }),
-  z.object({
-    type: z.literal("sticker"),
-    token: z.string(),
-    id: z.string().min(1).max(100),
-    asset: assetIdSchema,
-    text: z.string().trim().min(1).max(48),
   }),
   z.object({
     type: z.literal("interaction"),
@@ -125,7 +142,7 @@ export interface DecisionSummary {
   simulations: number;
   version: number;
 }
-export const protocolVersion = 2;
+export const protocolVersion = 7;
 export interface Snapshot {
   apiVersion: number;
   rulesVersion: string;
@@ -134,6 +151,9 @@ export interface Snapshot {
   config: RoomConfig;
   version: number;
   actor: number;
+  canManage: boolean;
+  playing: boolean;
+  host: { id: string; name: string; online: boolean } | null;
   seats: {
     id: string;
     name: string;
@@ -143,6 +163,8 @@ export interface Snapshot {
   }[];
   state: GameState | null;
   candidates: Candidate[];
+  computation: AiComputation | null;
+  aiPaused: boolean;
   chat: ChatMessage[];
   chatSequence: number;
   chatTotals: Record<string, number>;
@@ -156,8 +178,15 @@ export interface Snapshot {
 }
 export type Response =
   | { type: "session"; room: string; token: string; localTokens?: string[] }
-  | { type: "snapshot"; snapshot: Snapshot }
-  | { type: "error"; message: string }
+  | { type: "snapshot"; snapshot: Snapshot; revision?: number }
+  | {
+      type: "patch";
+      base: number;
+      revision: number;
+      changes: Partial<Snapshot>;
+    }
+  | { type: "activity"; pending: boolean; latencyMs?: number }
+  | { type: "error"; message: string; id?: string }
   | { type: "interaction"; event: InteractionEvent }
   | { type: "ack"; id: string }
   | { type: "left" }

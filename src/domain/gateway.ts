@@ -13,7 +13,10 @@ export class Gateway {
       throw new Error("该命令仅用于本地存档");
     if (command.type === "create") {
       const room = new Room(crypto.randomUUID().slice(0, 8), command.config);
-      const token = room.claim(command.name);
+      const token =
+        command.hostOnly || !room.config.humans
+          ? room.createHost(command.name)
+          : room.claim(command.name);
       this.rooms.set(room.id, room);
       return {
         session: { room: room.id, token },
@@ -34,7 +37,7 @@ export class Gateway {
     const room = this.rooms.get(session.room);
     if (!room) throw new Error("房间不存在");
     if (command.type === "close") {
-      if (room.identity(command.token) !== 0)
+      if (!room.canManage(command.token))
         throw new Error("只有房主可以关闭房间");
       room.end(command.token);
       const replay = room.snapshot(command.token).replay;
@@ -59,9 +62,7 @@ export class Gateway {
     return {
       session,
       response:
-        command.type === "action" ||
-        command.type === "chat" ||
-        command.type === "sticker"
+        command.type === "action" || command.type === "chat"
           ? { type: "ack", id: command.id }
           : undefined,
     };
@@ -76,13 +77,15 @@ export class Gateway {
     if (command.type === "ready") room.setReady(command.token, command.ready);
     if (command.type === "leave") room.leave(command.token);
     if (command.type === "start") room.start(command.token);
+    if (command.type === "computation")
+      room.setComputation(command.token, command.audit, command.performance);
     if (command.type === "tempo") room.setTempo(command.token, command.delayMs);
-    if (command.type === "game") room.changeGame(command.token, command.kind);
+    if (command.type === "game") room.changeGame(command.token, command.setup);
+    if (command.type === "ai-run")
+      room.setAiRunning(command.token, command.enabled);
     if (command.type === "end") room.end(command.token);
     if (command.type === "action")
       room.act(command.token, command.id, command.version, command.action);
-    if (command.type === "sticker")
-      room.sticker(command.token, command.id, command.asset, command.text);
     if (command.type === "chat")
       room.chat(command.token, command.id, command.text);
   }

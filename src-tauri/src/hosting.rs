@@ -37,6 +37,17 @@ impl Hosting {
         self.generation.fetch_add(1, Ordering::SeqCst);
         self.session.lock().unwrap().take();
     }
+    pub fn clear_cache(&self, app: &tauri::AppHandle, runtime: bool, images: bool) -> Result<(), String> {
+        if self.starting.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() { return Err("公网服务正在启动，请稍后清理".into()); }
+        let result = (|| {
+            if runtime && self.session.lock().unwrap().is_some() { return Err("请先关闭公网房间，再清理联机组件".into()); }
+            if runtime { crate::cache::remove_directory(&crate::cache::runtime_path(app)?)?; }
+            if images { crate::cache::remove_directory(&crate::cache::image_path(app)?)?; }
+            Ok(())
+        })();
+        self.starting.store(false, Ordering::SeqCst);
+        result
+    }
     fn active(&self, generation: u64) -> Result<(), String> {
         if self.generation.load(Ordering::SeqCst) != generation { return Err("房间创建已取消".into()); }
         Ok(())
@@ -54,7 +65,7 @@ impl Hosting {
             Some(path) => PathBuf::from(path),
             None => if cfg!(debug_assertions) { PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/hosting") } else { app.path().resource_dir().map_err(|e| e.to_string())?.join("hosting") },
         };
-        let cache = match std::env::var_os("COMPANION_HOST_CACHE") { Some(path) => PathBuf::from(path), None => app.path().app_cache_dir().map_err(|e| e.to_string())?.join("hosting") };
+        let cache = crate::cache::runtime_path(app)?;
         fs::create_dir_all(&cache).map_err(|e| e.to_string())?;
         let runtime: Runtime = serde_json::from_slice(&fs::read(resources.join("runtime.json")).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
         if runtime.platform != std::env::consts::OS || runtime.arch != std::env::consts::ARCH { return Err("该平台的联机组件尚未配置".into()); }
@@ -183,6 +194,9 @@ pub async fn start_host(app: tauri::AppHandle, state: tauri::State<'_, Arc<Hosti
 }
 #[tauri::command]
 pub fn stop_host(state: tauri::State<'_, Arc<Hosting>>) { state.stop(); }
+
+#[tauri::command]
+pub fn clear_cache(app: tauri::AppHandle, state: tauri::State<'_, Arc<Hosting>>, runtime: bool, images: bool) -> Result<(), String> { state.clear_cache(&app, runtime, images) }
 
 #[cfg(all(test, windows))]
 mod tests {

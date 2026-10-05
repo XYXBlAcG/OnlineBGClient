@@ -1,6 +1,9 @@
+import type { PerformanceSettings } from "../domain/performance";
+import { PhraseSettings } from "./PhraseSettings";
+import { CacheSettings } from "./CacheSettings";
 import { enableNotifications } from "./notifications";
 import { themes } from "./themes";
-import { Panel, Select, Switch } from "./ui/Controls";
+import { Panel, Select, Slider, Switch } from "./ui/Controls";
 import type { Preferences } from "./preferences";
 import type { AppCommand } from "./commands";
 
@@ -11,14 +14,23 @@ export function Settings({
   onChange,
   commands,
   onBind,
+  onError,
+  canConfigureAI = true,
+  roomPerformance,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preferences: Preferences;
   onChange: (preferences: Preferences) => void;
   commands: AppCommand[];
+  canConfigureAI?: boolean;
+  roomPerformance?: PerformanceSettings;
+  onError: (message: string) => void;
   onBind: (id: string, binding: string) => void;
 }) {
+  const performance = canConfigureAI
+    ? preferences.performance
+    : roomPerformance || preferences.performance;
   return (
     <Panel title="设置" open={open} onOpenChange={onOpenChange}>
       <section className="settings-section">
@@ -86,15 +98,64 @@ export function Settings({
         />
       </section>
       <section className="settings-section">
-        <h3>高级</h3>
+        <h3>AI 计算</h3>
+        <label className="setting-row">
+          CPU 加速
+          <Select
+            aria-label="CPU加速模式"
+            value={performance.mode}
+            disabled={!canConfigureAI}
+            onValueChange={(mode) =>
+              onChange({
+                ...preferences,
+                performance: {
+                  ...preferences.performance,
+                  mode: mode as Preferences["performance"]["mode"],
+                },
+              })
+            }
+          >
+            <option value="auto">自动</option>
+            <option value="single">单线程</option>
+            <option value="multi">多线程</option>
+          </Select>
+        </label>
+        {performance.mode === "multi" && canConfigureAI && (
+          <label>
+            线程上限 · {preferences.performance.threads}
+            <Slider
+              aria-label="AI线程上限"
+              min={1}
+              max={32}
+              step={1}
+              value={preferences.performance.threads}
+              onValueChange={(threads) =>
+                onChange({
+                  ...preferences,
+                  performance: { ...preferences.performance, threads },
+                })
+              }
+            />
+          </label>
+        )}
+        <p className="muted">联机由房主电脑计算。当前策略使用 CPU 搜索。</p>
         <Switch
-          label="显示策略审核"
+          label={canConfigureAI ? "记录并显示策略审核" : "显示策略审核"}
           checked={preferences.auditVisible}
           onCheckedChange={(auditVisible) =>
             onChange({ ...preferences, auditVisible })
           }
         />
       </section>
+      <PhraseSettings
+        groups={preferences.phraseGroups}
+        onChange={(phraseGroups) => onChange({ ...preferences, phraseGroups })}
+        onError={onError}
+      />
+      <CacheSettings
+        onError={onError}
+        onAuditCleared={() => onChange({ ...preferences, auditVisible: false })}
+      />
       <section className="settings-section">
         <h3>快捷键</h3>
         <p className="muted">

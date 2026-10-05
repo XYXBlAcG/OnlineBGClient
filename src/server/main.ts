@@ -1,5 +1,7 @@
-import { AssetStore } from "./assets";
-import { builtinStickers, stickerLimit } from "../domain/social";
+import { SnapshotStream } from "../domain/sync";
+import { availableParallelism } from "node:os";
+import { ComputePool, SearchCoordinator } from "../domain/compute";
+import { computeThreads } from "../domain/performance";
 import { mkdirSync } from "node:fs";
 import { RoomStore } from "./storage";
 import { createServer } from "node:http";
@@ -8,7 +10,6 @@ import { resolve, extname, relative, sep, isAbsolute } from "node:path";
 import { Worker } from "node:worker_threads";
 import { WebSocketServer, WebSocket } from "ws";
 import { Gateway } from "../domain/gateway";
-import type { Decision } from "../domain/types";
 import { protocolVersion, type Response } from "../domain/protocol";
 
 const gateway = new Gateway();
@@ -19,20 +20,6 @@ for (const room of store.load()) {
   gateway.rooms.set(room.id, room);
   store.save(room);
 }
-const assets = new AssetStore(resolve(dataRoot, "assets"));
-const collectAssets = async () => {
-  const referenced = new Set<string>();
-  for (const room of gateway.rooms.values())
-    for (const message of room.export().messages)
-      if (message.asset) referenced.add(message.asset);
-  await assets.collect(referenced);
-};
-const assetMaintenance = setInterval(() => {
-  void collectAssets().catch((error) =>
-    console.error("Sticker cleanup failed", error),
-  );
-}, 3600000);
-assetMaintenance.unref();
 const root = resolve(process.env.STATIC_ROOT || "dist");
 const mime: Record<string, string> = {
   ".html": "text/html",
@@ -99,39 +86,6 @@ const server = createServer(async (request, response) => {
       );
       return;
     }
-    if (url.pathname === "/stickers" && request.method === "POST") {
-      const room = gateway.rooms.get(url.searchParams.get("room") || "");
-      if (!room) throw new Error("房间不存在");
-      room.identity(
-        (request.headers.authorization || "").replace(/^Bearer /, ""),
-      );
-      const chunks: Buffer[] = [];
-      let length = 0;
-      for await (const chunk of request) {
-        length += chunk.length;
-        if (length > stickerLimit) throw new Error("表情包不能超过 5 MB");
-        chunks.push(chunk);
-      }
-      const asset = await assets.save(
-        Buffer.concat(chunks),
-        url.searchParams.get("name") || "表情",
-        url.searchParams.get("preview") || undefined,
-      );
-      response.writeHead(201, { "Content-Type": "application/json" });
-      response.end(JSON.stringify(asset));
-      return;
-    }
-    if (url.pathname.startsWith("/stickers/")) {
-      const id = url.pathname.slice(10).replace(/\.json$/, "");
-      const metadata = await assets.metadata(id);
-      const json = url.pathname.endsWith(".json");
-      response.writeHead(200, {
-        "Content-Type": json ? "application/json" : metadata.mime,
-        "Cache-Control": "public, max-age=31536000, immutable",
-      });
-      response.end(json ? JSON.stringify(metadata) : await assets.bytes(id));
-      return;
-    }
     const path = resolve(
       root,
       `.${decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname)}`,
@@ -165,18 +119,34 @@ const send = (socket: WebSocket, response: Response) => {
   if (socket.readyState === WebSocket.OPEN)
     socket.send(JSON.stringify(response));
 };
-const publish = (roomId: string, socket?: WebSocket, response?: Response) => {
+const publish = (
+  roomId: string,
+  socket?: WebSocket,
+  response?: Response,
+  persist = true,
+) => {
   const room = gateway.rooms.get(roomId);
   if (!room) return;
-  store.save(room);
+  if (persist) store.save(room);
   if (socket && response) send(socket, response);
-  for (const [socket, session] of sessions)
-    if (session.room === roomId)
+  for (const [socket, session] of sessions) {
+    if (session.room !== roomId) continue;
+    if (
+      room.host?.token !== session.token &&
+      !room.seats.some((seat) => seat.token === session.token)
+    ) {
       send(socket, {
-        type: "snapshot",
-        snapshot: room.snapshot(session.token),
+        type: "error",
+        message: "房主调整了下一局席位，你已离开房间",
       });
+      send(socket, { type: "left" });
+      sessions.delete(socket);
+      socket.close(4000, "Removed from room");
+    } else
+      send(socket, streams.get(socket)!.next(room.snapshot(session.token)));
+  }
 };
+const streams = new Map<WebSocket, SnapshotStream>();
 const alive = new Set<WebSocket>();
 const heartbeat = setInterval(() => {
   for (const socket of sockets.clients) {
@@ -186,16 +156,14 @@ const heartbeat = setInterval(() => {
 }, 15000);
 heartbeat.unref();
 sockets.on("connection", (socket) => {
+  streams.set(socket, new SnapshotStream());
   let serial = Promise.resolve();
   socket.on("message", (data) => {
     serial = serial.then(async () => {
+      let requestId: string | undefined;
       try {
         const input = JSON.parse(data.toString());
-        if (
-          input.type === "sticker" &&
-          !builtinStickers.some((asset) => asset.id === input.asset)
-        )
-          await assets.metadata(input.asset);
+        requestId = typeof input?.id === "string" ? input.id : undefined;
         const result = gateway.handle(input, sessions.get(socket));
         for (const [other, session] of sessions)
           if (
@@ -207,6 +175,8 @@ sockets.on("connection", (socket) => {
             other.close(4001, "Session resumed elsewhere");
           }
         sessions.set(socket, result.session);
+        if (result.response?.type === "session")
+          streams.set(socket, new SnapshotStream());
         if (result.response?.type === "closed") {
           store.remove(result.session.room);
           for (const [other, session] of sessions)
@@ -225,21 +195,32 @@ sockets.on("connection", (socket) => {
               send(other, result.response);
           return;
         }
+        if (input.type === "snapshot") {
+          const room = gateway.rooms.get(result.session.room)!;
+          send(
+            socket,
+            streams
+              .get(socket)!
+              .next(room.snapshot(result.session.token), true),
+          );
+          return;
+        }
         publish(result.session.room, socket, result.response);
         if (result.response?.type === "left") socket.close(4000, "Left room");
       } catch (error) {
         send(socket, {
           type: "error",
           message: error instanceof Error ? error.message : "操作失败",
+          id: requestId,
         });
         const session = sessions.get(socket);
         if (session) {
           const room = gateway.rooms.get(session.room);
           if (room)
-            send(socket, {
-              type: "snapshot",
-              snapshot: room.snapshot(session.token),
-            });
+            send(
+              socket,
+              streams.get(socket)!.next(room.snapshot(session.token), true),
+            );
         }
       }
     });
@@ -248,6 +229,7 @@ sockets.on("connection", (socket) => {
   alive.add(socket);
   socket.on("close", () => {
     alive.delete(socket);
+    streams.delete(socket);
     const session = sessions.get(socket);
     sessions.delete(socket);
     if (session) {
@@ -256,47 +238,92 @@ sockets.on("connection", (socket) => {
     }
   });
 });
-const worker = new Worker(new URL("./ai-worker.mjs", import.meta.url));
-let pending: { room: string; version: number } | null = null;
-const failed = new Set<string>();
-worker.on("message", (response: { decision?: Decision; error?: string }) => {
-  if (!pending) return;
-  const request = pending;
-  pending = null;
-  const room = gateway.rooms.get(request.room);
-  if (!room) return;
-  if (response.error) {
-    failed.add(`${room.id}:${request.version}`);
-    for (const [socket, session] of sessions)
-      if (session.room === room.id)
-        send(socket, { type: "error", message: response.error });
-  } else if (
-    response.decision &&
-    room.queueDecision(response.decision, request.version)
-  )
-    publish(room.id);
-});
-worker.on("error", (error) => {
-  console.error(error);
-  process.exitCode = 1;
-  server.close();
-});
+const cores = availableParallelism();
+const pool = new ComputePool(
+  () => {
+    const worker = new Worker(new URL("./ai-worker.mjs", import.meta.url));
+    return {
+      send: (input) => worker.postMessage(input),
+      receive: (callback) => {
+        worker.on("message", callback);
+      },
+      error: (callback) => {
+        worker.on("error", callback);
+        worker.on("exit", (code) => {
+          if (code) callback(new Error(`计算线程退出：${code}`));
+        });
+      },
+      close: () => {
+        void worker.terminate();
+      },
+    };
+  },
+  Math.min(32, cores),
+);
+const compute = new SearchCoordinator(pool);
+const pending = new Map<
+  string,
+  { version: number; controller: AbortController }
+>();
+const failed = new Map<string, number>();
 setInterval(() => {
-  for (const room of gateway.rooms.values()) {
-    if (room.commitIfDue() || room.resolveIfDue()) publish(room.id);
-    if (pending) continue;
-    const request = room.aiRequest();
-    if (request && !failed.has(`${room.id}:${request.version}`)) {
-      pending = { room: room.id, version: request.version };
-      worker.postMessage(request);
+  for (const [id, active] of pending) {
+    const room = gateway.rooms.get(id);
+    if (
+      !room ||
+      room.version !== active.version ||
+      room.paused ||
+      !room.aiRequest()
+    ) {
+      active.controller.abort();
+      pending.delete(id);
     }
   }
+  for (const room of gateway.rooms.values()) {
+    if (room.commitIfDue() || room.resolveIfDue()) publish(room.id);
+    if (pending.has(room.id)) continue;
+    const request = room.aiRequest();
+    if (!request || failed.get(room.id) === request.version) continue;
+    const active = {
+      version: request.version,
+      controller: new AbortController(),
+    };
+    pending.set(room.id, active);
+    void compute
+      .decide(
+        request,
+        computeThreads(room.config.performance, cores),
+        active.controller.signal,
+        (progress) => {
+          if (
+            pending.get(room.id) === active &&
+            room.updateComputation(request.actor, request.version, progress)
+          )
+            publish(room.id, undefined, undefined, false);
+        },
+      )
+      .then((result) => {
+        if (gateway.rooms.get(room.id) === room)
+          room.queueDecision(result, request.version);
+      })
+      .catch((error) => {
+        if (active.controller.signal.aborted) return;
+        active.controller.abort();
+        failed.set(room.id, request.version);
+        for (const [socket, session] of sessions)
+          if (session.room === room.id)
+            send(socket, { type: "error", message: String(error) });
+      })
+      .finally(() => {
+        if (pending.get(room.id) === active) pending.delete(room.id);
+      });
+  }
+  for (const id of failed.keys()) if (!gateway.rooms.has(id)) failed.delete(id);
 }, 100).unref();
 server.on("close", () => {
   clearInterval(heartbeat);
-  clearInterval(assetMaintenance);
   store.close();
-  void worker.terminate();
+  pool.close();
 });
 const port = Number(process.env.PORT || 8787);
 server.listen(port, process.env.HOST || "127.0.0.1", () =>

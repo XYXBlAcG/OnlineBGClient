@@ -1,6 +1,7 @@
 import { GameEngine } from "./engine";
 import type {
   Action,
+  AiResult,
   Candidate,
   Decision,
   DecisionCandidate,
@@ -8,13 +9,24 @@ import type {
   Feature,
   GameState,
 } from "./types";
-
 export const strategyConfig = {
-  version: "weighted-search-1",
+  version: "weighted-search-2",
   difficulties: {
-    easy: { samples: 0, depth: 0, shortlist: 0 },
-    normal: { samples: 6, depth: 4, shortlist: 4 },
-    hard: { samples: 20, depth: 8, shortlist: 6 },
+    easy: {
+      samples: 0,
+      depth: 0,
+      shortlist: 0,
+    },
+    normal: {
+      samples: 6,
+      depth: 4,
+      shortlist: 4,
+    },
+    hard: {
+      samples: 20,
+      depth: 8,
+      shortlist: 6,
+    },
   },
   weights: {
     health: 18,
@@ -32,107 +44,173 @@ export const strategyConfig = {
     hero: 1,
   },
 };
-
 export class Strategy {
+  static readonly version: string = strategyConfig.version;
+  readonly version: string = Strategy.version;
+  budget(request: SearchRequest) {
+    return strategyConfig.difficulties[request.difficulty];
+  }
+  candidates(request: SearchRequest): Candidate[] {
+    return this.engine.candidates(request.observation, request.actor);
+  }
   readonly engine = new GameEngine();
-
   decide(
     observation: GameState,
     actor: number,
     difficulty: Difficulty,
     seed: string,
+    options?: Pick<SearchRequest, "search" | "tradeEnabled">,
   ): Decision {
-    if (observation.kind === "ddz") throw new Error("斗地主 AI 尚未接入");
-    const actions = this.engine.candidates(observation, actor);
-    if (!actions.length) throw new Error(`玩家 ${actor + 1} 没有合法动作`);
-    const candidates = actions.map((candidate) =>
-      this.evaluate(observation, actor, candidate, `${seed}:evaluate`),
+    const request: SearchRequest = {
+      ...options,
+      observation,
+      actor,
+      difficulty,
+      seed,
+      audit: true,
+    };
+    const candidates = this.score(request, this.candidates(request));
+    const roots = request.search
+      ? request.search.map((plan) => ({ action: plan.action }))
+      : this.roots(request, candidates);
+    const samples = roots.map((candidate) => ({
+      action: candidate.action,
+      values: this.simulate(
+        request,
+        candidate.action,
+        request.search?.find(
+          (plan) =>
+            JSON.stringify(plan.action) === JSON.stringify(candidate.action),
+        )?.indexes ||
+          Array.from(
+            {
+              length: this.budget(request).samples,
+            },
+            (_, i) => i,
+          ),
+      ),
+    }));
+    return this.complete(request, candidates, samples).audit!;
+  }
+  score(request: SearchRequest, moves: Candidate[]): DecisionCandidate[] {
+    return moves.map((move) =>
+      this.evaluate(
+        request.observation,
+        request.actor,
+        move,
+        `${request.seed}:evaluate`,
+        request.audit,
+      ),
     );
-    const budget = strategyConfig.difficulties[difficulty];
-    const shortlist = [...candidates]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, budget.shortlist);
-    let simulations = 0;
-    if (!actions.some((candidate) => candidate.action.type === "sgs-hero")) {
-      for (const candidate of shortlist) {
-        const results: number[] = [];
-        for (let index = 0; index < budget.samples; index++) {
-          let sampled = this.sample(
-            observation,
-            actor,
-            `${seed}:sample:${index}`,
-          );
-          const before = this.position(sampled, actor);
-          sampled = this.engine.apply(
+  }
+  roots(
+    request: SearchRequest,
+    candidates: DecisionCandidate[],
+  ): DecisionCandidate[] {
+    return candidates.length < 2 ||
+      candidates.some((candidate) => candidate.action.type === "sgs-hero")
+      ? []
+      : [...candidates]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, this.budget(request).shortlist);
+  }
+  simulate(
+    request: SearchRequest,
+    action: Action,
+    indexes: number[],
+  ): SampleValue[] {
+    const { observation, actor, seed, difficulty } = request;
+    const budget = this.budget(request);
+    return indexes.map((index) => {
+      let sampled = this.sample(observation, actor, `${seed}:sample:${index}`);
+      const before = this.position(sampled, actor);
+      sampled = this.engine.apply(
+        sampled,
+        actor,
+        action,
+        `${seed}:root:${index}`,
+      );
+      const limit =
+        observation.kind === "tq"
+          ? Math.max(budget.depth, observation.view.playerPieces.length)
+          : budget.depth;
+      for (
+        let depth = 0;
+        depth < limit && !this.engine.finished(sampled);
+        depth++
+      ) {
+        if (this.engine.needsResolution(sampled)) {
+          sampled = this.engine.resolve(
             sampled,
-            actor,
-            candidate.action,
-            `${seed}:root:${index}`,
+            `${seed}:resolve:${index}:${depth}`,
           );
-          for (
-            let depth = 0,
-              limit =
-                observation.kind === "tq"
-                  ? Math.max(budget.depth, observation.view.playerPieces.length)
-                  : budget.depth;
-            depth < limit && !this.engine.finished(sampled);
-            depth++
-          ) {
-            if (this.engine.needsResolution(sampled)) {
-              sampled = this.engine.resolve(
-                sampled,
-                `${seed}:resolve:${index}:${depth}`,
-              );
-              if (this.engine.finished(sampled)) break;
-            }
-            const nextActor = this.engine.actors(sampled)[0];
-            if (nextActor === undefined) break;
-            const view = this.engine.project(sampled, nextActor);
-            const possible = this.engine.candidates(view, nextActor);
-            if (!possible.length) throw new Error("模拟阶段缺少合法动作");
-            const next = possible
-              .map((move) =>
-                this.evaluate(
-                  view,
-                  nextActor,
-                  move,
-                  `${seed}:rollout:${index}:${depth}`,
-                ),
-              )
-              .sort((a, b) => b.score - a.score)[0];
-            sampled = this.engine.apply(
-              sampled,
-              nextActor,
-              next.action,
-              `${seed}:move:${index}:${depth}`,
-            );
-          }
-          results.push(this.position(sampled, actor) - before);
-          simulations++;
+          if (this.engine.finished(sampled)) break;
         }
-        if (results.length) {
-          const mean =
-            results.reduce((sum, result) => sum + result, 0) / results.length;
-          const variance =
-            results.reduce((sum, result) => sum + (result - mean) ** 2, 0) /
-            Math.max(1, results.length - 1);
-          candidate.simulation = {
-            samples: results.length,
-            mean,
-            standardError: Math.sqrt(variance / results.length),
-          };
-          candidate.features.push(
-            this.feature(
-              "模拟后的局面收益",
-              mean,
-              strategyConfig.weights.future,
-            ),
+        const nextActor = this.engine.actors(sampled)[0];
+        if (nextActor === undefined) break;
+        const view = this.engine.project(sampled, nextActor),
+          possible = this.engine.candidates(view, nextActor);
+        if (!possible.length) throw new Error("模拟阶段缺少合法动作");
+        let next: DecisionCandidate | undefined;
+        for (const move of possible) {
+          const evaluated = this.evaluate(
+            view,
+            nextActor,
+            move,
+            `${seed}:rollout:${index}:${depth}`,
+            false,
           );
-          candidate.score = candidate.features.reduce(
-            (sum, feature) => sum + feature.contribution,
-            0,
-          );
+          if (!next || evaluated.score > next.score) next = evaluated;
         }
+        sampled = this.engine.apply(
+          sampled,
+          nextActor,
+          next!.action,
+          `${seed}:move:${index}:${depth}`,
+        );
+      }
+      return {
+        index,
+        value: this.position(sampled, actor) - before,
+      };
+    });
+  }
+  complete(
+    request: SearchRequest,
+    candidates: DecisionCandidate[],
+    samples: RootSamples[],
+  ): AiResult {
+    if (!candidates.length) throw new Error("没有合法动作");
+    let simulations = 0;
+    for (const candidate of candidates) {
+      const values = samples
+        .filter(
+          (sample) =>
+            JSON.stringify(sample.action) === JSON.stringify(candidate.action),
+        )
+        .flatMap((sample) => sample.values)
+        .sort((a, b) => a.index - b.index)
+        .map((sample) => sample.value);
+      simulations += values.length;
+      if (!values.length) continue;
+      const mean =
+        values.reduce((sum, value) => sum + value, 0) / values.length;
+      candidate.score += mean * strategyConfig.weights.future;
+      if (request.audit) {
+        const variance =
+          values.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
+          Math.max(1, values.length - 1);
+        candidate.simulation = {
+          samples: values.length,
+          mean,
+          standardError: Math.sqrt(variance / values.length),
+        };
+        candidate.features.push({
+          name: "模拟后的局面收益",
+          value: mean,
+          weight: strategyConfig.weights.future,
+          contribution: mean * strategyConfig.weights.future,
+        });
       }
     }
     candidates.sort(
@@ -140,41 +218,72 @@ export class Strategy {
         b.score - a.score ||
         JSON.stringify(a.action).localeCompare(JSON.stringify(b.action)),
     );
-    return {
-      version: strategyConfig.version,
-      actor,
-      difficulty,
-      seed,
-      observation: structuredClone(observation),
-      candidates,
+    const result: AiResult = {
+      actor: request.actor,
       chosen: candidates[0].action,
-      assumptions:
-        observation.kind === "tq"
-          ? [
-              "棋盘信息完全公开；目标营地与合法路由沿用原规则。",
-              "以最优棋子目标分配的距离、入营及连续跳跃评分；有限搜索不能保证最优。",
-            ]
-          : observation.kind === "fxq"
-            ? [
-                "棋盘信息公开，骰子由房间公平生成，不预测真实点数。",
-                "风险按对手下一次六种骰子结果及其最佳撞机机会估计；局面收益不是胜率。",
-              ]
-            : observation.kind === "uno"
-              ? [
-                  "对手手牌与牌堆从未见牌中按已知数量抽样；不读取真实牌序。",
-                  "模拟收益是局面评分，不是获胜概率。",
-                ]
-              : [
-                  "隐藏身份按尚未公开的身份构成抽样；对手手牌从未见牌中抽样。",
-                  "对未知阵营使用身份先验与公开行动推断，判断可能错误。",
-                  "模拟收益是局面评分，不是获胜概率。",
-                ],
+      difficulty: request.difficulty,
       simulations,
     };
+    if (request.audit)
+      result.audit = {
+        version: this.version,
+        actor: request.actor,
+        difficulty: request.difficulty,
+        seed: request.seed,
+        observation: structuredClone(request.observation),
+        candidates,
+        chosen: result.chosen,
+        assumptions:
+          request.observation.kind === "dy"
+            ? [
+                "对手手牌仅从未见牌中按数量抽样，不读取真实手牌。",
+                "计分、药锅容量与颜色多数沿用原规则；有限搜索不能保证最优。",
+              ]
+            : request.observation.kind === "tq"
+              ? [
+                  "棋盘信息完全公开；目标营地与合法路由沿用原规则。",
+                  "以最优棋子目标分配的距离、入营及连续跳跃评分；有限搜索不能保证最优。",
+                ]
+              : request.observation.kind === "fxq"
+                ? [
+                    "棋盘信息公开，骰子由房间公平生成，不预测真实点数。",
+                    "风险按对手下一次六种骰子结果及其最佳撞机机会估计；局面收益不是胜率。",
+                  ]
+                : request.observation.kind === "uno"
+                  ? [
+                      "对手手牌与牌堆从未见牌中按已知数量抽样；不读取真实牌序。",
+                      "模拟收益是局面评分，不是获胜概率。",
+                    ]
+                  : [
+                      "隐藏身份按尚未公开的身份构成抽样；对手手牌从未见牌中抽样。",
+                      "对未知阵营使用身份先验与公开行动推断，判断可能错误。",
+                      "模拟收益是局面评分，不是获胜概率。",
+                    ],
+        simulations,
+        search: candidates
+          .map((candidate) => ({
+            action: candidate.action,
+            indexes: samples
+              .filter(
+                (sample) =>
+                  JSON.stringify(sample.action) ===
+                  JSON.stringify(candidate.action),
+              )
+              .flatMap((sample) => sample.values.map((value) => value.index))
+              .sort((a, b) => a - b),
+          }))
+          .filter((plan) => plan.indexes.length),
+        tradeEnabled: request.tradeEnabled,
+      };
+    return result;
   }
-
   sample(observation: GameState, actor: number, seed: string): GameState {
-    if (observation.kind === "ddz") throw new Error("斗地主 AI 尚未接入");
+    if (
+      observation.kind === "ddz" ||
+      observation.kind === "ktd" ||
+      observation.kind === "ccbs"
+    )
+      throw new Error("该游戏 AI 尚未接入");
     const state = structuredClone(observation);
     if (state.kind === "fxq" || state.kind === "tq") return state;
     const random = this.engine.seed(seed);
@@ -186,13 +295,35 @@ export class Strategy {
       }
       return result;
     };
+    if (state.kind === "dy") {
+      const known = new Set([
+        ...state.view.players[actor],
+        ...state.view.pots.flat(),
+        ...state.view.eats.flat(),
+      ]);
+      const pool = shuffle(
+        Array.from(
+          {
+            length: 50,
+          },
+          (_, card) => card,
+        ).filter((card) => !known.has(card)),
+      );
+      state.view.players = state.view.players.map((cards, id) =>
+        id === actor ? cards : pool.splice(0, cards.length),
+      );
+      return state;
+    }
     if (state.kind === "uno") {
       const view = state.view;
       const known = new Set([...view.playerCards[actor], ...view.playedCards]);
       const pool = shuffle(
-        Array.from({ length: 108 }, (_, card) => card).filter(
-          (card) => !known.has(card),
-        ),
+        Array.from(
+          {
+            length: 108,
+          },
+          (_, card) => card,
+        ).filter((card) => !known.has(card)),
       );
       view.cardList = Array(108).fill(15);
       for (const card of view.playedCards) view.cardList[card] = 0;
@@ -222,9 +353,12 @@ export class Strategy {
             if (card >= 0) known.add(card);
       }
     const pool = shuffle(
-      Array.from({ length: view.cardPos.length }, (_, card) => card).filter(
-        (card) => !known.has(card),
-      ),
+      Array.from(
+        {
+          length: view.cardPos.length,
+        },
+        (_, card) => card,
+      ).filter((card) => !known.has(card)),
     );
     view.cardPos = view.cardPos.map((position) =>
       position >= 0 ? position : 0,
@@ -262,9 +396,13 @@ export class Strategy {
       view: this.engine.sgs.my(this.engine.sgs.qA(view), view.hero.length),
     };
   }
-
   hostility(observation: GameState, actor: number, target: number): number {
-    if (observation.kind === "ddz") throw new Error("斗地主 AI 尚未接入");
+    if (
+      observation.kind === "ddz" ||
+      observation.kind === "ktd" ||
+      observation.kind === "ccbs"
+    )
+      throw new Error("该游戏 AI 尚未接入");
     if (actor === target) return -1;
     if (observation.kind !== "sgs") return 1;
     const view = observation.view;
@@ -283,15 +421,31 @@ export class Strategy {
       return role === 1 ? -0.7 : 0.9;
     return role === 1 ? 0.15 : role === 3 ? 0.3 : 0.4;
   }
-
-  private evaluate(
+  protected evaluate(
     observation: GameState,
     actor: number,
     candidate: Candidate,
     seed: string,
+    audit = true,
   ): DecisionCandidate {
-    if (observation.kind === "ddz") throw new Error("斗地主 AI 尚未接入");
+    if (
+      observation.kind === "ddz" ||
+      observation.kind === "ktd" ||
+      observation.kind === "ccbs"
+    )
+      throw new Error("该游戏 AI 尚未接入");
     const features: Feature[] = [];
+    let score = 0;
+    const add = (name: string, value: number, weight: number) => {
+      score += value * weight;
+      if (audit)
+        features.push({
+          name,
+          value,
+          weight,
+          contribution: value * weight,
+        });
+    };
     const weights = strategyConfig.weights;
     const action = candidate.action;
     if (action.type === "sgs-hero") {
@@ -310,42 +464,53 @@ export class Strategy {
                 : 2),
           0,
         );
-      features.push(
-        this.feature("体力与武将技能的先验价值", value, weights.hero),
+      add("体力与武将技能的先验价值", value, weights.hero);
+    } else if (observation.kind === "dy") {
+      const sampled = this.sample(observation, actor, `${seed}:heuristic`);
+      const after = this.engine.apply(sampled, actor, action, seed);
+      if (sampled.kind !== "dy" || after.kind !== "dy")
+        throw new Error("游戏类型不匹配");
+      add(
+        "收牌后计分负担",
+        sampled.view.scores[actor] - after.view.scores[actor],
+        6,
+      );
+      add(
+        "药锅剩余容量",
+        after.view.potValues.reduce((sum, value) => sum + 13 - value, 0) -
+          sampled.view.potValues.reduce((sum, value) => sum + 13 - value, 0),
+        0.15,
+      );
+      add(
+        "颜色多数与终局分数",
+        this.position(after, actor) - this.position(sampled, actor),
+        1,
       );
     } else if (observation.kind === "tq") {
       const after = this.engine.apply(observation, actor, action, seed);
       if (after.kind !== "tq") throw new Error("游戏类型不匹配");
-      features.push(
-        this.feature(
-          "棋子与目标位置最优匹配的距离收益",
-          this.engine.checkers.cost(observation.view, actor) -
-            this.engine.checkers.cost(after.view, actor),
-          1,
-        ),
+      add(
+        "棋子与目标位置最优匹配的距离收益",
+        this.engine.checkers.cost(observation.view, actor) -
+          this.engine.checkers.cost(after.view, actor),
+        1,
       );
-      features.push(
-        this.feature(
-          "目标营地棋子",
-          this.engine.checkers.settled(after.view, actor) -
-            this.engine.checkers.settled(observation.view, actor),
-          6,
-        ),
+      add(
+        "目标营地棋子",
+        this.engine.checkers.settled(after.view, actor) -
+          this.engine.checkers.settled(observation.view, actor),
+        6,
       );
-      features.push(
-        this.feature(
-          "疏通目标营地中异色棋子的离营路线",
-          this.engine.checkers.escape(after.view, actor) -
-            this.engine.checkers.escape(observation.view, actor),
-          8,
-        ),
+      add(
+        "疏通目标营地中异色棋子的离营路线",
+        this.engine.checkers.escape(after.view, actor) -
+          this.engine.checkers.escape(observation.view, actor),
+        8,
       );
-      features.push(
-        this.feature(
-          "完成目标营地",
-          after.view.winnerId.includes(actor) ? 1 : 0,
-          weights.terminal,
-        ),
+      add(
+        "完成目标营地",
+        after.view.winnerId.includes(actor) ? 1 : 0,
+        weights.terminal,
       );
       if (action.type === "tq-move") {
         const recent = observation.view.recordList
@@ -363,66 +528,55 @@ export class Strategy {
           last.at(-1) === action.route[0]
             ? 1
             : 0;
-        features.push(this.feature("最近十二步重复同一路径", -repeated, 8));
-        features.push(this.feature("立即撤回上一步", -reversed, 12));
+        add("最近十二步重复同一路径", -repeated, 8);
+        add("立即撤回上一步", -reversed, 12);
       }
     } else if (observation.kind === "fxq") {
-      if (action.type === "fxq-roll")
-        features.push(this.feature("公平掷骰，点数由房间产生", 0, 1));
+      if (action.type === "fxq-roll") add("公平掷骰，点数由房间产生", 0, 1);
       else {
         const after = this.engine.apply(observation, actor, action, seed);
         if (after.kind !== "fxq") throw new Error("游戏类型不匹配");
         const before = observation.view;
         const next = after.view;
-        features.push(
-          this.feature(
-            "飞机前进与跳跃收益",
-            this.engine.flight.progress(next, actor) -
-              this.engine.flight.progress(before, actor),
-            1,
-          ),
+        add(
+          "飞机前进与跳跃收益",
+          this.engine.flight.progress(next, actor) -
+            this.engine.flight.progress(before, actor),
+          1,
         );
-        features.push(
-          this.feature(
-            "终点飞机",
-            next.planePositionList
+        add(
+          "终点飞机",
+          next.planePositionList
+            .slice(actor * 4, actor * 4 + 4)
+            .filter((position) => position >= 57).length -
+            before.planePositionList
               .slice(actor * 4, actor * 4 + 4)
-              .filter((position) => position >= 57).length -
-              before.planePositionList
-                .slice(actor * 4, actor * 4 + 4)
-                .filter((position) => position >= 57).length,
-            30,
-          ),
+              .filter((position) => position >= 57).length,
+          30,
         );
-        features.push(
-          this.feature(
-            "撞回对手的路程",
-            before.planePositionList.reduce(
-              (sum, position, index) =>
-                sum +
-                (Math.floor(index / 4) !== actor &&
-                position > 0 &&
-                next.planePositionList[index] === 0
-                  ? position
-                  : 0),
-              0,
-            ),
-            0.8,
+        add(
+          "撞回对手的路程",
+          before.planePositionList.reduce(
+            (sum, position, index) =>
+              sum +
+              (Math.floor(index / 4) !== actor &&
+              position > 0 &&
+              next.planePositionList[index] === 0
+                ? position
+                : 0),
+            0,
           ),
+          0.8,
         );
-        features.push(
-          this.feature(
-            "下一轮被撞返航的预期损失",
-            -this.engine.flight.risk(next, actor),
-            0.7,
-          ),
+        add(
+          "下一轮被撞返航的预期损失",
+          -this.engine.flight.risk(next, actor),
+          0.7,
         );
-        features.push(
-          this.feature(
-            "赢得飞行棋",
-            next.winners.includes(actor) ? 1 : 0,
-            weights.terminal,
-          ),
+        add(
+          "赢得飞行棋",
+          next.winners.includes(actor) ? 1 : 0,
+          weights.terminal,
         );
       }
     } else if (observation.kind === "uno") {
@@ -433,58 +587,42 @@ export class Strategy {
         );
         const type = this.engine.uno.Vz(action.card);
         const color = type > 13 ? action.color : Math.floor(action.card / 25);
-        features.push(this.feature("减少手牌", 1, weights.hand));
-        features.push(
-          this.feature(
-            "出完全部手牌",
-            remaining.length === 0 ? 1 : 0,
-            weights.terminal,
-          ),
-        );
-        features.push(
-          this.feature(
-            "剩余同色牌的连贯性",
-            remaining.filter((card) => Math.floor(card / 25) === color).length,
-            weights.colour,
-          ),
+        add("减少手牌", 1, weights.hand);
+        add("出完全部手牌", remaining.length === 0 ? 1 : 0, weights.terminal);
+        add(
+          "剩余同色牌的连贯性",
+          remaining.filter((card) => Math.floor(card / 25) === color).length,
+          weights.colour,
         );
         const next =
           (actor + (view.currentD ? 1 : view.playerCards.length - 1)) %
           view.playerCards.length;
-        features.push(
-          this.feature(
-            "压制即将获胜的对手",
-            [11, 12, 13, 15].includes(type)
-              ? 1 / Math.max(1, view.playerCards[next].length)
-              : 0,
-            weights.threat,
-          ),
+        add(
+          "压制即将获胜的对手",
+          [11, 12, 13, 15].includes(type)
+            ? 1 / Math.max(1, view.playerCards[next].length)
+            : 0,
+          weights.threat,
         );
-        features.push(
-          this.feature(
-            "保留万能牌",
-            type > 13 && remaining.length > 2 ? -1 : 0,
-            weights.wild,
-          ),
+        add(
+          "保留万能牌",
+          type > 13 && remaining.length > 2 ? -1 : 0,
+          weights.wild,
         );
-        features.push(
-          this.feature(
-            "最后两张牌喊 UNO",
-            view.playerCards[actor].length === 2 && !action.saidUno ? -1 : 0,
-            weights.uno,
-          ),
+        add(
+          "最后两张牌喊 UNO",
+          view.playerCards[actor].length === 2 && !action.saidUno ? -1 : 0,
+          weights.uno,
         );
       } else if (action.type === "uno-draw")
-        features.push(
-          this.feature(
-            "摸牌代价",
-            view.isDrawThink ? 0 : -(view.currentPlus || 1),
-            weights.hand,
-          ),
+        add(
+          "摸牌代价",
+          view.isDrawThink ? 0 : -(view.currentPlus || 1),
+          weights.hand,
         );
       else if (action.type === "uno-report")
-        features.push(this.feature("阻止漏喊 UNO 的对手", 2, weights.threat));
-      else features.push(this.feature("开局", 1, weights.tempo));
+        add("阻止漏喊 UNO 的对手", 2, weights.threat);
+      else add("开局", 1, weights.tempo);
     } else {
       const sampled = this.sample(observation, actor, `${seed}:heuristic`);
       const after = this.engine.apply(sampled, actor, action, `${seed}:apply`);
@@ -492,28 +630,21 @@ export class Strategy {
         throw new Error("策略游戏类型不匹配");
       const before = sampled.view;
       const next = after.view;
-      features.push(
-        this.feature(
-          "自身体力变化",
-          next.playerBlood[actor] - before.playerBlood[actor],
-          weights.health,
-        ),
+      add(
+        "自身体力变化",
+        next.playerBlood[actor] - before.playerBlood[actor],
+        weights.health,
       );
-      features.push(
-        this.feature(
-          "自身手牌资源变化",
-          next.playerHandCard[actor].length -
-            before.playerHandCard[actor].length,
-          weights.hand,
-        ),
+      add(
+        "自身手牌资源变化",
+        next.playerHandCard[actor].length - before.playerHandCard[actor].length,
+        weights.hand,
       );
-      features.push(
-        this.feature(
-          "装备变化",
-          Object.keys(next.playerEquip[actor]).length -
-            Object.keys(before.playerEquip[actor]).length,
-          weights.equipment,
-        ),
+      add(
+        "装备变化",
+        Object.keys(next.playerEquip[actor]).length -
+          Object.keys(before.playerEquip[actor]).length,
+        weights.equipment,
       );
       const damage = before.playerBlood.reduce(
         (sum, blood, id) =>
@@ -524,7 +655,7 @@ export class Strategy {
                 this.hostility(observation, actor, id),
         0,
       );
-      features.push(this.feature("阵营体力收益", damage, weights.damage));
+      add("阵营体力收益", damage, weights.damage);
       if (action.type === "sgs-choice") {
         const type =
           action.cards[0] >= 0 ? this.engine.cards.e3(action.cards[0]) : -1;
@@ -540,50 +671,51 @@ export class Strategy {
               (healing ? -1 : offensive ? 1 : 0),
           0,
         );
-        features.push(
-          this.feature(
-            "行动目标的阵营价值",
-            action.button === 0 ? targetValue : 0,
-            weights.target,
-          ),
+        add(
+          "行动目标的阵营价值",
+          action.button === 0 ? targetValue : 0,
+          weights.target,
         );
         const spent = action.cards
           .filter((card) => card >= 0)
           .reduce((sum, card) => sum + this.engine.keepValue(card), 0);
-        features.push(
-          this.feature("使用或弃置手牌的保留价值", -spent * 0.1, 1),
-        );
-        features.push(
-          this.feature(
-            "推进有效行动",
-            action.button === 0 && before.dcdType === 1 ? 1 : 0,
-            weights.tempo,
-          ),
+        add("使用或弃置手牌的保留价值", -spent * 0.1, 1);
+        add(
+          "推进有效行动",
+          action.button === 0 && before.dcdType === 1 ? 1 : 0,
+          weights.tempo,
         );
         if (before.dcdType === 1 && action.button === 1)
-          features.push(this.feature("结束出牌保留资源", 1, 0.3));
+          add("结束出牌保留资源", 1, 0.3);
       }
-      features.push(
-        this.feature(
-          "终局阵营结果",
-          this.engine.finished(after)
-            ? next.winners.includes(actor)
-              ? 1
-              : -1
-            : 0,
-          weights.terminal,
-        ),
+      add(
+        "终局阵营结果",
+        this.engine.finished(after)
+          ? next.winners.includes(actor)
+            ? 1
+            : -1
+          : 0,
+        weights.terminal,
       );
     }
     return {
       ...candidate,
       features,
-      score: features.reduce((sum, feature) => sum + feature.contribution, 0),
+      score,
     };
   }
-
-  private position(state: GameState, actor: number): number {
-    if (state.kind === "ddz") throw new Error("斗地主 AI 尚未接入");
+  protected position(state: GameState, actor: number): number {
+    if (state.kind === "ddz" || state.kind === "ktd" || state.kind === "ccbs")
+      throw new Error("该游戏 AI 尚未接入");
+    if (state.kind === "dy") {
+      const own = state.view.scores[actor];
+      const rivals = state.view.scores.filter((_, id) => id !== actor);
+      return (
+        -own * 4 +
+        Math.min(...rivals) * 2 +
+        (state.view.finish ? (own <= Math.min(...rivals) ? 100 : -100) : 0)
+      );
+    }
     if (state.kind === "uno") {
       if (state.view.playerFinish[actor]) return 100;
       if (this.engine.finished(state)) return -100;
@@ -620,8 +752,58 @@ export class Strategy {
       )
     );
   }
-
-  private feature(name: string, value: number, weight: number): Feature {
-    return { name, value, weight, contribution: value * weight };
-  }
+}
+export interface SearchRequest {
+  observation: GameState;
+  actor: number;
+  difficulty: Difficulty;
+  seed: string;
+  audit: boolean;
+  tradeEnabled?: boolean;
+  search?: { action: Action; indexes: number[] }[];
+}
+export interface SampleValue {
+  index: number;
+  value: number;
+}
+export interface RootSamples {
+  action: Action;
+  values: SampleValue[];
+}
+export type SearchTask =
+  | {
+      type: "score";
+      request: SearchRequest;
+      moves: Candidate[];
+    }
+  | {
+      type: "simulate";
+      request: SearchRequest;
+      action: Action;
+      indexes: number[];
+    };
+export type SearchOutput =
+  | {
+      type: "score";
+      candidates: DecisionCandidate[];
+    }
+  | {
+      type: "simulate";
+      action: Action;
+      values: SampleValue[];
+    };
+export function executeSearchTask(
+  strategy: Strategy,
+  task: SearchTask,
+): SearchOutput {
+  return task.type === "score"
+    ? {
+        type: "score",
+        candidates: strategy.score(task.request, task.moves),
+      }
+    : {
+        type: "simulate",
+        action: task.action,
+        values: strategy.simulate(task.request, task.action, task.indexes),
+      };
 }

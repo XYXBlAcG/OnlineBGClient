@@ -1,7 +1,7 @@
 import { chromium, expect } from "@playwright/test";
 import { TestService } from "./service-harness.mjs";
 import { existsSync } from "node:fs";
-import { mkdtemp, rm, mkdir, readFile } from "node:fs/promises";
+import { mkdtemp, rm, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -36,6 +36,20 @@ const page = async (mobile = false) => {
   return p;
 };
 const choose = async (p, label, text) => {
+  if (label === "房间游戏") {
+    await p.getByRole("button", { name: "游戏与人数", exact: true }).click();
+    await choose(p, "下一局游戏", text);
+    await p.getByRole("button", { name: "应用", exact: true }).click();
+    const confirm = p.getByRole("button", { name: "应用配置", exact: true }),
+      setup = p.getByRole("dialog", { name: "下一局", exact: true });
+    await expect
+      .poll(
+        async () => (await confirm.isVisible()) || !(await setup.isVisible()),
+      )
+      .toBe(true);
+    if (await confirm.isVisible()) await confirm.click();
+    return;
+  }
   await p.getByRole("combobox", { name: label, exact: true }).click();
   await p.getByRole("option", { name: text, exact: true }).click();
   await expect(p.getByRole("listbox")).toHaveCount(0);
@@ -95,58 +109,122 @@ try {
     .getByRole("dialog")
     .getByRole("button", { name: "关闭", exact: true })
     .click();
-  await host.locator(".room-avatars button").nth(1).click();
+  for (const p of [guest, mobile])
+    await p.getByRole("button", { name: "准备", exact: true }).click();
+  await host.getByRole("button", { name: "开始对局", exact: true }).click();
+  await host.locator('[data-game-avatar="1"]').click();
+  await expect(
+    host.getByRole("button", { name: "让我想一想。", exact: true }),
+  ).toHaveCount(0);
   await host.getByRole("button", { name: "送出鸡蛋", exact: true }).click();
   await Promise.all(
     [host, guest, mobile].map((p) =>
       expect(p.locator(".interaction-particle")).toHaveCount(1),
     ),
   );
+  expect(
+    await host
+      .locator(".interaction-layer")
+      .evaluate((node) => node.closest(".original-game") !== null),
+  ).toBe(true);
   await host.getByRole("button", { name: "聊天", exact: true }).click();
   await guest.getByLabel("消息", { exact: true }).fill("同名也要提醒");
   await guest.getByRole("button", { name: "发送", exact: true }).click();
   await host.getByRole("button", { name: "聊天 · 1", exact: true }).waitFor();
   await host.getByRole("button", { name: "聊天 · 1", exact: true }).click();
   await expect(host.getByText("同名也要提醒", { exact: true })).toBeVisible();
-  await guest.getByRole("button", { name: "表情包", exact: true }).click();
-  await guest.getByRole("button", { name: "发送开心", exact: true }).click();
+  await guest.locator('[data-game-avatar="1"]').click();
+  await guest
+    .getByRole("button", { name: "让我想一想。", exact: true })
+    .click();
+  await expect(host.getByText("让我想一想。", { exact: true })).toBeVisible();
   await expect(
-    host.getByRole("img", { name: "开心", exact: true }),
-  ).toBeVisible();
-  await guest.getByRole("button", { name: "表情包", exact: true }).click();
-  await guest.getByLabel("导入表情图片", { exact: true }).setInputFiles({
-    name: "测试表情.png",
-    mimeType: "image/png",
-    buffer: await readFile("tests/fixtures/sticker.png"),
-  });
-  await expect(guest.getByAltText("待发送表情")).toBeVisible();
-  await guest.getByRole("button", { name: "发送表情", exact: true }).click();
-  await expect(host.getByAltText("测试表情", { exact: true })).toBeVisible();
-  await mobile.getByRole("button", { name: /^聊天/ }).click();
-  await expect(mobile.getByAltText("测试表情", { exact: true })).toBeVisible();
-  await mobile.getByRole("button", { name: "收起聊天", exact: true }).click();
-  await guest.getByRole("button", { name: "表情包", exact: true }).click();
-  await guest.getByRole("button", { name: "收藏开心", exact: true }).click();
-  await guest.getByRole("button", { name: "收藏", exact: true }).click();
+    host.getByRole("button", { name: "表情包", exact: true }),
+  ).toHaveCount(0);
+  await expect(host.locator(".chat-message time").last()).toHaveText(
+    /\d{2}:\d{2}:\d{2}/,
+  );
+  const resize = host.getByRole("separator", { name: "聊天侧栏宽度" });
+  const initialWidth = (await host.locator(".chat-panel").boundingBox()).width;
+  await resize.focus();
+  await resize.press("ArrowLeft");
+  await expect
+    .poll(async () =>
+      Math.round((await host.locator(".chat-panel").boundingBox()).width),
+    )
+    .toBe(Math.round(initialWidth + 16));
+  const handle = await resize.boundingBox();
+  await host.mouse.move(handle.x + handle.width / 2, handle.y + 80);
+  await host.mouse.down();
+  await host.mouse.move(handle.x - 90, handle.y + 80);
+  await host.mouse.up();
+  expect(
+    (await host.locator(".chat-panel").boundingBox()).width,
+  ).toBeGreaterThan(initialWidth + 70);
+  const savedWidth = (await host.locator(".chat-panel").boundingBox()).width;
+  await host.reload();
+  await host.getByRole("button", { name: "恢复联机房间", exact: true }).click();
+  await expect(host.locator(".room-toolbar")).toBeVisible();
+  await expect
+    .poll(async () =>
+      Math.round((await host.locator(".chat-panel").boundingBox()).width),
+    )
+    .toBe(Math.round(savedWidth));
+  await host.getByRole("button", { name: "打开设置", exact: true }).click();
+  await host.locator(".phrase-settings summary").first().click();
+  await host
+    .getByLabel("常用语内容 1", { exact: true })
+    .fill("我的定制招呼\n第二句话");
+  await host.getByRole("button", { name: "保存常用语", exact: true }).click();
+  await host
+    .getByRole("dialog")
+    .getByRole("button", { name: "关闭", exact: true })
+    .click();
+  await host.locator('[data-game-avatar="0"]').click();
   await expect(
-    guest.getByRole("button", { name: "发送开心", exact: true }),
-  ).toBeVisible();
-  await guest.getByRole("button", { name: "最近", exact: true }).click();
-  await expect(
-    guest.getByRole("button", { name: "发送测试表情", exact: true }),
-  ).toBeVisible();
-  await guest.getByLabel("导入表情图片", { exact: true }).setInputFiles({
-    name: "动画.gif",
-    mimeType: "image/gif",
-    buffer: await readFile("tests/fixtures/sticker.gif"),
-  });
-  await guest.getByRole("button", { name: "发送表情", exact: true }).click();
-  const gif = host.getByAltText("动画", { exact: true });
-  await expect(gif).toBeVisible();
-  const gifUrl = await gif.getAttribute("src");
-  await host.emulateMedia({ reducedMotion: "reduce" });
-  await expect(gif).not.toHaveAttribute("src", gifUrl);
-  await host.emulateMedia({ reducedMotion: "no-preference" });
+    host.getByRole("button", { name: "送出鸡蛋", exact: true }),
+  ).toHaveCount(0);
+  await host.getByRole("button", { name: "我的定制招呼", exact: true }).click();
+  await expect(guest.getByText("我的定制招呼", { exact: true })).toBeVisible();
+  await host.waitForTimeout(1300);
+  await host.locator('[data-game-avatar="1"]').click();
+  await host.getByRole("button", { name: "送出学霸", exact: true }).click();
+  await Promise.all(
+    [host, guest, mobile].map((p) =>
+      expect(p.locator('[data-effect="nerd"]')).toHaveCount(1),
+    ),
+  );
+
+  await host.locator('[data-game-avatar="1"]').click();
+  const effects = await host
+    .locator(".avatar-interactions button")
+    .evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute("aria-label")),
+    );
+  await host.keyboard.press("Escape");
+  expect(effects).toHaveLength(20);
+  for (const name of effects) {
+    await expect(host.locator(".interaction-particle")).toHaveCount(0);
+    await host.locator('[data-game-avatar="1"]').click();
+    await host.getByRole("button", { name, exact: true }).click();
+    await Promise.all(
+      [host, guest, mobile].map((p) =>
+        expect(p.locator(".interaction-particle")).toHaveCount(1),
+      ),
+    );
+    expect(
+      await host
+        .locator(".interaction-layer")
+        .evaluate((node) => getComputedStyle(node).pointerEvents),
+    ).toBe("none");
+    await Promise.all(
+      [host, guest, mobile].map((p) =>
+        expect(p.locator(".interaction-particle")).toHaveCount(0),
+      ),
+    );
+    await expect(host.locator(".interaction-fragment")).toHaveCount(0);
+  }
+
   for (let i = 0; i < 18; i++) {
     await guest.getByLabel("消息", { exact: true }).fill(`历史消息 ${i}`);
     await guest.getByRole("button", { name: "发送", exact: true }).click();
@@ -189,8 +267,8 @@ try {
     .getByRole("button", { name: "关闭", exact: true })
     .click();
   await host.waitForTimeout(1300);
-  await host.locator("#userseat1 > button").click();
-  await host.getByRole("button", { name: "扔🥚", exact: true }).click();
+  await host.locator('[data-game-avatar="1"]').click();
+  await host.getByRole("button", { name: "送出鸡蛋", exact: true }).click();
   await Promise.all(
     [host, guest, mobile].map((p) =>
       expect(p.locator(".interaction-particle")).toHaveCount(1),
@@ -226,7 +304,7 @@ try {
   await host.getByRole("button", { name: "抢地主", exact: true }).click();
   await host.getByRole("button", { name: "结束游戏", exact: true }).click();
   await host.getByRole("button", { name: "确认结束", exact: true }).click();
-  for (const name of ["UNO", "飞行棋", "跳棋"]) {
+  for (const name of ["UNO", "飞行棋", "跳棋", "毒药", "卡坦岛"]) {
     await choose(host, "房间游戏", name);
     for (const p of [guest, mobile])
       await p.getByRole("button", { name: "准备", exact: true }).click();
@@ -259,9 +337,36 @@ try {
     await host.getByRole("button", { name: "结束游戏", exact: true }).click();
     await host.getByRole("button", { name: "确认结束", exact: true }).click();
   }
+  await host.getByRole("button", { name: "游戏与人数", exact: true }).click();
+  await choose(host, "下一局游戏", "三国杀");
+  await choose(host, "下一局真人席位", "4");
+  await host.getByRole("button", { name: "应用", exact: true }).click();
+  const fourth = await page();
+  await fourth.goto(`${endpoint}/?room=${room}`);
+  await fourth.getByLabel("昵称", { exact: true }).fill("第四人");
+  await fourth
+    .getByRole("button", { name: "加入 / 恢复房间", exact: true })
+    .click();
+  await expect(host.locator(".seat-row")).toHaveCount(4);
+  await expect(
+    host.locator(".seat-row").filter({ hasText: "第四人" }),
+  ).toBeVisible();
+  await host.getByRole("button", { name: "游戏与人数", exact: true }).click();
+  await choose(host, "下一局游戏", "毒药");
+  await choose(host, "下一局真人席位", "3");
+  await host
+    .getByRole("dialog", { name: "下一局", exact: true })
+    .getByLabel("第四人", { exact: true })
+    .uncheck();
+  await host.getByRole("button", { name: "应用", exact: true }).click();
+  await host.getByRole("button", { name: "应用配置", exact: true }).click();
+  await expect(
+    fourth.getByRole("heading", { name: "一起玩一局" }),
+  ).toBeVisible();
+  await expect(host.locator(".seat-row")).toHaveCount(3);
   await host.getByRole("button", { name: "关闭房间", exact: true }).click();
   await host
-    .locator("dialog")
+    .locator(".confirmation-dialog")
     .getByRole("button", { name: "关闭房间", exact: true })
     .click();
   await mobile
@@ -269,7 +374,7 @@ try {
     .waitFor();
   if (errors.length) throw new Error(errors.join("\n"));
   console.log(
-    "PASS: packaged hosting service, three-client interactions, same-name unread, builtin/custom/GIF stickers, favorites, history reading, QR, mobile core UI, hero details, recovery, five-game room switch",
+    "PASS: packaged hosting service, three-client interactions, same-name unread, avatar quick phrases, game-surface effects, history reading, QR, mobile core UI, hero details, recovery, seven-game room switch, custom phrases, timestamps and resizable chat",
   );
 } catch (error) {
   console.error(errors);

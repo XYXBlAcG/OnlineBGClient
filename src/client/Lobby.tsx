@@ -3,7 +3,7 @@ import { Select, Slider } from "./ui/Controls";
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { gameCatalogue, gameKinds, type GameKind } from "../domain/catalogue";
-import type { RoomConfig } from "../domain/protocol";
+import { configSchema, type RoomConfig } from "../domain/protocol";
 import type { Difficulty } from "../domain/types";
 
 export const difficultyNames: Record<Difficulty, string> = {
@@ -31,6 +31,7 @@ export function Lobby({
     mode: "local" | "network",
     service: string,
     temporary: boolean,
+    hostOnly: boolean,
   ) => void;
   onJoin: (name: string, invitation: string, service: string) => void;
 }) {
@@ -45,12 +46,14 @@ export function Lobby({
     { difficulty: "normal", name: "" },
   ]);
   const [aiDelayMs, setDelay] = useState(1500);
+  const [catanTrades, setCatanTrades] = useState(true);
   const [team, setTeam] = useState(false);
   const [training, setTraining] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("全部");
   const [endpoint, setEndpoint] = useState(service);
   const [invitation, setInvitation] = useState(initialRoom);
+  const [hostOnly, setHostOnly] = useState(false);
   const [temporary, setTemporary] = useState(isTauri());
   const game = gameCatalogue[kind];
   const total = humans + ai.length;
@@ -59,12 +62,18 @@ export function Lobby({
     setKind(next);
     setHumans(
       gameCatalogue[next].ai
-        ? Math.min(humans, max)
+        ? Math.min(Math.max(next === "tq" ? 0 : 1, humans), max)
         : gameCatalogue[next].minPlayers,
     );
     setAi(
       gameCatalogue[next].ai
-        ? ai.slice(0, Math.max(0, max - Math.min(humans, max)))
+        ? ai.slice(
+            0,
+            Math.max(
+              0,
+              max - Math.min(Math.max(next === "tq" ? 0 : 1, humans), max),
+            ),
+          )
         : [],
     );
     setTeam(false);
@@ -125,7 +134,20 @@ export function Lobby({
                   aria-pressed={kind === key}
                 >
                   <span className={`game-symbol ${key}`}>
-                    {gameCatalogue[key].symbol}
+                    {key === "dy" ? (
+                      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                        <path
+                          d="M12 3h8M14 3v10L5 26a2 2 0 0 0 2 3h18a2 2 0 0 0 2-3l-9-13V3M10 20h12"
+                          stroke="currentColor"
+                          strokeWidth="2.4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <circle cx="16" cy="24" r="1.5" fill="currentColor" />
+                      </svg>
+                    ) : (
+                      gameCatalogue[key].symbol
+                    )}
                   </span>
                   <strong>{gameCatalogue[key].name}</strong>
                   <span>{gameCatalogue[key].description}</span>
@@ -193,10 +215,37 @@ export function Lobby({
             </button>
           </div>
         )}
+        {kind === "tq" && (
+          <button
+            onClick={() => {
+              setHumans(0);
+              setAi(
+                Array.from({ length: 6 }, () => ({
+                  difficulty: "hard",
+                  name: "",
+                })),
+              );
+              setDelay(0);
+              setMode("local");
+            }}
+          >
+            6 个困难 AI 性能测试
+          </button>
+        )}
+        {mode === "network" && (
+          <label className="setting-row">
+            <span>仅启动服务，不参与游戏</span>
+            <input
+              type="checkbox"
+              checked={hostOnly}
+              onChange={(event) => setHostOnly(event.target.checked)}
+            />
+          </label>
+        )}
         <div className="setting-row">
           <span>真人玩家</span>
           <Select
-            disabled={!game.ai}
+            disabled={game.minPlayers === game.maxPlayers && !game.ai}
             aria-label="真人人数"
             value={humans}
             onValueChange={(value) => {
@@ -205,26 +254,43 @@ export function Lobby({
               setAi(
                 Array.from(
                   {
-                    length: Math.max(
-                      game.minPlayers - count,
-                      Math.min(ai.length, game.maxPlayers - count),
-                    ),
+                    length: game.ai
+                      ? Math.max(
+                          game.minPlayers - count,
+                          Math.min(ai.length, game.maxPlayers - count),
+                        )
+                      : 0,
                   },
                   (_, index) => ai[index] || { difficulty: "normal", name: "" },
                 ),
               );
             }}
           >
-            {Array.from({ length: game.maxPlayers }, (_, index) => (
-              <option key={index} value={index + 1}>
-                {index + 1} 人
-              </option>
-            ))}
+            {Array.from(
+              {
+                length:
+                  game.maxPlayers -
+                  (kind === "tq" ? 0 : game.ai ? 1 : game.minPlayers) +
+                  1,
+              },
+              (_, index) => (
+                <option
+                  key={index}
+                  value={
+                    index + (kind === "tq" ? 0 : game.ai ? 1 : game.minPlayers)
+                  }
+                >
+                  {index + (kind === "tq" ? 0 : game.ai ? 1 : game.minPlayers)}{" "}
+                  人
+                </option>
+              ),
+            )}
           </Select>
         </div>
         <div className="setting-row">
           <span>总席位</span>
           <Select
+            disabled={!game.ai}
             aria-label="总席位"
             value={total}
             onValueChange={(value) =>
@@ -251,7 +317,7 @@ export function Lobby({
             )}
           </Select>
         </div>
-        {!game.ai && <p className="muted">三名真人对局 · AI 尚未接入</p>}
+        {!game.ai && <p className="muted">{humans} 名真人 · AI 尚未接入</p>}
         <div className="ai-settings">
           {ai.map((entry, index) => (
             <div className="ai-setting" key={index}>
@@ -306,6 +372,16 @@ export function Lobby({
             />
           </label>
         )}
+        {kind === "ktd" && !!ai.length && (
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={catanTrades}
+              onChange={(event) => setCatanTrades(event.target.checked)}
+            />
+            允许 AI 主动提出交易
+          </label>
+        )}
         <details className="advanced">
           <summary>更多设置</summary>
           {game.team && (
@@ -355,11 +431,22 @@ export function Lobby({
           disabled={busy || !name.trim() || total < game.minPlayers}
           onClick={() =>
             onCreate(
-              { kind, humans, ai, team, training, aiDelayMs },
+              configSchema.parse({
+                kind,
+                humans,
+                ai,
+                team,
+                training,
+                aiDelayMs,
+                auditEnabled: preferences.auditVisible,
+                catanTrades,
+                performance: preferences.performance,
+              }),
               name,
               mode,
               endpoint,
               temporary,
+              mode === "network" && hostOnly,
             )
           }
         >

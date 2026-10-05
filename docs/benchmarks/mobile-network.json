@@ -1,0 +1,19 @@
+{
+  "delayEachDirectionMs": 180,
+  "fullBytes": 2328,
+  "deltaBytes": 45570,
+  "equivalentFullBytes": 92242,
+  "actions": 9,
+  "computationRequests": 1,
+  "feedback": {
+    "visible": true,
+    "elapsed": 3.199999988079071,
+    "busy": "true"
+  },
+  "gameClonesOnChat": 0,
+  "date": "2026-10-05",
+  "environment": "macOS ARM64 / Chrome desktop with 390x844 touch emulation",
+  "scenario": "service console + 2 mobile browsers; configuration, UNO action, chat and Catan setup; WebSocket delay proxy",
+  "source": "scripts/verify-mobile-host.mjs",
+  "note": "Artificial latency and browser emulation; not physical phone or public-network measurement"
+}

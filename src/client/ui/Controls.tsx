@@ -1,3 +1,4 @@
+import { SurfaceResize } from "../SurfaceResize";
 import React, { Children, isValidElement, type ReactNode } from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import * as SliderPrimitive from "@radix-ui/react-slider";
@@ -162,6 +163,7 @@ export function Panel({
             </DialogPrimitive.Close>
           </div>
           {children}
+          <SurfaceResize id={title} />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

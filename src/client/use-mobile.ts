@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
-export function useMobile(): boolean {
-  const query = "(pointer: coarse)";
-  const [mobile, setMobile] = useState(
-    () => !isTauri() && matchMedia(query).matches,
-  );
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => matchMedia(query).matches);
   useEffect(() => {
     const media = matchMedia(query);
-    const update = () => setMobile(!isTauri() && media.matches);
+    const update = () => setMatches(media.matches);
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
-  }, []);
-  return mobile;
+  }, [query]);
+  return matches;
+}
+
+export function useMobile(): boolean {
+  const coarse = useMediaQuery("(pointer: coarse)");
+  return !isTauri() && coarse;
+}
+
+export function useCompactLayout(): boolean {
+  return useMediaQuery("(max-width: 880px)");
 }

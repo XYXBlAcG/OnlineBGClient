@@ -1,47 +1,32 @@
-import { useMotion } from "./use-motion";
+import * as Popover from "@radix-ui/react-popover";
+import { phraseGroups } from "../domain/phrases";
+import { PhraseMenu } from "./PhraseMenu";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Snapshot } from "../domain/protocol";
 import type { Preferences } from "./preferences";
 import { ChatReadState } from "./chat-read";
-import { ClientStore } from "./storage";
-import { Stickers } from "./stickers";
-import { StickerImage } from "./StickerImage";
-import { StickerPicker } from "./StickerPicker";
 import { notifyMessage, playCue } from "./notifications";
 
 export function ChatPanel({
   snapshot,
   compact,
   endpoint,
-  token,
   preferences,
-  onPreferences,
   onText,
-  onSticker,
   onUnread,
   onClose,
-  onError,
 }: {
   snapshot: Snapshot;
   compact: boolean;
   endpoint?: string;
-  token: string;
   preferences: Preferences;
-  onPreferences: (value: Preferences) => void;
   onText: (text: string) => void;
-  onSticker: (asset: string, name: string) => void;
   onUnread: (count: number) => void;
   onClose: () => void;
-  onError: (message: string) => void;
 }) {
-  const motion = useMotion(preferences.motion);
   const panel = useRef<HTMLElement>(null);
-  const [store] = useState(() => new ClientStore());
-  const stickers = useMemo(
-    () => new Stickers(store, endpoint, { room: snapshot.room, token }),
-    [store, endpoint, snapshot.room, token],
-  );
-  const ownId = snapshot.seats[snapshot.actor].id;
+  const ownId =
+    snapshot.actor < 0 ? snapshot.host!.id : snapshot.seats[snapshot.actor].id;
   const key = `chat-read:${endpoint || "local"}:${snapshot.room}:${ownId}`;
   const read = useMemo(() => new ChatReadState(key, localStorage), [key]);
   const [text, setText] = useState(""),
@@ -144,17 +129,21 @@ export function ChatPanel({
             key={message.sequence}
             className={`chat-message ${message.sender === ownId ? "own-message" : ""}`}
           >
-            <small>{message.name}</small>
-            {message.type === "sticker" && message.asset ? (
-              <StickerImage
-                id={message.asset}
-                name={message.text}
-                stickers={stickers}
-                reduced={!motion}
-              />
-            ) : (
-              <p>{message.text}</p>
-            )}
+            <div className="chat-message-meta">
+              <small>{message.name}</small>
+              <time
+                dateTime={new Date(message.time).toISOString()}
+                title={new Date(message.time).toLocaleString()}
+              >
+                {new Date(message.time).toLocaleTimeString([], {
+                  hour12: false,
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </time>
+            </div>
+            <p>{message.text}</p>
           </div>
         ))}
       </div>
@@ -172,14 +161,27 @@ export function ChatPanel({
           jump();
         }}
       >
-        <StickerPicker
-          stickers={stickers}
-          preferences={preferences}
-          onPreferences={onPreferences}
-          onSend={onSticker}
-          onEmoji={(emoji) => setText((value) => value + emoji)}
-          onError={onError}
-        />
+        <Popover.Root>
+          <Popover.Trigger asChild>
+            <button type="button" aria-label="常用语">
+              常用语
+            </button>
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Content
+              className="ui-popover quick-phrase-menu"
+              sideOffset={8}
+            >
+              <PhraseMenu
+                groups={phraseGroups(snapshot.kind, preferences.phraseGroups)}
+                onSend={(phrase) => {
+                  onText(phrase);
+                  jump();
+                }}
+              />
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
         <input
           aria-label="消息"
           placeholder="发消息"

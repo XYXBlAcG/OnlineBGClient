@@ -11,14 +11,15 @@ const createPage = async () => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } }); contexts.push(context);
   const page = await context.newPage(); page.on('pageerror', error => errors.push(String(error))); await page.goto(endpoint); return page;
 };
-const choose = async (page, label, text) => { await page.getByRole('combobox', { name: label, exact: true }).click(); await page.getByRole('option', { name: text, exact: true }).click(); await expect(page.getByRole('listbox')).toHaveCount(0); };
+const choose = async (page, label, text) => { if(label==='房间游戏'){await page.getByRole('button',{name:'游戏与人数',exact:true}).click();await choose(page,'下一局游戏',text);await page.getByRole('button',{name:'应用',exact:true}).click();return;} await page.getByRole('combobox', { name: label, exact: true }).click(); await page.getByRole('option', { name: text, exact: true }).click(); await expect(page.getByRole('listbox')).toHaveCount(0); };
 try {
   await mkdir('.tmp/screenshots', { recursive: true });
   const page = await createPage();
   await page.getByRole('button', { name: '关于', exact: true }).click();
-  await expect(page.getByRole('link', { name: 'XYXBlAcG', exact: true })).toHaveAttribute('href', 'https://github.com/XYXBlAcG');
+  await expect(page.getByRole('link', { name: '链接', exact: true })).toHaveAttribute('href', 'https://github.com/XYXBlAcG');
+  await expect(page.getByRole('link',{name:'game',exact:true})).toHaveAttribute('href','https://game.hullqin.cn/');
   await page.keyboard.press('Escape');
-  await expect(page.locator('.game-card')).toHaveCount(5);
+  await expect(page.locator('.game-card')).toHaveCount(7);
   await page.getByRole('button', { name: '收藏UNO', exact: true }).click();
   await page.getByRole('button', { name: '收藏', exact: true }).click();
   await expect(page.locator('.game-card')).toHaveCount(1);
@@ -36,11 +37,11 @@ try {
   await page.getByRole('button', { name: '我先出牌', exact: true }).waitFor();
   await expect(page.getByRole('button', { name: '策略审核', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '打开设置', exact: true }).click();
-  await page.getByRole('switch', { name: '显示策略审核', exact: true }).click();
+  await page.getByRole('switch', { name: '记录并显示策略审核', exact: true }).click();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '策略审核', exact: true }).click();
   await page.getByRole('button', { name: '打开设置', exact: true }).click();
-  await page.getByRole('switch', { name: '显示策略审核', exact: true }).click();
+  await page.getByRole('switch', { name: '记录并显示策略审核', exact: true }).click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: '策略审核', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '我先出牌', exact: true }).waitFor();
@@ -57,6 +58,7 @@ try {
   await page.getByRole('button', { name: '对局记录', exact: true }).click();
   await page.locator('.record-row').first().waitFor();
   await page.locator('.record-row > button').first().click();
+  await expect(page.locator('.ui-panel-wide').getByRole('button',{name:'结束游戏',exact:true})).toHaveCount(0);
   const progress = page.getByRole('slider', { name: '回放进度' }); await progress.waitFor();
   await choose(page, '回放速度', '2×');
   await page.getByRole('button', { name: '播放回放', exact: true }).click();
@@ -79,12 +81,12 @@ try {
   await page.getByRole('button', { name: '结束游戏', exact: true }).click();
   await page.getByRole('button', { name: '确认结束', exact: true }).click();
   await page.getByRole('button', { name: '关闭房间', exact: true }).click();
-  await page.locator('dialog').getByRole('button', { name: '关闭房间', exact: true }).click();
+  await page.locator('.confirmation-dialog').getByRole('button', { name: '关闭房间', exact: true }).click();
   await page.getByRole('heading', { name: '一起玩一局' }).waitFor();
 
   const host = await createPage();
   await host.getByRole('button', { name: /地主与农民/ }).click();
-  await expect(host.getByText('三名真人对局 · AI 尚未接入')).toBeVisible();
+  await expect(host.getByText('3 名真人 · AI 尚未接入')).toBeVisible();
   await expect(host.getByRole('slider', { name: 'AI 动作间隔' })).toHaveCount(0);
   await host.getByRole('button', { name: '跨网络联机', exact: true }).click();
   await host.getByRole('button', { name: '创建房间', exact: true }).click();
@@ -122,7 +124,7 @@ try {
   await host.getByRole('button', { name: '结束游戏', exact: true }).click();
   await host.getByRole('button', { name: '确认结束', exact: true }).click();
   await guests[0].getByRole('button', { name: '离开房间', exact: true }).click(); await guests[0].getByRole('heading', { name: '一起玩一局' }).waitFor();
-  await host.getByRole('button', { name: '关闭房间', exact: true }).click(); await host.locator('dialog').getByRole('button', { name: '关闭房间', exact: true }).click();
+  await host.getByRole('button', { name: '关闭房间', exact: true }).click(); await host.locator('.confirmation-dialog').getByRole('button', { name: '关闭房间', exact: true }).click();
   await guests[1].getByRole('heading', { name: '一起玩一局' }).waitFor();
   if (errors.length) throw new Error(errors.join('\n'));
   console.log('PASS: audit visibility and persistence, controls, dark theme, favorites, keyboard action, local recovery, replay playback/pause/speed, local and three-client game switch, about, three-human DDZ, chat, reconnect, leave and close');

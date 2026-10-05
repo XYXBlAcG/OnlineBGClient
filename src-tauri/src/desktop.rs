@@ -40,9 +40,10 @@ pub fn quit_app(app: tauri::AppHandle, state: tauri::State<'_, Desktop>) {
 }
 
 #[tauri::command]
-pub fn open_profile() -> Result<(), String> {
+pub fn open_link(key: String) -> Result<(), String> {
     let profile: serde_json::Value = serde_json::from_str(include_str!("../../src/client/about.json")).map_err(|error| error.to_string())?;
-    let url = profile["github"].as_str().ok_or("GitHub 主页未配置")?;
+    if !["github", "original"].contains(&key.as_str()) { return Err("链接未配置".into()); }
+    let url = profile[&key].as_str().ok_or("链接未配置")?;
     #[cfg(target_os = "macos")]
     let mut command = std::process::Command::new("open");
     #[cfg(target_os = "windows")]

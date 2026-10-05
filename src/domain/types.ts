@@ -132,7 +132,21 @@ export interface DdzView {
   canPlayAnyCards: boolean;
   lastCards: number[];
 }
+export interface PoisonView {
+  rule: number;
+  state: number;
+  lastOp: { playerId: number; putCard?: number; eatCardList: number[] };
+  pots: number[][];
+  potValues: number[];
+  players: number[][];
+  eats: number[][];
+  scores: number[];
+  finish: number;
+}
 export type GameState =
+  | { kind: "ccbs"; view: import("./splendor-actions").SplendorView }
+  | { kind: "ktd"; view: import("./catan-actions").CatanView }
+  | { kind: "dy"; view: PoisonView }
   | { kind: "ddz"; view: DdzView }
   | { kind: "tq"; view: CheckersView }
   | { kind: "fxq"; view: FlightView }
@@ -163,6 +177,8 @@ export interface DecisionCandidate extends Candidate {
   simulation?: { samples: number; mean: number; standardError: number };
 }
 export interface Decision {
+  search?: { action: Action; indexes: number[] }[];
+  tradeEnabled?: boolean;
   version: string;
   actor: number;
   difficulty: Difficulty;
@@ -172,4 +188,12 @@ export interface Decision {
   chosen: Action;
   assumptions: string[];
   simulations: number;
+}
+
+export interface AiResult {
+  actor: number;
+  chosen: Action;
+  difficulty: Difficulty;
+  simulations: number;
+  audit?: Decision;
 }

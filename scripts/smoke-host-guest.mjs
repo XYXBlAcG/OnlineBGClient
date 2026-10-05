@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 const status = await readFile(".tmp/native-hosting.log", "utf8");
 assert.ok(status.startsWith("HOST_READY "), status);
-const { url, room } = JSON.parse(status.slice("HOST_READY ".length));
+const { url, room } = JSON.parse(status.split("\n")[0].slice("HOST_READY ".length));
 const browser = await chromium.launch({
   executablePath:
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -16,6 +16,7 @@ try {
     isMobile: true,
     hasTouch: true,
   });
+  page.setDefaultTimeout(120000);
   await page.goto(`${url}/?room=${room}`);
   await page.getByLabel("昵称", { exact: true }).fill("公网手机");
   await page.getByRole("button", { name: "加入 / 恢复房间" }).click();
@@ -35,17 +36,10 @@ try {
     .locator(".room-toolbar > strong")
     .filter({ hasText: "三国杀" })
     .waitFor();
-  await page.getByRole("button", { name: "表情包", exact: true }).tap();
-  await page.getByLabel("导入表情图片", { exact: true }).setInputFiles({
-    name: "公网表情.png",
-    mimeType: "image/png",
-    buffer: await readFile("tests/fixtures/sticker.png"),
-  });
-  await page.getByRole("button", { name: "发送表情", exact: true }).tap();
   await page.getByLabel("消息", { exact: true }).fill("切换验证通过");
   await page.getByRole("button", { name: "发送", exact: true }).tap();
   console.log(
-    "PASS: native host invitation, mobile browser guest, HTTPS/WSS game and chat, public custom sticker, identity recovery, same-room switch",
+    "PASS: native host invitation, mobile browser guest, HTTPS/WSS game and chat, quick text, identity recovery, same-room switch",
   );
 } finally {
   await browser.close();

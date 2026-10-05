@@ -1,4 +1,3 @@
-import type { StickerAsset } from "../domain/social";
 import { openDB, type DBSchema } from "idb";
 import type { RoomArchive } from "../domain/room";
 import type { ReplayRecord } from "../domain/replay";
@@ -8,13 +7,12 @@ export interface LocalSave {
   tokens: string[];
   token: string;
 }
-export interface StoredSticker {
-  asset: StickerAsset;
+interface CachedImage {
   bytes: Blob;
   preview: Blob;
 }
 interface ClientDatabase extends DBSchema {
-  stickers: { key: string; value: StoredSticker };
+  stickers: { key: string; value: CachedImage };
   local: { key: string; value: LocalSave };
   records: { key: string; value: ReplayRecord };
 }
@@ -25,18 +23,52 @@ export class ClientStore {
         database.createObjectStore("local");
       if (!database.objectStoreNames.contains("records"))
         database.createObjectStore("records");
-      if (!database.objectStoreNames.contains("stickers"))
-        database.createObjectStore("stickers");
     },
   });
-  async saveSticker(sticker: StoredSticker): Promise<void> {
-    await (await this.database).put("stickers", sticker, sticker.asset.id);
+  async cacheUsage(): Promise<{ images: number; audit: number }> {
+    const database = await this.database;
+    const images = (
+      database.objectStoreNames.contains("stickers")
+        ? await database.getAll("stickers")
+        : []
+    ).reduce(
+      (total, value) => total + value.bytes.size + value.preview.size,
+      0,
+    );
+    const save = await database.get("local", "active");
+    const audit =
+      save && (save.room.decisions.length || save.room.summaries.length)
+        ? new TextEncoder().encode(
+            JSON.stringify({
+              decisions: save.room.decisions,
+              summaries: save.room.summaries,
+            }),
+          ).length
+        : 0;
+    return { images, audit };
   }
-  async sticker(id: string): Promise<StoredSticker | undefined> {
-    return (await this.database).get("stickers", id);
-  }
-  async stickers(): Promise<StoredSticker[]> {
-    return (await this.database).getAll("stickers");
+  async clearCache(selection: {
+    images: boolean;
+    audit: boolean;
+  }): Promise<void> {
+    const database = await this.database;
+    const stores: Array<"stickers" | "local"> =
+      database.objectStoreNames.contains("stickers")
+        ? ["stickers", "local"]
+        : ["local"];
+    const transaction = database.transaction(stores, "readwrite");
+    if (selection.images && database.objectStoreNames.contains("stickers"))
+      await transaction.objectStore("stickers").clear();
+    if (selection.audit) {
+      const save = await transaction.objectStore("local").get("active");
+      if (save) {
+        save.room.decisions = [];
+        save.room.summaries = [];
+        save.room.config.auditEnabled = false;
+        await transaction.objectStore("local").put(save, "active");
+      }
+    }
+    await transaction.done;
   }
   async saveLocal(save: LocalSave): Promise<void> {
     await (await this.database).put("local", save, "active");

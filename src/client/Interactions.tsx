@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { interactionKinds, type InteractionEvent } from "../domain/social";
+import { interactionCatalogue, type InteractionEvent } from "../domain/social";
+import { effectMotion } from "./effect-motion";
 import { playCue } from "./notifications";
 
 function Particle({
@@ -16,60 +17,71 @@ function Particle({
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = ref.current;
-    const from = document
-      .querySelector(`[data-avatar-index="${event.from}"]`)
+    const surface = element?.closest(".original-game");
+    const bounds = surface?.getBoundingClientRect();
+    const from = surface
+      ?.querySelector(`[data-game-avatar="${event.from}"]`)
       ?.getBoundingClientRect();
-    const target = document
-      .querySelector(`[data-avatar-index="${event.target}"]`)
+    const target = surface
+      ?.querySelector(`[data-game-avatar="${event.target}"]`)
       ?.getBoundingClientRect();
-    if (!element || !target) {
+    if (!element || !target || !bounds) {
       onEnd(event.id);
       return;
     }
     if (sound) playCue();
     const end = {
-      x: target.x + target.width / 2,
-      y: target.y + target.height / 2,
+      x: target.x + target.width / 2 - bounds.x,
+      y: target.y + target.height / 2 - bounds.y,
     };
     const start =
       motion && from
-        ? { x: from.x + from.width / 2, y: from.y + from.height / 2 }
+        ? {
+            x: from.x + from.width / 2 - bounds.x,
+            y: from.y + from.height / 2 - bounds.y,
+          }
         : end;
     element.style.left = `${start.x}px`;
     element.style.top = `${start.y}px`;
+    const effect = interactionCatalogue[event.kind];
+    const frames = effectMotion(effect.style, end.x - start.x, end.y - start.y);
+    element.style.setProperty("--effect-color", effect.color);
     const animation = element.animate(
-      motion
-        ? [
-            { transform: "translate(-50%,-50%) scale(0.5)", opacity: 0 },
-            {
-              transform: `translate(calc(-50% + ${(end.x - start.x) / 2}px), calc(-50% + ${(end.y - start.y) / 2 - 90}px)) rotate(120deg)`,
-              opacity: 1,
-              offset: 0.45,
-            },
-            {
-              transform: `translate(calc(-50% + ${end.x - start.x}px), calc(-50% + ${end.y - start.y}px)) rotate(240deg) scale(1.3)`,
-              opacity: 1,
-              offset: 0.75,
-            },
-            {
-              transform: `translate(calc(-50% + ${end.x - start.x}px), calc(-50% + ${end.y - start.y}px)) scale(1.8)`,
-              opacity: 0,
-            },
-          ]
-        : [{ opacity: 1 }, { opacity: 0 }],
-      { duration: motion ? 1100 : 900, easing: "ease-out" },
+      motion ? frames.body : [{ opacity: 1 }, { opacity: 0 }],
+      { duration: motion ? 1900 : 900, easing: "ease-out" },
     );
+    const fragments = motion
+      ? frames.fragments.map((keyframes, index) => {
+          const fragment = document.createElement("span");
+          fragment.className = `interaction-fragment effect-${effect.style}`;
+          fragment.textContent = effect.particles;
+          fragment.style.left = `${end.x}px`;
+          fragment.style.top = `${end.y}px`;
+          element.parentElement?.appendChild(fragment);
+          fragment.animate(keyframes, {
+            duration: 750,
+            delay: 950 + (index % 4) * 45,
+            easing: "ease-out",
+          }).onfinish = () => fragment.remove();
+          return fragment;
+        })
+      : [];
     animation.onfinish = () => onEnd(event.id);
-    return () => animation.cancel();
+    return () => {
+      animation.cancel();
+      fragments.forEach((fragment) => fragment.remove());
+    };
   }, [event, motion, sound, onEnd]);
   return (
     <div
       ref={ref}
       className="interaction-particle"
       data-interaction={event.id}
+      data-effect={event.kind}
+      data-effect-style={interactionCatalogue[event.kind].style}
       aria-hidden="true"
     >
-      {interactionKinds[event.kind]}
+      {interactionCatalogue[event.kind].emoji}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 #[cfg(not(mobile))]
+pub mod cache;
+#[cfg(not(mobile))]
 pub mod hosting;
 #[cfg(not(mobile))]
 mod desktop;
@@ -11,7 +13,7 @@ pub fn run() {
         .manage(desktop::Desktop::default())
         .setup(desktop::setup)
         .on_menu_event(desktop::menu)
-        .invoke_handler(tauri::generate_handler![hosting::start_host, hosting::stop_host, desktop::quit_app, desktop::open_profile])
+        .invoke_handler(tauri::generate_handler![hosting::start_host, hosting::stop_host, hosting::clear_cache, cache::cache_usage, desktop::quit_app, desktop::open_link])
         .on_window_event(|window, event| {
             use tauri::{Emitter, Manager};
             let hosting = window.state::<std::sync::Arc<hosting::Hosting>>();

@@ -1,7 +1,8 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { Panel } from "./ui/Controls";
 import profile from "./about.json";
-import { productName, version } from "../../src-tauri/tauri.conf.json";
+import { productName } from "../../src-tauri/tauri.conf.json";
+import { version } from "../../package.json";
 
 export function About({
   open,
@@ -20,18 +21,30 @@ export function About({
     >
       <h2>{productName}</h2>
       <p className="muted">{version}</p>
-      <a
-        href={profile.github}
-        target="_blank"
-        rel="noreferrer"
-        onClick={(event) => {
-          if (!isTauri()) return;
-          event.preventDefault();
-          void invoke("open_profile").catch((error) => onError(String(error)));
-        }}
-      >
-        {profile.author}
-      </a>
+      {(
+        [
+          ["github", "作者 Github 主页：", "链接"],
+          ["original", "请支持原作：", "game"],
+        ] as const
+      ).map(([key, label, text]) => (
+        <p key={key}>
+          {label}
+          <a
+            href={profile[key]}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => {
+              if (!isTauri()) return;
+              event.preventDefault();
+              void invoke("open_link", { key }).catch((error) =>
+                onError(String(error)),
+              );
+            }}
+          >
+            {text}
+          </a>
+        </p>
+      ))}
     </Panel>
   );
 }

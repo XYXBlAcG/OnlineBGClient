@@ -1,3 +1,4 @@
+import { SnapshotReplica } from "../domain/sync";
 import { gameCatalogue } from "../domain/catalogue";
 import {
   protocolVersion,
@@ -36,6 +37,13 @@ export class NetworkConnection implements Connection {
   private pending = new Map<string, Command>();
   private attempts = 0;
   private session?: { room: string; token: string };
+  private replica = new SnapshotReplica();
+  private action?: {
+    id: string;
+    started: number;
+    acknowledged: boolean;
+    latencyMs?: number;
+  };
 
   constructor(
     readonly endpoint: string,
@@ -56,19 +64,20 @@ export class NetworkConnection implements Connection {
   }
 
   send(command: Command): void {
-    if (
-      command.type === "action" ||
-      command.type === "chat" ||
-      command.type === "sticker"
-    )
+    if (command.type === "action") {
+      if (this.action) return;
+      this.action = {
+        id: command.id,
+        started: performance.now(),
+        acknowledged: false,
+      };
+      this.receive({ type: "activity", pending: true });
+    }
+    if (command.type === "action" || command.type === "chat")
       this.pending.set(command.id, command);
     if (this.socket?.readyState === WebSocket.OPEN)
       this.socket.send(JSON.stringify(command));
-    else if (
-      command.type !== "action" &&
-      command.type !== "chat" &&
-      command.type !== "sticker"
-    )
+    else if (command.type !== "action" && command.type !== "chat")
       this.receive({ type: "error", message: "连接尚未恢复，请稍后操作" });
   }
 
@@ -94,6 +103,7 @@ export class NetworkConnection implements Connection {
     this.status(this.attempts ? "重连中" : "连接中");
     const url = new URL("/connect", this.endpoint);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    this.replica = new SnapshotReplica();
     const socket = new WebSocket(url);
     this.socket = socket;
     socket.onopen = () => {
@@ -105,7 +115,16 @@ export class NetworkConnection implements Connection {
     };
     socket.onmessage = (event) => {
       if (this.stopped || socket !== this.socket) return;
-      const response: Response = JSON.parse(event.data);
+      let response: Response = JSON.parse(event.data);
+      if (response.type === "snapshot" || response.type === "patch") {
+        const snapshot = this.replica.apply(response);
+        if (!snapshot) {
+          if (this.session)
+            this.send({ type: "snapshot", token: this.session.token });
+          return;
+        }
+        response = { type: "snapshot", snapshot };
+      }
       if (
         response.type === "snapshot" &&
         (response.snapshot.apiVersion !== protocolVersion ||
@@ -140,9 +159,29 @@ export class NetworkConnection implements Connection {
           );
         this.close();
       }
-      if (response.type === "ack") this.pending.delete(response.id);
-      if (response.type === "error") this.pending.clear();
+      if (response.type === "ack") {
+        this.pending.delete(response.id);
+        if (response.id === this.action?.id) {
+          this.action.acknowledged = true;
+          this.action.latencyMs = Math.round(
+            performance.now() - this.action.started,
+          );
+        }
+      }
+      if (response.type === "error") {
+        if (response.id) this.pending.delete(response.id);
+        else this.pending.clear();
+        if (this.action && (!response.id || response.id === this.action.id)) {
+          this.action = undefined;
+          this.receive({ type: "activity", pending: false });
+        }
+      }
       this.receive(response);
+      if (response.type === "snapshot" && this.action?.acknowledged) {
+        const latencyMs = this.action.latencyMs;
+        this.action = undefined;
+        this.receive({ type: "activity", pending: false, latencyMs });
+      }
     };
     socket.onclose = (event) => {
       if (this.stopped || socket !== this.socket) return;

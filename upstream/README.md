@@ -1,9 +1,15 @@
 # 原站资源
 
-来源：[Hullqin 桌游](https://game.hullqin.cn/)，2026-10-04 固定公开构建资源。当前未获得可维护的原始源码仓库。
+来源：[Hullqin 桌游](https://game.hullqin.cn/)，2026-10-04 至 2026-10-05 固定公开构建资源。当前未获得可维护的原始源码仓库。
 
 - [房间与通信资源](https://fe-1255520126.file.myqcloud.com/game/static/js/app.75ad5e73.chunk.js)
 - [斗地主资源](https://fe-1255520126.file.myqcloud.com/game/static/js/ddz.1895f9e7.chunk.js)
+- [璀璨宝石规则和界面](https://fe-1255520126.file.myqcloud.com/game/static/js/ccbs.5bb4458d.chunk.js)
+- [璀璨宝石牌桌样式](https://fe-1255520126.file.myqcloud.com/game/static/css/ccbs.2d1e7365.chunk.css)
+- [卡坦岛规则和界面](https://fe-1255520126.file.myqcloud.com/game/static/js/ktd.88a9a814.chunk.js)
+- [卡坦岛牌桌样式](https://fe-1255520126.file.myqcloud.com/game/static/css/ktd.4f080489.chunk.css)
+- [毒药规则和界面](https://fe-1255520126.file.myqcloud.com/game/static/js/dy.627c39cb.chunk.js)
+- [毒药牌面样式](https://fe-1255520126.file.myqcloud.com/game/static/css/dy.cf86b4c7.chunk.css)
 - [UNO 资源](https://fe-1255520126.file.myqcloud.com/game/static/js/uno.b93c4f09.chunk.js)
 - [四国弑资源](https://fe-1255520126.file.myqcloud.com/game/static/js/sgs.906041c4.chunk.js)
 - [飞行棋资源](https://fe-1255520126.file.myqcloud.com/game/static/js/fxq.3c7c1a54.chunk.js)

@@ -9,7 +9,9 @@ export function GameCommands({
   act,
   registry,
   bindings,
+  pending = false,
 }: {
+  pending?: boolean;
   snapshot: Snapshot;
   act: (action: Action) => void;
   registry: CommandRegistry;
@@ -18,8 +20,8 @@ export function GameCommands({
   const choices = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(0);
-  const latest = useRef({ snapshot, act, selected, open });
-  latest.current = { snapshot, act, selected, open };
+  const latest = useRef({ snapshot, act, selected, open, pending });
+  latest.current = { snapshot, act, selected, open, pending };
   useEffect(() => {
     setSelected(0);
   }, [snapshot.version]);
@@ -59,6 +61,7 @@ export function GameCommands({
           latest.current.open &&
           !!latest.current.snapshot.candidates[latest.current.selected],
         run: () => {
+          if (latest.current.pending) return;
           const { snapshot, selected, act } = latest.current;
           act(snapshot.candidates[selected].action);
           setOpen(false);
@@ -68,9 +71,11 @@ export function GameCommands({
     const quick =
       kind === "uno"
         ? { type: "uno-draw", title: "摸牌 / 不出", binding: "D" }
-        : kind === "fxq"
-          ? { type: "fxq-roll", title: "掷骰", binding: "D" }
-          : null;
+        : kind === "ktd"
+          ? { type: "ktd-action", title: "掷骰", binding: "D" }
+          : kind === "fxq"
+            ? { type: "fxq-roll", title: "掷骰", binding: "D" }
+            : null;
     if (quick)
       entries.push({
         id: `${kind}.${quick.type}`,
@@ -79,11 +84,18 @@ export function GameCommands({
         enabled: () =>
           !latest.current.open &&
           latest.current.snapshot.candidates.some(
-            (candidate) => candidate.action.type === quick.type,
+            (candidate) =>
+              candidate.action.type === quick.type &&
+              (candidate.action.type !== "ktd-action" ||
+                candidate.action.move.kind === "roll"),
           ),
         run: () => {
+          if (latest.current.pending) return;
           const candidate = latest.current.snapshot.candidates.find(
-            (candidate) => candidate.action.type === quick.type,
+            (candidate) =>
+              candidate.action.type === quick.type &&
+              (candidate.action.type !== "ktd-action" ||
+                candidate.action.move.kind === "roll"),
           );
           if (candidate) latest.current.act(candidate.action);
         },
@@ -142,9 +154,10 @@ export function GameCommands({
               </div>
               <button
                 className="primary-button"
+                disabled={pending}
                 onClick={() => {
                   const candidate = snapshot.candidates[selected];
-                  if (candidate) {
+                  if (candidate && !pending) {
                     act(candidate.action);
                     setOpen(false);
                   }

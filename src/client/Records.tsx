@@ -88,6 +88,9 @@ export function Records({
           config: selected.config,
           version: step,
           actor,
+          canManage: false,
+          playing: false,
+          host: null,
           seats: selected.names.map((name, index) => ({
             id: `replay:${index}`,
             name,
@@ -97,6 +100,8 @@ export function Records({
           })),
           state: engine.project(frames[step], actor),
           candidates: [],
+          computation: null,
+          aiPaused: false,
           chat: [],
           chatSequence: 0,
           chatTotals: {},
@@ -242,7 +247,12 @@ export function Records({
             <p>正在重放…</p>
           ) : (
             preview && (
-              <OriginalGame snapshot={preview} act={() => {}} end={() => {}} />
+              <OriginalGame
+                replay
+                snapshot={preview}
+                act={() => {}}
+                end={() => {}}
+              />
             )
           )}
         </Panel>

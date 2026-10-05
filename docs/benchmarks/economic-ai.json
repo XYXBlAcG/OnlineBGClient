@@ -1,0 +1,169 @@
+{
+  "date": "2026-10-05",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "processor": "Apple M1",
+  "seed": "fixed-benchmark",
+  "audit": false,
+  "comparison": "Completed root search samples within the same hard thinking budget; no win-rate measurement.",
+  "results": {
+    "ktd": [
+      {
+        "cores": 8,
+        "game": "ktd",
+        "fixture": "seeded setup with supply-conserving rich build turn",
+        "difficulty": "hard"
+      },
+      {
+        "threads": 1,
+        "milliseconds": [
+          2002,
+          2008,
+          2001
+        ],
+        "action": {
+          "type": "ktd-action",
+          "move": {
+            "kind": "build",
+            "building": "city",
+            "id": 49
+          }
+        },
+        "simulations": [
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "threads": 4,
+        "milliseconds": [
+          2002,
+          2002,
+          2004
+        ],
+        "action": {
+          "type": "ktd-action",
+          "move": {
+            "kind": "build",
+            "building": "city",
+            "id": 49
+          }
+        },
+        "simulations": [
+          12,
+          12,
+          12
+        ]
+      },
+      {
+        "threads": 8,
+        "milliseconds": [
+          2002,
+          2002,
+          2002
+        ],
+        "action": {
+          "type": "ktd-action",
+          "move": {
+            "kind": "build",
+            "building": "city",
+            "id": 49
+          }
+        },
+        "simulations": [
+          16,
+          16,
+          16
+        ]
+      },
+      {
+        "audit": false,
+        "milliseconds": 2002
+      },
+      {
+        "audit": true,
+        "milliseconds": 2007
+      }
+    ],
+    "ccbs": [
+      {
+        "cores": 8,
+        "game": "ccbs",
+        "fixture": "seeded six-action position",
+        "difficulty": "hard"
+      },
+      {
+        "threads": 1,
+        "milliseconds": [
+          2002,
+          2001,
+          2001
+        ],
+        "action": {
+          "type": "ccbs-action",
+          "move": {
+            "kind": "book",
+            "cardId": 33,
+            "pos": 1
+          }
+        },
+        "simulations": [
+          13,
+          12,
+          12
+        ]
+      },
+      {
+        "threads": 4,
+        "milliseconds": [
+          2001,
+          2001,
+          2002
+        ],
+        "action": {
+          "type": "ccbs-action",
+          "move": {
+            "kind": "book",
+            "cardId": 33,
+            "pos": 1
+          }
+        },
+        "simulations": [
+          40,
+          36,
+          36
+        ]
+      },
+      {
+        "threads": 8,
+        "milliseconds": [
+          2009,
+          2003,
+          2002
+        ],
+        "action": {
+          "type": "ccbs-action",
+          "move": {
+            "kind": "book",
+            "cardId": 33,
+            "pos": 1
+          }
+        },
+        "simulations": [
+          32,
+          32,
+          32
+        ]
+      },
+      {
+        "audit": false,
+        "milliseconds": 2002
+      },
+      {
+        "audit": true,
+        "milliseconds": 2004
+      }
+    ]
+  }
+}

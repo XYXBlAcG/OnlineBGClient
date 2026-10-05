@@ -8,7 +8,7 @@ type Exports = Record<string, any>;
 type Factory = (module: { exports: Exports }, exports: Exports, require: any) => void;
 
 export class UpstreamRuntime {
-  bridge: { sink?: (action: unknown) => void; heroCard?: React.ComponentType<any>; interact?: (target:number,kind:any)=>void } = {};
+  bridge: { mapViewport?: React.ComponentType<any>; catanIntent?: (previous: any, next: any, actor: number) => unknown; readOnly?: boolean; avatar?: React.ComponentType<any>; avatarContext?: Record<string, unknown>; sink?: (action: unknown) => void; heroCard?: React.ComponentType<any>; trickCard?: React.ComponentType<any>; } = {};
   private cache = new Map<number, Exports>();
   random: () => number = Math.random;
 
@@ -62,6 +62,14 @@ export class UpstreamRuntime {
     if (!factory) throw new Error(`Missing Hullqin module ${id}`);
     factory(module, exports, this.require);
     let result = module.exports;
+    if (id === 4595) {
+      const Button = result.Z;
+      result = {...result, Z: (props:any) => this.bridge.readOnly && props.onClick ? null : React.createElement(Button,props)};
+    }
+    if (id === 7992) {
+      const OriginalAvatar = result.ZP;
+      result = {...result, ZP: (props: any) => React.createElement(this.bridge.avatar || OriginalAvatar, {...props, ...this.bridge.avatarContext})};
+    }
     if (id === 6435) result = new Proxy(result, { get: (target, key: string) => {
       const operation = target[key];
       if (!['Lk', 'Ih', 'yS', 'o7'].includes(key)) return operation;

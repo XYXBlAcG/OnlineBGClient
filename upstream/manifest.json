@@ -1,6 +1,6 @@
 {
   "origin": "https://game.hullqin.cn/",
-  "captured": "2026-10-04",
+  "captured": "2026-10-05",
   "sources": [
     {
       "path": "upstream/raw/vendor.js",
@@ -29,12 +29,47 @@
     {
       "path": "upstream/raw/ddz.js",
       "sha256": "60a102f3ccfc43fc0ba2caa93c4fa62a00bc1308cc40c1607456bd27a7ae3884"
+    },
+    {
+      "path": "upstream/raw/dy.js",
+      "sha256": "ffac1188ae9caefe9b677d63359c7987d9bc1cc3776c8171954daec4029ab4ab"
+    },
+    {
+      "path": "upstream/raw/ktd.js",
+      "sha256": "a36a8c7c182bf5116114ded64ba9fa6509e51ca39b8eb411a1a7c22185c01f46"
+    },
+    {
+      "path": "upstream/raw/ccbs.js",
+      "sha256": "ddcf9fed092c999a2414ceccdf53b9cc84fd51b6efb1700bd0b338f2e73fcce3"
+    },
+    {
+      "path": "public/upstream/dy.css",
+      "sha256": "8589428d01b3ef1aa4f9380c8c6272dcafba4af313c92dff728dee42c5e20fe6"
+    },
+    {
+      "path": "public/upstream/ktd.css",
+      "sha256": "ff4a5eba03195def1a5e5c1eb5286bd961e548c41c68335cd8070e00dc8211ad"
+    },
+    {
+      "path": "public/upstream/ccbs.css",
+      "sha256": "f5ba7dfc136de192ebc90c776bad4670cd9c5eece136350d93a74e98b2ff3a7e"
+    },
+    {
+      "path": "public/upstream/ccbs-cards.webp",
+      "sha256": "3af9a522c9c7e89a51d8b9b44784bcd69fa9313ec2ed46ccb0955888a76a27fc"
+    },
+    {
+      "path": "public/upstream/ccbs-nobles.webp",
+      "sha256": "16a9ff59c39decd94f4881cdcfd591f01bc33cc8f1f186c69c60533afa21df82"
     }
   ],
   "modules": [
-    6544,
+    7902,
+    885,
+    181,
+    907,
     5982,
-    9474,
+    3515,
     7710,
     9488,
     8050,
@@ -53,21 +88,39 @@
     7523,
     1331,
     3107,
-    6139,
-    885,
-    181,
-    907,
-    7762,
-    2982,
-    5911,
+    1124,
     1413,
     4942,
-    7992,
-    3299,
+    2982,
+    7698,
+    3797,
+    3329,
     4595,
     7890,
     5216,
     9466,
+    7762,
+    7992,
+    3299,
+    9414,
+    4962,
+    2262,
+    2078,
+    738,
+    6634,
+    4929,
+    552,
+    9796,
+    6805,
+    6912,
+    4591,
+    3405,
+    4473,
+    2437,
+    6544,
+    9474,
+    6139,
+    5911,
     3861,
     6135,
     7707,
@@ -81,20 +134,16 @@
     1983,
     8280,
     5051,
-    3329,
     575,
     7002,
     6359,
     5042,
     7448,
     6630,
-    4929,
     4062,
-    4591,
     1621,
     1529,
     5328,
-    4962,
     1817
   ]
 }

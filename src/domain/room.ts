@@ -1,3 +1,8 @@
+import type {
+  AiComputation,
+  ComputeProgress,
+  PerformanceSettings,
+} from "./performance";
 import type { ChatContent, InteractionEvent, InteractionKind } from "./social";
 import { gameCatalogue } from "./catalogue";
 import { Replay, type ReplayRecord } from "./replay";
@@ -10,17 +15,36 @@ import {
   type ChatMessage,
   type DecisionSummary,
   type RoomConfig,
+  type RoomSetup,
   type Snapshot,
   type SeatConfig,
 } from "./protocol";
-import type { Action, Decision, GameKind, GameState, Seat } from "./types";
+import type { Action, AiResult, Decision, GameState, Seat } from "./types";
 
 export class Room {
   readonly engine = new GameEngine();
   readonly config: RoomConfig;
   readonly seats: Seat[];
   readonly seed: string;
+  host: { id: string; name: string; token: string; online: boolean } | null =
+    null;
+  private projection = new Map<
+    number,
+    {
+      version: number;
+      paused: boolean;
+      state: GameState | null;
+      candidates: Snapshot["candidates"];
+    }
+  >();
   state: GameState | null = null;
+  private computation: AiComputation | null = null;
+  private totals = {
+    completedDecisions: 0,
+    totalElapsedMs: 0,
+    totalSimulations: 0,
+  };
+  aiPaused = false;
   version = 0;
   private messageSequence = 0;
   private messageTotals: Record<string, number> = {};
@@ -36,7 +60,7 @@ export class Room {
   private lastMoveAt = 0;
   private replay: ReplayRecord | null = null;
   private records: ReplayRecord[] = [];
-  private queued: { decision: Decision; version: number } | null = null;
+  private queued: { decision: AiResult; version: number } | null = null;
 
   constructor(
     readonly id: string,
@@ -66,9 +90,24 @@ export class Room {
     ];
   }
 
+  createHost(name: string): string {
+    if (this.host || this.seats.some((seat) => seat.token))
+      throw new Error("房间已存在身份");
+    this.host = {
+      id: crypto.randomUUID(),
+      name,
+      token: crypto.randomUUID(),
+      online: true,
+    };
+    return this.host.token;
+  }
+  canManage(token: string): boolean {
+    return this.identity(token) <= 0;
+  }
   claim(name: string, token?: string): string {
     if (token) {
-      const seat = this.seats[this.identity(token)];
+      const actor = this.identity(token);
+      const seat = actor < 0 ? this.host! : this.seats[actor];
       seat.online = true;
       return token;
     }
@@ -87,11 +126,12 @@ export class Room {
   }
 
   disconnect(token: string): void {
-    this.seats[this.identity(token)].online = false;
+    const actor = this.identity(token);
+    (actor < 0 ? this.host! : this.seats[actor]).online = false;
   }
 
   start(token: string): void {
-    if (this.identity(token) !== 0) throw new Error("只有房主可以开始或重开");
+    if (!this.canManage(token)) throw new Error("只有房主可以开始或重开");
     if (this.seats.some((seat) => !seat.difficulty && !seat.token))
       throw new Error("等待真人玩家加入");
     if (this.state && !this.ended && !this.engine.finished(this.state))
@@ -126,6 +166,13 @@ export class Room {
     this.roundVersion = this.version;
     this.decisions = [];
     this.summaries = [];
+    this.computation = null;
+    this.totals = {
+      completedDecisions: 0,
+      totalElapsedMs: 0,
+      totalSimulations: 0,
+    };
+    this.aiPaused = false;
     this.resolutionAt = 0;
     this.ended = false;
     this.lastMoveAt = Date.now();
@@ -133,36 +180,38 @@ export class Room {
   }
 
   end(token: string): void {
-    if (this.identity(token) !== 0) throw new Error("只有房主可以结束对局");
+    if (!this.canManage(token)) throw new Error("只有房主可以结束对局");
     this.ended = true;
     this.queued = null;
     this.version++;
   }
 
-  changeGame(token: string, kind: GameKind): void {
-    if (this.identity(token) !== 0) throw new Error("只有房主可以切换游戏");
-    if (kind === this.config.kind) return;
-    if (this.state && !this.ended && !this.engine.finished(this.state))
+  changeGame(token: string, setup: RoomSetup): void {
+    if (!this.canManage(token)) throw new Error("只有房主可以切换游戏");
+    if (
+      this.state &&
+      !this.ended &&
+      !this.engine.finished(this.state) &&
+      !setup.endCurrent
+    )
       throw new Error("请先结束当前对局再切换游戏");
-    const game = gameCatalogue[kind];
-    const occupied = this.seats.filter((seat) => !!seat.token);
+    const next = configSchema.parse(setup.config),
+      game = gameCatalogue[next.kind],
+      members = this.seats.filter((seat) => !!seat.token),
+      actual = members.map((seat) => seat.id!).sort();
+    if (JSON.stringify(actual) !== JSON.stringify([...setup.members].sort()))
+      throw new Error("房间成员已更新，请重新配置");
+    if (
+      (!this.host && !setup.retain.includes(this.seats[0].id!)) ||
+      new Set(setup.retain).size !== setup.retain.length ||
+      setup.retain.some((id) => !actual.includes(id))
+    )
+      throw new Error("保留玩家配置无效");
+    const occupied = members.filter((seat) => setup.retain.includes(seat.id!));
     if (occupied.length > game.maxPlayers)
       throw new Error("房间人数超过新游戏上限");
-    const total = Math.max(
-      game.minPlayers,
-      Math.min(this.seats.length, game.maxPlayers),
-    );
-    const humans = game.ai
-      ? Math.max(occupied.length, Math.min(this.config.humans, total))
-      : total;
-    const ai = game.ai ? this.config.ai.slice(0, total - humans) : [];
-    const next = configSchema.parse({
-      ...this.config,
-      kind,
-      humans: total - ai.length,
-      ai,
-      team: game.team && this.config.team,
-    });
+    if (occupied.length > next.humans)
+      throw new Error("保留真人超过真人席位数");
     const seats = Room.createSeats(next);
     occupied.forEach((seat, index) => {
       seats[index] = { ...seat, ready: index === 0 };
@@ -171,6 +220,8 @@ export class Room {
     Object.assign(this.config, next);
     this.seats.splice(0, this.seats.length, ...seats);
     this.state = null;
+    this.computation = null;
+    this.aiPaused = false;
     this.replay = null;
     this.decisions = [];
     this.summaries = [];
@@ -183,6 +234,7 @@ export class Room {
 
   act(token: string, id: string, version: number, action: Action): void {
     const actor = this.identity(token);
+    if (actor < 0) throw new Error("服务身份不参与游戏");
     const key = `${token}:${id}`;
     if (this.accepted.has(key)) return;
     if (
@@ -219,21 +271,22 @@ export class Room {
   chat(token: string, id: string, text: string): void {
     this.addMessage(token, id, { type: "text", text });
   }
-  sticker(token: string, id: string, asset: string, text: string): void {
-    this.addMessage(token, id, { type: "sticker", asset, text });
-  }
   private addMessage(token: string, id: string, content: ChatContent): void {
     const actor = this.identity(token);
     const key = `${token}:chat:${id}`;
     if (this.accepted.has(key)) return;
-    const sender = this.seats[actor].id!;
+    const member = actor < 0 ? this.host! : this.seats[actor];
+    const sender = member.id!;
     this.messageTotals[sender] = (this.messageTotals[sender] || 0) + 1;
     this.messages.push({
       ...content,
       id,
       sequence: ++this.messageSequence,
-      sender: this.seats[actor].id!,
-      name: seatDisplayName(this.seats[actor], actor, this.state),
+      sender,
+      name:
+        actor < 0
+          ? member.name
+          : seatDisplayName(this.seats[actor], actor, this.state),
       time: Date.now(),
     });
     if (this.messages.length > 200) this.messages.shift();
@@ -248,6 +301,7 @@ export class Room {
     kind: InteractionKind,
   ): InteractionEvent | undefined {
     const from = this.identity(token);
+    if (from < 0) throw new Error("服务身份不参与牌桌互动");
     if (
       !this.seats[target] ||
       (!this.seats[target].token && !this.seats[target].difficulty)
@@ -266,11 +320,13 @@ export class Room {
   }
 
   aiRequest(): {
+    tradeEnabled: boolean;
     observation: GameState;
     actor: number;
     difficulty: NonNullable<Seat["difficulty"]>;
     seed: string;
     version: number;
+    audit: boolean;
   } | null {
     if (
       !this.state ||
@@ -285,6 +341,8 @@ export class Room {
       .find((actor) => this.seats[actor].difficulty !== null);
     if (actor === undefined) return null;
     return {
+      tradeEnabled: this.config.catanTrades,
+      audit: this.config.auditEnabled,
       observation: this.engine.project(this.state, actor),
       actor,
       difficulty: this.seats[actor].difficulty!,
@@ -293,7 +351,7 @@ export class Room {
     };
   }
 
-  acceptDecision(decision: Decision, version: number): boolean {
+  acceptDecision(decision: AiResult, version: number): boolean {
     if (!this.state || this.ended || this.paused || version !== this.version)
       return false;
     this.state = this.engine.apply(
@@ -311,18 +369,21 @@ export class Room {
       seed: `${this.seed}:move:${this.version - 1}`,
       version: this.version,
     });
-    this.decisions.push(decision);
-    const chosen = decision.candidates.find(
-      (candidate) =>
-        JSON.stringify(candidate.action) === JSON.stringify(decision.chosen),
-    );
-    this.summaries.push({
-      actor: decision.actor,
-      label: chosen?.label || decision.chosen.type,
-      difficulty: decision.difficulty,
-      simulations: decision.simulations,
-      version: this.version,
-    });
+    if (this.config.auditEnabled && decision.audit) {
+      const audit = decision.audit;
+      this.decisions.push(audit);
+      const chosen = audit.candidates.find(
+        (candidate) =>
+          JSON.stringify(candidate.action) === JSON.stringify(decision.chosen),
+      );
+      this.summaries.push({
+        actor: decision.actor,
+        label: chosen?.label || decision.chosen.type,
+        difficulty: decision.difficulty,
+        simulations: decision.simulations,
+        version: this.version,
+      });
+    }
     this.updateResolution();
     return true;
   }
@@ -355,9 +416,32 @@ export class Room {
 
   snapshot(token: string): Snapshot {
     const actor = this.identity(token);
-    const state = this.state ? this.engine.project(this.state, actor) : null;
+    const paused = this.paused;
     const finished =
       this.ended || (this.state ? this.engine.finished(this.state) : false);
+    let projected = this.projection.get(actor);
+    if (
+      !projected ||
+      projected.version !== this.version ||
+      projected.paused !== paused
+    ) {
+      const state =
+        (actor >= 0 || (this.config.kind === "tq" && !this.config.humans)) &&
+        this.state &&
+        !this.ended
+          ? this.engine.project(this.state, actor)
+          : null;
+      projected = {
+        version: this.version,
+        paused,
+        state,
+        candidates:
+          actor >= 0 && state && !finished && !paused
+            ? this.engine.candidates(state, actor)
+            : [],
+      };
+      this.projection.set(actor, projected);
+    }
     return {
       apiVersion: protocolVersion,
       rulesVersion: gameCatalogue[this.config.kind].version,
@@ -366,6 +450,11 @@ export class Room {
       config: this.config,
       version: this.version,
       actor,
+      canManage: this.canManage(token),
+      playing: !!this.state && !finished,
+      host: this.host
+        ? { id: this.host.id, name: this.host.name, online: this.host.online }
+        : null,
       seats: this.seats.map((seat, index) => ({
         id: seat.id || `ai:${index}`,
         name: seatDisplayName(seat, index, this.state),
@@ -373,11 +462,10 @@ export class Room {
         online: seat.online,
         ready: seat.ready,
       })),
-      state: this.ended ? null : state,
-      candidates:
-        state && !finished && !this.paused
-          ? this.engine.candidates(state, actor)
-          : [],
+      state: projected.state,
+      candidates: projected.candidates,
+      computation: this.computation,
+      aiPaused: this.aiPaused,
       chat: this.messages,
       chatSequence: this.messageSequence,
       chatTotals: this.messageTotals,
@@ -391,12 +479,58 @@ export class Room {
     };
   }
 
+  setAiRunning(token: string, enabled: boolean): void {
+    if (!this.canManage(token) || this.config.humans)
+      throw new Error("仅全 AI 房主可以控制测试");
+    this.aiPaused = !enabled;
+    this.queued = null;
+    this.version++;
+  }
+  updateComputation(
+    actor: number,
+    version: number,
+    progress: ComputeProgress,
+  ): boolean {
+    if (version !== this.version || this.ended || this.paused) return false;
+    const previous = this.computation;
+    const completed =
+      progress.status === "completed" &&
+      !(previous?.version === version && previous.status === "completed");
+    if (completed) {
+      this.totals.completedDecisions++;
+      this.totals.totalElapsedMs += progress.elapsedMs;
+      this.totals.totalSimulations += progress.simulations;
+    }
+    this.computation = { ...progress, actor, version, ...this.totals };
+    return true;
+  }
+  setComputation(
+    token: string,
+    audit: boolean,
+    performance: PerformanceSettings,
+  ): void {
+    if (!this.canManage(token)) throw new Error("只有房主可以调整计算与记录");
+    if (
+      this.config.auditEnabled === audit &&
+      JSON.stringify(this.config.performance) === JSON.stringify(performance)
+    )
+      return;
+    this.config.auditEnabled = audit;
+    this.config.performance = performance;
+    if (!audit) {
+      this.decisions = [];
+      this.summaries = [];
+    }
+    this.queued = null;
+    this.version++;
+  }
+
   setTempo(token: string, delayMs: number): void {
-    if (this.identity(token) !== 0) throw new Error("只有房主可以调整节奏");
+    if (!this.canManage(token)) throw new Error("只有房主可以调整节奏");
     this.config.aiDelayMs = delayMs;
   }
 
-  queueDecision(decision: Decision, version: number): boolean {
+  queueDecision(decision: AiResult, version: number): boolean {
     if (!this.state || this.ended || this.queued || version !== this.version)
       return false;
     this.queued = { decision, version };
@@ -416,6 +550,7 @@ export class Room {
   }
 
   identity(token: string): number {
+    if (this.host?.token === token) return -1;
     const actor = this.seats.findIndex((seat) => seat.token === token);
     if (actor < 0) throw new Error("房间身份无效");
     return actor;
@@ -426,18 +561,21 @@ export class Room {
       !!this.state &&
       !this.ended &&
       !this.engine.finished(this.state) &&
-      this.seats.some((seat) => !seat.difficulty && !seat.online)
+      (this.aiPaused ||
+        this.seats.some((seat) => !seat.difficulty && !seat.online))
     );
   }
   setReady(token: string, ready: boolean): void {
-    const seat = this.seats[this.identity(token)];
+    const actor = this.identity(token);
+    if (actor < 0) throw new Error("服务身份不参与准备");
+    const seat = this.seats[actor];
     if (this.state && !this.ended && !this.engine.finished(this.state))
       throw new Error("对局中不能更改准备状态");
     seat.ready = ready;
   }
   leave(token: string): void {
     const actor = this.identity(token);
-    if (actor === 0) throw new Error("房主需要关闭房间");
+    if (actor <= 0) throw new Error("房主需要关闭房间");
     if (this.state && !this.ended && !this.engine.finished(this.state))
       throw new Error("请先结束对局再离开");
     if (this.seats[actor].id) delete this.messageTotals[this.seats[actor].id!];
@@ -449,7 +587,7 @@ export class Room {
     };
   }
   configureSeat(token: string, index: number, config: SeatConfig): void {
-    if (this.identity(token) !== 0) throw new Error("只有房主可以调整席位");
+    if (!this.canManage(token)) throw new Error("只有房主可以调整席位");
     if (this.state && !this.ended && !this.engine.finished(this.state))
       throw new Error("对局中不能调整席位");
     const seat = this.seats[index];
@@ -482,6 +620,7 @@ export class Room {
       seed: this.seed,
       config: this.config,
       seats: this.seats,
+      host: this.host,
       version: this.version,
       roundVersion: this.roundVersion,
       ended: this.ended,
@@ -520,6 +659,7 @@ export class Room {
       room.seats.length,
       ...archive.seats.map((seat) => ({ ...seat, online: !!seat.difficulty })),
     );
+    room.host = archive.host ? { ...archive.host, online: false } : null;
     room.version = archive.version;
     room.roundVersion = archive.roundVersion;
     room.ended = archive.ended;
@@ -528,8 +668,8 @@ export class Room {
     room.messages = archive.messages;
     room.messageSequence = archive.messageSequence;
     room.messageTotals = archive.messageTotals;
-    room.decisions = archive.decisions;
-    room.summaries = archive.summaries;
+    room.decisions = room.config.auditEnabled ? archive.decisions : [];
+    room.summaries = room.config.auditEnabled ? archive.summaries : [];
     room.accepted = new Set(archive.accepted);
     if (archive.replay)
       room.state = new Replay(archive.replay).frames().at(-1)!;
@@ -552,6 +692,7 @@ export interface RoomArchive {
   seed: string;
   config: RoomConfig;
   seats: Seat[];
+  host?: Room["host"];
   version: number;
   roundVersion: number;
   ended: boolean;

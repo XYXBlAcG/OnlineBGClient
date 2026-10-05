@@ -1,7 +1,6 @@
-import { useMemo, useState, type ReactNode } from "react";
-import * as Tooltip from "@radix-ui/react-tooltip";
+import { useMemo, type ReactNode } from "react";
 import { HeroGuides, type HeroGuide } from "../domain/hero-guide";
-import { Panel } from "./ui/Controls";
+import { DetailSurface } from "./DetailSurface";
 
 export function HeroDescription({ hero }: { hero: HeroGuide }) {
   return (
@@ -31,43 +30,21 @@ export function HeroSurface({
   id: number;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   const hero = useMemo(() => new HeroGuides().get(id), [id]);
   return (
-    <Tooltip.Provider delayDuration={300}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>
-          <div
-            className="hero-surface"
-            tabIndex={0}
-            aria-label={`${hero.name}武将牌`}
-          >
-            {children}
-            <button
-              className="hero-detail-button"
-              aria-label={`查看${hero.name}技能`}
-              onClick={(event) => {
-                event.stopPropagation();
-                setOpen(true);
-              }}
-            >
-              ⓘ
-            </button>
-          </div>
-        </Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Content
-            className="ui-tooltip"
-            sideOffset={8}
-            collisionPadding={12}
-          >
-            <HeroDescription hero={hero} />
-          </Tooltip.Content>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-      <Panel title={`${hero.name} · 技能`} open={open} onOpenChange={setOpen}>
-        <HeroDescription hero={hero} />
-      </Panel>
-    </Tooltip.Provider>
+    <DetailSurface
+      label={`${hero.name}武将牌`}
+      title={`${hero.name} · 技能`}
+      buttonLabel={`查看${hero.name}技能`}
+      buttonClassName="hero-detail-button"
+      description={<HeroDescription hero={hero} />}
+    >
+      {(button) => (
+        <div className="hero-surface">
+          {children}
+          {button}
+        </div>
+      )}
+    </DetailSurface>
   );
 }

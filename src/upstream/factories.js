@@ -1,4 +1,8609 @@
 export default {
+7902: function (n, e, t) {
+  var companionBridge = t.bridge;
+  t.r(e);
+  var r = t(885),
+    a = t(7313),
+    i = t(5982),
+    c = t(3953),
+    o = t(3515),
+    l = t(1124),
+    s = t(4595),
+    u = t(7992),
+    d = t(9414),
+    f = t(2262),
+    h = t(6417);
+  function p(n) {
+    var e = Math.min(n, l.R$),
+      t = Math.floor(e / 60),
+      r = e % 60,
+      a = "".concat(t, ":").concat(String(r).padStart(2, "0"));
+    return e >= l.R$ ? "".concat(a, "+") : a;
+  }
+  e.default = function (n) {
+    var e = n.room,
+      t = n.game,
+      m = n.send,
+      v = t.version,
+      b = o.d4.decode(t.data),
+      y = n.view,
+      w = !!e.position,
+      g = w ? e.position - 1 : null,
+      x = e.position === e.owner,
+      k = w && (0, u.Yw)(e, y.waitFor) ? y.waitFor : null,
+      j = !!y.enableCt,
+      N = !!y.winner.length,
+      C = N ? null : (0, l.g$)(y),
+      O = (0, a.useState)(0),
+      Z = (0, r.Z)(O, 2)[1];
+    (0, a.useEffect)(function () {
+      if (j && !N) {
+        var n = setInterval(function () {
+          return Z(function (n) {
+            return n + 1;
+          });
+        }, 1e3);
+        return function () {
+          return clearInterval(n);
+        };
+      }
+    }, [j, N]);
+    var E = (0, a.useRef)({
+      version: t.version,
+      at: e.create + t.time
+    });
+    E.current.version !== t.version && (E.current = {
+      version: t.version,
+      at: Date.now()
+    });
+    var L = function (n) {
+        var e = y.costs[n] || 0;
+        return y.ptOwner === n && (e += Math.max(0, Math.floor(t.time / 1e3) - y.pt)), C === n && (e += Math.max(0, Math.floor((Date.now() - E.current.at) / 1e3))), e;
+      },
+      A = (0, a.useRef)({
+        version: v,
+        pending: !1
+      });
+    return A.current.version !== v && (A.current = {
+      version: v,
+      pending: !1
+    }), (0, c.N)([]), (0, h.jsxs)(h.Fragment, {
+      children: [x && (0, h.jsx)("div", {
+        className: "button-container",
+        children: (0, h.jsx)("div", {
+          className: "button-right",
+          children: (0, h.jsx)(s.Z, {
+            small: !0,
+            onClick: function () {
+              return (0, c.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
+                return m(i.Z.OwnerExitGame, {
+                  data: o.d4.encode(y.enableCt ? {
+                    ct: new Uint8Array([1])
+                  } : {}).finish()
+                });
+              });
+            },
+            children: "\u7ed3\u675f\u6e38\u620f"
+          })
+        })
+      }), (0, h.jsx)(f.Z, {
+        view: y,
+        playerId: g,
+        readOnly: !w,
+        onAction: function (move) {
+          if (!companionBridge.readOnly && g !== null && !A.current.pending) {
+            A.current.pending = true;
+            companionBridge.sink({
+              type: "ccbs-action",
+              move: move
+            });
+          }
+        },
+        version: v,
+        afkPlayerId: k,
+        renderSeat: function (n) {
+          return (0, h.jsxs)(h.Fragment, {
+            children: [(0, h.jsx)(u.ZP, {
+              room: e,
+              index: n,
+              send: m,
+              isTurn: !N && y.waitFor === n
+            }), j && (0, h.jsx)("div", {
+              className: "text-xs whitespace-nowrap",
+              children: "\u23f1 ".concat(p(L(n)))
+            })]
+          });
+        }
+      }), N && y.initial && (0, h.jsx)("div", {
+        className: "text-center mt-4",
+        children: (0, h.jsx)(s.Z, {
+          to: "/ccbs".concat((0, d.HF)(y)),
+          children: "\u67e5\u770b\u5bf9\u5c40\u590d\u76d8"
+        })
+      })]
+    });
+  };
+},
+885: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    Z: function () {
+      return a;
+    }
+  });
+  var r = n(181);
+  function a(e, t) {
+    return function (e) {
+      if (Array.isArray(e)) return e;
+    }(e) || function (e, t) {
+      var n = null == e ? null : "undefined" !== typeof Symbol && e[Symbol.iterator] || e["@@iterator"];
+      if (null != n) {
+        var r,
+          a,
+          l = [],
+          o = !0,
+          i = !1;
+        try {
+          for (n = n.call(e); !(o = (r = n.next()).done) && (l.push(r.value), !t || l.length !== t); o = !0);
+        } catch (u) {
+          i = !0, a = u;
+        } finally {
+          try {
+            o || null == n.return || n.return();
+          } finally {
+            if (i) throw a;
+          }
+        }
+        return l;
+      }
+    }(e, t) || (0, r.Z)(e, t) || function () {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }();
+  }
+},
+181: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    Z: function () {
+      return a;
+    }
+  });
+  var r = n(907);
+  function a(e, t) {
+    if (e) {
+      if ("string" === typeof e) return (0, r.Z)(e, t);
+      var n = Object.prototype.toString.call(e).slice(8, -1);
+      return "Object" === n && e.constructor && (n = e.constructor.name), "Map" === n || "Set" === n ? Array.from(e) : "Arguments" === n || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? (0, r.Z)(e, t) : void 0;
+    }
+  }
+},
+907: function (e, t, n) {
+  "use strict";
+
+  function r(e, t) {
+    (null == t || t > e.length) && (t = e.length);
+    for (var n = 0, r = new Array(t); n < t; n++) r[n] = e[n];
+    return r;
+  }
+  n.d(t, {
+    Z: function () {
+      return r;
+    }
+  });
+},
+5982: function (e, t, n) {
+  "use strict";
+
+  var i, a;
+  n.d(t, {
+    Z: function () {
+      return i;
+    },
+    q: function () {
+      return a;
+    }
+  }), function (e) {
+    e[e.PlayerUpdateGameData = 0] = "PlayerUpdateGameData", e[e.VisitorJoinGame = 1] = "VisitorJoinGame", e[e.PlayerUpdateUserInfo = 2] = "PlayerUpdateUserInfo", e[e.PlayerChangeSeat = 3] = "PlayerChangeSeat", e[e.OwnerStartGame = 4] = "OwnerStartGame", e[e.OwnerExitGame = 5] = "OwnerExitGame", e[e.OwnerChangePlayerCount = 6] = "OwnerChangePlayerCount", e[e.OwnerKickOut = 7] = "OwnerKickOut", e[e.OwnerUpdateGameData = 9] = "OwnerUpdateGameData", e[e.PlayerUpdatePlayerData = 10] = "PlayerUpdatePlayerData", e[e.PlayerInteraction = 11] = "PlayerInteraction";
+  }(i || (i = {})), function (e) {
+    e[e.UpdateGameData = 0] = "UpdateGameData", e[e.UpdatePlayerOffline = 1] = "UpdatePlayerOffline", e[e.UpdatePlayerData = 2] = "UpdatePlayerData", e[e.UpdatePlayerState = 3] = "UpdatePlayerState", e[e.ShowPlayerInteraction = 4] = "ShowPlayerInteraction", e[e.UpdateVisitorCount = 5] = "UpdateVisitorCount";
+  }(a || (a = {}));
+},
+3515: function (n, e, t) {
+  t.d(e, {
+    d4: function () {
+      return l;
+    }
+  });
+  var r = t(7710),
+    a = r.Reader,
+    i = r.Writer,
+    c = r.util,
+    o = r.roots.default || (r.roots.default = {}),
+    l = (o.CCBSOperation = function () {
+      function n(n) {
+        if (this.noble = [], this.noblePos = [], this.gemDelta = [], n) for (var e = Object.keys(n), t = 0; t < e.length; ++t) null != n[e[t]] && (this[e[t]] = n[e[t]]);
+      }
+      return n.prototype.type = 0, n.prototype.playerId = 0, n.prototype.card = 0, n.prototype.cardPos = 0, n.prototype.noble = c.emptyArray, n.prototype.noblePos = c.emptyArray, n.prototype.gemDelta = c.emptyArray, n.encode = function (n, e) {
+        if (e || (e = i.create()), null != n.type && Object.hasOwnProperty.call(n, "type") && e.uint32(8).uint32(n.type), null != n.playerId && Object.hasOwnProperty.call(n, "playerId") && e.uint32(16).uint32(n.playerId), null != n.card && Object.hasOwnProperty.call(n, "card") && e.uint32(24).uint32(n.card), null != n.cardPos && Object.hasOwnProperty.call(n, "cardPos") && e.uint32(32).uint32(n.cardPos), null != n.noble && n.noble.length) {
+          e.uint32(42).fork();
+          for (var t = 0; t < n.noble.length; ++t) e.uint32(n.noble[t]);
+          e.ldelim();
+        }
+        if (null != n.noblePos && n.noblePos.length) {
+          e.uint32(50).fork();
+          for (t = 0; t < n.noblePos.length; ++t) e.uint32(n.noblePos[t]);
+          e.ldelim();
+        }
+        if (null != n.gemDelta && n.gemDelta.length) {
+          e.uint32(58).fork();
+          for (t = 0; t < n.gemDelta.length; ++t) e.uint32(n.gemDelta[t]);
+          e.ldelim();
+        }
+        return e;
+      }, n.decode = function (n, e) {
+        n instanceof a || (n = a.create(n));
+        for (var t = void 0 === e ? n.len : n.pos + e, r = new o.CCBSOperation(); n.pos < t;) {
+          var i = n.uint32();
+          switch (i >>> 3) {
+            case 1:
+              r.type = n.uint32();
+              break;
+            case 2:
+              r.playerId = n.uint32();
+              break;
+            case 3:
+              r.card = n.uint32();
+              break;
+            case 4:
+              r.cardPos = n.uint32();
+              break;
+            case 5:
+              if (r.noble && r.noble.length || (r.noble = []), 2 === (7 & i)) for (var c = n.uint32() + n.pos; n.pos < c;) r.noble.push(n.uint32());else r.noble.push(n.uint32());
+              break;
+            case 6:
+              if (r.noblePos && r.noblePos.length || (r.noblePos = []), 2 === (7 & i)) for (c = n.uint32() + n.pos; n.pos < c;) r.noblePos.push(n.uint32());else r.noblePos.push(n.uint32());
+              break;
+            case 7:
+              if (r.gemDelta && r.gemDelta.length || (r.gemDelta = []), 2 === (7 & i)) for (c = n.uint32() + n.pos; n.pos < c;) r.gemDelta.push(n.uint32());else r.gemDelta.push(n.uint32());
+              break;
+            default:
+              n.skipType(7 & i);
+          }
+        }
+        return r;
+      }, n;
+    }(), o.CCBSGameData = function () {
+      function n(n) {
+        if (this.cardList = [], this.nobleList = [], n) for (var e = Object.keys(n), t = 0; t < e.length; ++t) null != n[e[t]] && (this[e[t]] = n[e[t]]);
+      }
+      return n.prototype.state = 0, n.prototype.cardList = c.emptyArray, n.prototype.nobleList = c.emptyArray, n.prototype.gem = c.newBuffer([]), n.prototype.lastOp = null, n.prototype.ct = c.newBuffer([]), n.prototype.initial = c.newBuffer([]), n.prototype.records = c.newBuffer([]), n.encode = function (n, e) {
+        if (e || (e = i.create()), null != n.state && Object.hasOwnProperty.call(n, "state") && e.uint32(8).uint32(n.state), null != n.cardList && n.cardList.length) {
+          e.uint32(18).fork();
+          for (var t = 0; t < n.cardList.length; ++t) e.uint32(n.cardList[t]);
+          e.ldelim();
+        }
+        if (null != n.nobleList && n.nobleList.length) {
+          e.uint32(26).fork();
+          for (t = 0; t < n.nobleList.length; ++t) e.uint32(n.nobleList[t]);
+          e.ldelim();
+        }
+        return null != n.gem && Object.hasOwnProperty.call(n, "gem") && e.uint32(34).bytes(n.gem), null != n.lastOp && Object.hasOwnProperty.call(n, "lastOp") && o.CCBSOperation.encode(n.lastOp, e.uint32(42).fork()).ldelim(), null != n.ct && Object.hasOwnProperty.call(n, "ct") && e.uint32(50).bytes(n.ct), null != n.initial && Object.hasOwnProperty.call(n, "initial") && e.uint32(58).bytes(n.initial), null != n.records && Object.hasOwnProperty.call(n, "records") && e.uint32(66).bytes(n.records), e;
+      }, n.decode = function (n, e) {
+        n instanceof a || (n = a.create(n));
+        for (var t = void 0 === e ? n.len : n.pos + e, r = new o.CCBSGameData(); n.pos < t;) {
+          var i = n.uint32();
+          switch (i >>> 3) {
+            case 1:
+              r.state = n.uint32();
+              break;
+            case 2:
+              if (r.cardList && r.cardList.length || (r.cardList = []), 2 === (7 & i)) for (var c = n.uint32() + n.pos; n.pos < c;) r.cardList.push(n.uint32());else r.cardList.push(n.uint32());
+              break;
+            case 3:
+              if (r.nobleList && r.nobleList.length || (r.nobleList = []), 2 === (7 & i)) for (c = n.uint32() + n.pos; n.pos < c;) r.nobleList.push(n.uint32());else r.nobleList.push(n.uint32());
+              break;
+            case 4:
+              r.gem = n.bytes();
+              break;
+            case 5:
+              r.lastOp = o.CCBSOperation.decode(n, n.uint32());
+              break;
+            case 6:
+              r.ct = n.bytes();
+              break;
+            case 7:
+              r.initial = n.bytes();
+              break;
+            case 8:
+              r.records = n.bytes();
+              break;
+            default:
+              n.skipType(7 & i);
+          }
+        }
+        return r;
+      }, n;
+    }());
+},
+7710: function (e, t, n) {
+  "use strict";
+
+  e.exports = n(9488);
+},
+9488: function (e, t, n) {
+  "use strict";
+
+  var r = t;
+  function a() {
+    r.util._configure(), r.Writer._configure(r.BufferWriter), r.Reader._configure(r.BufferReader);
+  }
+  r.build = "minimal", r.Writer = n(8050), r.BufferWriter = n(2149), r.Reader = n(2422), r.BufferReader = n(4148), r.util = n(9716), r.rpc = n(7523), r.roots = n(3107), r.configure = a, a();
+},
+8050: function (e, t, n) {
+  "use strict";
+
+  e.exports = f;
+  var r,
+    a = n(9716),
+    l = a.LongBits,
+    o = a.base64,
+    i = a.utf8;
+  function u(e, t, n) {
+    this.fn = e, this.len = t, this.next = void 0, this.val = n;
+  }
+  function s() {}
+  function c(e) {
+    this.head = e.head, this.tail = e.tail, this.len = e.len, this.next = e.states;
+  }
+  function f() {
+    this.len = 0, this.head = new u(s, 0, 0), this.tail = this.head, this.states = null;
+  }
+  var d = function () {
+    return a.Buffer ? function () {
+      return (f.create = function () {
+        return new r();
+      })();
+    } : function () {
+      return new f();
+    };
+  };
+  function p(e, t, n) {
+    t[n] = 255 & e;
+  }
+  function h(e, t) {
+    this.len = e, this.next = void 0, this.val = t;
+  }
+  function m(e, t, n) {
+    for (; e.hi;) t[n++] = 127 & e.lo | 128, e.lo = (e.lo >>> 7 | e.hi << 25) >>> 0, e.hi >>>= 7;
+    for (; e.lo > 127;) t[n++] = 127 & e.lo | 128, e.lo = e.lo >>> 7;
+    t[n++] = e.lo;
+  }
+  function v(e, t, n) {
+    t[n] = 255 & e, t[n + 1] = e >>> 8 & 255, t[n + 2] = e >>> 16 & 255, t[n + 3] = e >>> 24;
+  }
+  f.create = d(), f.alloc = function (e) {
+    return new a.Array(e);
+  }, a.Array !== Array && (f.alloc = a.pool(f.alloc, a.Array.prototype.subarray)), f.prototype._push = function (e, t, n) {
+    return this.tail = this.tail.next = new u(e, t, n), this.len += t, this;
+  }, h.prototype = Object.create(u.prototype), h.prototype.fn = function (e, t, n) {
+    for (; e > 127;) t[n++] = 127 & e | 128, e >>>= 7;
+    t[n] = e;
+  }, f.prototype.uint32 = function (e) {
+    return this.len += (this.tail = this.tail.next = new h((e >>>= 0) < 128 ? 1 : e < 16384 ? 2 : e < 2097152 ? 3 : e < 268435456 ? 4 : 5, e)).len, this;
+  }, f.prototype.int32 = function (e) {
+    return e < 0 ? this._push(m, 10, l.fromNumber(e)) : this.uint32(e);
+  }, f.prototype.sint32 = function (e) {
+    return this.uint32((e << 1 ^ e >> 31) >>> 0);
+  }, f.prototype.uint64 = function (e) {
+    var t = l.from(e);
+    return this._push(m, t.length(), t);
+  }, f.prototype.int64 = f.prototype.uint64, f.prototype.sint64 = function (e) {
+    var t = l.from(e).zzEncode();
+    return this._push(m, t.length(), t);
+  }, f.prototype.bool = function (e) {
+    return this._push(p, 1, e ? 1 : 0);
+  }, f.prototype.fixed32 = function (e) {
+    return this._push(v, 4, e >>> 0);
+  }, f.prototype.sfixed32 = f.prototype.fixed32, f.prototype.fixed64 = function (e) {
+    var t = l.from(e);
+    return this._push(v, 4, t.lo)._push(v, 4, t.hi);
+  }, f.prototype.sfixed64 = f.prototype.fixed64, f.prototype.float = function (e) {
+    return this._push(a.float.writeFloatLE, 4, e);
+  }, f.prototype.double = function (e) {
+    return this._push(a.float.writeDoubleLE, 8, e);
+  };
+  var y = a.Array.prototype.set ? function (e, t, n) {
+    t.set(e, n);
+  } : function (e, t, n) {
+    for (var r = 0; r < e.length; ++r) t[n + r] = e[r];
+  };
+  f.prototype.bytes = function (e) {
+    var t = e.length >>> 0;
+    if (!t) return this._push(p, 1, 0);
+    if (a.isString(e)) {
+      var n = f.alloc(t = o.length(e));
+      o.decode(e, n, 0), e = n;
+    }
+    return this.uint32(t)._push(y, t, e);
+  }, f.prototype.string = function (e) {
+    var t = i.length(e);
+    return t ? this.uint32(t)._push(i.write, t, e) : this._push(p, 1, 0);
+  }, f.prototype.fork = function () {
+    return this.states = new c(this), this.head = this.tail = new u(s, 0, 0), this.len = 0, this;
+  }, f.prototype.reset = function () {
+    return this.states ? (this.head = this.states.head, this.tail = this.states.tail, this.len = this.states.len, this.states = this.states.next) : (this.head = this.tail = new u(s, 0, 0), this.len = 0), this;
+  }, f.prototype.ldelim = function () {
+    var e = this.head,
+      t = this.tail,
+      n = this.len;
+    return this.reset().uint32(n), n && (this.tail.next = e.next, this.tail = t, this.len += n), this;
+  }, f.prototype.finish = function () {
+    for (var e = this.head.next, t = this.constructor.alloc(this.len), n = 0; e;) e.fn(e.val, t, n), n += e.len, e = e.next;
+    return t;
+  }, f._configure = function (e) {
+    r = e, f.create = d(), r._configure();
+  };
+},
+9716: function (e, t, n) {
+  "use strict";
+
+  var r = t;
+  function a(e, t, n) {
+    for (var r = Object.keys(t), a = 0; a < r.length; ++a) void 0 !== e[r[a]] && n || (e[r[a]] = t[r[a]]);
+    return e;
+  }
+  function l(e) {
+    function t(e, n) {
+      if (!(this instanceof t)) return new t(e, n);
+      Object.defineProperty(this, "message", {
+        get: function () {
+          return e;
+        }
+      }), Error.captureStackTrace ? Error.captureStackTrace(this, t) : Object.defineProperty(this, "stack", {
+        value: new Error().stack || ""
+      }), n && a(this, n);
+    }
+    return t.prototype = Object.create(Error.prototype, {
+      constructor: {
+        value: t,
+        writable: !0,
+        enumerable: !1,
+        configurable: !0
+      },
+      name: {
+        get: function () {
+          return e;
+        },
+        set: void 0,
+        enumerable: !1,
+        configurable: !0
+      },
+      toString: {
+        value: function () {
+          return this.name + ": " + this.message;
+        },
+        writable: !0,
+        enumerable: !1,
+        configurable: !0
+      }
+    }), t;
+  }
+  r.asPromise = n(7223), r.base64 = n(1938), r.EventEmitter = n(6597), r.float = n(2678), r.inquire = n(7640), r.utf8 = n(2842), r.pool = n(110), r.LongBits = n(6112), r.isNode = Boolean("undefined" !== typeof n.g && n.g && n.g.process && n.g.process.versions && n.g.process.versions.node), r.global = r.isNode && n.g || "undefined" !== typeof window && window || "undefined" !== typeof self && self || this, r.emptyArray = Object.freeze ? Object.freeze([]) : [], r.emptyObject = Object.freeze ? Object.freeze({}) : {}, r.isInteger = Number.isInteger || function (e) {
+    return "number" === typeof e && isFinite(e) && Math.floor(e) === e;
+  }, r.isString = function (e) {
+    return "string" === typeof e || e instanceof String;
+  }, r.isObject = function (e) {
+    return e && "object" === typeof e;
+  }, r.isset = r.isSet = function (e, t) {
+    var n = e[t];
+    return !(null == n || !e.hasOwnProperty(t)) && ("object" !== typeof n || (Array.isArray(n) ? n.length : Object.keys(n).length) > 0);
+  }, r.Buffer = function () {
+    try {
+      var e = r.inquire("buffer").Buffer;
+      return e.prototype.utf8Write ? e : null;
+    } catch (t) {
+      return null;
+    }
+  }(), r._Buffer_from = null, r._Buffer_allocUnsafe = null, r.newBuffer = function (e) {
+    return "number" === typeof e ? r.Buffer ? r._Buffer_allocUnsafe(e) : new r.Array(e) : r.Buffer ? r._Buffer_from(e) : "undefined" === typeof Uint8Array ? e : new Uint8Array(e);
+  }, r.Array = "undefined" !== typeof Uint8Array ? Uint8Array : Array, r.Long = r.global.dcodeIO && r.global.dcodeIO.Long || r.global.Long || r.inquire("long"), r.key2Re = /^true|false|0|1$/, r.key32Re = /^-?(?:0|[1-9][0-9]*)$/, r.key64Re = /^(?:[\\x00-\\xff]{8}|-?(?:0|[1-9][0-9]*))$/, r.longToHash = function (e) {
+    return e ? r.LongBits.from(e).toHash() : r.LongBits.zeroHash;
+  }, r.longFromHash = function (e, t) {
+    var n = r.LongBits.fromHash(e);
+    return r.Long ? r.Long.fromBits(n.lo, n.hi, t) : n.toNumber(Boolean(t));
+  }, r.merge = a, r.lcFirst = function (e) {
+    return e.charAt(0).toLowerCase() + e.substring(1);
+  }, r.newError = l, r.ProtocolError = l("ProtocolError"), r.oneOfGetter = function (e) {
+    for (var t = {}, n = 0; n < e.length; ++n) t[e[n]] = 1;
+    return function () {
+      for (var e = Object.keys(this), n = e.length - 1; n > -1; --n) if (1 === t[e[n]] && void 0 !== this[e[n]] && null !== this[e[n]]) return e[n];
+    };
+  }, r.oneOfSetter = function (e) {
+    return function (t) {
+      for (var n = 0; n < e.length; ++n) e[n] !== t && delete this[e[n]];
+    };
+  }, r.toJSONOptions = {
+    longs: String,
+    enums: String,
+    bytes: String,
+    json: !0
+  }, r._configure = function () {
+    var e = r.Buffer;
+    e ? (r._Buffer_from = e.from !== Uint8Array.from && e.from || function (t, n) {
+      return new e(t, n);
+    }, r._Buffer_allocUnsafe = e.allocUnsafe || function (t) {
+      return new e(t);
+    }) : r._Buffer_from = r._Buffer_allocUnsafe = null;
+  };
+},
+7223: function (e) {
+  "use strict";
+
+  e.exports = function (e, t) {
+    var n = new Array(arguments.length - 1),
+      r = 0,
+      a = 2,
+      l = !0;
+    for (; a < arguments.length;) n[r++] = arguments[a++];
+    return new Promise(function (a, o) {
+      n[r] = function (e) {
+        if (l) if (l = !1, e) o(e);else {
+          for (var t = new Array(arguments.length - 1), n = 0; n < t.length;) t[n++] = arguments[n];
+          a.apply(null, t);
+        }
+      };
+      try {
+        e.apply(t || null, n);
+      } catch (i) {
+        l && (l = !1, o(i));
+      }
+    });
+  };
+},
+1938: function (e, t) {
+  "use strict";
+
+  var n = t;
+  n.length = function (e) {
+    var t = e.length;
+    if (!t) return 0;
+    for (var n = 0; --t % 4 > 1 && "=" === e.charAt(t);) ++n;
+    return Math.ceil(3 * e.length) / 4 - n;
+  };
+  for (var r = new Array(64), a = new Array(123), l = 0; l < 64;) a[r[l] = l < 26 ? l + 65 : l < 52 ? l + 71 : l < 62 ? l - 4 : l - 59 | 43] = l++;
+  n.encode = function (e, t, n) {
+    for (var a, l = null, o = [], i = 0, u = 0; t < n;) {
+      var s = e[t++];
+      switch (u) {
+        case 0:
+          o[i++] = r[s >> 2], a = (3 & s) << 4, u = 1;
+          break;
+        case 1:
+          o[i++] = r[a | s >> 4], a = (15 & s) << 2, u = 2;
+          break;
+        case 2:
+          o[i++] = r[a | s >> 6], o[i++] = r[63 & s], u = 0;
+      }
+      i > 8191 && ((l || (l = [])).push(String.fromCharCode.apply(String, o)), i = 0);
+    }
+    return u && (o[i++] = r[a], o[i++] = 61, 1 === u && (o[i++] = 61)), l ? (i && l.push(String.fromCharCode.apply(String, o.slice(0, i))), l.join("")) : String.fromCharCode.apply(String, o.slice(0, i));
+  };
+  var o = "invalid encoding";
+  n.decode = function (e, t, n) {
+    for (var r, l = n, i = 0, u = 0; u < e.length;) {
+      var s = e.charCodeAt(u++);
+      if (61 === s && i > 1) break;
+      if (void 0 === (s = a[s])) throw Error(o);
+      switch (i) {
+        case 0:
+          r = s, i = 1;
+          break;
+        case 1:
+          t[n++] = r << 2 | (48 & s) >> 4, r = s, i = 2;
+          break;
+        case 2:
+          t[n++] = (15 & r) << 4 | (60 & s) >> 2, r = s, i = 3;
+          break;
+        case 3:
+          t[n++] = (3 & r) << 6 | s, i = 0;
+      }
+    }
+    if (1 === i) throw Error(o);
+    return n - l;
+  }, n.test = function (e) {
+    return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(e);
+  };
+},
+6597: function (e) {
+  "use strict";
+
+  function t() {
+    this._listeners = {};
+  }
+  e.exports = t, t.prototype.on = function (e, t, n) {
+    return (this._listeners[e] || (this._listeners[e] = [])).push({
+      fn: t,
+      ctx: n || this
+    }), this;
+  }, t.prototype.off = function (e, t) {
+    if (void 0 === e) this._listeners = {};else if (void 0 === t) this._listeners[e] = [];else for (var n = this._listeners[e], r = 0; r < n.length;) n[r].fn === t ? n.splice(r, 1) : ++r;
+    return this;
+  }, t.prototype.emit = function (e) {
+    var t = this._listeners[e];
+    if (t) {
+      for (var n = [], r = 1; r < arguments.length;) n.push(arguments[r++]);
+      for (r = 0; r < t.length;) t[r].fn.apply(t[r++].ctx, n);
+    }
+    return this;
+  };
+},
+2678: function (e) {
+  "use strict";
+
+  function t(e) {
+    return "undefined" !== typeof Float32Array ? function () {
+      var t = new Float32Array([-0]),
+        n = new Uint8Array(t.buffer),
+        r = 128 === n[3];
+      function a(e, r, a) {
+        t[0] = e, r[a] = n[0], r[a + 1] = n[1], r[a + 2] = n[2], r[a + 3] = n[3];
+      }
+      function l(e, r, a) {
+        t[0] = e, r[a] = n[3], r[a + 1] = n[2], r[a + 2] = n[1], r[a + 3] = n[0];
+      }
+      function o(e, r) {
+        return n[0] = e[r], n[1] = e[r + 1], n[2] = e[r + 2], n[3] = e[r + 3], t[0];
+      }
+      function i(e, r) {
+        return n[3] = e[r], n[2] = e[r + 1], n[1] = e[r + 2], n[0] = e[r + 3], t[0];
+      }
+      e.writeFloatLE = r ? a : l, e.writeFloatBE = r ? l : a, e.readFloatLE = r ? o : i, e.readFloatBE = r ? i : o;
+    }() : function () {
+      function t(e, t, n, r) {
+        var a = t < 0 ? 1 : 0;
+        if (a && (t = -t), 0 === t) e(1 / t > 0 ? 0 : 2147483648, n, r);else if (isNaN(t)) e(2143289344, n, r);else if (t > 34028234663852886e22) e((a << 31 | 2139095040) >>> 0, n, r);else if (t < 11754943508222875e-54) e((a << 31 | Math.round(t / 1401298464324817e-60)) >>> 0, n, r);else {
+          var l = Math.floor(Math.log(t) / Math.LN2);
+          e((a << 31 | l + 127 << 23 | 8388607 & Math.round(t * Math.pow(2, -l) * 8388608)) >>> 0, n, r);
+        }
+      }
+      function o(e, t, n) {
+        var r = e(t, n),
+          a = 2 * (r >> 31) + 1,
+          l = r >>> 23 & 255,
+          o = 8388607 & r;
+        return 255 === l ? o ? NaN : a * (1 / 0) : 0 === l ? 1401298464324817e-60 * a * o : a * Math.pow(2, l - 150) * (o + 8388608);
+      }
+      e.writeFloatLE = t.bind(null, n), e.writeFloatBE = t.bind(null, r), e.readFloatLE = o.bind(null, a), e.readFloatBE = o.bind(null, l);
+    }(), "undefined" !== typeof Float64Array ? function () {
+      var t = new Float64Array([-0]),
+        n = new Uint8Array(t.buffer),
+        r = 128 === n[7];
+      function a(e, r, a) {
+        t[0] = e, r[a] = n[0], r[a + 1] = n[1], r[a + 2] = n[2], r[a + 3] = n[3], r[a + 4] = n[4], r[a + 5] = n[5], r[a + 6] = n[6], r[a + 7] = n[7];
+      }
+      function l(e, r, a) {
+        t[0] = e, r[a] = n[7], r[a + 1] = n[6], r[a + 2] = n[5], r[a + 3] = n[4], r[a + 4] = n[3], r[a + 5] = n[2], r[a + 6] = n[1], r[a + 7] = n[0];
+      }
+      function o(e, r) {
+        return n[0] = e[r], n[1] = e[r + 1], n[2] = e[r + 2], n[3] = e[r + 3], n[4] = e[r + 4], n[5] = e[r + 5], n[6] = e[r + 6], n[7] = e[r + 7], t[0];
+      }
+      function i(e, r) {
+        return n[7] = e[r], n[6] = e[r + 1], n[5] = e[r + 2], n[4] = e[r + 3], n[3] = e[r + 4], n[2] = e[r + 5], n[1] = e[r + 6], n[0] = e[r + 7], t[0];
+      }
+      e.writeDoubleLE = r ? a : l, e.writeDoubleBE = r ? l : a, e.readDoubleLE = r ? o : i, e.readDoubleBE = r ? i : o;
+    }() : function () {
+      function t(e, t, n, r, a, l) {
+        var o = r < 0 ? 1 : 0;
+        if (o && (r = -r), 0 === r) e(0, a, l + t), e(1 / r > 0 ? 0 : 2147483648, a, l + n);else if (isNaN(r)) e(0, a, l + t), e(2146959360, a, l + n);else if (r > 17976931348623157e292) e(0, a, l + t), e((o << 31 | 2146435072) >>> 0, a, l + n);else {
+          var i;
+          if (r < 22250738585072014e-324) e((i = r / 5e-324) >>> 0, a, l + t), e((o << 31 | i / 4294967296) >>> 0, a, l + n);else {
+            var u = Math.floor(Math.log(r) / Math.LN2);
+            1024 === u && (u = 1023), e(4503599627370496 * (i = r * Math.pow(2, -u)) >>> 0, a, l + t), e((o << 31 | u + 1023 << 20 | 1048576 * i & 1048575) >>> 0, a, l + n);
+          }
+        }
+      }
+      function o(e, t, n, r, a) {
+        var l = e(r, a + t),
+          o = e(r, a + n),
+          i = 2 * (o >> 31) + 1,
+          u = o >>> 20 & 2047,
+          s = 4294967296 * (1048575 & o) + l;
+        return 2047 === u ? s ? NaN : i * (1 / 0) : 0 === u ? 5e-324 * i * s : i * Math.pow(2, u - 1075) * (s + 4503599627370496);
+      }
+      e.writeDoubleLE = t.bind(null, n, 0, 4), e.writeDoubleBE = t.bind(null, r, 4, 0), e.readDoubleLE = o.bind(null, a, 0, 4), e.readDoubleBE = o.bind(null, l, 4, 0);
+    }(), e;
+  }
+  function n(e, t, n) {
+    t[n] = 255 & e, t[n + 1] = e >>> 8 & 255, t[n + 2] = e >>> 16 & 255, t[n + 3] = e >>> 24;
+  }
+  function r(e, t, n) {
+    t[n] = e >>> 24, t[n + 1] = e >>> 16 & 255, t[n + 2] = e >>> 8 & 255, t[n + 3] = 255 & e;
+  }
+  function a(e, t) {
+    return (e[t] | e[t + 1] << 8 | e[t + 2] << 16 | e[t + 3] << 24) >>> 0;
+  }
+  function l(e, t) {
+    return (e[t] << 24 | e[t + 1] << 16 | e[t + 2] << 8 | e[t + 3]) >>> 0;
+  }
+  e.exports = t(t);
+},
+7640: function (module) {
+  module.exports = function (name) {
+    return name === "buffer" && typeof Buffer !== "undefined" ? {
+      Buffer
+    } : null;
+  };
+},
+2842: function (e, t) {
+  "use strict";
+
+  var n = t;
+  n.length = function (e) {
+    for (var t = 0, n = 0, r = 0; r < e.length; ++r) (n = e.charCodeAt(r)) < 128 ? t += 1 : n < 2048 ? t += 2 : 55296 === (64512 & n) && 56320 === (64512 & e.charCodeAt(r + 1)) ? (++r, t += 4) : t += 3;
+    return t;
+  }, n.read = function (e, t, n) {
+    if (n - t < 1) return "";
+    for (var r, a = null, l = [], o = 0; t < n;) (r = e[t++]) < 128 ? l[o++] = r : r > 191 && r < 224 ? l[o++] = (31 & r) << 6 | 63 & e[t++] : r > 239 && r < 365 ? (r = ((7 & r) << 18 | (63 & e[t++]) << 12 | (63 & e[t++]) << 6 | 63 & e[t++]) - 65536, l[o++] = 55296 + (r >> 10), l[o++] = 56320 + (1023 & r)) : l[o++] = (15 & r) << 12 | (63 & e[t++]) << 6 | 63 & e[t++], o > 8191 && ((a || (a = [])).push(String.fromCharCode.apply(String, l)), o = 0);
+    return a ? (o && a.push(String.fromCharCode.apply(String, l.slice(0, o))), a.join("")) : String.fromCharCode.apply(String, l.slice(0, o));
+  }, n.write = function (e, t, n) {
+    for (var r, a, l = n, o = 0; o < e.length; ++o) (r = e.charCodeAt(o)) < 128 ? t[n++] = r : r < 2048 ? (t[n++] = r >> 6 | 192, t[n++] = 63 & r | 128) : 55296 === (64512 & r) && 56320 === (64512 & (a = e.charCodeAt(o + 1))) ? (r = 65536 + ((1023 & r) << 10) + (1023 & a), ++o, t[n++] = r >> 18 | 240, t[n++] = r >> 12 & 63 | 128, t[n++] = r >> 6 & 63 | 128, t[n++] = 63 & r | 128) : (t[n++] = r >> 12 | 224, t[n++] = r >> 6 & 63 | 128, t[n++] = 63 & r | 128);
+    return n - l;
+  };
+},
+110: function (e) {
+  "use strict";
+
+  e.exports = function (e, t, n) {
+    var r = n || 8192,
+      a = r >>> 1,
+      l = null,
+      o = r;
+    return function (n) {
+      if (n < 1 || n > a) return e(n);
+      o + n > r && (l = e(r), o = 0);
+      var i = t.call(l, o, o += n);
+      return 7 & o && (o = 1 + (7 | o)), i;
+    };
+  };
+},
+6112: function (e, t, n) {
+  "use strict";
+
+  e.exports = a;
+  var r = n(9716);
+  function a(e, t) {
+    this.lo = e >>> 0, this.hi = t >>> 0;
+  }
+  var l = a.zero = new a(0, 0);
+  l.toNumber = function () {
+    return 0;
+  }, l.zzEncode = l.zzDecode = function () {
+    return this;
+  }, l.length = function () {
+    return 1;
+  };
+  var o = a.zeroHash = "\0\0\0\0\0\0\0\0";
+  a.fromNumber = function (e) {
+    if (0 === e) return l;
+    var t = e < 0;
+    t && (e = -e);
+    var n = e >>> 0,
+      r = (e - n) / 4294967296 >>> 0;
+    return t && (r = ~r >>> 0, n = ~n >>> 0, ++n > 4294967295 && (n = 0, ++r > 4294967295 && (r = 0))), new a(n, r);
+  }, a.from = function (e) {
+    if ("number" === typeof e) return a.fromNumber(e);
+    if (r.isString(e)) {
+      if (!r.Long) return a.fromNumber(parseInt(e, 10));
+      e = r.Long.fromString(e);
+    }
+    return e.low || e.high ? new a(e.low >>> 0, e.high >>> 0) : l;
+  }, a.prototype.toNumber = function (e) {
+    if (!e && this.hi >>> 31) {
+      var t = 1 + ~this.lo >>> 0,
+        n = ~this.hi >>> 0;
+      return t || (n = n + 1 >>> 0), -(t + 4294967296 * n);
+    }
+    return this.lo + 4294967296 * this.hi;
+  }, a.prototype.toLong = function (e) {
+    return r.Long ? new r.Long(0 | this.lo, 0 | this.hi, Boolean(e)) : {
+      low: 0 | this.lo,
+      high: 0 | this.hi,
+      unsigned: Boolean(e)
+    };
+  };
+  var i = String.prototype.charCodeAt;
+  a.fromHash = function (e) {
+    return e === o ? l : new a((i.call(e, 0) | i.call(e, 1) << 8 | i.call(e, 2) << 16 | i.call(e, 3) << 24) >>> 0, (i.call(e, 4) | i.call(e, 5) << 8 | i.call(e, 6) << 16 | i.call(e, 7) << 24) >>> 0);
+  }, a.prototype.toHash = function () {
+    return String.fromCharCode(255 & this.lo, this.lo >>> 8 & 255, this.lo >>> 16 & 255, this.lo >>> 24, 255 & this.hi, this.hi >>> 8 & 255, this.hi >>> 16 & 255, this.hi >>> 24);
+  }, a.prototype.zzEncode = function () {
+    var e = this.hi >> 31;
+    return this.hi = ((this.hi << 1 | this.lo >>> 31) ^ e) >>> 0, this.lo = (this.lo << 1 ^ e) >>> 0, this;
+  }, a.prototype.zzDecode = function () {
+    var e = -(1 & this.lo);
+    return this.lo = ((this.lo >>> 1 | this.hi << 31) ^ e) >>> 0, this.hi = (this.hi >>> 1 ^ e) >>> 0, this;
+  }, a.prototype.length = function () {
+    var e = this.lo,
+      t = (this.lo >>> 28 | this.hi << 4) >>> 0,
+      n = this.hi >>> 24;
+    return 0 === n ? 0 === t ? e < 16384 ? e < 128 ? 1 : 2 : e < 2097152 ? 3 : 4 : t < 16384 ? t < 128 ? 5 : 6 : t < 2097152 ? 7 : 8 : n < 128 ? 9 : 10;
+  };
+},
+2149: function (e, t, n) {
+  "use strict";
+
+  e.exports = l;
+  var r = n(8050);
+  (l.prototype = Object.create(r.prototype)).constructor = l;
+  var a = n(9716);
+  function l() {
+    r.call(this);
+  }
+  function o(e, t, n) {
+    e.length < 40 ? a.utf8.write(e, t, n) : t.utf8Write ? t.utf8Write(e, n) : t.write(e, n);
+  }
+  l._configure = function () {
+    l.alloc = a._Buffer_allocUnsafe, l.writeBytesBuffer = a.Buffer && a.Buffer.prototype instanceof Uint8Array && "set" === a.Buffer.prototype.set.name ? function (e, t, n) {
+      t.set(e, n);
+    } : function (e, t, n) {
+      if (e.copy) e.copy(t, n, 0, e.length);else for (var r = 0; r < e.length;) t[n++] = e[r++];
+    };
+  }, l.prototype.bytes = function (e) {
+    a.isString(e) && (e = a._Buffer_from(e, "base64"));
+    var t = e.length >>> 0;
+    return this.uint32(t), t && this._push(l.writeBytesBuffer, t, e), this;
+  }, l.prototype.string = function (e) {
+    var t = a.Buffer.byteLength(e);
+    return this.uint32(t), t && this._push(o, t, e), this;
+  }, l._configure();
+},
+2422: function (e, t, n) {
+  "use strict";
+
+  e.exports = u;
+  var r,
+    a = n(9716),
+    l = a.LongBits,
+    o = a.utf8;
+  function i(e, t) {
+    return RangeError("index out of range: " + e.pos + " + " + (t || 1) + " > " + e.len);
+  }
+  function u(e) {
+    this.buf = e, this.pos = 0, this.len = e.length;
+  }
+  var s = "undefined" !== typeof Uint8Array ? function (e) {
+      if (e instanceof Uint8Array || Array.isArray(e)) return new u(e);
+      throw Error("illegal buffer");
+    } : function (e) {
+      if (Array.isArray(e)) return new u(e);
+      throw Error("illegal buffer");
+    },
+    c = function () {
+      return a.Buffer ? function (e) {
+        return (u.create = function (e) {
+          return a.Buffer.isBuffer(e) ? new r(e) : s(e);
+        })(e);
+      } : s;
+    };
+  function f() {
+    var e = new l(0, 0),
+      t = 0;
+    if (!(this.len - this.pos > 4)) {
+      for (; t < 3; ++t) {
+        if (this.pos >= this.len) throw i(this);
+        if (e.lo = (e.lo | (127 & this.buf[this.pos]) << 7 * t) >>> 0, this.buf[this.pos++] < 128) return e;
+      }
+      return e.lo = (e.lo | (127 & this.buf[this.pos++]) << 7 * t) >>> 0, e;
+    }
+    for (; t < 4; ++t) if (e.lo = (e.lo | (127 & this.buf[this.pos]) << 7 * t) >>> 0, this.buf[this.pos++] < 128) return e;
+    if (e.lo = (e.lo | (127 & this.buf[this.pos]) << 28) >>> 0, e.hi = (e.hi | (127 & this.buf[this.pos]) >> 4) >>> 0, this.buf[this.pos++] < 128) return e;
+    if (t = 0, this.len - this.pos > 4) {
+      for (; t < 5; ++t) if (e.hi = (e.hi | (127 & this.buf[this.pos]) << 7 * t + 3) >>> 0, this.buf[this.pos++] < 128) return e;
+    } else for (; t < 5; ++t) {
+      if (this.pos >= this.len) throw i(this);
+      if (e.hi = (e.hi | (127 & this.buf[this.pos]) << 7 * t + 3) >>> 0, this.buf[this.pos++] < 128) return e;
+    }
+    throw Error("invalid varint encoding");
+  }
+  function d(e, t) {
+    return (e[t - 4] | e[t - 3] << 8 | e[t - 2] << 16 | e[t - 1] << 24) >>> 0;
+  }
+  function p() {
+    if (this.pos + 8 > this.len) throw i(this, 8);
+    return new l(d(this.buf, this.pos += 4), d(this.buf, this.pos += 4));
+  }
+  u.create = c(), u.prototype._slice = a.Array.prototype.subarray || a.Array.prototype.slice, u.prototype.uint32 = function () {
+    var e = 4294967295;
+    return function () {
+      if (e = (127 & this.buf[this.pos]) >>> 0, this.buf[this.pos++] < 128) return e;
+      if (e = (e | (127 & this.buf[this.pos]) << 7) >>> 0, this.buf[this.pos++] < 128) return e;
+      if (e = (e | (127 & this.buf[this.pos]) << 14) >>> 0, this.buf[this.pos++] < 128) return e;
+      if (e = (e | (127 & this.buf[this.pos]) << 21) >>> 0, this.buf[this.pos++] < 128) return e;
+      if (e = (e | (15 & this.buf[this.pos]) << 28) >>> 0, this.buf[this.pos++] < 128) return e;
+      if ((this.pos += 5) > this.len) throw this.pos = this.len, i(this, 10);
+      return e;
+    };
+  }(), u.prototype.int32 = function () {
+    return 0 | this.uint32();
+  }, u.prototype.sint32 = function () {
+    var e = this.uint32();
+    return e >>> 1 ^ -(1 & e) | 0;
+  }, u.prototype.bool = function () {
+    return 0 !== this.uint32();
+  }, u.prototype.fixed32 = function () {
+    if (this.pos + 4 > this.len) throw i(this, 4);
+    return d(this.buf, this.pos += 4);
+  }, u.prototype.sfixed32 = function () {
+    if (this.pos + 4 > this.len) throw i(this, 4);
+    return 0 | d(this.buf, this.pos += 4);
+  }, u.prototype.float = function () {
+    if (this.pos + 4 > this.len) throw i(this, 4);
+    var e = a.float.readFloatLE(this.buf, this.pos);
+    return this.pos += 4, e;
+  }, u.prototype.double = function () {
+    if (this.pos + 8 > this.len) throw i(this, 4);
+    var e = a.float.readDoubleLE(this.buf, this.pos);
+    return this.pos += 8, e;
+  }, u.prototype.bytes = function () {
+    var e = this.uint32(),
+      t = this.pos,
+      n = this.pos + e;
+    if (n > this.len) throw i(this, e);
+    return this.pos += e, Array.isArray(this.buf) ? this.buf.slice(t, n) : t === n ? new this.buf.constructor(0) : this._slice.call(this.buf, t, n);
+  }, u.prototype.string = function () {
+    var e = this.bytes();
+    return o.read(e, 0, e.length);
+  }, u.prototype.skip = function (e) {
+    if ("number" === typeof e) {
+      if (this.pos + e > this.len) throw i(this, e);
+      this.pos += e;
+    } else do {
+      if (this.pos >= this.len) throw i(this);
+    } while (128 & this.buf[this.pos++]);
+    return this;
+  }, u.prototype.skipType = function (e) {
+    switch (e) {
+      case 0:
+        this.skip();
+        break;
+      case 1:
+        this.skip(8);
+        break;
+      case 2:
+        this.skip(this.uint32());
+        break;
+      case 3:
+        for (; 4 !== (e = 7 & this.uint32());) this.skipType(e);
+        break;
+      case 5:
+        this.skip(4);
+        break;
+      default:
+        throw Error("invalid wire type " + e + " at offset " + this.pos);
+    }
+    return this;
+  }, u._configure = function (e) {
+    r = e, u.create = c(), r._configure();
+    var t = a.Long ? "toLong" : "toNumber";
+    a.merge(u.prototype, {
+      int64: function () {
+        return f.call(this)[t](!1);
+      },
+      uint64: function () {
+        return f.call(this)[t](!0);
+      },
+      sint64: function () {
+        return f.call(this).zzDecode()[t](!1);
+      },
+      fixed64: function () {
+        return p.call(this)[t](!0);
+      },
+      sfixed64: function () {
+        return p.call(this)[t](!1);
+      }
+    });
+  };
+},
+4148: function (e, t, n) {
+  "use strict";
+
+  e.exports = l;
+  var r = n(2422);
+  (l.prototype = Object.create(r.prototype)).constructor = l;
+  var a = n(9716);
+  function l(e) {
+    r.call(this, e);
+  }
+  l._configure = function () {
+    a.Buffer && (l.prototype._slice = a.Buffer.prototype.slice);
+  }, l.prototype.string = function () {
+    var e = this.uint32();
+    return this.buf.utf8Slice ? this.buf.utf8Slice(this.pos, this.pos = Math.min(this.pos + e, this.len)) : this.buf.toString("utf-8", this.pos, this.pos = Math.min(this.pos + e, this.len));
+  }, l._configure();
+},
+7523: function (e, t, n) {
+  "use strict";
+
+  t.Service = n(1331);
+},
+1331: function (e, t, n) {
+  "use strict";
+
+  e.exports = a;
+  var r = n(9716);
+  function a(e, t, n) {
+    if ("function" !== typeof e) throw TypeError("rpcImpl must be a function");
+    r.EventEmitter.call(this), this.rpcImpl = e, this.requestDelimited = Boolean(t), this.responseDelimited = Boolean(n);
+  }
+  (a.prototype = Object.create(r.EventEmitter.prototype)).constructor = a, a.prototype.rpcCall = function e(t, n, a, l, o) {
+    if (!l) throw TypeError("request must be specified");
+    var i = this;
+    if (!o) return r.asPromise(e, i, t, n, a, l);
+    if (i.rpcImpl) try {
+      return i.rpcImpl(t, n[i.requestDelimited ? "encodeDelimited" : "encode"](l).finish(), function (e, n) {
+        if (e) return i.emit("error", e, t), o(e);
+        if (null !== n) {
+          if (!(n instanceof a)) try {
+            n = a[i.responseDelimited ? "decodeDelimited" : "decode"](n);
+          } catch (e) {
+            return i.emit("error", e, t), o(e);
+          }
+          return i.emit("data", n, t), o(null, n);
+        }
+        i.end(!0);
+      });
+    } catch (u) {
+      return i.emit("error", u, t), void setTimeout(function () {
+        o(u);
+      }, 0);
+    } else setTimeout(function () {
+      o(Error("already ended"));
+    }, 0);
+  }, a.prototype.end = function (e) {
+    return this.rpcImpl && (e || this.rpcImpl(null, null, null), this.rpcImpl = null, this.emit("end").off()), this;
+  };
+},
+3107: function (e) {
+  "use strict";
+
+  e.exports = {};
+},
+1124: function (n, e, t) {
+  t.d(e, {
+    Y7: function () {
+      return v;
+    },
+    R$: function () {
+      return b;
+    },
+    jp: function () {
+      return rn;
+    },
+    QW: function () {
+      return en;
+    },
+    au: function () {
+      return z;
+    },
+    Us: function () {
+      return J;
+    },
+    EL: function () {
+      return U;
+    },
+    Wq: function () {
+      return D;
+    },
+    s0: function () {
+      return R;
+    },
+    Cs: function () {
+      return T;
+    },
+    y5: function () {
+      return W;
+    },
+    th: function () {
+      return G;
+    },
+    kY: function () {
+      return I;
+    },
+    fX: function () {
+      return tn;
+    },
+    RJ: function () {
+      return B;
+    },
+    my: function () {
+      return E;
+    },
+    Q$: function () {
+      return Q;
+    },
+    fU: function () {
+      return F;
+    },
+    j7: function () {
+      return Nn;
+    },
+    QU: function () {
+      return M;
+    },
+    h: function () {
+      return P;
+    },
+    t2: function () {
+      return $;
+    },
+    g$: function () {
+      return k;
+    },
+    h3: function () {
+      return jn;
+    },
+    Bx: function () {
+      return A;
+    },
+    fM: function () {
+      return On;
+    },
+    M_: function () {
+      return gn;
+    },
+    eq: function () {
+      return kn;
+    },
+    gO: function () {
+      return j;
+    },
+    LI: function () {
+      return Cn;
+    },
+    lH: function () {
+      return Zn;
+    },
+    Eg: function () {
+      return xn;
+    },
+    qA: function () {
+      return L;
+    }
+  });
+  var r = t(1413),
+    a = t(885),
+    i = t(2982),
+    c = t(7698),
+    o = t(3797),
+    l = t(3329),
+    s = t(3515),
+    u = t(4420);
+  function d(n, e) {
+    if (!(n instanceof e)) throw new TypeError("Cannot call a class as a function");
+  }
+  function f(n, e) {
+    for (var t = 0; t < e.length; t++) {
+      var r = e[t];
+      r.enumerable = r.enumerable || !1, r.configurable = !0, "value" in r && (r.writable = !0), Object.defineProperty(n, r.key, r);
+    }
+  }
+  function h(n, e, t) {
+    return e && f(n.prototype, e), t && f(n, t), Object.defineProperty(n, "prototype", {
+      writable: !1
+    }), n;
+  }
+  var p = function () {
+      function n() {
+        d(this, n), this.bytes = [], this.current = 0, this.offset = 0;
+      }
+      return h(n, [{
+        key: "write",
+        value: function (n, e) {
+          var t,
+            r,
+            c = (0, l.F)(this.current, this.offset, n, e),
+            o = (0, a.Z)(c, 3);
+          this.current = o[0], this.offset = o[1], r = o[2], (t = this.bytes).push.apply(t, (0, i.Z)(r));
+        }
+      }, {
+        key: "choice",
+        value: function (n, e) {
+          var t, r;
+          if (!Number.isInteger(n) || n < 0 || n >= e || e > 511) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u5019\u9009");
+          var c = (0, l.p2)(this.current, this.offset, n, e),
+            o = (0, a.Z)(c, 3);
+          this.current = o[0], this.offset = o[1], r = o[2], (t = this.bytes).push.apply(t, (0, i.Z)(r));
+        }
+      }, {
+        key: "count",
+        value: function (n) {
+          if (!Number.isSafeInteger(n) || n < 0) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u957f\u5ea6");
+          do {
+            var e = n % 128;
+            n = Math.floor(n / 128), this.write(e | (n ? 128 : 0), 8);
+          } while (n);
+        }
+      }, {
+        key: "finish",
+        value: function () {
+          return Uint8Array.from(this.offset ? [].concat((0, i.Z)(this.bytes), [this.current]) : this.bytes);
+        }
+      }]), n;
+    }(),
+    m = function () {
+      function n(e) {
+        d(this, n), this.bytes = e, this.offset = 0;
+      }
+      return h(n, [{
+        key: "read",
+        value: function (n) {
+          var e,
+            t = (0, l.lS)(this.bytes, this.offset, n),
+            r = (0, a.Z)(t, 2);
+          return e = r[0], this.offset = r[1], e;
+        }
+      }, {
+        key: "choice",
+        value: function (n) {
+          if (!Number.isInteger(n) || n < 1 || n > 511) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u5019\u9009");
+          var e,
+            t = (0, l.Su)(this.bytes, this.offset, n),
+            r = (0, a.Z)(t, 2);
+          return e = r[0], this.offset = r[1], e;
+        }
+      }, {
+        key: "count",
+        value: function () {
+          for (var n = 0, e = 1, t = 0; t < 5; t++) {
+            var r = this.read(8);
+            if (n += (127 & r) * e, !(128 & r)) {
+              if (t && !(127 & r)) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u957f\u5ea6");
+              return n;
+            }
+            e *= 128;
+          }
+          throw new Error("\u590d\u76d8\u957f\u5ea6\u8fc7\u5927");
+        }
+      }, {
+        key: "finish",
+        value: function () {
+          var n = 8 * this.bytes.length - this.offset;
+          if (n >= 8 || n && this.read(n)) throw new Error("\u590d\u76d8\u5b58\u5728\u591a\u4f59\u6570\u636e");
+        }
+      }]), n;
+    }(),
+    v = 8,
+    b = 4095,
+    y = function (n) {
+      return n.reduce(function (n, e) {
+        return n + e;
+      }, 0);
+    },
+    w = function (n, e) {
+      var t,
+        r = [],
+        c = 0,
+        o = 0;
+      return [n].concat((0, i.Z)(e)).forEach(function (n) {
+        for (var e = 0; e < 6; e++) {
+          var s = (0, l.F)(c, o, n[e], 3),
+            u = (0, a.Z)(s, 3);
+          c = u[0], o = u[1], t = u[2], r.push.apply(r, (0, i.Z)(t));
+        }
+      }), o && r.push(c), Uint8Array.from(r);
+    },
+    g = function (n) {
+      var e,
+        t = [],
+        r = 0,
+        c = 0,
+        o = function (n, o) {
+          var s = (0, l.F)(r, c, n, o),
+            u = (0, a.Z)(s, 3);
+          r = u[0], c = u[1], e = u[2], t.push.apply(t, (0, i.Z)(e));
+        };
+      return o(n.pt >> 16 & 15, 4), o(n.pt >> 8 & 255, 8), o(255 & n.pt, 8), n.playerGem.forEach(function (e, t) {
+        var r = Math.min(n.costs[t] || 0, b);
+        o(r >> 8 & 15, 4), o(255 & r, 8);
+      }), o(null === n.ptOwner ? 0 : n.ptOwner + 1, 3), c && t.push(r), Uint8Array.from(t);
+    },
+    x = function (n, e) {
+      if (!n || n.length < function (n) {
+        return Math.ceil((20 + 12 * n + 3) / 8);
+      }(e)) return {
+        pt: 0,
+        costs: new Array(e).fill(0),
+        ptOwner: null
+      };
+      var t,
+        r = 0,
+        i = function (e) {
+          var i = (0, l.lS)(n, r, e),
+            c = (0, a.Z)(i, 2);
+          return t = c[0], r = c[1], t;
+        },
+        c = i(4) << 16;
+      c |= i(8) << 8, c |= i(8);
+      for (var o = [], s = 0; s < e; s++) {
+        var u = i(4);
+        o.push(u << 8 | i(8));
+      }
+      var d = i(3);
+      return {
+        pt: c,
+        costs: o,
+        ptOwner: d && d - 1 < e ? d - 1 : null
+      };
+    },
+    k = function (n) {
+      return n.winner.length ? null : n.waitFor;
+    },
+    j = function (n, e, t) {
+      if (e.enableCt) {
+        var r = Math.min(Math.floor(t / 1e3), 1048575);
+        if (null !== e.ptOwner) {
+          var a = Math.max(0, r - e.pt);
+          n.costs[e.ptOwner] = Math.min(n.costs[e.ptOwner] + a, b);
+        }
+        n.pt = r, n.ptOwner = k(e);
+      }
+    },
+    N = function (n) {
+      var e = new Set();
+      n.bankCard.forEach(function (n) {
+        return n.forEach(function (n) {
+          return n && e.add(n - 1);
+        });
+      }), n.playerCard.forEach(function (n) {
+        return n.forEach(function (n) {
+          return e.add(n);
+        });
+      }), n.playerBooked.forEach(function (n) {
+        return n.forEach(function (n) {
+          return e.add(n);
+        });
+      });
+      for (var t = [[], [], []], r = 0; r < 90; r++) e.has(r) || t[o.XO[r]].push(r);
+      return t;
+    },
+    C = function (n, e) {
+      var t = [0, 0, 0, 0, 0];
+      n.playerCard[e].forEach(function (n) {
+        t[o.dS[n]] += 1;
+      });
+      var r = [];
+      return n.bankNoble.forEach(function (n, e) {
+        n && o.Hf[n - 1].every(function (n, e) {
+          return t[e] >= n;
+        }) && r.push(e);
+      }), r;
+    },
+    O = function (n) {
+      var e;
+      if (n.playerCard.forEach(function (n) {
+        return n.sort(function (n, e) {
+          return n - e;
+        });
+      }), n.playerBooked.forEach(function (n) {
+        return n.sort(function (n, e) {
+          return n - e;
+        });
+      }), n.playerNoble.forEach(function (n) {
+        return n.sort(function (n, e) {
+          return n - e;
+        });
+      }), n.lastOp = {
+        type: (e = n.lastOp).type || 0,
+        playerId: e.playerId || 0,
+        card: e.card || 0,
+        cardPos: e.cardPos || 0,
+        noble: e.noble || [],
+        noblePos: e.noblePos || [],
+        gemDelta: e.gemDelta || []
+      }, n.playerCardCount = n.playerCard.map(function (n) {
+        var e = [0, 0, 0, 0, 0];
+        return n.forEach(function (n) {
+          e[o.dS[n]] += 1;
+        }), e;
+      }), n.playerScore = n.playerCard.map(function (e, t) {
+        return y(e.map(function (n) {
+          return o.KI[n];
+        })) + 3 * n.playerNoble[t].length;
+      }), n.bankLeftCard = N(n), n.bankLeftCardCount = n.bankLeftCard.map(function (n) {
+        return n.length;
+      }), n.nobleCandidates = C(n, n.waitFor), n.winner = [], n.lastTurn = !1, n.playerScore.some(function (n) {
+        return n >= 15;
+      })) if (n.waitFor || n.waitThrowing || n.waitNoble) n.lastTurn = !0;else {
+        var t = n.playerScore.map(function (e, t) {
+            return e >= 15 ? e - .01 * y(n.playerCardCount[t]) : -1;
+          }),
+          r = Math.max.apply(Math, (0, i.Z)(t));
+        n.winner = t.map(function (n, e) {
+          return n === r ? e + 1 : 0;
+        }).filter(Boolean);
+      }
+    },
+    Z = function (n) {
+      return JSON.parse(JSON.stringify(n));
+    },
+    E = function (n, e) {
+      var t,
+        r = function (n, e) {
+          var t,
+            r = 0,
+            i = function () {
+              for (var e = [], i = 0; i < 6; i++) {
+                var c = (0, l.lS)(n, r, 3),
+                  o = (0, a.Z)(c, 2);
+                t = o[0], r = o[1], e.push(t);
+              }
+              return e;
+            };
+          return {
+            bankGem: i(),
+            playerGem: new Array(e).fill(0).map(i)
+          };
+        }(n.gem, e),
+        i = r.bankGem,
+        c = r.playerGem,
+        s = x(n.ct, e),
+        u = {
+          waitFor: 3 & n.state,
+          waitThrowing: !!(4 & n.state),
+          waitNoble: !!(8 & n.state),
+          bankGem: i,
+          bankCard: [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+          bankNoble: new Array(e + 1).fill(0),
+          playerGem: c,
+          playerCard: new Array(e).fill(0).map(function () {
+            return [];
+          }),
+          playerBooked: new Array(e).fill(0).map(function () {
+            return [];
+          }),
+          playerNoble: new Array(e).fill(0).map(function () {
+            return [];
+          }),
+          lastOp: n.lastOp,
+          initial: null,
+          recordList: [],
+          enableCt: n.ct && n.ct.length ? 1 : 0,
+          costs: s.costs,
+          pt: s.pt,
+          ptOwner: s.ptOwner,
+          bankLeftCard: [[], [], []],
+          bankLeftCardCount: [0, 0, 0],
+          playerScore: [],
+          playerCardCount: [],
+          nobleCandidates: [],
+          winner: [],
+          lastTurn: !1
+        };
+      if (n.cardList.forEach(function (n, e) {
+        8 & n ? 4 & n || (u.bankCard[o.XO[e]][3 & n] = e + 1) : 4 & n ? u.playerCard[3 & n].push(e) : u.playerBooked[3 & n].push(e);
+      }), n.nobleList.forEach(function (n, e) {
+        16 & n ? 8 & n || (u.bankNoble[7 & n] = e + 1) : u.playerNoble[7 & n].push(e);
+      }), O(u), null !== (t = n.initial) && void 0 !== t && t.length) try {
+        var d = pn(n.initial, e),
+          f = wn(n.records || new Uint8Array(), d, e);
+        on(u) === on(f) && (u.initial = d, u.recordList = f.recordList);
+      } catch (h) {}
+      return u;
+    },
+    L = function (n) {
+      var e = new Array(90).fill(12),
+        t = new Array(10).fill(24);
+      return n.bankCard.forEach(function (n) {
+        return n.forEach(function (n, t) {
+          n && (e[n - 1] = 8 | t);
+        });
+      }), n.bankNoble.forEach(function (n, e) {
+        n && (t[n - 1] = 16 | e);
+      }), n.playerBooked.forEach(function (n, t) {
+        return n.forEach(function (n) {
+          e[n] = t;
+        });
+      }), n.playerCard.forEach(function (n, t) {
+        return n.forEach(function (n) {
+          e[n] = 4 | t;
+        });
+      }), n.playerNoble.forEach(function (n, e) {
+        return n.forEach(function (n) {
+          t[n] = e;
+        });
+      }), {
+        state: n.waitFor | (n.waitThrowing ? 4 : 0) | (n.waitNoble ? 8 : 0),
+        cardList: e,
+        nobleList: t,
+        gem: w(n.bankGem, n.playerGem),
+        lastOp: n.lastOp,
+        ct: n.enableCt ? g(n) : void 0,
+        initial: n.initial ? hn(n.initial, n.playerGem.length) : void 0,
+        records: n.initial ? yn(n.initial, n.recordList, n.playerGem.length) : void 0
+      };
+    },
+    A = function (n, e) {
+      var t = n.playerList.length,
+        r = 0;
+      if (e && e.length) try {
+        var a;
+        r = null !== (a = s.d4.decode(e).ct) && void 0 !== a && a.length ? 1 : 0;
+      } catch (i) {
+        r = 0;
+      }
+      return L(I(t, void 0, r));
+    },
+    I = function (n, e) {
+      var t = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : 0;
+      if (![2, 3, 4].includes(n)) throw new Error("\u7480\u74a8\u5b9d\u77f3\u9700\u8981 2 \u81f3 4 \u4eba");
+      var r = e ? [] : (0, u.T)(new Array(10).fill(0).map(function (n, e) {
+          return e;
+        })),
+        a = {
+          2: 4,
+          3: 5
+        }[n] || 7,
+        o = {
+          waitFor: 0,
+          waitThrowing: !1,
+          waitNoble: !1,
+          bankGem: [a, a, a, a, a, 5],
+          bankCard: e ? e.bankCard.map(function (n) {
+            return (0, i.Z)(n);
+          }) : [0, 1, 2].map(function (n) {
+            var e = (0, u.T)(new Array([40, 30, 20][n]).fill(0).map(function (n, e) {
+                return e;
+              })),
+              t = [8, 6, 4][n],
+              r = [0, 8, 14][n];
+            return new Array(4).fill(0).map(function (n, a) {
+              return 18 * Math.floor(e[a] / t) + e[a] % t + r + 1;
+            });
+          }),
+          bankNoble: e ? (0, i.Z)(e.bankNoble) : new Array(n + 1).fill(0).map(function (n, e) {
+            return r[e] + 1;
+          }),
+          playerGem: new Array(n).fill(0).map(function () {
+            return [0, 0, 0, 0, 0, 0];
+          }),
+          playerCard: new Array(n).fill(0).map(function () {
+            return [];
+          }),
+          playerBooked: new Array(n).fill(0).map(function () {
+            return [];
+          }),
+          playerNoble: new Array(n).fill(0).map(function () {
+            return [];
+          }),
+          lastOp: {
+            type: c.W.NULL
+          },
+          initial: null,
+          recordList: [],
+          enableCt: t,
+          costs: new Array(n).fill(0),
+          pt: 0,
+          ptOwner: null,
+          bankLeftCard: [[], [], []],
+          bankLeftCardCount: [0, 0, 0],
+          playerScore: [],
+          playerCardCount: [],
+          nobleCandidates: [],
+          winner: [],
+          lastTurn: !1
+        };
+      return o.initial = {
+        bankCard: o.bankCard.map(function (n) {
+          return (0, i.Z)(n);
+        }),
+        bankNoble: (0, i.Z)(o.bankNoble)
+      }, O(o), o;
+    },
+    B = function (n) {
+      return n.map(function (n, e) {
+        return n ? "".concat(n).concat("\u767d\u84dd\u7eff\u7ea2\u9ed1\u91d1"[e]) : "";
+      }).join("");
+    },
+    S = function (n, e, t) {
+      var r = n.playerCardCount[t];
+      return o.s2[e].map(function (n, e) {
+        return Math.max(0, n - r[e]);
+      });
+    },
+    F = function (n, e, t) {
+      var r = n.playerGem[t],
+        a = S(n, e, t),
+        i = a.map(function (n, e) {
+          return Math.max(0, n - r[e]);
+        }),
+        c = a.map(function (n, e) {
+          return Math.min(r[e], n);
+        }),
+        o = y(i),
+        l = r[5] >= o;
+      return {
+        need: i,
+        spend: c,
+        needGold: o,
+        enough: l,
+        hasChoice: l && r[5] > o && y(c) > 0
+      };
+    },
+    P = function (n, e, t) {
+      var r = n.playerGem[t],
+        a = S(n, e, t),
+        i = [],
+        c = [0, 0, 0, 0, 0];
+      return function n(e, t) {
+        if (5 !== e) {
+          for (var o = Math.max(0, a[e] - r[e]), l = Math.min(a[e], t); l >= o; l--) c[e] = l, n(e + 1, t - l);
+          c[e] = 0;
+        } else i.push({
+          spend: a.map(function (n, e) {
+            return n - c[e];
+          }),
+          gold: y(c)
+        });
+      }(0, r[5]), i.sort(function (n, e) {
+        return n.gold - e.gold;
+      });
+    },
+    G = function (n, e, t) {
+      if (5 === t) return "\u4e0d\u53ef\u4ee5\u62ff\u9ec4\u91d1\uff0c\u9ec4\u91d1\u53ea\u80fd\u901a\u8fc7\u9884\u5b9a\u53d1\u5c55\u5361\u83b7\u53d6";
+      if (e.length > 2) return "\u6700\u591a\u62ff3\u4e2a\u5b9d\u77f3";
+      if (e.length > 1 && e[0] === e[1]) return "\u82e5\u62ff\u76f8\u540c\u5b9d\u77f3\uff0c\u603b\u5171\u53ea\u80fd\u62ff2\u4e2a";
+      if (e.length > 1 && e.includes(t)) return "\u53ea\u80fd\u62ff3\u4e2a\u4e0d\u540c\u5b9d\u77f3\u62162\u4e2a\u76f8\u540c\u5b9d\u77f3";
+      var r = n.bankGem[t] - e.filter(function (n) {
+        return n === t;
+      }).length;
+      return 1 === e.length && e[0] === t && r < 3 ? "\u94f6\u884c\u8be5\u5b9d\u77f3\u6570\u91cf\u4e0d\u8db34\uff0c\u4e0d\u5141\u8bb8\u62ff2\u4e2a\u8be5\u5b9d\u77f3" : r ? "" : "\u8be5\u5b9d\u77f3\u62ff\u5b8c\u4e86";
+    },
+    M = function (n, e) {
+      return y(n.playerGem[e]) - 10;
+    },
+    T = function (n, e) {
+      return e.length > 0;
+    },
+    U = function (n) {
+      return n.playerBooked[n.waitFor].length < 3;
+    },
+    D = function (n, e) {
+      return F(n, e, n.waitFor).enough;
+    },
+    W = function (n, e) {
+      var t = n.playerGem[n.waitFor];
+      return y(e) === M(n, n.waitFor) && e.every(function (n, e) {
+        return n <= t[e];
+      });
+    },
+    R = function (n, e) {
+      return n.waitNoble && n.nobleCandidates.includes(e);
+    },
+    Y = function (n, e, t) {
+      var r = n.bankNoble[t];
+      n.bankNoble[t] = 0, n.playerNoble[e].push(r - 1), n.lastOp.noble = [r], n.lastOp.noblePos = [t];
+    },
+    V = function (n, e) {
+      var t = arguments.length > 2 && void 0 !== arguments[2] && arguments[2];
+      if (!t) {
+        var r = C(n, e);
+        if (r.length > 1) return void (n.waitNoble = !0);
+        1 === r.length && Y(n, e, r[0]);
+      }
+      n.waitNoble = !1, y(n.playerGem[e]) > 10 ? n.waitThrowing = !0 : (n.waitThrowing = !1, n.waitFor = (e + 1) % n.playerGem.length);
+    },
+    K = function (n, e, t, r) {
+      var a = N(n)[e];
+      n.bankCard[e][t] = a.length ? (void 0 === r ? a[(0, u.M)(a.length)] : r) + 1 : 0;
+    },
+    _ = function (n, e, t, r) {
+      var a = Z(n),
+        i = a.waitFor,
+        l = o.XO[e],
+        s = a.bankGem[5] > 0 ? 1 : 0;
+      return a.bankGem[5] -= s, a.playerGem[i][5] += s, a.playerBooked[i].push(e), a.lastOp = {
+        type: c.W.BOOK,
+        playerId: i,
+        card: e + 1,
+        cardPos: t,
+        gemDelta: [0, 0, 0, 0, 0, s]
+      }, t !== v && (a.bankCard[l][t] = 0, K(a, l, t, r)), V(a, i), O(a), cn(n, a, t === v ? {
+        kind: "deck",
+        level: l
+      } : {
+        kind: "book",
+        cardId: e,
+        pos: t
+      }, t === v ? e : a.bankCard[l][t] ? a.bankCard[l][t] - 1 : void 0), a;
+    },
+    H = function (n, e) {
+      var t = Z(n),
+        r = t.waitFor;
+      return t.lastOp = {
+        type: c.W.CHOOSE_NOBLE,
+        playerId: r
+      }, Y(t, r, e), V(t, r, !0), O(t), cn(n, t, {
+        kind: "noble",
+        noblePos: e
+      }), t;
+    },
+    X = function (n, e) {
+      var t = Z(n),
+        r = t.waitFor;
+      return e.forEach(function (n, e) {
+        t.bankGem[e] += n, t.playerGem[r][e] -= n;
+      }), t.waitThrowing = !1, t.waitFor = (r + 1) % t.playerGem.length, t.lastOp = {
+        type: c.W.THROW,
+        playerId: r,
+        gemDelta: e
+      }, O(t), cn(n, t, {
+        kind: "throw",
+        gemDelta: e
+      }), t;
+    },
+    q = function (n) {
+      for (var e = n.playerGem[n.waitFor], t = new Array(6).fill(0), r = M(n, n.waitFor), a = 5; a >= 0 && r > 0; a--) t[a] = Math.min(e[a], r), r -= t[a];
+      return t;
+    },
+    $ = function (n) {
+      var e = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : n.waitFor;
+      if (e !== n.waitFor || n.winner.length) return [];
+      if (n.waitNoble) return n.nobleCandidates.map(function (n) {
+        return {
+          kind: "noble",
+          noblePos: n
+        };
+      });
+      var t = [];
+      if (n.waitThrowing) {
+        var r = [0, 0, 0, 0, 0, 0],
+          a = function a(i, c) {
+            if (6 !== i) for (var o = 0; o <= Math.min(c, n.playerGem[e][i]); o++) r[i] = o, a(i + 1, c - o);else c || t.push({
+              kind: "throw",
+              gemDelta: [].concat(r)
+            });
+          };
+        return a(0, M(n, e)), t;
+      }
+      for (var c = function e(r, a, c) {
+          if (c) for (var o = a; o < 5; o++) n.bankGem[o] > 0 && e([].concat((0, i.Z)(r), [o]), o + 1, c - 1);else t.push({
+            kind: "take",
+            selected: (0, i.Z)(r)
+          });
+        }, o = 1; o <= 3; o++) c([], 0, o);
+      for (var l = 0; l < 5; l++) n.bankGem[l] >= 4 && t.push({
+        kind: "take",
+        selected: [l, l]
+      });
+      U(n) && (n.bankCard.forEach(function (n) {
+        return n.forEach(function (n, e) {
+          n && t.push({
+            kind: "book",
+            cardId: n - 1,
+            pos: e
+          });
+        });
+      }), n.bankLeftCard.forEach(function (n, e) {
+        n.length && t.push({
+          kind: "deck",
+          level: e
+        });
+      }));
+      var s = function (r, a, i) {
+        P(n, r, e).forEach(function (n) {
+          t.push({
+            kind: "buy",
+            cardId: r,
+            pos: a,
+            booked: i,
+            payment: n
+          });
+        });
+      };
+      return n.bankCard.forEach(function (n) {
+        return n.forEach(function (n, e) {
+          n && s(n - 1, e, !1);
+        });
+      }), n.playerBooked[e].forEach(function (n, e) {
+        return s(n, e, !0);
+      }), t.push({
+        kind: "pass"
+      }), t;
+    },
+    J = function (n, e) {
+      var t = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : n.waitFor,
+        a = "take" === e.kind ? (0, r.Z)((0, r.Z)({}, e), {}, {
+          selected: (0, i.Z)(e.selected).sort(function (n, e) {
+            return n - e;
+          })
+        }) : e,
+        c = an(a);
+      return $(n, t).some(function (n) {
+        return an(n) === c;
+      });
+    },
+    Q = function (n) {
+      return n.winner.length ? null : n.waitNoble ? {
+        kind: "noble",
+        noblePos: n.nobleCandidates[0]
+      } : n.waitThrowing ? {
+        kind: "throw",
+        gemDelta: q(n)
+      } : {
+        kind: "pass"
+      };
+    },
+    z = function (n, e) {
+      var t = Q(n);
+      return null !== t && an(t) === an(e);
+    },
+    nn = function (n, e) {
+      var t = null;
+      return "deck" === e.kind ? t = e.level : ("book" === e.kind || "buy" === e.kind && !e.booked) && (t = o.XO[e.cardId]), null !== t && n.bankLeftCard[t].length ? t : null;
+    },
+    en = function (n, e, t) {
+      switch (e.kind) {
+        case "take":
+          return function (n, e) {
+            var t = Z(n),
+              r = t.waitFor,
+              a = new Array(6).fill(0).map(function (n, t) {
+                return e.filter(function (n) {
+                  return n === t;
+                }).length;
+              });
+            return a.forEach(function (n, e) {
+              t.bankGem[e] -= n, t.playerGem[r][e] += n;
+            }), t.lastOp = {
+              type: c.W.GEM,
+              playerId: r,
+              gemDelta: a
+            }, V(t, r), O(t), cn(n, t, {
+              kind: "take",
+              selected: (0, i.Z)(e).sort(function (n, e) {
+                return n - e;
+              })
+            }), t;
+          }(n, e.selected);
+        case "book":
+          return _(n, e.cardId, e.pos, t);
+        case "deck":
+          return function (n, e, t) {
+            var r = n.bankLeftCard[e];
+            return _(n, void 0 === t ? r[(0, u.M)(r.length)] : t, v);
+          }(n, e.level, t);
+        case "buy":
+          return function (n, e, t, r, a, l) {
+            var s = Z(n),
+              u = s.waitFor,
+              d = o.XO[e],
+              f = F(n, e, u),
+              h = a ? [].concat((0, i.Z)(a.spend), [a.gold]) : [].concat((0, i.Z)(f.spend), [f.needGold]);
+            return h.forEach(function (n, e) {
+              s.bankGem[e] += n, s.playerGem[u][e] -= n;
+            }), s.playerCard[u].push(e), s.lastOp = {
+              type: r ? c.W.BUY_BOOKED : c.W.BUY,
+              playerId: u,
+              card: e + 1,
+              cardPos: t,
+              gemDelta: h
+            }, r ? s.playerBooked[u].splice(s.playerBooked[u].indexOf(e), 1) : (s.bankCard[d][t] = 0, K(s, d, t, l)), V(s, u), O(s), cn(n, s, {
+              kind: "buy",
+              cardId: e,
+              pos: t,
+              booked: r,
+              payment: a || {
+                spend: f.spend,
+                gold: f.needGold
+              }
+            }, !r && s.bankCard[d][t] ? s.bankCard[d][t] - 1 : void 0), s;
+          }(n, e.cardId, e.pos, e.booked, e.payment, t);
+        case "noble":
+          return H(n, e.noblePos);
+        case "throw":
+          return X(n, e.gemDelta);
+        case "pass":
+          return function (n) {
+            var e = Z(n),
+              t = e.waitFor;
+            return e.waitFor = (t + 1) % e.playerGem.length, e.lastOp = {
+              type: c.W.NULL,
+              playerId: t
+            }, O(e), cn(n, e, {
+              kind: "pass"
+            }), e;
+          }(n);
+        default:
+          return n;
+      }
+    },
+    tn = function () {
+      return [[], [], []];
+    },
+    rn = function (n, e, t) {
+      var r = nn(n, e),
+        a = en(n, e, null === r ? void 0 : t[r][0]),
+        c = t.map(function (n) {
+          return (0, i.Z)(n);
+        });
+      return null !== r && c[r].length && c[r].shift(), {
+        view: a,
+        tail: c
+      };
+    },
+    an = function (n) {
+      switch (n.kind) {
+        case "take":
+          return "take:".concat(n.selected.join(","));
+        case "book":
+          return "book:".concat(n.cardId, ":").concat(n.pos);
+        case "deck":
+          return "deck:".concat(n.level);
+        case "buy":
+          return "buy:".concat(n.cardId, ":").concat(n.pos, ":").concat(n.booked, ":").concat(n.payment.spend.join(","), ":").concat(n.payment.gold);
+        case "noble":
+          return "noble:".concat(n.noblePos);
+        case "throw":
+          return "throw:".concat(n.gemDelta.join(","));
+        case "pass":
+          return "pass";
+        default:
+          return "";
+      }
+    },
+    cn = function (n, e, t, r) {
+      if (n.initial) {
+        var a = M(n, n.waitFor) > 3 ? [] : $(n),
+          i = an(t),
+          c = a.findIndex(function (n) {
+            return an(n) === i;
+          });
+        if (c < 0 || a.length > 511) return e.initial = null, void (e.recordList = []);
+        e.recordList.push(void 0 === r ? {
+          candidateId: c
+        } : {
+          candidateId: c,
+          drawCard: r
+        });
+      }
+    },
+    on = function (n) {
+      return JSON.stringify([n.waitFor, n.waitNoble, n.waitThrowing, n.bankGem, n.bankCard, n.bankNoble, n.playerGem, n.playerCard, n.playerBooked, n.playerNoble, n.lastOp]);
+    },
+    ln = 1e5,
+    sn = [[], [], []];
+  o.XO.forEach(function (n, e) {
+    return sn[n].push(e);
+  });
+  var un = function (n, e, t) {
+      if (![2, 3, 4].includes(t) || 3 !== e.bankCard.length || e.bankNoble.length !== t + 1) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u5f00\u5c40");
+      e.bankCard.forEach(function (e, t) {
+        if (4 !== e.length) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u573a\u724c");
+        var r = (0, i.Z)(sn[t]);
+        e.forEach(function (e) {
+          var t = r.indexOf(e - 1);
+          n.choice(t, r.length), r.splice(t, 1);
+        });
+      });
+      var r = new Array(10).fill(0).map(function (n, e) {
+        return e + 1;
+      });
+      e.bankNoble.forEach(function (e) {
+        var t = r.indexOf(e);
+        n.choice(t, r.length), r.splice(t, 1);
+      });
+    },
+    dn = function (n, e) {
+      if (![2, 3, 4].includes(e)) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u4eba\u6570");
+      var t = sn.map(function (e) {
+          var t = (0, i.Z)(e);
+          return new Array(4).fill(0).map(function () {
+            return t.splice(n.choice(t.length), 1)[0] + 1;
+          });
+        }),
+        r = new Array(10).fill(0).map(function (n, e) {
+          return e + 1;
+        });
+      return {
+        bankCard: t,
+        bankNoble: new Array(e + 1).fill(0).map(function () {
+          return r.splice(n.choice(r.length), 1)[0];
+        })
+      };
+    },
+    fn = function (n) {
+      if (1 !== n.read(3)) throw new Error("\u4e0d\u652f\u6301\u7684\u590d\u76d8\u7248\u672c");
+    },
+    hn = function (n, e) {
+      var t = new p();
+      return t.write(1, 3), un(t, n, e), t.finish();
+    },
+    pn = function (n, e) {
+      var t = new m(n);
+      fn(t);
+      var r = dn(t, e);
+      return t.finish(), r;
+    },
+    mn = function (n, e) {
+      var t = $(n);
+      if (!Number.isInteger(e.candidateId) || e.candidateId < 0 || e.candidateId >= t.length) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u64cd\u4f5c");
+      var r = t[e.candidateId],
+        a = nn(n, r);
+      if (null === a ? void 0 !== e.drawCard : !n.bankLeftCard[a].includes(e.drawCard)) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u62bd\u724c");
+      return {
+        candidates: t,
+        action: r,
+        level: a
+      };
+    },
+    vn = function (n, e, t, r) {
+      if (t.length > ln) throw new Error("\u590d\u76d8\u8bb0\u5f55\u8fc7\u591a");
+      n.count(t.length);
+      var a = I(r, e);
+      a.initial = null, t.forEach(function (e) {
+        var t = mn(a, e),
+          r = t.candidates,
+          i = t.action,
+          c = t.level;
+        if (n.choice(e.candidateId, r.length), null !== c) {
+          var o = a.bankLeftCard[c];
+          n.choice(o.indexOf(e.drawCard), o.length);
+        }
+        a = en(a, i, e.drawCard);
+      });
+    },
+    bn = function (n, e, t) {
+      var r = n.count();
+      if (r > ln) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u957f\u5ea6");
+      var a = I(t, e),
+        i = a.initial,
+        c = [],
+        o = [0];
+      a.initial = null;
+      for (var l = 0; l < r; l++) {
+        var s = $(a),
+          u = n.choice(s.length),
+          d = s[u],
+          f = nn(a, d),
+          h = null === f ? void 0 : a.bankLeftCard[f][n.choice(a.bankLeftCard[f].length)];
+        a = en(a, d, h), c.push(void 0 === h ? {
+          candidateId: u
+        } : {
+          candidateId: u,
+          drawCard: h
+        }), a.waitNoble || a.waitThrowing || o.push(l + 1);
+      }
+      return o[o.length - 1] !== r && o.push(r), a.initial = i, a.recordList = c, {
+        view: a,
+        offsets: o
+      };
+    },
+    yn = function (n, e, t) {
+      if (!e.length) return new Uint8Array();
+      var r = new p();
+      return r.write(1, 3), vn(r, n, e, t), r.finish();
+    },
+    wn = function (n, e, t) {
+      if (!n.length) return I(t, e);
+      var r = new m(n);
+      fn(r);
+      var a = bn(r, e, t).view;
+      if (r.finish(), !a.recordList.length) throw new Error("\u7a7a\u5386\u53f2\u5e94\u7f16\u7801\u4e3a\u7a7a\u5b57\u8282");
+      return a;
+    },
+    gn = function (n) {
+      if (!n.initial) throw new Error("\u8fd9\u5c40\u6ca1\u6709\u5b8c\u6574\u5386\u53f2");
+      var e = new p();
+      return e.write(1, 3), un(e, n.initial, n.playerGem.length), vn(e, n.initial, n.recordList, n.playerGem.length), e.finish();
+    },
+    xn = function (n, e) {
+      var t = new m(n);
+      fn(t);
+      var r = dn(t, e),
+        a = bn(t, r, e);
+      return t.finish(), a;
+    },
+    kn = function (n, e) {
+      if (!n.initial || !Number.isInteger(e) || e < 0 || e > n.recordList.length) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u4f4d\u7f6e");
+      return function (n, e, t) {
+        var a = I(t, n),
+          i = a.initial;
+        return a.initial = null, e.forEach(function (n) {
+          var e = mn(a, n).action;
+          a = en(a, e, n.drawCard);
+        }), a.initial = i, a.recordList = e.map(function (n) {
+          return (0, r.Z)({}, n);
+        }), a;
+      }(n.initial, n.recordList.slice(0, e), n.playerGem.length);
+    },
+    jn = function (n) {
+      var e = [0];
+      if (!n.initial) return e;
+      var t = I(n.playerGem.length, n.initial);
+      return t.initial = null, n.recordList.forEach(function (n, r) {
+        var a = mn(t, n).action;
+        (t = en(t, a, n.drawCard)).waitNoble || t.waitThrowing || e.push(r + 1);
+      }), e[e.length - 1] !== n.recordList.length && e.push(n.recordList.length), e;
+    },
+    Nn = function (n, e, t) {
+      if (!n.initial || !Number.isInteger(e) || e < 0 || e > n.recordList.length) throw new Error("\u65e0\u6548\u7684\u590d\u76d8\u4f4d\u7f6e");
+      var r = [[], [], []];
+      return n.recordList.slice(e).forEach(function (n) {
+        void 0 !== n.drawCard && r[o.XO[n.drawCard]].push(n.drawCard);
+      }), r.forEach(function (n, e) {
+        return n.push.apply(n, (0, i.Z)(t[e]));
+      }), r;
+    },
+    Cn = function (n, e) {
+      var t = jn(n);
+      return function (n, e, t) {
+        return {
+          view: kn(n, t),
+          tail: Nn(n, t, e)
+        };
+      }(n, e, t[t.length - 2]);
+    },
+    On = function (n, e) {
+      if (3 !== e.length) throw new Error("\u65e0\u6548\u7684\u5df2\u77e5\u724c\u5e8f");
+      if (e.every(function (n) {
+        return !n.length;
+      })) return new Uint8Array();
+      var t = new p();
+      return t.write(1, 3), e.forEach(function (e, r) {
+        var a = (0, i.Z)(n.bankLeftCard[r]);
+        t.choice(e.length, a.length + 1), e.forEach(function (n) {
+          var e = a.indexOf(n);
+          t.choice(e, a.length), a.splice(e, 1);
+        });
+      }), t.finish();
+    },
+    Zn = function (n, e) {
+      if (!e.length) return [[], [], []];
+      var t = new m(e);
+      fn(t);
+      var r = n.bankLeftCard.map(function (n) {
+        var e = (0, i.Z)(n),
+          r = t.choice(e.length + 1);
+        return new Array(r).fill(0).map(function () {
+          return e.splice(t.choice(e.length), 1)[0];
+        });
+      });
+      if (t.finish(), r.every(function (n) {
+        return !n.length;
+      })) throw new Error("\u7a7a\u724c\u5e8f\u5e94\u7f16\u7801\u4e3a\u7a7a\u5b57\u8282");
+      return r;
+    };
+},
+1413: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    Z: function () {
+      return l;
+    }
+  });
+  var r = n(4942);
+  function a(e, t) {
+    var n = Object.keys(e);
+    if (Object.getOwnPropertySymbols) {
+      var r = Object.getOwnPropertySymbols(e);
+      t && (r = r.filter(function (t) {
+        return Object.getOwnPropertyDescriptor(e, t).enumerable;
+      })), n.push.apply(n, r);
+    }
+    return n;
+  }
+  function l(e) {
+    for (var t = 1; t < arguments.length; t++) {
+      var n = null != arguments[t] ? arguments[t] : {};
+      t % 2 ? a(Object(n), !0).forEach(function (t) {
+        (0, r.Z)(e, t, n[t]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(n)) : a(Object(n)).forEach(function (t) {
+        Object.defineProperty(e, t, Object.getOwnPropertyDescriptor(n, t));
+      });
+    }
+    return e;
+  }
+},
+4942: function (e, t, n) {
+  "use strict";
+
+  function r(e, t, n) {
+    return t in e ? Object.defineProperty(e, t, {
+      value: n,
+      enumerable: !0,
+      configurable: !0,
+      writable: !0
+    }) : e[t] = n, e;
+  }
+  n.d(t, {
+    Z: function () {
+      return r;
+    }
+  });
+},
+2982: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    Z: function () {
+      return l;
+    }
+  });
+  var r = n(907);
+  var a = n(181);
+  function l(e) {
+    return function (e) {
+      if (Array.isArray(e)) return (0, r.Z)(e);
+    }(e) || function (e) {
+      if ("undefined" !== typeof Symbol && null != e[Symbol.iterator] || null != e["@@iterator"]) return Array.from(e);
+    }(e) || (0, a.Z)(e) || function () {
+      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }();
+  }
+},
+7698: function (n, e, t) {
+  var r;
+  t.d(e, {
+    W: function () {
+      return r;
+    }
+  }), function (n) {
+    n[n.NULL = 0] = "NULL", n[n.GEM = 1] = "GEM", n[n.BOOK = 2] = "BOOK", n[n.BUY = 3] = "BUY", n[n.BUY_BOOKED = 4] = "BUY_BOOKED", n[n.THROW = 5] = "THROW", n[n.CHOOSE_NOBLE = 6] = "CHOOSE_NOBLE";
+  }(r || (r = {}));
+},
+3797: function (n, e, t) {
+  t.d(e, {
+    FL: function () {
+      return d;
+    },
+    Hf: function () {
+      return a;
+    },
+    KI: function () {
+      return i;
+    },
+    XO: function () {
+      return o;
+    },
+    dS: function () {
+      return c;
+    },
+    s2: function () {
+      return s;
+    }
+  });
+  var r = t(2982),
+    a = [[0, 0, 4, 4, 0], [0, 4, 4, 0, 0], [4, 4, 0, 0, 0], [4, 0, 0, 0, 4], [0, 0, 0, 4, 4], [3, 3, 0, 0, 3], [0, 0, 3, 3, 3], [3, 0, 0, 3, 3], [0, 3, 3, 3, 0], [3, 3, 3, 0, 0]],
+    i = [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5];
+  i.push.apply(i, i.concat(i, i, i));
+  var c = [].concat((0, r.Z)(new Array(18).fill(0)), (0, r.Z)(new Array(18).fill(1)), (0, r.Z)(new Array(18).fill(2)), (0, r.Z)(new Array(18).fill(3)), (0, r.Z)(new Array(18).fill(4))),
+    o = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2];
+  o.push.apply(o, o.concat(o, o, o));
+  for (var l = [[0, 1, 1, 1, 1], [0, 1, 2, 1, 1], [3, 1, 0, 0, 1], [0, 2, 2, 0, 1], [0, 2, 0, 0, 2], [0, 0, 0, 2, 1], [0, 3, 0, 0, 0], [0, 0, 4, 0, 0], [2, 3, 0, 3, 0], [0, 0, 3, 2, 2], [0, 0, 1, 4, 2], [0, 0, 0, 5, 0], [0, 0, 0, 5, 3], [6, 0, 0, 0, 0], [0, 3, 3, 5, 3], [0, 0, 0, 0, 7], [3, 0, 0, 3, 6], [3, 0, 0, 0, 7]], s = l.map(function (n) {
+      return n.map(function (n) {
+        return n;
+      });
+    }), u = 1; u < 5; u++) l.forEach(function (n) {
+    var e = n[0];
+    n[0] = n[4], n[4] = n[3], n[3] = n[2], n[2] = n[1], n[1] = e;
+  }), s.push.apply(s, (0, r.Z)(l.map(function (n) {
+    return n.map(function (n) {
+      return n;
+    });
+  })));
+  s[20] = [0, 1, 3, 1, 0], s[22] = [0, 0, 2, 0, 2], s[24] = [0, 0, 0, 0, 3], s[27] = [0, 2, 2, 3, 0], s[29] = [0, 5, 0, 0, 0], s[30] = [5, 3, 0, 0, 0], s[38] = [1, 3, 1, 0, 0], s[45] = [2, 3, 0, 0, 2], s[47] = [0, 0, 5, 0, 0], s[48] = [0, 5, 3, 0, 0], s[56] = [1, 0, 0, 1, 3], s[58] = [2, 0, 0, 2, 0], s[60] = [3, 0, 0, 0, 0], s[63] = [2, 0, 0, 2, 3], s[65] = [0, 0, 0, 0, 5], s[66] = [3, 0, 0, 0, 5], s[74] = [0, 0, 1, 3, 1], s[76] = [2, 0, 2, 0, 0], s[78] = [0, 0, 3, 0, 0], s[81] = [3, 2, 2, 0, 0], s[83] = [5, 0, 0, 0, 0];
+  var d = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 4, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 1, 1, 2, 1, 4, 4, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 1, 1, 3, 4, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 1, 1, 4, 4, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 4, 4, 3];
+},
+3329: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    F: function () {
+      return s;
+    },
+    H0: function () {
+      return d;
+    },
+    I$: function () {
+      return m;
+    },
+    Su: function () {
+      return u;
+    },
+    lS: function () {
+      return l;
+    },
+    p2: function () {
+      return c;
+    }
+  });
+  var i = n(2982),
+    a = n(885),
+    r = new Map([]),
+    o = new Map([]);
+  function s(e, t, n, i) {
+    n = Math.min(n, (1 << i) - 1);
+    var a = e,
+      r = t,
+      o = [];
+    return t + i < 8 ? (a |= n << 8 - i - t, r += i) : t + i === 8 ? (o.push(e | n), a = 0, r = 0) : (a |= n >> t - 8 + i, o.push(a), a = n << 16 - t - i & 255, r = t - 8 + i), [a, r, o];
+  }
+  function c(e, t, n, c) {
+    if (c < 2) return [e, t, []];
+    var l = o.get(c),
+      u = r.get(c),
+      d = Math.pow(2, l),
+      m = c - d;
+    if (l === u || n < d - m) return s(e, t, n, l);
+    var f,
+      h = e,
+      x = t,
+      p = [];
+    if (n < d) {
+      var j = s(h, x, n, l),
+        y = (0, a.Z)(j, 3);
+      h = y[0], x = y[1], f = y[2], p.push.apply(p, (0, i.Z)(f));
+      var b = s(h, x, 0, 1),
+        g = (0, a.Z)(b, 3);
+      h = g[0], x = g[1], f = g[2], p.push.apply(p, (0, i.Z)(f));
+    } else {
+      var v = s(h, x, n - m, l),
+        w = (0, a.Z)(v, 3);
+      h = w[0], x = w[1], f = w[2], p.push.apply(p, (0, i.Z)(f));
+      var W = s(h, x, 1, 1),
+        k = (0, a.Z)(W, 3);
+      h = k[0], x = k[1], f = k[2], p.push.apply(p, (0, i.Z)(f));
+    }
+    return [h, x, p];
+  }
+  function l(e, t, n) {
+    var i = t % 8,
+      a = Math.floor(t / 8);
+    if (i + n > 8 && a + 1 >= e.length || i + n <= 8 && a >= e.length) throw new Error("readBitsError");
+    var r = i + n <= 8 ? e[a] : e[a] << 8 | e[a + 1];
+    return r >>= (i + n <= 8 ? 8 : 16) - n - i, [r &= [0, 1, 3, 7, 15, 31, 63, 127, 255][n], t + n];
+  }
+  function u(e, t, n) {
+    if (!n) throw new Error("readBitsError");
+    if (1 === n) return [0, t];
+    var i = o.get(n),
+      s = r.get(n),
+      c = Math.pow(2, i),
+      u = n - c,
+      d = l(e, t, i),
+      m = (0, a.Z)(d, 2),
+      f = m[0],
+      h = m[1];
+    if (i === s || f < c - u) return [f, h];
+    var x = l(e, h, 1),
+      p = (0, a.Z)(x, 2),
+      j = p[0],
+      y = p[1];
+    return j ? [f + u, y] : [f, y];
+  }
+  function d(e, t) {
+    for (var n = [], i = 0; i < t; i++) n.push(!!(e >> i & 1));
+    return n;
+  }
+  function m(e) {
+    var t = 0;
+    return e.forEach(function (e, n) {
+      e && (t |= 1 << n);
+    }), t;
+  }
+  new Array(511).fill(0).forEach(function (e, t) {
+    var n = Math.log2(t + 1);
+    r.set(t + 1, Math.ceil(n)), o.set(t + 1, Math.floor(n));
+  });
+},
+4595: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    P: function () {
+      return l;
+    }
+  });
+  var i = n(1413),
+    a = n(7313),
+    r = n(7890),
+    o = n(9466),
+    s = n(161),
+    c = n(6417);
+  function l(e) {
+    var t = (0, r.s0)(),
+      n = (0, r.TH)().state,
+      i = null === n || void 0 === n ? void 0 : n.keepSession;
+    return function () {
+      i ? t(-1) : 1 === window.history.length ? t(e, {
+        replace: !0
+      }) : (t(e, {
+        replace: !0
+      }), t(e), t(-1));
+    };
+  }
+  function u(e) {
+    var t = e.to,
+      n = e.children,
+      i = e.className,
+      a = e.lastClickTime,
+      r = l(t);
+    return (0, c.jsx)(o.rU, {
+      to: t,
+      className: i,
+      onClick: function (e) {
+        if (0 === e.button && !(e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)) {
+          e.preventDefault();
+          var t = new Date().getTime();
+          t - a.current > 100 && (a.current = t, r());
+        }
+      },
+      children: n
+    });
+  }
+  t.Z = function (e) {
+    var t,
+      n = e.to,
+      r = e.state,
+      l = e.replace,
+      d = e.back,
+      m = e.children,
+      f = e.onClick,
+      h = e.disabled,
+      x = e.small,
+      p = e.primary,
+      j = e.noStyle,
+      y = e.className,
+      b = (0, a.useRef)(0),
+      g = n && !h;
+    j ? t = y || "" : (t = "inline-block flex-shrink-0 overflow-hidden whitespace-nowrap transition-colors rounded-full box-shadow ", t += x ? "h-6 leading-6 px-2 text-xs " : "h-10 leading-10 px-4 text-base ", t += h ? "text-black/40 bg-gray-200 cursor-not-allowed" : p ? "text-white primary" : "text-black/90 bg-slate-200/80 active:bg-slate-300/70", y && (t += " ".concat(y)));
+    var v = h || !f ? void 0 : function (e) {
+      if (g) {
+        if (0 !== e.button) return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+      }
+      var t = new Date().getTime();
+      t - b.current > 100 && (b.current = t, f(e));
+    };
+    return g ? d ? (0, c.jsx)(u, {
+      to: n,
+      className: t,
+      lastClickTime: b,
+      children: m
+    }) : n.startsWith("http") ? s.ot && !n.startsWith("https://mp.weixin.qq.com") || s.ot && !s.at ? null : (0, c.jsx)("a", {
+      href: n,
+      target: "_blank",
+      rel: "noreferrer noopener",
+      className: t,
+      onClick: v,
+      children: m
+    }) : (0, c.jsx)(o.rU, {
+      to: n,
+      state: (0, i.Z)((0, i.Z)({}, r), {}, {
+        keepSession: !0
+      }),
+      replace: l,
+      className: t,
+      onClick: v,
+      children: m
+    }) : (0, c.jsx)("button", {
+      type: "button",
+      className: t,
+      onClick: v,
+      children: m,
+      disabled: h
+    });
+  };
+},
+7890: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    AW: function () {
+      return T;
+    },
+    F0: function () {
+      return R;
+    },
+    TH: function () {
+      return _;
+    },
+    UO: function () {
+      return N;
+    },
+    WU: function () {
+      return z;
+    },
+    Z5: function () {
+      return M;
+    },
+    j3: function () {
+      return L;
+    },
+    oQ: function () {
+      return x;
+    },
+    s0: function () {
+      return C;
+    }
+  });
+  var r = n(885),
+    a = n(5216),
+    l = n(7313),
+    o = (0, l.createContext)(null);
+  var i = (0, l.createContext)(null);
+  var u = (0, l.createContext)({
+    outlet: null,
+    matches: []
+  });
+  function s(e, t) {
+    if (!e) throw new Error(t);
+  }
+  function c(e, t, n) {
+    void 0 === n && (n = "/");
+    var r = g(("string" === typeof t ? (0, a.cP)(t) : t).pathname || "/", n);
+    if (null == r) return null;
+    var l = f(e);
+    !function (e) {
+      e.sort(function (e, t) {
+        return e.score !== t.score ? t.score - e.score : function (e, t) {
+          var n = e.length === t.length && e.slice(0, -1).every(function (e, n) {
+            return e === t[n];
+          });
+          return n ? e[e.length - 1] - t[t.length - 1] : 0;
+        }(e.routesMeta.map(function (e) {
+          return e.childrenIndex;
+        }), t.routesMeta.map(function (e) {
+          return e.childrenIndex;
+        }));
+      });
+    }(l);
+    for (var o = null, i = 0; null == o && i < l.length; ++i) o = m(l[i], r);
+    return o;
+  }
+  function f(e, t, n, r) {
+    return void 0 === t && (t = []), void 0 === n && (n = []), void 0 === r && (r = ""), e.forEach(function (e, a) {
+      var l = {
+        relativePath: e.path || "",
+        caseSensitive: !0 === e.caseSensitive,
+        childrenIndex: a,
+        route: e
+      };
+      l.relativePath.startsWith("/") && (l.relativePath.startsWith(r) || s(!1), l.relativePath = l.relativePath.slice(r.length));
+      var o = b([r, l.relativePath]),
+        i = n.concat(l);
+      e.children && e.children.length > 0 && (!0 === e.index && s(!1), f(e.children, t, i, o)), (null != e.path || e.index) && t.push({
+        path: o,
+        score: h(o, e.index),
+        routesMeta: i
+      });
+    }), t;
+  }
+  var d = /^:\w+$/,
+    p = function (e) {
+      return "*" === e;
+    };
+  function h(e, t) {
+    var n = e.split("/"),
+      r = n.length;
+    return n.some(p) && (r += -2), t && (r += 2), n.filter(function (e) {
+      return !p(e);
+    }).reduce(function (e, t) {
+      return e + (d.test(t) ? 3 : "" === t ? 1 : 10);
+    }, r);
+  }
+  function m(e, t) {
+    for (var n = e.routesMeta, r = {}, a = "/", l = [], o = 0; o < n.length; ++o) {
+      var i = n[o],
+        u = o === n.length - 1,
+        s = "/" === a ? t : t.slice(a.length) || "/",
+        c = v({
+          path: i.relativePath,
+          caseSensitive: i.caseSensitive,
+          end: u
+        }, s);
+      if (!c) return null;
+      Object.assign(r, c.params);
+      var f = i.route;
+      l.push({
+        params: r,
+        pathname: b([a, c.pathname]),
+        pathnameBase: w(b([a, c.pathnameBase])),
+        route: f
+      }), "/" !== c.pathnameBase && (a = b([a, c.pathnameBase]));
+    }
+    return l;
+  }
+  function v(e, t) {
+    "string" === typeof e && (e = {
+      path: e,
+      caseSensitive: !1,
+      end: !0
+    });
+    var n = function (e, t, n) {
+        void 0 === t && (t = !1);
+        void 0 === n && (n = !0);
+        var r = [],
+          a = "^" + e.replace(/\/*\*?$/, "").replace(/^\/*/, "/").replace(/[\\.*+^$?{}|()[\]]/g, "\\$&").replace(/:(\w+)/g, function (e, t) {
+            return r.push(t), "([^\\/]+)";
+          });
+        e.endsWith("*") ? (r.push("*"), a += "*" === e || "/*" === e ? "(.*)$" : "(?:\\/(.+)|\\/*)$") : a += n ? "\\/*$" : "(?:(?=[.~-]|%[0-9A-F]{2})|\\b|\\/|$)";
+        return [new RegExp(a, t ? void 0 : "i"), r];
+      }(e.path, e.caseSensitive, e.end),
+      a = (0, r.Z)(n, 2),
+      l = a[0],
+      o = a[1],
+      i = t.match(l);
+    if (!i) return null;
+    var u = i[0],
+      s = u.replace(/(.)\/+$/, "$1"),
+      c = i.slice(1);
+    return {
+      params: o.reduce(function (e, t, n) {
+        if ("*" === t) {
+          var r = c[n] || "";
+          s = u.slice(0, u.length - r.length).replace(/(.)\/+$/, "$1");
+        }
+        return e[t] = function (e, t) {
+          try {
+            return decodeURIComponent(e);
+          } catch (n) {
+            return e;
+          }
+        }(c[n] || ""), e;
+      }, {}),
+      pathname: u,
+      pathnameBase: s,
+      pattern: e
+    };
+  }
+  function y(e, t, n) {
+    var r,
+      l = "string" === typeof e ? (0, a.cP)(e) : e,
+      o = "" === e || "" === l.pathname ? "/" : l.pathname;
+    if (null == o) r = n;else {
+      var i = t.length - 1;
+      if (o.startsWith("..")) {
+        for (var u = o.split("/"); ".." === u[0];) u.shift(), i -= 1;
+        l.pathname = u.join("/");
+      }
+      r = i >= 0 ? t[i] : "/";
+    }
+    var s = function (e, t) {
+      void 0 === t && (t = "/");
+      var n = "string" === typeof e ? (0, a.cP)(e) : e,
+        r = n.pathname,
+        l = n.search,
+        o = void 0 === l ? "" : l,
+        i = n.hash,
+        u = void 0 === i ? "" : i,
+        s = r ? r.startsWith("/") ? r : function (e, t) {
+          var n = t.replace(/\/+$/, "").split("/");
+          return e.split("/").forEach(function (e) {
+            ".." === e ? n.length > 1 && n.pop() : "." !== e && n.push(e);
+          }), n.length > 1 ? n.join("/") : "/";
+        }(r, t) : t;
+      return {
+        pathname: s,
+        search: k(o),
+        hash: S(u)
+      };
+    }(l, r);
+    return o && "/" !== o && o.endsWith("/") && !s.pathname.endsWith("/") && (s.pathname += "/"), s;
+  }
+  function g(e, t) {
+    if ("/" === t) return e;
+    if (!e.toLowerCase().startsWith(t.toLowerCase())) return null;
+    var n = e.charAt(t.length);
+    return n && "/" !== n ? null : e.slice(t.length) || "/";
+  }
+  var b = function (e) {
+      return e.join("/").replace(/\/\/+/g, "/");
+    },
+    w = function (e) {
+      return e.replace(/\/+$/, "").replace(/^\/*/, "/");
+    },
+    k = function (e) {
+      return e && "?" !== e ? e.startsWith("?") ? e : "?" + e : "";
+    },
+    S = function (e) {
+      return e && "#" !== e ? e.startsWith("#") ? e : "#" + e : "";
+    };
+  function x(e) {
+    E() || s(!1);
+    var t = (0, l.useContext)(o),
+      n = t.basename,
+      r = t.navigator,
+      i = z(e),
+      u = i.hash,
+      c = i.pathname,
+      f = i.search,
+      d = c;
+    if ("/" !== n) {
+      var p = function (e) {
+          return "" === e || "" === e.pathname ? "/" : "string" === typeof e ? (0, a.cP)(e).pathname : e.pathname;
+        }(e),
+        h = null != p && p.endsWith("/");
+      d = "/" === c ? n + (h ? "/" : "") : b([n, c]);
+    }
+    return r.createHref({
+      pathname: d,
+      search: f,
+      hash: u
+    });
+  }
+  function E() {
+    return null != (0, l.useContext)(i);
+  }
+  function _() {
+    return E() || s(!1), (0, l.useContext)(i).location;
+  }
+  function C() {
+    E() || s(!1);
+    var e = (0, l.useContext)(o),
+      t = e.basename,
+      n = e.navigator,
+      r = (0, l.useContext)(u).matches,
+      a = _().pathname,
+      i = JSON.stringify(r.map(function (e) {
+        return e.pathnameBase;
+      })),
+      c = (0, l.useRef)(!1);
+    return (0, l.useEffect)(function () {
+      c.current = !0;
+    }), (0, l.useCallback)(function (e, r) {
+      if (void 0 === r && (r = {}), c.current) if ("number" !== typeof e) {
+        var l = y(e, JSON.parse(i), a);
+        "/" !== t && (l.pathname = b([t, l.pathname])), (r.replace ? n.replace : n.push)(l, r.state);
+      } else n.go(e);
+    }, [t, n, i, a]);
+  }
+  var P = (0, l.createContext)(null);
+  function N() {
+    var e = (0, l.useContext)(u).matches,
+      t = e[e.length - 1];
+    return t ? t.params : {};
+  }
+  function z(e) {
+    var t = (0, l.useContext)(u).matches,
+      n = _().pathname,
+      r = JSON.stringify(t.map(function (e) {
+        return e.pathnameBase;
+      }));
+    return (0, l.useMemo)(function () {
+      return y(e, JSON.parse(r), n);
+    }, [e, r, n]);
+  }
+  function O(e, t) {
+    return void 0 === t && (t = []), null == e ? null : e.reduceRight(function (n, r, a) {
+      return (0, l.createElement)(u.Provider, {
+        children: void 0 !== r.route.element ? r.route.element : n,
+        value: {
+          outlet: n,
+          matches: t.concat(e.slice(0, a + 1))
+        }
+      });
+    }, null);
+  }
+  function L(e) {
+    return function (e) {
+      var t = (0, l.useContext)(u).outlet;
+      return t ? (0, l.createElement)(P.Provider, {
+        value: e
+      }, t) : t;
+    }(e.context);
+  }
+  function T(e) {
+    s(!1);
+  }
+  function R(e) {
+    var t = e.basename,
+      n = void 0 === t ? "/" : t,
+      r = e.children,
+      u = void 0 === r ? null : r,
+      c = e.location,
+      f = e.navigationType,
+      d = void 0 === f ? a.aU.Pop : f,
+      p = e.navigator,
+      h = e.static,
+      m = void 0 !== h && h;
+    E() && s(!1);
+    var v = w(n),
+      y = (0, l.useMemo)(function () {
+        return {
+          basename: v,
+          navigator: p,
+          static: m
+        };
+      }, [v, p, m]);
+    "string" === typeof c && (c = (0, a.cP)(c));
+    var b = c,
+      k = b.pathname,
+      S = void 0 === k ? "/" : k,
+      x = b.search,
+      _ = void 0 === x ? "" : x,
+      C = b.hash,
+      P = void 0 === C ? "" : C,
+      N = b.state,
+      z = void 0 === N ? null : N,
+      O = b.key,
+      L = void 0 === O ? "default" : O,
+      T = (0, l.useMemo)(function () {
+        var e = g(S, v);
+        return null == e ? null : {
+          pathname: e,
+          search: _,
+          hash: P,
+          state: z,
+          key: L
+        };
+      }, [v, S, _, P, z, L]);
+    return null == T ? null : (0, l.createElement)(o.Provider, {
+      value: y
+    }, (0, l.createElement)(i.Provider, {
+      children: u,
+      value: {
+        location: T,
+        navigationType: d
+      }
+    }));
+  }
+  function M(e) {
+    var t = e.children,
+      n = e.location;
+    return function (e, t) {
+      E() || s(!1);
+      var n,
+        r = (0, l.useContext)(u).matches,
+        o = r[r.length - 1],
+        i = o ? o.params : {},
+        f = (o && o.pathname, o ? o.pathnameBase : "/"),
+        d = (o && o.route, _());
+      if (t) {
+        var p,
+          h = "string" === typeof t ? (0, a.cP)(t) : t;
+        "/" === f || (null == (p = h.pathname) ? void 0 : p.startsWith(f)) || s(!1), n = h;
+      } else n = d;
+      var m = n.pathname || "/",
+        v = c(e, {
+          pathname: "/" === f ? m : m.slice(f.length) || "/"
+        });
+      return O(v && v.map(function (e) {
+        return Object.assign({}, e, {
+          params: Object.assign({}, i, e.params),
+          pathname: b([f, e.pathname]),
+          pathnameBase: "/" === e.pathnameBase ? f : b([f, e.pathnameBase])
+        });
+      }), r);
+    }(F(t), n);
+  }
+  function F(e) {
+    var t = [];
+    return l.Children.forEach(e, function (e) {
+      if ((0, l.isValidElement)(e)) if (e.type !== l.Fragment) {
+        e.type !== T && s(!1);
+        var n = {
+          caseSensitive: e.props.caseSensitive,
+          element: e.props.element,
+          index: e.props.index,
+          path: e.props.path
+        };
+        e.props.children && (n.children = F(e.props.children)), t.push(n);
+      } else t.push.apply(t, F(e.props.children));
+    }), t;
+  }
+},
+5216: function (e, t, n) {
+  "use strict";
+
+  function r() {
+    return r = Object.assign ? Object.assign.bind() : function (e) {
+      for (var t = 1; t < arguments.length; t++) {
+        var n = arguments[t];
+        for (var r in n) Object.prototype.hasOwnProperty.call(n, r) && (e[r] = n[r]);
+      }
+      return e;
+    }, r.apply(this, arguments);
+  }
+  var a;
+  n.d(t, {
+    aU: function () {
+      return a;
+    },
+    lX: function () {
+      return u;
+    },
+    Ep: function () {
+      return d;
+    },
+    cP: function () {
+      return p;
+    }
+  }), function (e) {
+    e.Pop = "POP", e.Push = "PUSH", e.Replace = "REPLACE";
+  }(a || (a = {}));
+  var l = function (e) {
+    return e;
+  };
+  var o = "beforeunload",
+    i = "popstate";
+  function u(e) {
+    void 0 === e && (e = {});
+    var t = e.window,
+      n = void 0 === t ? document.defaultView : t,
+      u = n.history;
+    function h() {
+      var e = n.location,
+        t = e.pathname,
+        r = e.search,
+        a = e.hash,
+        o = u.state || {};
+      return [o.idx, l({
+        pathname: t,
+        search: r,
+        hash: a,
+        state: o.usr || null,
+        key: o.key || "default"
+      })];
+    }
+    var m = null;
+    n.addEventListener(i, function () {
+      if (m) k.call(m), m = null;else {
+        var e = a.Pop,
+          t = h(),
+          n = t[0],
+          r = t[1];
+        if (k.length) {
+          if (null != n) {
+            var l = g - n;
+            l && (m = {
+              action: e,
+              location: r,
+              retry: function () {
+                P(-1 * l);
+              }
+            }, P(l));
+          }
+        } else C(e);
+      }
+    });
+    var v = a.Pop,
+      y = h(),
+      g = y[0],
+      b = y[1],
+      w = c(),
+      k = c();
+    function S(e) {
+      return "string" === typeof e ? e : d(e);
+    }
+    function x(e, t) {
+      return void 0 === t && (t = null), l(r({
+        pathname: b.pathname,
+        hash: "",
+        search: ""
+      }, "string" === typeof e ? p(e) : e, {
+        state: t,
+        key: f()
+      }));
+    }
+    function E(e, t) {
+      return [{
+        usr: e.state,
+        key: e.key,
+        idx: t
+      }, S(e)];
+    }
+    function _(e, t, n) {
+      return !k.length || (k.call({
+        action: e,
+        location: t,
+        retry: n
+      }), !1);
+    }
+    function C(e) {
+      v = e;
+      var t = h();
+      g = t[0], b = t[1], w.call({
+        action: v,
+        location: b
+      });
+    }
+    function P(e) {
+      u.go(e);
+    }
+    null == g && (g = 0, u.replaceState(r({}, u.state, {
+      idx: g
+    }), ""));
+    var N = {
+      get action() {
+        return v;
+      },
+      get location() {
+        return b;
+      },
+      createHref: S,
+      push: function e(t, r) {
+        var l = a.Push,
+          o = x(t, r);
+        if (_(l, o, function () {
+          e(t, r);
+        })) {
+          var i = E(o, g + 1),
+            s = i[0],
+            c = i[1];
+          try {
+            u.pushState(s, "", c);
+          } catch (f) {
+            n.location.assign(c);
+          }
+          C(l);
+        }
+      },
+      replace: function e(t, n) {
+        var r = a.Replace,
+          l = x(t, n);
+        if (_(r, l, function () {
+          e(t, n);
+        })) {
+          var o = E(l, g),
+            i = o[0],
+            s = o[1];
+          u.replaceState(i, "", s), C(r);
+        }
+      },
+      go: P,
+      back: function () {
+        P(-1);
+      },
+      forward: function () {
+        P(1);
+      },
+      listen: function (e) {
+        return w.push(e);
+      },
+      block: function (e) {
+        var t = k.push(e);
+        return 1 === k.length && n.addEventListener(o, s), function () {
+          t(), k.length || n.removeEventListener(o, s);
+        };
+      }
+    };
+    return N;
+  }
+  function s(e) {
+    e.preventDefault(), e.returnValue = "";
+  }
+  function c() {
+    var e = [];
+    return {
+      get length() {
+        return e.length;
+      },
+      push: function (t) {
+        return e.push(t), function () {
+          e = e.filter(function (e) {
+            return e !== t;
+          });
+        };
+      },
+      call: function (t) {
+        e.forEach(function (e) {
+          return e && e(t);
+        });
+      }
+    };
+  }
+  function f() {
+    return Math.random().toString(36).substr(2, 8);
+  }
+  function d(e) {
+    var t = e.pathname,
+      n = void 0 === t ? "/" : t,
+      r = e.search,
+      a = void 0 === r ? "" : r,
+      l = e.hash,
+      o = void 0 === l ? "" : l;
+    return a && "?" !== a && (n += "?" === a.charAt(0) ? a : "?" + a), o && "#" !== o && (n += "#" === o.charAt(0) ? o : "#" + o), n;
+  }
+  function p(e) {
+    var t = {};
+    if (e) {
+      var n = e.indexOf("#");
+      n >= 0 && (t.hash = e.substr(n), e = e.substr(0, n));
+      var r = e.indexOf("?");
+      r >= 0 && (t.search = e.substr(r), e = e.substr(0, r)), e && (t.pathname = e);
+    }
+    return t;
+  }
+},
+9466: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    VK: function () {
+      return f;
+    },
+    lr: function () {
+      return p;
+    },
+    rU: function () {
+      return d;
+    }
+  });
+  var r = n(7762),
+    a = n(885),
+    l = n(7313),
+    o = n(5216),
+    i = n(7890);
+  function u() {
+    return u = Object.assign || function (e) {
+      for (var t = 1; t < arguments.length; t++) {
+        var n = arguments[t];
+        for (var r in n) Object.prototype.hasOwnProperty.call(n, r) && (e[r] = n[r]);
+      }
+      return e;
+    }, u.apply(this, arguments);
+  }
+  function s(e, t) {
+    if (null == e) return {};
+    var n,
+      r,
+      a = {},
+      l = Object.keys(e);
+    for (r = 0; r < l.length; r++) n = l[r], t.indexOf(n) >= 0 || (a[n] = e[n]);
+    return a;
+  }
+  var c = ["onClick", "reloadDocument", "replace", "state", "target", "to"];
+  function f(e) {
+    var t = e.basename,
+      n = e.children,
+      r = e.window,
+      u = (0, l.useRef)();
+    null == u.current && (u.current = (0, o.lX)({
+      window: r
+    }));
+    var s = u.current,
+      c = (0, l.useState)({
+        action: s.action,
+        location: s.location
+      }),
+      f = (0, a.Z)(c, 2),
+      d = f[0],
+      p = f[1];
+    return (0, l.useLayoutEffect)(function () {
+      return s.listen(p);
+    }, [s]), (0, l.createElement)(i.F0, {
+      basename: t,
+      children: n,
+      location: d.location,
+      navigationType: d.action,
+      navigator: s
+    });
+  }
+  var d = (0, l.forwardRef)(function (e, t) {
+    var n = e.onClick,
+      r = e.reloadDocument,
+      a = e.replace,
+      f = void 0 !== a && a,
+      d = e.state,
+      p = e.target,
+      h = e.to,
+      m = s(e, c),
+      v = (0, i.oQ)(h),
+      y = function (e, t) {
+        var n = void 0 === t ? {} : t,
+          r = n.target,
+          a = n.replace,
+          u = n.state,
+          s = (0, i.s0)(),
+          c = (0, i.TH)(),
+          f = (0, i.WU)(e);
+        return (0, l.useCallback)(function (t) {
+          if (0 === t.button && (!r || "_self" === r) && !function (e) {
+            return !!(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey);
+          }(t)) {
+            t.preventDefault();
+            var n = !!a || (0, o.Ep)(c) === (0, o.Ep)(f);
+            s(e, {
+              replace: n,
+              state: u
+            });
+          }
+        }, [c, s, f, a, u, r, e]);
+      }(h, {
+        replace: f,
+        state: d,
+        target: p
+      });
+    return (0, l.createElement)("a", u({}, m, {
+      href: v,
+      onClick: function (e) {
+        n && n(e), e.defaultPrevented || r || y(e);
+      },
+      ref: t,
+      target: p
+    }));
+  });
+  function p(e) {
+    var t = (0, l.useRef)(h(e)),
+      n = (0, i.TH)(),
+      a = (0, l.useMemo)(function () {
+        var e,
+          a = h(n.search),
+          l = (0, r.Z)(t.current.keys());
+        try {
+          var o = function () {
+            var n = e.value;
+            a.has(n) || t.current.getAll(n).forEach(function (e) {
+              a.append(n, e);
+            });
+          };
+          for (l.s(); !(e = l.n()).done;) o();
+        } catch (i) {
+          l.e(i);
+        } finally {
+          l.f();
+        }
+        return a;
+      }, [n.search]),
+      o = (0, i.s0)();
+    return [a, (0, l.useCallback)(function (e, t) {
+      o("?" + h(e), t);
+    }, [o])];
+  }
+  function h(e) {
+    return void 0 === e && (e = ""), new URLSearchParams("string" === typeof e || Array.isArray(e) || e instanceof URLSearchParams ? e : Object.keys(e).reduce(function (t, n) {
+      var r = e[n];
+      return t.concat(Array.isArray(r) ? r.map(function (e) {
+        return [n, e];
+      }) : [[n, r]]);
+    }, []));
+  }
+},
+7762: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    Z: function () {
+      return a;
+    }
+  });
+  var r = n(181);
+  function a(e, t) {
+    var n = "undefined" !== typeof Symbol && e[Symbol.iterator] || e["@@iterator"];
+    if (!n) {
+      if (Array.isArray(e) || (n = (0, r.Z)(e)) || t && e && "number" === typeof e.length) {
+        n && (e = n);
+        var a = 0,
+          l = function () {};
+        return {
+          s: l,
+          n: function () {
+            return a >= e.length ? {
+              done: !0
+            } : {
+              done: !1,
+              value: e[a++]
+            };
+          },
+          e: function (e) {
+            throw e;
+          },
+          f: l
+        };
+      }
+      throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+    var o,
+      i = !0,
+      u = !1;
+    return {
+      s: function () {
+        n = n.call(e);
+      },
+      n: function () {
+        var e = n.next();
+        return i = e.done, e;
+      },
+      e: function (e) {
+        u = !0, o = e;
+      },
+      f: function () {
+        try {
+          i || null == n.return || n.return();
+        } finally {
+          if (u) throw o;
+        }
+      }
+    };
+  }
+},
+7992: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    Yw: function () {
+      return m;
+    }
+  });
+  var i,
+    a = n(885),
+    r = n(7313),
+    o = n(3299),
+    s = n(5982),
+    c = n(4595),
+    l = n(2335),
+    u = n(3366),
+    d = n(6417);
+  !function (e) {
+    e[e.None = 0] = "None", e[e.OK = 1] = "OK", e[e.NO = 2] = "NO", e[e.AddPosition = 3] = "AddPosition", e[e.LetsStart = 4] = "LetsStart", e[e.SitBeforeAndStart = 5] = "SitBeforeAndStart", e[e.AreYouReady = 6] = "AreYouReady", e[e.WaitFiveMin = 7] = "WaitFiveMin", e[e.WaitThreeMin = 8] = "WaitThreeMin", e[e.WaitOneMin = 9] = "WaitOneMin", e[e.INeedLeave = 10] = "INeedLeave", e[e.Bye = 11] = "Bye", e[e.IHaveToHangUp = 12] = "IHaveToHangUp", e[e.MyLastGame = 13] = "MyLastGame", e[e.StartAgain = 14] = "StartAgain", e[e.BeQuick = 15] = "BeQuick", e[e.Wait30S = 16] = "Wait30S", e[e.Wait60S = 17] = "Wait60S", e[e.Wait120S = 18] = "Wait120S", e[e.WaitMore = 19] = "WaitMore", e[e.Proud = 20] = "Proud", e[e.Sad = 21] = "Sad", e[e.Help = 22] = "Help", e[e.Thanks = 23] = "Thanks", e[e.Haha = 24] = "Haha";
+  }(i || (i = {}));
+  var m = function (e, t) {
+      var n = e.playerList[t];
+      return n.state === i.IHaveToHangUp || n.offline && +new Date() - n.offlineTime > 6e4;
+    },
+    f = [i.WaitFiveMin, i.WaitThreeMin, i.WaitOneMin, i.IHaveToHangUp, i.Wait30S, i.Wait60S, i.Wait120S, i.WaitMore],
+    h = [[i.WaitFiveMin, 300], [i.WaitThreeMin, 180], [i.WaitOneMin, 60], [i.Wait30S, 30], [i.Wait60S, 60], [i.Wait120S, 120]],
+    x = ["", "\u597d\u554a", "\u62b1\u6b49\uff0c\u4e0d\u884c", "\u623f\u4e3b\u52a0\u4e2a\u4f4d\u7f6e", "\u5f00\u59cb\u5427", "\u5927\u5bb6\u5f80\u524d\u5750\uff0c\u4e0d\u7b49\u4e86\uff0c\u51c6\u5907\u5f00", "\u51c6\u5907\u597d\u4e86\u5417\uff1f\u8981\u5f00\u59cb\u4e86", "\u7b49\u4e94\u5206\u949f\u5f00", "\u7b49\u4e09\u5206\u949f\u5f00", "\u7b49\u4e00\u5206\u949f\u5f00", "\u6211\u6709\u4e8b\u4e0d\u73a9\u4e86\uff0c\u62dc\u62dc", "\u62dc\u62dc", "\u6211\u6302\u673a\u4e86\uff0c\u4f60\u4eec\u73a9", "\u6700\u540e\u4e00\u5c40\uff0c\u73a9\u5b8c\u8fd9\u5c40\u6211\u4e0b\u4e86", "\u518d\u6765\u4e00\u5c40", "\u8bf7\u64cd\u4f5c\u5feb\u4e00\u70b9", "\u7b49\u6211\u601d\u800330\u79d2", "\u7b49\u6211\u601d\u800360\u79d2", "\u7b49\u6211\u601d\u8003120\u79d2", "\u6211\u4e34\u65f6\u6709\u4e8b\uff0c\u7b49\u6211\u51e0\u5206\u949f", "\u563f\u563f", "\u545c\u545c", "\u9976\u547d", "\u8c22\u8c22", "\u54c8\u54c8"],
+    p = ["", "\ud83c\udd97", "\u274c", "\u2795", "\ud83c\udfae", "", "", "\u23f3", "\u23f3", "\u23f3", "\ud83d\udc4b", "\ud83d\udc4b", "\ud83c\udfc3", "\ud83d\udc4b", "\ud83c\udfae", "\ud83e\udd40", "\u23f3", "\u23f3", "\u23f3", "\ud83d\ude4f", "\ud83d\ude0e", "\ud83d\ude2d", "\ud83e\udd7a", "\ud83d\ude4f", "\ud83d\ude02"];
+  t.ZP = function (e) {
+    var t,
+      n,
+      m,
+      j,
+      y,
+      b,
+      g = e.room,
+      v = e.index,
+      w = e.isTurn,
+      W = e.className,
+      k = e.empty,
+      A = e.children,
+      z = e.send,
+      Z = e.player,
+      N = e.isMe,
+      L = e.isOwner,
+      C = e.position;
+    g && void 0 !== v && (Z = g.playerList[v], N = g.position === v + 1, L = g.owner === v + 1, void 0 === C && (C = v + 1));
+    var q = Z || {},
+      O = q.source,
+      T = void 0 === O ? 0 : O,
+      S = q.emoji,
+      D = void 0 === S ? "" : S,
+      I = (q.name, q.imgUrl),
+      P = void 0 === I ? "" : I,
+      E = q.offline,
+      U = (0, r.useState)(!1),
+      G = (0, a.Z)(U, 2),
+      M = G[0],
+      K = G[1],
+      B = (0, r.useState)(!1),
+      _ = (0, a.Z)(B, 2),
+      R = _[0],
+      H = _[1],
+      Y = (0, r.useState)(0),
+      Q = (0, a.Z)(Y, 2),
+      V = Q[0],
+      F = Q[1],
+      J = (0, r.useRef)(+new Date()),
+      X = (0, r.useRef)(null),
+      $ = (0, r.useRef)(0),
+      ee = !E,
+      te = (0, r.useMemo)(function () {
+        return !D || T && P ? D : (0, o.ZF)(D) ? (0, o.mY)(D) > o.Dj + 5 ? D.substring(0, 2) : D : "\ud83d\ude0a";
+      }, [D]),
+      ne = !T && !D,
+      ie = "absolute whitespace-nowrap px-1 translate-x-[-50%] rounded-full text-white text-xs ".concat(N ? "bg-orange-600" : "bg-gray-600"),
+      ae = null !== (t = Z) && void 0 !== t && t.state ? Math.ceil((+new Date() - Z.stateTime) / 1e3) : 999999,
+      re = !(null === (n = Z) || void 0 === n || !n.state) && ae < (f.includes(Z.state) ? 86400 : 30),
+      oe = !ne && !!z && (!N || !R),
+      se = (0, r.useState)(+new Date()),
+      ce = (0, a.Z)(se, 2),
+      le = ce[0],
+      ue = ce[1];
+    (0, r.useEffect)(function () {
+      H(!1), K(!1), F(0), ue(+new Date());
+    }, [T, D]), (0, r.useEffect)(function () {
+      var e;
+      if (null !== (e = Z) && void 0 !== e && e.state && !(+new Date() - J.current < 150 && ae > 3)) {
+        H(!0);
+        var t = window.setTimeout(function () {
+          H(!1);
+        }, 3e3);
+        return function () {
+          window.clearTimeout(t);
+        };
+      }
+    }, [null === (m = Z) || void 0 === m ? void 0 : m.stateTime]), (0, r.useEffect)(function () {
+      var e,
+        t,
+        n = null;
+      return re && null !== (e = Z) && void 0 !== e && e.stateTime && null !== (t = Z) && void 0 !== t && t.state && h.findIndex(function (e) {
+        var t;
+        return e[0] === (null === (t = Z) || void 0 === t ? void 0 : t.state) || 0;
+      }) >= 0 && (n = window.setInterval(function () {
+        var e = +new Date();
+        e - Z.stateTime > 303e3 ? (null !== n && window.clearInterval(n), n = null) : null !== n && ue(e);
+      }, 300)), function () {
+        null !== n && window.clearInterval(n), n = null;
+      };
+    }, [null === (j = Z) || void 0 === j ? void 0 : j.state, null === (y = Z) || void 0 === y ? void 0 : y.stateTime, re, h.findIndex(function (e) {
+      var t;
+      return e[0] === (null === (t = Z) || void 0 === t ? void 0 : t.state) || 0;
+    }) >= 0]);
+    var de = re && h.findIndex(function (e) {
+      var t;
+      return e[0] === (null === (t = Z) || void 0 === t ? void 0 : t.state) || 0;
+    }) >= 0 ? h.find(function (e) {
+      return e[0] === Z.state;
+    })[1] : 60;
+    return (0, d.jsxs)("div", {
+      id: g ? "userseat".concat(v) : void 0,
+      ref: X,
+      className: "relative box-shadow w-14 h-14 rounded-full border text-center flex items-center justify-center ".concat(W || ""),
+      children: [ne ? k : T && P ? (0, d.jsx)("div", {
+        className: "head-image",
+        style: {
+          backgroundImage: 'url("'.concat(P, '")')
+        }
+      }) : (0, d.jsx)("div", {
+        className: "text-2xl overflow-hidden",
+        children: te
+      }), L && (0, d.jsx)("div", {
+        className: "".concat(ie, " top-0 left-[7px]"),
+        children: "\u623f\u4e3b"
+      }), !!C && (0, d.jsx)("div", {
+        className: "".concat(ie, " font-mono top-[39px] left-[46px]"),
+        children: C
+      }), N ? (0, d.jsx)("div", {
+        className: "".concat(ie, " top-[39px] left-[7px]"),
+        children: "\u6211"
+      }) : !ne && (0, d.jsx)("div", {
+        className: "absolute left-[3px] top-[42px] border border-black rounded-full w-2.5 h-2.5 ".concat(ee ? "bg-green-500" : "bg-gray-500")
+      }), re && (0, d.jsx)("div", {
+        className: "absolute rounded-full w-4 h-4 leading-4 text-xs top-[20px] left-[-8px] text-black bg-white",
+        children: p[Z.state] || "\ud83d\udcac"
+      }), w && (0, d.jsx)("div", {
+        className: "absolute text-lg top-[-6px] left-[37px] text-black ".concat(N ? " game-swing" : ""),
+        children: "\u23f0\ufe0f"
+      }), re && h.findIndex(function (e) {
+        var t;
+        return e[0] === (null === (t = Z) || void 0 === t ? void 0 : t.state) || 0;
+      }) >= 0 && le - Z.stateTime < 1e3 * de && (0, d.jsx)("div", {
+        className: "absolute h-1 rounded-full bg-black",
+        style: {
+          width: 56,
+          top: -5
+        },
+        children: (0, d.jsx)("div", {
+          className: "absolute h-1 transition-all rounded-full bg-purple-400",
+          style: {
+            minWidth: 0,
+            maxWidth: 56,
+            width: 56 * (1 - (le - Z.stateTime) / 1e3 / de)
+          }
+        })
+      }), oe && (0, d.jsx)(c.Z, {
+        noStyle: !0,
+        className: "block absolute w-14 h-14 rounded-full",
+        onClick: function () {
+          if (M) K(!1);else if (X.current) {
+            var e = X.current.getBoundingClientRect(),
+              t = e.left + e.width / 2;
+            t - 120 < 1 ? F(120 - t + 1) : t + 120 > window.innerWidth - 1 && F(-(t + 120 - window.innerWidth + 1)), K(!0);
+          }
+        }
+      }), A, (0, d.jsxs)("div", {
+        className: "absolute w-0 h-0",
+        children: [R && !(null === (b = Z) || void 0 === b || !b.state) && (0, d.jsxs)("div", {
+          className: "relative translate-x-[-50%] translate-y-[-50%] break-all text-center min-w-[72px] px-1 py-0.5 border rounded text-white text-xs border-black bg-gray-700 bg-opacity-90",
+          style: {
+            zIndex: 1008
+          },
+          children: [f.includes(Z.state) ? ae < 4 ? "" : ae < 121 ? "".concat(ae, "\u79d2\u524d:") : ae < 3600 ? "".concat(Math.ceil(ae / 60), "\u5206\u949f\u524d:") : "".concat((ae / 3600).toFixed(1), "\u5c0f\u65f6\u524d:") : "", p[Z.state] || "\ud83d\udcac", x[Z.state]]
+        }), M && oe && (0, d.jsxs)("div", {
+          className: "relative border translate-x-[-50%] overflow-y-auto rounded text-white text-sm border-black bg-gray-700 bg-opacity-90",
+          style: {
+            left: V,
+            width: 240,
+            maxHeight: 450,
+            zIndex: 1009
+          },
+          children: [(0, d.jsx)("div", {
+            className: "text-center",
+            children: (0, d.jsx)(c.Z, {
+              small: !0,
+              className: "w-full",
+              onClick: function () {
+                return K(!1);
+              },
+              children: "\u5173\u95ed\u804a\u5929\u9762\u677f"
+            })
+          }), (0, d.jsx)("div", {
+            children: N ? x.map(function (e, t) {
+              var n;
+              if (!t) return null;
+              if (g) if (g.state) {
+                if (t === i.IHaveToHangUp && !["ccbs", "ktd", "bzm", "fxq", "lm", "dy"].includes(l.s_.key)) return null;
+                if ([i.AddPosition, i.LetsStart, i.SitBeforeAndStart, i.AreYouReady, i.WaitFiveMin, i.WaitThreeMin, i.WaitOneMin, i.INeedLeave, i.Bye].includes(t)) return null;
+              } else {
+                if (N && L && [i.AddPosition, i.LetsStart].includes(t)) return null;
+                if (N && !L && [i.SitBeforeAndStart, i.AreYouReady, i.WaitFiveMin, i.WaitThreeMin, i.WaitOneMin].includes(t)) return null;
+                if ([i.IHaveToHangUp, i.MyLastGame, i.StartAgain, i.BeQuick, i.Wait30S, i.Wait60S, i.Wait120S, i.WaitMore, i.Proud, i.Sad, i.Help, i.Thanks, i.Haha].includes(t)) return null;
+              }
+              return (0, d.jsx)(c.Z, {
+                className: "block w-full leading-6".concat(t === (null === (n = Z) || void 0 === n ? void 0 : n.state) && re && f.includes(Z.state) ? " text-red-400" : ""),
+                noStyle: !0,
+                onClick: function () {
+                  z(s.Z.PlayerUpdateUserInfo, {
+                    payload: t
+                  }), K(!1);
+                },
+                children: e
+              }, t);
+            }) : [["\u9001\ud83c\udf39", 3], ["\u9001\u2615\ufe0f", 9], ["\u6254\ud83e\udd5a", 15], ["\u6254\ud83e\ude74", 15]].map(function (e, t) {
+              var n = (0, a.Z)(e, 2),
+                i = n[0],
+                r = n[1];
+              return (0, d.jsx)(c.Z, {
+                className: "block w-full leading-6",
+                noStyle: !0,
+                onClick: function () {
+                  var e;
+                  if (K(!1), !document.cookie.includes("gsid=")) return (0, u.Z)("\u70b9\u51fb\u4e0a\u9762\u7684 \u516d\u8fb9\u5f62Logo \u8bb8\u613f\uff0c\u5e76\u901a\u8fc7\u5fae\u4fe1\u767b\u9646\uff0c\u624d\u6709\u673a\u4f1a\u4f7f\u7528\u8be5\u529f\u80fd");
+                  if (!g.position) return (0, u.Z)("\u70b9\u51fb\u4e0a\u9762\u7684 \u516d\u8fb9\u5f62Logo \u8bb8\u613f\uff0c\u52a0\u5165\u5ea7\u4f4d\u540e\uff0c\u624d\u6709\u673a\u4f1a\u4f7f\u7528\u8be5\u529f\u80fd");
+                  if (((null === (e = g.playerList[g.position - 1]) || void 0 === e ? void 0 : e.wishCount) || 0) < r) return (0, u.Z)("\u6700\u8fd1\u51e0\u5929\u8bb8\u613f\u6b21\u6570\u4e0d\u591f\u591a\uff0c\u65e0\u6cd5\u4f7f\u7528".concat(i, "\uff0c\u70b9\u51fb\u4e0a\u9762\u7684 \u516d\u8fb9\u5f62Logo \u53bb\u8bb8\u613f\u5427\uff01"));
+                  if (!g.state) return (0, u.Z)("\u5f00\u59cb\u540e\u624d\u80fd\u7528\u8be5\u529f\u80fd");
+                  var n = +new Date();
+                  n > $.current + 1400 && ($.current = n, z(s.Z.PlayerInteraction, {
+                    payload: t << 5 | v
+                  }));
+                },
+                children: i
+              }, t);
+            })
+          })]
+        })]
+      })]
+    });
+  };
+},
+3299: function (e, t, n) {
+  "use strict";
+
+  n.d(t, {
+    Dj: function () {
+      return r;
+    },
+    Vo: function () {
+      return o;
+    },
+    ZF: function () {
+      return s;
+    },
+    mY: function () {
+      return a;
+    }
+  });
+  var i = new Map(),
+    a = function (e) {
+      var t = i.get(e);
+      if (t) return t;
+      var n = document.createElement("span");
+      n.setAttribute("aria-hidden", "true"), n.setAttribute("class", "absolute top-0 opacity-0"), n.setAttribute("style", 'font-size:16px!important;font-family:Consolas,"Liberation Mono","Courier New",monospace'), n.textContent = e, document.body.appendChild(n);
+      var a = n.clientWidth;
+      return document.body.removeChild(n), i.set(e, a), a;
+    },
+    r = typeof document === "undefined" ? 16 : a("😀"),
+    o = function (e, t) {
+      return function (e) {
+        return Math.abs(a(e) - r) < 7;
+      }(e) ? e : t;
+    },
+    s = function (e) {
+      return !new RegExp("\ud83c\uddf9\u200d?\ud83c\uddfc|[\\u" + "9a9a5c4c5c447fe07fd24e605201535267406bba6b7b4ea1827260278d4c8d3c8cca8ced6bd25ad65a3c903c64cd8279808f5993809b8fb17a2357fa9e2172d77f05819c86e48bc89a975f115a4a".match(/.{4}/g).join("\\u") + "]").test(e) && !["sb", "jb"].includes(e.toLowerCase());
+    };
+},
+9414: function (n, e, t) {
+  t.d(e, {
+    HF: function () {
+      return s;
+    },
+    Ie: function () {
+      return o;
+    },
+    MP: function () {
+      return i;
+    },
+    Ml: function () {
+      return c;
+    },
+    YU: function () {
+      return l;
+    },
+    vo: function () {
+      return u;
+    }
+  });
+  var r = t(4962),
+    a = t(1124),
+    i = function (n) {
+      return "1" === n ? 3 : "2" === n ? 4 : 2;
+    },
+    c = function (n, e) {
+      if (null === n) return null;
+      var t = Number(n);
+      return Math.min(e, Math.max(0, Number.isSafeInteger(t) ? t : 0));
+    },
+    o = function (n, e, t) {
+      var c = i(e),
+        o = (0, r.I)(n);
+      if (!o) throw new Error("\u94fe\u63a5\u65e0\u6548");
+      var l = (0, a.Eg)(o, c),
+        s = l.view,
+        u = l.offsets,
+        d = (0, a.fX)();
+      if (null !== t && "" !== t) {
+        var f = (0, r.I)(t);
+        if (!f) throw new Error("\u724c\u5e8f\u65e0\u6548");
+        d = (0, a.lH)(s, f);
+      }
+      return {
+        view: s,
+        tail: d,
+        playerCount: c,
+        offsets: u
+      };
+    },
+    l = function (n) {
+      var e = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : (0, a.fX)(),
+        t = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : null,
+        i = new URLSearchParams({
+          p: (0, r.Z)((0, a.M_)(n))
+        }),
+        c = n.playerGem.length;
+      return 2 !== c && i.set("r", String(c - 2)), e.some(function (n) {
+        return n.length > 0;
+      }) && i.set("ts", (0, r.Z)((0, a.fM)(n, e))), null !== t && i.set("s", String(t)), "?".concat(i.toString());
+    },
+    s = function (n) {
+      var e = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : (0, a.fX)();
+      return l(n, e, (0, a.h3)(n).length - 1);
+    },
+    u = function (n) {
+      var e = new URLSearchParams(n);
+      return e.delete("ts"), e;
+    };
+},
+4962: function (n, e, t) {
+  t.d(e, {
+    I: function () {
+      return a;
+    },
+    Z: function () {
+      return i;
+    }
+  });
+  var r = t(2982);
+  function a(n) {
+    if (n.length % 4 === 1) return null;
+    if (!/^[a-zA-Z0-9_-]+$/.test(n)) return null;
+    var e = n.replace(/_/g, "/").replace(/-/g, "+");
+    return e.length % 4 === 3 ? e += "=" : e.length % 4 === 2 && (e += "=="), new Uint8Array(Array.from(window.atob(e)).map(function (n) {
+      return n.charCodeAt(0);
+    }));
+  }
+  function i(n) {
+    return window.btoa(String.fromCharCode.apply(String, (0, r.Z)(n))).replace(/\//g, "_").replace(/\+/g, "-").replace(/=/g, "");
+  }
+},
+2262: function (n, e, t) {
+  t.d(e, {
+    Z: function () {
+      return E;
+    }
+  });
+  var r = t(885),
+    a = t(7313),
+    i = t(1124),
+    c = t(3797),
+    o = t(6417);
+  var l = function (n) {
+      var e = n.id,
+        t = n.eid,
+        r = n.small,
+        a = n.className,
+        i = n.children;
+      if (!e) return (0, o.jsx)("div", {
+        id: t,
+        className: "ccbs-noble-wrapper".concat(r ? " ccbs-small" : ""),
+        children: (0, o.jsx)("div", {
+          className: "ccbs-noble ccbs-empty"
+        })
+      });
+      var l = e - 1,
+        s = c.Hf[l];
+      return (0, o.jsx)("div", {
+        id: t,
+        className: "ccbs-noble-wrapper".concat(r ? " ccbs-small" : ""),
+        children: (0, o.jsxs)("div", {
+          className: "ccbs-noble ccbs-noble-".concat(l, " ").concat(a || ""),
+          children: [(0, o.jsx)("div", {
+            className: "ccbs-noble-left"
+          }), (0, o.jsx)("div", {
+            className: "ccbs-score right-0",
+            children: "3"
+          }), (0, o.jsx)("div", {
+            className: "bottom-0.5 left-0.5 absolute flex flex-col-reverse",
+            children: s.map(function (n, e) {
+              return n > 0 && (0, o.jsx)("div", {
+                className: "ccbs-rect m-0.5 basis-1/2 ccbs-color-".concat(e),
+                children: n
+              }, e);
+            })
+          }), i]
+        })
+      });
+    },
+    s = t(4595),
+    u = a.memo(function (n) {
+      var e,
+        t,
+        i = n.lastOp,
+        c = n.gameVersion,
+        s = (0, a.useState)([]),
+        u = (0, r.Z)(s, 2),
+        d = u[0],
+        f = u[1],
+        h = (0, a.useState)(!1),
+        p = (0, r.Z)(h, 2),
+        m = p[0],
+        v = p[1],
+        b = (0, a.useState)(!1),
+        y = (0, r.Z)(b, 2),
+        w = y[0],
+        g = y[1],
+        x = (0, a.useRef)(0);
+      return (0, a.useEffect)(function () {
+        var n = [],
+          e = document.getElementById("ccbs-noble-0").getClientRects()[0];
+        n.push(e.top, e.left);
+        for (var t = 1; t < 5; t++) {
+          var r = document.getElementById("ccbs-noble-".concat(t));
+          if (!r) break;
+          n.push(r.getClientRects()[0].left);
+        }
+        f(n);
+      }, [document.body.clientWidth]), (0, a.useEffect)(function () {
+        x.current && clearTimeout(x.current), g(!1), v(!1);
+        var n = window.setTimeout(function () {
+          return v(!0);
+        }, 0);
+        return x.current = window.setTimeout(function () {
+          g(!0), x.current = 0;
+        }, 820), function () {
+          clearTimeout(n), clearTimeout(x.current);
+        };
+      }, [c]), i && null !== (e = i.noble) && void 0 !== e && e.length && null !== (t = i.noblePos) && void 0 !== t && t.length ? (0, o.jsx)("div", {
+        className: "absolute top-0",
+        children: !w && i.noble.map(function (n, e) {
+          return (0, o.jsx)("div", {
+            className: "absolute transition-all ease-linear duration-300 delay-500 z-20",
+            style: {
+              left: d[i.noblePos[e] + 1],
+              top: d[0],
+              marginTop: m ? 130 : 0,
+              opacity: m ? .7 : 1
+            },
+            children: (0, o.jsx)(l, {
+              id: n
+            })
+          }, e);
+        })
+      }) : null;
+    }, function (n, e) {
+      return n.gameVersion === e.gameVersion;
+    });
+  var d = function (n) {
+      var e = n.view,
+        t = n.canAct,
+        r = n.onAction,
+        c = n.gameVersion,
+        d = n.animate,
+        f = e.waitNoble && t;
+      return (0, o.jsxs)(o.Fragment, {
+        children: [(0, o.jsx)("div", {
+          className: "flex justify-center space-x-2",
+          children: e.bankNoble.map(function (n, c) {
+            var u = e.waitNoble && e.nobleCandidates.includes(c),
+              d = (0, o.jsx)(l, {
+                eid: "ccbs-noble-".concat(c),
+                id: n,
+                className: u ? "ccbs-candidate" : ""
+              });
+            return f && u ? (0, o.jsx)(s.Z, {
+              noStyle: !0,
+              className: "cursor-pointer",
+              disabled: !(0, i.s0)(e, c),
+              onClick: function () {
+                t && (0, i.s0)(e, c) && r({
+                  kind: "noble",
+                  noblePos: c
+                });
+              },
+              children: d
+            }, n || -c) : (0, o.jsx)(a.Fragment, {
+              children: d
+            }, n || -c);
+          })
+        }), e.waitNoble && (0, o.jsx)("div", {
+          className: "mt-1 text-sm",
+          children: f ? "\u540c\u65f6\u6ee1\u8db3\u591a\u5f20\u8d35\u65cf\uff0c\u70b9\u51fb\u9ad8\u4eae\u7684\u90a3\u5f20\u83b7\u5f97\u5b83" : "\u7b49\u5f85\u73a9\u5bb6".concat(e.waitFor + 1, "\u9009\u62e9\u8d35\u65cf\u5361")
+        }), d && (0, o.jsx)(u, {
+          lastOp: e.lastOp,
+          gameVersion: c
+        })]
+      });
+    },
+    f = t(2982),
+    h = t(4942),
+    p = t(7698);
+  var m = function (n) {
+      var e = n.id,
+        t = n.eid,
+        r = n.className,
+        a = n.small,
+        i = n.children;
+      if (e < 0) return (0, o.jsx)("div", {
+        id: t,
+        className: "ccbs-card-wrapper".concat(a ? " ccbs-small" : ""),
+        children: (0, o.jsx)("div", {
+          className: "ccbs-card ccbs-type-5 ccbs-img-".concat(-e - 1, " ").concat(r || ""),
+          children: i
+        })
+      });
+      if (!e) return (0, o.jsx)("div", {
+        id: t,
+        className: "ccbs-card-wrapper".concat(a ? " ccbs-small" : ""),
+        children: (0, o.jsx)("div", {
+          className: "ccbs-card ccbs-empty ".concat(r || "")
+        })
+      });
+      var l = e - 1,
+        s = c.KI[l],
+        u = c.dS[l],
+        d = c.s2[l];
+      return (0, o.jsx)("div", {
+        id: t,
+        className: "ccbs-card-wrapper".concat(a ? " ccbs-small" : ""),
+        children: (0, o.jsxs)("div", {
+          className: "ccbs-card ccbs-img-".concat(c.FL[l], " ccbs-type-").concat(u, " ").concat(r || ""),
+          children: [(0, o.jsx)("div", {
+            className: "ccbs-card-top"
+          }), s > 0 && (0, o.jsx)("div", {
+            className: "ccbs-score left-0.5",
+            children: s
+          }), (0, o.jsx)("div", {
+            className: "absolute top-1 right-1 ccbs-rect ccbs-color-".concat(u)
+          }), (0, o.jsx)("div", {
+            className: "bottom-0.5 left-0.5 absolute flex flex-col-reverse flex-wrap max-h-[80px]",
+            children: d.map(function (n, e) {
+              return n > 0 && (0, o.jsx)("div", {
+                className: "ccbs-circle m-0.5 basis-1/2 ccbs-color-".concat(e),
+                children: n
+              }, e);
+            })
+          }), i]
+        })
+      });
+    },
+    v = t(3366),
+    b = a.memo(function (n) {
+      var e,
+        t = n.lastOp,
+        l = n.gameVersion,
+        s = n.revealBooked,
+        u = (0, a.useState)([[], [], []]),
+        d = (0, r.Z)(u, 2),
+        f = d[0],
+        v = d[1],
+        b = (0, a.useState)(!1),
+        y = (0, r.Z)(b, 2),
+        w = y[0],
+        g = y[1],
+        x = (0, a.useState)(!1),
+        k = (0, r.Z)(x, 2),
+        j = k[0],
+        N = k[1],
+        C = (0, a.useRef)(0);
+      if ((0, a.useEffect)(function () {
+        for (var n = [[], [], []], e = 0; e < 3; e++) {
+          var t = document.getElementById("ccbs-card-".concat(e)).getClientRects()[0];
+          n[e].push(t.top, t.left);
+          for (var r = 0; r < 4; r++) n[e].push(document.getElementById("ccbs-card-".concat(e, "-").concat(r)).getClientRects()[0].left);
+        }
+        v(n);
+      }, [document.body.clientWidth]), (0, a.useEffect)(function () {
+        C.current && clearTimeout(C.current), N(!1), g(!1);
+        var n = window.setTimeout(function () {
+          return g(!0);
+        }, 0);
+        return C.current = window.setTimeout(function () {
+          N(!0), C.current = 0;
+        }, 1520), function () {
+          clearTimeout(n), clearTimeout(C.current);
+        };
+      }, [l]), !t || ![p.W.BUY, p.W.BUY_BOOKED, p.W.BOOK].includes(t.type) || !t.card) return null;
+      var O = t.card,
+        Z = c.XO[O - 1],
+        E = t.type === p.W.BUY_BOOKED ? -1 : t.cardPos !== i.Y7 ? t.cardPos : -1;
+      return (0, o.jsx)("div", {
+        className: "absolute top-0",
+        children: !j && (0, o.jsx)("div", {
+          className: "absolute transition-all ease-linear duration-500 delay-300 z-10",
+          style: {
+            left: f[Z][E + 2],
+            top: f[Z][0],
+            marginTop: w ? 190 : 0,
+            opacity: w ? .7 : 1
+          },
+          children: (0, o.jsx)(m, {
+            id: s || t.type !== p.W.BOOK || t.cardPos !== i.Y7 ? t.card : -1 - Z,
+            children: (0, o.jsx)("div", {
+              className: "mt-10 text-2xl bg-gray-600 text-white",
+              children: (e = {}, (0, h.Z)(e, p.W.BOOK, "\u9884\u5b9a"), (0, h.Z)(e, p.W.BUY, "\u8d2d\u4e70"), (0, h.Z)(e, p.W.BUY_BOOKED, "\u4e70\u9884\u5b9a\u5361"), e)[t.type]
+            })
+          })
+        })
+      });
+    }, function (n, e) {
+      return n.gameVersion === e.gameVersion;
+    });
+  function y(n) {
+    var e = n.op,
+      t = n.pos,
+      r = n.id,
+      a = n.eid,
+      c = n.booked,
+      l = n.view,
+      u = n.onAction,
+      d = n.setPaying,
+      h = n.canAct,
+      p = r - 1,
+      b = (0, i.fU)(l, p, l.waitFor),
+      y = b.spend,
+      w = b.need,
+      g = b.needGold,
+      x = b.enough,
+      k = b.hasChoice,
+      j = y.reduce(function (n, e) {
+        return n + e;
+      });
+    return (0, o.jsx)(m, {
+      id: r,
+      eid: a,
+      children: (0, o.jsxs)("div", {
+        className: "absolute mt-10 w-full text-center",
+        children: [h && !c && 3 === e && (0, o.jsx)(s.Z, {
+          disabled: !(0, i.EL)(l),
+          onClick: function () {
+            h && (0, i.EL)(l) && u({
+              kind: "book",
+              cardId: p,
+              pos: t
+            });
+          },
+          children: "\u9884\u5b9a"
+        }), h && 2 === e && (x ? (0, o.jsxs)(o.Fragment, {
+          children: [(0, o.jsx)("div", {
+            className: "bg-gray-600 text-white",
+            children: j || g ? "\u82b1\u8d39".concat((0, i.RJ)([].concat((0, f.Z)(y), [g]))).concat(k ? "?" : "") : "\u514d\u8d39"
+          }), (0, o.jsx)("div", {
+            children: (0, o.jsx)(s.Z, {
+              disabled: !(0, i.Wq)(l, p),
+              onClick: function () {
+                h && (0, i.Wq)(l, p) && (k ? ((0, v.Z)("\u8fd9\u5f20\u724c\u6709\u591a\u79cd\u652f\u4ed8\u65b9\u5f0f\uff0c\u8bf7\u5728\u4e0b\u65b9\u9009\u62e9\u4e00\u79cd"), d({
+                  cardId: p,
+                  pos: t,
+                  booked: !!c
+                })) : u({
+                  kind: "buy",
+                  cardId: p,
+                  pos: t,
+                  booked: !!c,
+                  payment: {
+                    spend: y,
+                    gold: g
+                  }
+                }));
+              },
+              children: k ? "\u8d2d\u4e70?" : "\u8d2d\u4e70"
+            })
+          })]
+        }) : (0, o.jsx)("div", {
+          className: "bg-gray-600 text-white",
+          children: "\u7f3a".concat((0, i.RJ)(w))
+        }))]
+      })
+    });
+  }
+  var w = function (n) {
+      var e = n.view,
+        t = n.op,
+        r = n.onAction,
+        a = n.setPaying,
+        c = n.playerId,
+        l = n.canAct,
+        u = n.gameVersion,
+        d = n.knownDecks,
+        f = n.revealBooked,
+        h = n.animate,
+        p = e.bankCard,
+        v = [p[2], p[1], p[0]],
+        w = null !== c ? e.playerBooked[c] : [];
+      return (0, o.jsxs)("div", {
+        children: [v.map(function (n, c) {
+          var u = 2 - c,
+            f = e.bankLeftCardCount[u];
+          return (0, o.jsxs)("div", {
+            className: "flex justify-center origin-top space-x-2 mt-2",
+            children: [(0, o.jsxs)(m, {
+              id: c - 3,
+              eid: "ccbs-card-".concat(u),
+              className: f ? "" : " opacity-50",
+              children: [(0, o.jsx)("div", {
+                className: "absolute ccbs-left-count top-4 right-4",
+                children: f
+              }), !(null === d || void 0 === d || !d[u].length) && (0, o.jsx)("div", {
+                className: "absolute bottom-2 w-full text-center bg-white text-black text-lg",
+                children: "\u5df2\u77e5 ".concat(d[u].length, " \u5f20")
+              }), l && 3 === t && f > 0 && (0, o.jsx)("div", {
+                className: "absolute mt-10 w-full",
+                children: (0, o.jsx)(s.Z, {
+                  disabled: !(0, i.EL)(e),
+                  onClick: function () {
+                    l && (0, i.EL)(e) && f > 0 && r({
+                      kind: "deck",
+                      level: u
+                    });
+                  },
+                  children: "\u9884\u5b9a"
+                })
+              })]
+            }), n.map(function (n, i) {
+              return n ? (0, o.jsx)(y, {
+                id: n,
+                eid: "ccbs-card-".concat(u, "-").concat(i),
+                pos: i,
+                view: e,
+                op: t,
+                canAct: l,
+                onAction: r,
+                setPaying: a
+              }, n) : (0, o.jsx)(m, {
+                id: 0,
+                eid: "ccbs-card-".concat(u, "-").concat(i)
+              }, -i);
+            })]
+          }, c);
+        }), w.length > 0 && (0, o.jsx)("div", {
+          className: "flex justify-center origin-top bg-gray-400 bg-opacity-50 space-x-2 py-2 mt-2",
+          children: w.map(function (n, i) {
+            return (0, o.jsx)(y, {
+              id: n + 1,
+              pos: i,
+              booked: !0,
+              view: e,
+              op: t,
+              canAct: l,
+              onAction: r,
+              setPaying: a
+            }, n);
+          })
+        }), h && (0, o.jsx)(b, {
+          gameVersion: u,
+          lastOp: e.lastOp,
+          revealBooked: f
+        })]
+      });
+    },
+    g = [],
+    x = a.memo(function (n) {
+      var e,
+        t = n.lastOp,
+        i = n.gameVersion,
+        c = (0, a.useState)([]),
+        l = (0, r.Z)(c, 2),
+        s = l[0],
+        u = l[1],
+        d = (0, a.useState)(!1),
+        f = (0, r.Z)(d, 2),
+        h = f[0],
+        m = f[1],
+        v = (0, a.useState)(!1),
+        b = (0, r.Z)(v, 2),
+        y = b[0],
+        w = b[1],
+        g = (0, a.useRef)(0);
+      return (0, a.useEffect)(function () {
+        for (var n = [], e = 0; e < 6; e++) n.push(document.getElementsByClassName("ccbs-circle ccbs-color-".concat(e, " scale-125"))[0].getClientRects()[0].left);
+        u(n);
+      }, [document.body.clientWidth]), (0, a.useEffect)(function () {
+        var n;
+        g.current && clearTimeout(g.current), w(!1), m(!1);
+        var e = window.setTimeout(function () {
+            return m(!0);
+          }, 0),
+          r = 0;
+        null === (n = t.gemDelta) || void 0 === n || n.forEach(function (n) {
+          n > r && (r = n);
+        });
+        var a = 200 * (r - 1) + 520;
+        return g.current = window.setTimeout(function () {
+          w(!0), g.current = 0;
+        }, a), function () {
+          clearTimeout(e), clearTimeout(g.current);
+        };
+      }, [i]), t && t.type ? (0, o.jsx)("div", {
+        className: "absolute",
+        children: !y && (null === (e = t.gemDelta) || void 0 === e ? void 0 : e.map(function (n, e) {
+          return new Array(n).fill(0).map(function (n, r) {
+            return (0, o.jsx)("div", {
+              className: "ccbs-circle ccbs-color-".concat(e, " top-0 absolute ease-linear transition-all duration-500"),
+              style: {
+                left: s[e],
+                top: -30,
+                transform: "scale(1.25)",
+                transformOrigin: "left",
+                marginTop: [p.W.GEM, p.W.BOOK].includes(t.type) ? h ? 70 : 0 : h ? 0 : 70,
+                transitionDelay: "".concat(200 * r, "ms"),
+                opacity: h ? .7 : 1
+              }
+            }, "".concat(e, "-").concat(r));
+          });
+        }))
+      }) : null;
+    }, function (n, e) {
+      return n.gameVersion === e.gameVersion;
+    });
+  var k = function (n) {
+    var e = n.view,
+      t = n.op,
+      c = n.setOp,
+      l = n.onAction,
+      u = n.canAct,
+      d = n.gameVersion,
+      h = n.animate,
+      p = (0, a.useState)(g),
+      m = (0, r.Z)(p, 2),
+      b = m[0],
+      y = m[1];
+    return (0, a.useEffect)(function () {
+      y(g);
+    }, [t, d]), (0, o.jsxs)(o.Fragment, {
+      children: [(0, o.jsx)("div", {
+        className: "mt-4 flex items-center justify-center space-x-6",
+        children: e.bankGem.map(function (n, r) {
+          if (!u || 1 !== t) return (0, o.jsx)("div", {
+            className: "ccbs-circle ccbs-color-".concat(r, " scale-125").concat(n ? "" : " opacity-50"),
+            children: n
+          }, r);
+          var a = n - b.filter(function (n) {
+            return n === r;
+          }).length;
+          return (0, o.jsx)("div", {
+            children: (0, o.jsx)(s.Z, {
+              noStyle: !0,
+              className: "ccbs-circle ccbs-color-".concat(r, " scale-125").concat(n ? "" : " opacity-50"),
+              disabled: !!(0, i.th)(e, b, r),
+              onClick: function () {
+                if (u) {
+                  var n = (0, i.th)(e, b, r);
+                  return n ? (0, v.Z)(n) : y([].concat((0, f.Z)(b), [r]));
+                }
+              },
+              children: a
+            })
+          }, r);
+        })
+      }), h && (0, o.jsx)(x, {
+        lastOp: e.lastOp,
+        gameVersion: d
+      }), u && 1 === t && (0, o.jsxs)("div", {
+        className: "mt-2 p-2 bg-gray-400 bg-opacity-50 flex items-center justify-center",
+        children: [(0, o.jsx)("div", {
+          className: "flex items-center space-x-6 h-8 w-40",
+          children: b.map(function (n, e) {
+            return (0, o.jsx)(s.Z, {
+              noStyle: !0,
+              className: "ccbs-circle ccbs-color-".concat(n),
+              onClick: function () {
+                y(function (n) {
+                  var t = (0, f.Z)(n);
+                  return t.splice(e, 1), t;
+                });
+              }
+            }, e);
+          })
+        }), (0, o.jsxs)("div", {
+          children: [(0, o.jsx)(s.Z, {
+            small: !0,
+            disabled: !(0, i.Cs)(e, b),
+            primary: 3 === b.length || 2 === b.length && b[0] === b[1],
+            onClick: function () {
+              u && (0, i.Cs)(e, b) && l({
+                kind: "take",
+                selected: b
+              });
+            },
+            children: "\u786e\u8ba4\u62ff\u8fd9\u4e9b"
+          }), (0, o.jsx)(s.Z, {
+            className: "ml-4",
+            small: !0,
+            onClick: function () {
+              return c(0);
+            },
+            children: "\u53d6\u6d88"
+          })]
+        })]
+      })]
+    });
+  };
+  var j = function (n) {
+    var e = n.view,
+      t = n.revealBooked,
+      r = n.renderSeat,
+      a = !!e.winner.length;
+    return (0, o.jsx)("div", {
+      className: "mt-4 px-2",
+      children: e.playerGem.map(function (n, i) {
+        var s = n[5];
+        return (0, o.jsxs)("div", {
+          className: "my-3",
+          children: [(0, o.jsxs)("div", {
+            className: "flex flex-wrap items-center justify-center",
+            children: [(0, o.jsx)("div", {
+              className: "mr-1 flex flex-col items-center",
+              children: r ? r(i) : (0, o.jsx)("div", {
+                className: a || e.waitFor !== i ? "" : "font-bold underline",
+                children: "\u73a9\u5bb6".concat(i + 1)
+              })
+            }), (0, o.jsx)("div", {
+              className: "w-10",
+              children: "".concat(e.playerScore[i], "\u5206")
+            }), new Array(5).fill(0).map(function (t, r) {
+              var a = e.playerCardCount[i][r],
+                c = n[r];
+              return (0, o.jsxs)("div", {
+                className: "w-8",
+                children: [(0, o.jsx)("div", {
+                  className: "ccbs-rect ccbs-color-".concat(r, " mx-auto").concat(a ? "" : " opacity-50"),
+                  children: a
+                }), (0, o.jsx)("div", {
+                  className: "h-[22.5px]",
+                  children: (0, o.jsx)("div", {
+                    className: "ccbs-circle ccbs-color-".concat(r, " scale-75 mx-auto").concat(c ? "" : " opacity-50"),
+                    children: c
+                  })
+                })]
+              }, r);
+            }), (0, o.jsx)("div", {
+              className: "w-8",
+              children: (0, o.jsx)("div", {
+                className: "h-[22.5px]",
+                children: (0, o.jsx)("div", {
+                  className: "ccbs-circle ccbs-color-5 scale-75 mt-7".concat(s ? "" : " opacity-50"),
+                  children: s
+                })
+              })
+            }), !t && (0, o.jsx)("div", {
+              style: {
+                width: 76
+              },
+              className: "flex",
+              children: e.playerBooked[i].map(function (n, reservedIndex) {
+                return (0, o.jsx)("div", {
+                  style: {
+                    width: 19
+                  },
+                  children: (0, o.jsx)(m, {
+                    id: n < 0 ? n : -1 - c.XO[n],
+                    small: !0
+                  })
+                }, n >= 0 ? n : "hidden-" + reservedIndex);
+              })
+            }), (0, o.jsx)("div", {
+              style: {
+                width: 72
+              },
+              className: "flex",
+              children: e.playerNoble[i].map(function (n) {
+                return (0, o.jsx)("div", {
+                  style: {
+                    width: 18
+                  },
+                  children: (0, o.jsx)(l, {
+                    id: n + 1,
+                    small: !0
+                  })
+                }, n);
+              })
+            })]
+          }), t && e.playerBooked[i].length > 0 && (0, o.jsx)("div", {
+            className: "flex flex-wrap items-center justify-center gap-2 mt-2",
+            children: e.playerBooked[i].map(function (n, reservedIndex) {
+              return (0, o.jsx)(m, {
+                id: n + 1,
+                small: !0
+              }, n >= 0 ? n : "hidden-" + reservedIndex);
+            })
+          })]
+        }, i);
+      })
+    });
+  };
+  var N = function (n) {
+    var e = n.view,
+      t = n.onAction,
+      c = e.playerGem[e.waitFor],
+      l = (0, a.useState)([]),
+      u = (0, r.Z)(l, 2),
+      d = u[0],
+      h = u[1],
+      p = (0, i.QU)(e, e.waitFor),
+      m = new Array(6).fill(0).map(function (n, e) {
+        return d.filter(function (n) {
+          return Number(n.split("-")[0]) === e;
+        }).length;
+      });
+    return (0, o.jsxs)("div", {
+      className: "mt-2",
+      children: [(0, o.jsx)("div", {
+        children: "\u8bf7\u4e22\u5f03 ".concat(p, " \u4e2a\u5b9d\u77f3\uff0c\u5df2\u9009 ").concat(d.length, " \u4e2a")
+      }), (0, o.jsx)("div", {
+        className: "mt-2 space-x-2 p-2 bg-gray-400 bg-opacity-50",
+        children: new Array(6).fill(0).map(function (n, e) {
+          return new Array(c[e]).fill(0).map(function (n, t) {
+            var r = "".concat(e, "-").concat(t);
+            return (0, o.jsx)(s.Z, {
+              noStyle: !0,
+              className: "ccbs-circle ccbs-color-".concat(e).concat(d.includes(r) ? " -translate-y-4" : ""),
+              onClick: function () {
+                return h(function (n) {
+                  var e = (0, f.Z)(n),
+                    t = e.indexOf(r);
+                  return t >= 0 ? e.splice(t, 1) : e.push(r), e;
+                });
+              }
+            }, r);
+          });
+        })
+      }), (0, o.jsx)("div", {
+        className: "mt-4",
+        children: (0, o.jsx)(s.Z, {
+          small: !0,
+          primary: !0,
+          disabled: !(0, i.y5)(e, m),
+          onClick: function () {
+            (0, i.y5)(e, m) && t({
+              kind: "throw",
+              gemDelta: m
+            });
+          },
+          children: "\u786e\u8ba4\u4e22\u5f03"
+        })
+      })]
+    });
+  };
+  var C = function (n) {
+      var e,
+        t = n.view,
+        r = n.playerId,
+        a = n.readOnly,
+        c = n.spectator,
+        l = n.op,
+        u = n.setOp,
+        d = n.candidates,
+        f = n.onAction,
+        h = n.skipAfk,
+        p = n.gameVersion,
+        m = null !== r && !a,
+        v = t.winner,
+        b = t.waitFor + 1,
+        y = t.waitThrowing,
+        w = t.waitNoble,
+        g = !!v.length,
+        x = d.some(function (n) {
+          return "take" === n.kind;
+        }),
+        k = m && r === t.waitFor && !g && !y && !w,
+        j = d.some(function (n) {
+          return "book" === n.kind || "deck" === n.kind;
+        }),
+        C = d.some(function (n) {
+          return "pass" === n.kind;
+        });
+      return e = g ? "\u6e38\u620f\u7ed3\u675f\uff0c\u606d\u559c\u73a9\u5bb6".concat(v.join("\u548c\u73a9\u5bb6"), "\u80dc\u5229") : "\u7b49\u5f85\u73a9\u5bb6".concat(b, w ? "\u9009\u62e9\u8981\u83b7\u5f97\u7684\u8d35\u65cf\u5361" : y ? "\u4e22\u5f03\u591a\u4f59\u5b9d\u77f3\uff08\u6bcf\u4eba\u6700\u591a\u6301\u670910\u4e2a\uff09" : "\u64cd\u4f5c"), m && !g && (e = e.replace("\u73a9\u5bb6".concat(r + 1), "\u4f60")), t.lastTurn && !g && (e += "\u3010\u6700\u540e\u4e00\u56de\u5408\u3011"), (0, o.jsxs)(o.Fragment, {
+        children: [(0, o.jsx)("div", {
+          className: "mt-4",
+          children: e
+        }), m && (0, o.jsxs)(o.Fragment, {
+          children: [!g && h && (0, o.jsx)("div", {
+            className: "py-2",
+            children: (0, o.jsx)(s.Z, {
+              primary: !0,
+              small: !0,
+              onClick: function () {
+                if (h && m && !g) {
+                  var n = (0, i.Q$)(t);
+                  n && h(n);
+                }
+              },
+              children: "\u8be5\u73a9\u5bb6\u5df2\u6302\u673a\uff0c\u70b9\u6b64\u8df3\u8fc7\u4ed6\u7684\u56de\u5408"
+            })
+          }), !g && (0, o.jsxs)("div", {
+            className: "flex justify-between max-w-[380px] mx-auto mt-2 px-2",
+            children: [(0, o.jsx)(s.Z, {
+              small: !0,
+              disabled: !x || 1 === l,
+              onClick: function () {
+                return u(1);
+              },
+              children: "\ud83d\udc8e\u53d6\u5b9d\u77f3"
+            }), (0, o.jsx)(s.Z, {
+              small: !0,
+              disabled: !k || 2 === l,
+              onClick: function () {
+                return u(2);
+              },
+              children: "\ud83d\udcb0\u8d2d\u4e70\u53d1\u5c55\u5361"
+            }), (0, o.jsx)(s.Z, {
+              small: !0,
+              disabled: !j || 3 === l,
+              onClick: function () {
+                return u(3);
+              },
+              children: "\ud83d\udcb3\u9884\u5b9a\u53d1\u5c55\u5361"
+            }), (0, o.jsx)(s.Z, {
+              small: !0,
+              disabled: !C || 4 === l,
+              onClick: function () {
+                return u(4);
+              },
+              children: "\u274c\u653e\u5f03"
+            })]
+          }), !g && (0, o.jsxs)("div", {
+            className: "flex items-center mt-4 justify-center space-x-4 text-sm px-2",
+            children: [!l && (0, o.jsx)("div", {
+              className: "h-6"
+            }), 1 === l && (0, o.jsx)("div", {
+              className: "h-6",
+              children: "\u62ff2\u4e2a\u76f8\u540c\u62163\u4e2a\u4e0d\u540c\u5b9d\u77f3\u3002\u4f60\u5df2\u6709".concat(t.playerGem[r].reduce(function (n, e) {
+                return n + e;
+              }), "\u4e2a\uff0c\u6700\u591a\u670910\u4e2a")
+            }), 2 === l && (0, o.jsxs)(o.Fragment, {
+              children: [(0, o.jsx)("div", {
+                children: "\u8bf7\u9009\u62e91\u4e2a\u53d1\u5c55\u5361\u8d2d\u4e70"
+              }), (0, o.jsx)(s.Z, {
+                small: !0,
+                className: "flex-shrink-0",
+                onClick: function () {
+                  return u(0);
+                },
+                children: "\u53d6\u6d88"
+              })]
+            }), 3 === l && (0, o.jsxs)(o.Fragment, {
+              children: [(0, o.jsx)("div", {
+                children: "\u8bf7\u4ece\u94f6\u884c\u9009\u62e91\u4e2a\u53d1\u5c55\u5361\u9884\u5b9a"
+              }), (0, o.jsx)(s.Z, {
+                small: !0,
+                onClick: function () {
+                  return u(0);
+                },
+                children: "\u53d6\u6d88"
+              })]
+            }), 4 === l && (0, o.jsxs)(o.Fragment, {
+              children: [(0, o.jsx)("div", {
+                children: "\u786e\u8ba4\u653e\u5f03\u672c\u56de\u5408\u64cd\u4f5c\u5417?"
+              }), (0, o.jsx)(s.Z, {
+                small: !0,
+                disabled: !C,
+                onClick: function () {
+                  C && f({
+                    kind: "pass"
+                  });
+                },
+                children: "\u786e\u8ba4\u653e\u5f03"
+              }), (0, o.jsx)(s.Z, {
+                small: !0,
+                onClick: function () {
+                  return u(0);
+                },
+                children: "\u53d6\u6d88"
+              })]
+            })]
+          }), y && r === t.waitFor && (0, o.jsx)(N, {
+            view: t,
+            onAction: f
+          }, p)]
+        }), c && (0, o.jsx)("div", {
+          className: "text-2xl mt-2",
+          children: "\u89c2\u6218\u4e2d"
+        })]
+      });
+    },
+    O = t(1413);
+  var Z = function (n) {
+    var e = n.view,
+      t = n.paying,
+      r = n.setPaying,
+      a = n.onAction,
+      c = n.canAct;
+    if (!t || !c) return null;
+    var l = (0, i.h)(e, t.cardId, e.waitFor);
+    return (0, o.jsxs)("div", {
+      className: "mt-2 p-2 bg-gray-400 bg-opacity-50",
+      children: [(0, o.jsx)("div", {
+        className: "text-sm",
+        children: "\u8bf7\u9009\u62e9\u652f\u4ed8\u65b9\u5f0f"
+      }), (0, o.jsx)("div", {
+        className: "flex flex-wrap items-center justify-center mt-1",
+        children: l.map(function (n, r) {
+          return (0, o.jsx)(s.Z, {
+            small: r > 0,
+            primary: 0 === r,
+            className: "m-1",
+            disabled: !(0, i.Wq)(e, t.cardId),
+            onClick: function () {
+              c && (0, i.Wq)(e, t.cardId) && a((0, O.Z)((0, O.Z)({
+                kind: "buy"
+              }, t), {}, {
+                payment: n
+              }));
+            },
+            children: (0, i.RJ)([].concat((0, f.Z)(n.spend), [n.gold]))
+          }, "".concat(n.spend.join(), "-").concat(n.gold));
+        })
+      }), (0, o.jsx)(s.Z, {
+        small: !0,
+        className: "mt-1",
+        onClick: function () {
+          return r(null);
+        },
+        children: "\u53d6\u6d88"
+      })]
+    });
+  };
+  var E = function (n) {
+    var e = n.view,
+      t = n.playerId,
+      c = n.readOnly,
+      l = void 0 !== c && c,
+      s = n.revealBooked,
+      u = void 0 !== s && s,
+      f = n.knownDecks,
+      h = n.onAction,
+      p = n.version,
+      m = n.renderSeat,
+      v = n.afkPlayerId,
+      b = void 0 === v ? null : v,
+      y = (0, a.useState)(0),
+      g = (0, r.Z)(y, 2),
+      x = g[0],
+      N = g[1],
+      O = (0, a.useState)(null),
+      E = (0, r.Z)(O, 2),
+      L = E[0],
+      A = E[1];
+    (0, a.useEffect)(function () {
+      N(0);
+    }, [p]), (0, a.useEffect)(function () {
+      A(null);
+    }, [x, p]);
+    var I = !l && t === e.waitFor && !e.winner.length,
+      B = I && !e.waitNoble && !e.waitThrowing,
+      S = (0, a.useMemo)(function () {
+        return I && null !== t ? (0, i.t2)(e, t) : [];
+      }, [e, t, I]),
+      F = B ? x : 0,
+      P = !(l && u),
+      G = function (n) {
+        I && null !== t && (0, i.Us)(e, n, t) && h(n);
+      };
+    return (0, o.jsxs)("div", {
+      className: "text-center splendor-table",
+      children: [(0, o.jsxs)("div", {
+        className: "table-public",
+        children: [(0, o.jsx)(d, {
+          view: e,
+          canAct: I,
+          onAction: G,
+          gameVersion: p,
+          animate: P
+        }), (0, o.jsx)(w, {
+          view: e,
+          op: F,
+          playerId: t,
+          canAct: B,
+          onAction: G,
+          setPaying: A,
+          gameVersion: p,
+          knownDecks: f,
+          revealBooked: u,
+          animate: P
+        })]
+      }), (0, o.jsxs)("div", {
+        className: "table-actions",
+        children: [(0, o.jsx)(Z, {
+          view: e,
+          paying: 2 === F ? L : null,
+          setPaying: A,
+          onAction: G,
+          canAct: B
+        }), (0, o.jsx)(k, {
+          view: e,
+          op: F,
+          setOp: N,
+          onAction: G,
+          canAct: B,
+          gameVersion: p,
+          animate: P
+        }, p), (0, o.jsx)(C, {
+          view: e,
+          playerId: t,
+          readOnly: l,
+          spectator: null === t && !u,
+          op: F,
+          setOp: N,
+          candidates: S,
+          onAction: G,
+          skipAfk: b !== e.waitFor || l || null === t || t === e.waitFor ? void 0 : h,
+          gameVersion: p
+        })]
+      }), (0, o.jsxs)("details", {
+        className: "table-collection",
+        children: [(0, o.jsx)("summary", {
+          children: "玩家与收藏"
+        }), (0, o.jsx)(j, {
+          view: e,
+          revealBooked: u,
+          renderSeat: m
+        })]
+      })]
+    });
+  };
+},
+2078: function (e, a, t) {
+  var companionMapBridge = t.bridge;
+  var companionBridge = t.bridge;
+  t.r(a), t.d(a, {
+    default: function () {
+      return _;
+    }
+  });
+  var r = t(1413),
+    n = t(2982),
+    s = t(885),
+    o = t(7313),
+    c = t(3366),
+    i = t(4595),
+    l = t(3953),
+    u = t(5982),
+    d = t(738),
+    p = t(3299),
+    f = t(6634),
+    h = ["\ud83c\udf32", (0, p.Vo)("\ud83e\uddf1", "\ud83d\udd36"), "\ud83d\udc11", "\ud83c\udf3e", (0, p.Vo)("\ud83e\udea8", "\ud83d\uddfb")],
+    y = ["\ud83d\ude08", (0, p.Vo)("\ud83d\udee3", "\ud83d\udccf"), "\ud83c\udfe6", "\ud83d\udc6e", "\ud83c\udfc6"],
+    m = t(4929),
+    x = t(6417);
+  function v(e) {
+    var a = e.count,
+      t = [[0, "#105020", "#8ddb56", "#1d5728", "#1f9d34", "#0d913d", "\ud83c\udf32"], [1, "#be1622", "#ed8233", "#be1920", "#ea772f", "#dc5623", h[1]], [2, "#4e7200", "#b1c100", "#4e7200", "#a2b801", "#86b412", "\ud83d\udc11"], [3, "#936300", "#ffd25d", "#956401", "#fec53e", "#eab10b", "\ud83c\udf3e"], [4, "#666666", "#b9bcbb", "#686868", "#b5bbb7", "#989e9a", h[4]], [7, "#877d52", "#d7cb9a", "#887c50", "#d9d295", "#c5bc7c", "\ud83c\udf35"]];
+    return (0, x.jsxs)("defs", {
+      children: [(0, x.jsx)("path", {
+        id: "tile-bg0",
+        d: "M0,-202L174.937,-101V101L0,202L-174.937,101V-101Z",
+        fill: "#e0b568"
+      }), (0, x.jsx)("path", {
+        id: "tile-bg1",
+        d: "M0,-184L159.349,-92V92L0,184L-159.349,92V-92Z"
+      }), (0, x.jsx)("path", {
+        id: "tile-bg2",
+        d: "M0,-182L157.617,-91V91L0,182L-157.617,91V-91Z"
+      }), (0, x.jsx)("path", {
+        id: "tile-bg3",
+        d: "M0,-170L147.224,-85V85L0,170L-147.224,85V-85Z"
+      }), (0, x.jsx)("path", {
+        id: "tile-bg4",
+        d: "M0,-166L143.760,-83V83L0,166L-143.760,83V-83Z"
+      }), t.map(function (e) {
+        return (0, x.jsxs)("g", {
+          id: "tr".concat(e[0]),
+          children: [(0, x.jsx)("use", {
+            xlinkHref: "#tile-bg0"
+          }), (0, x.jsx)("use", {
+            xlinkHref: "#tile-bg1",
+            fill: e[1]
+          }), (0, x.jsx)("use", {
+            xlinkHref: "#tile-bg2",
+            fill: e[2]
+          }), (0, x.jsx)("use", {
+            xlinkHref: "#tile-bg3",
+            fill: e[3]
+          }), (0, x.jsxs)("radialGradient", {
+            id: "radial".concat(e[0]),
+            r: "50%",
+            children: [(0, x.jsx)("stop", {
+              offset: "0%",
+              stopColor: e[4]
+            }), (0, x.jsx)("stop", {
+              offset: "100%",
+              stopColor: e[5]
+            })]
+          }), (0, x.jsx)("use", {
+            xlinkHref: "#tile-bg4",
+            fill: "url(#radial".concat(e[0], ")")
+          }), (0, x.jsx)("text", {
+            alignmentBaseline: "central",
+            dominantBaseline: "central",
+            textAnchor: "middle",
+            fontSize: "88",
+            y: "-80",
+            className: "ktd-emoji-shadow",
+            children: e[6]
+          })]
+        }, e[0]);
+      }), (0, x.jsxs)("linearGradient", {
+        id: "sea1",
+        gradientUnits: "userSpaceOnUse",
+        x1: "79.76",
+        y1: "-138.45",
+        x2: "60",
+        y2: "-104.23",
+        children: [(0, x.jsx)("stop", {
+          offset: ".4",
+          stopColor: "#57afd6"
+        }), (0, x.jsx)("stop", {
+          offset: "1",
+          stopColor: "#064f80"
+        })]
+      }), (0, x.jsxs)("linearGradient", {
+        id: "sea2",
+        gradientUnits: "userSpaceOnUse",
+        x1: "79.76",
+        y1: "-138.45",
+        x2: "60",
+        y2: "-104.23",
+        gradientTransform: "rotate(60)",
+        children: [(0, x.jsx)("stop", {
+          offset: ".4",
+          stopColor: "#57afd6"
+        }), (0, x.jsx)("stop", {
+          offset: "1",
+          stopColor: "#064f80"
+        })]
+      }), (0, x.jsxs)("g", {
+        id: "ts1",
+        children: [(0, x.jsx)("path", {
+          d: "M0,-200.76L173.86,-100.38v60L-51.96,-170.76Z",
+          fill: "url(#sea1)"
+        }), (0, x.jsx)("path", {
+          d: "M0,-200.76L173.86,-100.38v16.08L-13.93,-192.72Z",
+          fill: "#e0b568"
+        })]
+      }), (0, x.jsxs)("g", {
+        id: "ts2",
+        children: [(0, x.jsx)("path", {
+          d: "M0,-200.76L173.86,-100.38L121.9,-70.38L-51.96,-170.76Z",
+          fill: "url(#sea1)"
+        }), (0, x.jsx)("path", {
+          d: "M173.86,-100.38L121.9,-70.38V130.38L173.86,100.38Z",
+          fill: "url(#sea2)"
+        }), (0, x.jsx)("path", {
+          d: "M0,-200.76L173.86,-100.38V100.38L160.11,108.32v-200.76L-13.75,-192.82Z",
+          fill: "#e0b568"
+        })]
+      }), (0, x.jsxs)("g", {
+        id: "n",
+        children: [(0, x.jsx)("path", {
+          d: "M117.2 133.4H24A17 17 0 017 116.5V23.2A17 17 0 0123.9 6.3h93.3a17 17 0 0116.9 16.9v93.3a17 17 0 01-16.9 17z",
+          opacity: ".5"
+        }), (0, x.jsx)("path", {
+          d: "M112.3 129.3H19a17 17 0 01-16.9-17V19A17 17 0 0119 2.2h93.3a17 17 0 0117 16.8v93.4a17 17 0 01-17 16.9z",
+          fill: "#eae9e4"
+        })]
+      }), [2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(function (e) {
+        var a = 6 === e || 8 === e ? "#cc0000" : "#004405";
+        return (0, x.jsxs)("g", {
+          id: "n".concat(e),
+          children: [(0, x.jsx)("use", {
+            xlinkHref: "#n",
+            x: "-64.8",
+            y: "-15"
+          }), (0, x.jsx)("text", {
+            className: "font-mono font-bold",
+            alignmentBaseline: "central",
+            dominantBaseline: "central",
+            textAnchor: "middle",
+            fill: a,
+            fontSize: "90",
+            y: "45",
+            children: e
+          }), new Array(6 - Math.abs(7 - e)).fill(0).map(function (e, t, r) {
+            return (0, x.jsx)("circle", {
+              r: "5",
+              fill: a,
+              cx: 20 * (t - r.length / 2 + .5),
+              cy: "95"
+            }, t);
+          })]
+        }, e);
+      }), (0, x.jsx)("text", {
+        id: "rob",
+        className: "ktd-emoji-shadow",
+        fontSize: "110",
+        x: "-130",
+        y: "45",
+        children: "\ud83d\ude08"
+      }), (0, x.jsxs)("g", {
+        id: "pier",
+        children: [(0, x.jsx)("rect", {
+          width: "66",
+          height: "240",
+          stroke: "#603a10",
+          strokeWidth: "5",
+          x: "7",
+          fill: "#dc9020"
+        }), (0, x.jsx)("path", {
+          stroke: "#925e1e",
+          strokeWidth: "6",
+          fill: "none",
+          d: "M9,40H71M9,80H71M9,120H71M9,160H71M9,200H71"
+        })]
+      }), (0, x.jsxs)("g", {
+        id: "tp",
+        children: [(0, x.jsx)("use", {
+          xlinkHref: "#pier",
+          x: "-40",
+          y: "-380",
+          transform: "scale(0.5),rotate(60,0,0)"
+        }), (0, x.jsx)("use", {
+          xlinkHref: "#pier",
+          x: "-40",
+          y: "-380",
+          transform: "scale(0.5)"
+        })]
+      }), (0, x.jsxs)("g", {
+        id: "tp7",
+        children: [(0, x.jsx)("circle", {
+          r: "50",
+          fill: "#eae9e4"
+        }), (0, x.jsx)(m.Z, {
+          fontSize: "46",
+          fontWeight: "700",
+          y: "-19",
+          children: "?"
+        }), (0, x.jsx)(m.Z, {
+          fontSize: "36",
+          fontWeight: "700",
+          y: "22",
+          children: "3:1"
+        })]
+      }), h.map(function (e, a) {
+        return (0, x.jsxs)("g", {
+          id: "tp".concat(a),
+          children: [(0, x.jsx)("circle", {
+            r: "50",
+            fill: "#eae9e4"
+          }), (0, x.jsx)(m.Z, {
+            fontSize: "46",
+            y: "-19",
+            children: e
+          }), (0, x.jsx)(m.Z, {
+            fontSize: "36",
+            fontWeight: "700",
+            y: "22",
+            children: "2:1"
+          })]
+        }, a);
+      }), f.DM.slice(0, a).map(function (e, a) {
+        return (0, x.jsxs)(o.Fragment, {
+          children: [(0, x.jsxs)("radialGradient", {
+            id: "vr".concat(a),
+            r: "100%",
+            children: [(0, x.jsx)("stop", {
+              offset: "10%",
+              stopColor: f.SR[a][0]
+            }), (0, x.jsx)("stop", {
+              offset: "100%",
+              stopColor: f.SR[a][1]
+            })]
+          }), (0, x.jsxs)("linearGradient", {
+            id: "cr".concat(a),
+            gradientUnits: "userSpaceOnUse",
+            x1: "0",
+            y1: "59",
+            x2: "0",
+            y2: "96",
+            children: [(0, x.jsx)("stop", {
+              offset: ".26",
+              stopColor: f.SR[a][1]
+            }), (0, x.jsx)("stop", {
+              offset: ".4",
+              stopColor: f.SR[a][0]
+            })]
+          }), (0, x.jsxs)("g", {
+            id: "city".concat(a),
+            transform: "translate(-64, -64)",
+            children: [(0, x.jsx)("path", {
+              fill: "url(#cr".concat(a, ")"),
+              stroke: "none",
+              d: "M122,96L121,69L112,59H82L69,96Z"
+            }), (0, x.jsx)("path", {
+              fill: "url(#vr".concat(a, ")"),
+              stroke: "none",
+              d: "M43,10L8,29L2,80L9,76L23.4,112H109L116,96,H69L77,76L84,80L78,29Z"
+            }), (0, x.jsx)("path", {
+              stroke: f.SR[a][2],
+              strokeWidth: "3.6",
+              strokeLinejoin: "round",
+              fill: "none",
+              d: "M77,76L69,96H122L121,69L112,59H82M116,96L109,112H23.4L9,76M43,57L84,79.9L78,29L43,10L8,29L2,80L43,57L43,10"
+            })]
+          }), (0, x.jsxs)("g", {
+            id: "vill".concat(a),
+            transform: "translate(-64, -64)",
+            children: [(0, x.jsx)("path", {
+              fill: "url(#vr".concat(a, ")"),
+              stroke: "none",
+              d: "M99,91L89,111H39L29,91L23,95L30,48L64,19L98,48L105,95Z"
+            }), (0, x.jsx)("path", {
+              stroke: f.SR[a][2],
+              strokeWidth: "3.6",
+              strokeLinejoin: "round",
+              fill: "none",
+              d: "M99,91L87,111H39L31,91M64,19V65L23,95L30,48L64,19L98,48L105,95L64,65"
+            })]
+          }), (0, x.jsxs)("linearGradient", {
+            id: "lg".concat(a),
+            gradientUnits: "userSpaceOnUse",
+            x1: "-23",
+            y1: "0",
+            x2: "23",
+            y2: "0",
+            children: [(0, x.jsx)("stop", {
+              offset: "0",
+              stopColor: f.SR[a][1]
+            }), (0, x.jsx)("stop", {
+              offset: ".4",
+              stopColor: f.SR[a][0]
+            }), (0, x.jsx)("stop", {
+              offset: ".5",
+              stopColor: f.SR[a][0]
+            }), (0, x.jsx)("stop", {
+              offset: "1",
+              stopColor: f.SR[a][1]
+            })]
+          }), (0, x.jsx)("g", {
+            id: "road".concat(a),
+            children: (0, x.jsx)("path", {
+              fill: "url(#lg".concat(a, ")"),
+              strokeLinejoin: "round",
+              d: "M-20,85V-85L0,-96L20,-85V85L0,96Z",
+              strokeWidth: "3.6",
+              stroke: f.SR[a][2]
+            })
+          })]
+        }, a);
+      })]
+    });
+  }
+  var b = o.memo(v),
+    D = t(4942),
+    j = t(552),
+    g = t(9796),
+    C = t(6912);
+  function k(e) {
+    var a = e.r,
+      t = e.className,
+      r = e.onClick;
+    return (0, x.jsxs)("div", {
+      className: "ktd-card",
+      children: [(0, x.jsx)("div", {
+        className: "ktd-card-r".concat(a, " ").concat(t || ""),
+        children: h[a]
+      }), r && (0, x.jsx)(i.Z, {
+        className: "absolute block w-full h-full top-0",
+        noStyle: !0,
+        onClick: r
+      })]
+    });
+  }
+  var Z = o.memo(k),
+    R = t(4420),
+    w = t(7992),
+    O = t(6805);
+  var P = function (e) {
+      var a,
+        t,
+        o = e.room,
+        l = e.game,
+        p = e.updateGameData,
+        h = e.send,
+        m = e.gameMapProp,
+        v = e.gameState,
+        b = e.setAction,
+        k = e.action,
+        P = e.putRoad,
+        N = e.putHouse,
+        H = v.isOver,
+        K = o.position - 1,
+        I = !!o.position && o.position === o.owner,
+        L = v.waitFor === K,
+        E = !L || v.allowOps.length < 2,
+        B = [],
+        M = l.playerData.length,
+        V = k[0];
+      E || (V === f.Hx.PutRoad ? f.Vf[f.Wj.Road] : V === f.Hx.PutHouse ? f.Vf[f.Wj.Village] : V === f.Hx.PutCity ? f.Vf[f.Wj.City] : V === f.Hx.BuyDevCard ? f.Vf[f.Wj.DevCard] : []).forEach(function (e, a) {
+        for (var t = 0; t < e; t++) B.push((0, x.jsx)(Z, {
+          r: a,
+          className: l.playerData[K].resources[a] <= t ? "opacity-50" : ""
+        }, "".concat(a, "-").concat(t)));
+      });
+      var q = (0, j.bb)(l),
+        W = -1;
+      return !H && q && (0, O.H0)(l.actionRequest, M).map(function (e, a) {
+        return {
+          b: e,
+          i: a
+        };
+      }).filter(function (e) {
+        return e.b;
+      }).map(function (e) {
+        return e.i;
+      }).forEach(function (e) {
+        K !== e && (0, w.Yw)(o, e) && (W = e);
+      }), (0, x.jsxs)(x.Fragment, {
+        children: [W >= 0 && (0, x.jsx)("div", {
+          className: "text-center",
+          children: (0, x.jsx)(i.Z, {
+            small: !0,
+            primary: !0,
+            onClick: function () {
+              var e = W,
+                a = [];
+              l.playerData[W].resources.forEach(function (e, t) {
+                for (var r = 0; r < e; r++) a.push(t);
+              });
+              var t = [0, 0, 0, 0, 0];
+              (0, R.T)(a).slice(0, a.length >> 1).forEach(function (e) {
+                t[e] += 1;
+              });
+              var s = {
+                state: l.state,
+                devCard: l.devCard,
+                robber: l.robber,
+                lastDice: l.lastDice,
+                newCards: l.newCards,
+                bankData: (0, r.Z)((0, r.Z)({}, l.bankData), {}, {
+                  resources: l.bankData.resources.map(function (e, a) {
+                    return e + t[a];
+                  })
+                }),
+                playerData: (0, n.Z)(l.playerData),
+                actionRequest: l.actionRequest & (0, O.Vi)(e, o.playerList.length)
+              };
+              s.playerData[e] = (0, r.Z)((0, r.Z)({}, s.playerData[e]), {}, {
+                resources: s.playerData[e].resources.map(function (e, a) {
+                  return e - t[a];
+                })
+              }), s.lastOp = {
+                type: f.K8.RollDice,
+                playerId: l.lastOp.playerId
+              }, p(s);
+            },
+            children: "\u8be5\u73a9\u5bb6\u5df2\u6302\u673a\uff0c\u70b9\u6b64\u8ba9\u4ed6\u968f\u673a\u4e22\u5f03\u8d44\u6e90"
+          })
+        }), W < 0 && !H && !L && (0, w.Yw)(o, v.waitFor) && !q && (0, x.jsx)("div", {
+          className: "text-center",
+          children: (0, x.jsx)(i.Z, {
+            small: !0,
+            primary: !0,
+            onClick: function () {
+              if (!(0, j.bb)(l)) {
+                var e,
+                  a = (0, j.my)(o, l),
+                  t = g.ZP[l.mapId],
+                  i = a.waitFor;
+                if (a.allowOps[0] === f.K8.PutHouse) {
+                  var u = (0, C.q9)(l);
+                  if (u.length) {
+                    var d = u[(0, R.M)(u.length)],
+                      h = (0, s.Z)(d, 2),
+                      y = h[0],
+                      x = h[1],
+                      v = (0, s.Z)(y, 2),
+                      b = v[0],
+                      D = v[1];
+                    (e = f.Vf[f.Wj.Free], function (a) {
+                      var o = {
+                          state: l.state,
+                          devCard: l.devCard,
+                          lastOp: {
+                            type: f.K8.PutHouse,
+                            playerId: i,
+                            house: a,
+                            costs: e
+                          },
+                          robber: l.robber,
+                          lastDice: l.lastDice,
+                          newCards: l.newCards,
+                          bankData: l.bankData,
+                          playerData: (0, n.Z)(l.playerData),
+                          actionRequest: l.actionRequest
+                        },
+                        c = o.playerData[i];
+                      if (o.playerData[i] = (0, r.Z)((0, r.Z)({}, c), {}, {
+                        houses: [].concat((0, n.Z)(c.houses), [a])
+                      }), 1 === c.houses.length) {
+                        var u = (2 & a) >> 1,
+                          d = t.tiles[a >> 2],
+                          h = (0, s.Z)(d, 2),
+                          y = h[0],
+                          x = h[1],
+                          v = [0, 0, 0, 0, 0],
+                          b = function (e, a) {
+                            var r = t.xyToId.get("".concat(e, ",").concat(a));
+                            if (r < t.tileCount) {
+                              var n = m.tileTypes[r];
+                              n < f.j5.None && (v[n] += 1);
+                            }
+                          };
+                        b(y, x), b(y - 1, x - 1), u ? b(y, x - 1) : b(y - 1, x), o.playerData[i].resources = v, o.bankData.resources = o.bankData.resources.map(function (e, a) {
+                          return e - v[a];
+                        });
+                      }
+                      p(o, !(1 & a));
+                    })(t.xyToId.get("".concat(b, ",").concat(D)) << 2 | x << 1);
+                  }
+                } else if (a.allowOps[0] === f.K8.PutRoad) {
+                  var k = !(16 & l.devCard) && 2 & l.devCard ? (0, C.jc)(l, i) : (0, C.Z7)(l);
+                  if (k.length) {
+                    var Z = k[(0, R.M)(k.length)],
+                      w = (0, s.Z)(Z, 2),
+                      O = w[0],
+                      P = w[1],
+                      N = (0, s.Z)(O, 2),
+                      H = N[0],
+                      K = N[1];
+                    !function (e) {
+                      return function (a) {
+                        if (l.playerData[i].roads.length > 14) return (0, c.Z)("\u9053\u8def\u6700\u591a\u4fee15\u6761");
+                        var t = {
+                            state: l.state,
+                            devCard: 16 & l.devCard ? l.devCard : 2 & l.devCard ? 125 & l.devCard : l.devCard,
+                            lastOp: {
+                              type: f.K8.PutRoad,
+                              playerId: i,
+                              road: a,
+                              costs: e
+                            },
+                            robber: l.robber,
+                            lastDice: l.lastDice,
+                            newCards: l.newCards,
+                            bankData: l.bankData,
+                            playerData: (0, n.Z)(l.playerData),
+                            actionRequest: l.actionRequest
+                          },
+                          s = t.playerData[i];
+                        t.playerData[i] = (0, r.Z)((0, r.Z)({}, s), {}, {
+                          roads: [].concat((0, n.Z)(s.roads), [a])
+                        }), s.roads.length ? s.roads.length < 2 && (t.state = t.state ? t.state - 1 : 0) : t.state = t.state === l.playerData.length - 1 ? t.state : t.state + 1, p(t, !0);
+                      };
+                    }(f.Vf[f.Wj.Free])(t.xyToId.get("".concat(H, ",").concat(K)) << 2 | P);
+                  }
+                } else a.allowOps.includes(f.K8.RollDice) ? p((0, j.HU)(l, m, a)) : p((0, j.d7)(l));
+              }
+            },
+            children: "\u8be5\u73a9\u5bb6\u5df2\u6302\u673a\uff0c\u70b9\u6b64\u8df3\u8fc7\u4ed6\u7684\u56de\u5408"
+          })
+        }), !H && (0, x.jsxs)("div", {
+          children: [(0, x.jsx)(i.Z, {
+            className: "m-1",
+            primary: !0,
+            small: !0,
+            disabled: !v.allowOps.includes(f.K8.RollDice),
+            onClick: function () {
+              p((0, j.HU)(l, m, v));
+            },
+            children: "\ud83c\udfb2\u63b7\u9ab0\u5b50"
+          }), (0, x.jsx)(i.Z, {
+            className: "m-1",
+            small: !0,
+            disabled: E || !v.allowOps.includes(f.K8.BuyDevCard) || V === f.Hx.BuyDevCard,
+            onClick: function () {
+              return l.bankData.cards.reduce(function (e, a) {
+                return e + a;
+              }) ? b([f.Hx.BuyDevCard, function () {
+                var e = f.Vf[f.Wj.DevCard];
+                if (!e.every(function (e, a) {
+                  return l.playerData[K].resources[a] >= e;
+                })) return (0, c.Z)("\u8d44\u6e90\u4e0d\u8db3");
+                var a = {
+                    state: l.state,
+                    devCard: l.devCard,
+                    lastOp: {
+                      type: f.K8.BuyDevCard,
+                      playerId: K,
+                      costs: e
+                    },
+                    robber: l.robber,
+                    lastDice: l.lastDice,
+                    newCards: (0, n.Z)(l.newCards),
+                    bankData: (0, r.Z)((0, r.Z)({}, l.bankData), {}, {
+                      resources: (0, n.Z)(l.bankData.resources),
+                      cards: (0, n.Z)(l.bankData.cards)
+                    }),
+                    playerData: (0, n.Z)(l.playerData),
+                    actionRequest: l.actionRequest
+                  },
+                  t = [];
+                l.bankData.cards.forEach(function (e, a) {
+                  for (var r = 0; r < e; r++) t.push(a);
+                });
+                var s = t[(0, R.M)(t.length)];
+                a.bankData.cards[s] -= 1, a.newCards[s] += 1, a.playerData[K] = (0, r.Z)((0, r.Z)({}, a.playerData[K]), {}, {
+                  cards: (0, n.Z)(a.playerData[K].cards),
+                  resources: (0, n.Z)(a.playerData[K].resources)
+                }), a.playerData[K].cards[s] += 1, e.forEach(function (e, t) {
+                  a.bankData.resources[t] += e, a.playerData[K].resources[t] -= e;
+                }), p(a);
+              }]) : (0, c.Z)("\u53d1\u5c55\u5361\u5df2\u7ecf\u5356\u5b8c\u4e86");
+            },
+            children: "\ud83d\ude4f\u4e70\u53d1\u5c55\u5361"
+          }), (0, x.jsx)(i.Z, {
+            className: "m-1",
+            small: !0,
+            disabled: E || !v.allowOps.includes(f.K8.BuyRoad) || V === f.Hx.PutRoad,
+            onClick: function () {
+              return b([f.Hx.PutRoad, P(f.Vf[f.Wj.Road])]);
+            },
+            children: "".concat(y[1], "\u4fee\u9053\u8def")
+          }), (0, x.jsx)(i.Z, {
+            className: "m-1",
+            small: !0,
+            disabled: E || !v.allowOps.includes(f.K8.BuyHouse) || V === f.Hx.PutHouse,
+            onClick: function () {
+              return b([f.Hx.PutHouse, N(f.Vf[f.Wj.Village])]);
+            },
+            children: "\ud83c\udfe0\u4fee\u6751\u5e84"
+          }), (0, x.jsx)(i.Z, {
+            className: "m-1",
+            small: !0,
+            disabled: E || !v.allowOps.includes(f.K8.BuyCity) || V === f.Hx.PutCity,
+            onClick: function () {
+              return b([f.Hx.PutCity, N(f.Vf[f.Wj.City])]);
+            },
+            children: "\ud83c\udfd8\ufe0f\u4fee\u57ce\u5e02"
+          }), (0, x.jsx)(i.Z, {
+            className: "m-1",
+            small: !0,
+            disabled: E || !v.allowOps.includes(f.K8.ExchangeWithPlayer) || V === f.Hx.Exchange,
+            onClick: function () {
+              return b([f.Hx.Exchange, null]);
+            },
+            children: "\ud83d\udcb0\u4ea4\u6613"
+          }), (0, x.jsx)(i.Z, {
+            className: "m-1",
+            small: !0,
+            disabled: !L || v.allowOps.includes(f.K8.RollDice) || l.exchangeData && l.exchangeData.responses.indexOf(1) >= 0 || v.allowOps.length <= 1 || V === f.Hx.End,
+            onClick: function () {
+              b([f.Hx.End, null]);
+            },
+            children: "\u23e9\u7ed3\u675f"
+          }), M > 4 && (0, x.jsx)(i.Z, {
+            className: "m-1",
+            small: !0,
+            disabled: l.state === K || !!(16 & l.devCard) || !l.lastDice || 7 === (0, j.bg)(l.lastDice) && (null === (a = l.lastOp) || void 0 === a ? void 0 : a.type) === f.K8.RollDice || !!((l.actionRequest || 0) >> K & 1),
+            onClick: function () {
+              var e = {
+                state: l.state,
+                devCard: l.devCard,
+                robber: l.robber,
+                lastDice: l.lastDice,
+                newCards: l.newCards,
+                bankData: l.bankData,
+                playerData: l.playerData,
+                actionRequest: (l.actionRequest || 0) | 1 << K
+              };
+              l.exchangeData && (e.exchangeData = l.exchangeData), p(e);
+            },
+            children: "\ud83d\udea9\u8bf7\u6c42\u5efa\u9020"
+          })]
+        }), B.length > 0 && (0, x.jsxs)("div", {
+          className: "flex items-center justify-center",
+          children: [(t = {}, (0, D.Z)(t, f.Hx.PutRoad, "\u4fee\u9053\u8def"), (0, D.Z)(t, f.Hx.PutHouse, "\u4fee\u6751\u5e84"), (0, D.Z)(t, f.Hx.PutCity, "\u4fee\u57ce\u5e02"), (0, D.Z)(t, f.Hx.BuyDevCard, "\u4e70\u53d1\u5c55\u5361"), t)[V], "\u9700\u8981", B, V === f.Hx.BuyDevCard && (0, x.jsx)(i.Z, {
+            className: "ml-2",
+            small: !0,
+            primary: !0,
+            onClick: k[1],
+            children: "\u786e\u8ba4"
+          }), (0, x.jsx)(i.Z, {
+            className: "ml-4",
+            small: !0,
+            onClick: function () {
+              return b([f.Hx.None, null]);
+            },
+            children: "\u53d6\u6d88"
+          })]
+        }), V === f.Hx.BuyDevCard && (0, x.jsx)("div", {
+          className: "text-sm mt-2",
+          children: "(\u4e70\u7684\u53d1\u5c55\u5361\u4e0b\u56de\u5408\u624d\u80fd\u7528\uff0c\u6bcf\u56de\u5408\u53ea\u80fd\u75281\u5f20)"
+        }), V === f.Hx.End && (0, x.jsxs)("div", {
+          className: "text-center",
+          children: [(0, x.jsx)("div", {
+            className: "m-1",
+            children: "\u786e\u8ba4\u7ed3\u675f\u81ea\u5df1\u7684\u56de\u5408\u5417\uff1f"
+          }), (0, x.jsxs)("div", {
+            className: "flex items-center justify-center",
+            children: [(0, x.jsx)(i.Z, {
+              small: !0,
+              primary: !0,
+              onClick: function () {
+                p((0, j.d7)(l));
+              },
+              children: "\u786e\u8ba4"
+            }), (0, x.jsx)(i.Z, {
+              className: "ml-4",
+              small: !0,
+              onClick: function () {
+                return b([f.Hx.None, null]);
+              },
+              children: "\u53d6\u6d88"
+            })]
+          })]
+        }), I && H && (0, x.jsx)("div", {
+          className: "mt-1",
+          children: (0, x.jsx)(i.Z, {
+            small: !0,
+            onClick: function () {
+              return h(u.Z.OwnerExitGame, {
+                data: d.AD.encode({
+                  mapId: l.mapId
+                }).finish()
+              });
+            },
+            children: "\u7ed3\u675f\u6e38\u620f"
+          })
+        })]
+      });
+    },
+    N = {
+      1: [1, 0],
+      2: [1, -60],
+      4: [1, -120],
+      8: [1, -180],
+      16: [1, -240],
+      32: [1, -300],
+      33: [2, 0],
+      3: [2, -60],
+      6: [2, -120],
+      12: [2, -180],
+      24: [2, -240],
+      48: [2, -300]
+    };
+  function H(e) {
+    var a = e.game,
+      t = e.mapProp,
+      r = g.ZP[a.mapId];
+    return (0, x.jsxs)(x.Fragment, {
+      children: [t.tileTypes.map(function (e, a) {
+        var t = (0, C.d3)(r.tiles[a]),
+          n = (0, s.Z)(t, 2),
+          o = n[0],
+          c = n[1];
+        return (0, x.jsx)("use", {
+          xlinkHref: "#tr".concat(e),
+          x: o,
+          y: c
+        }, a);
+      }), r.tiles.slice(r.tileCount).map(function (e, a) {
+        var t = (0, C.d3)(e),
+          r = (0, s.Z)(t, 2),
+          n = r[0],
+          o = r[1],
+          c = N[e[2]];
+        return (0, x.jsx)("use", {
+          xlinkHref: "#ts".concat(c[0]),
+          transform: "translate(".concat(n, ",").concat(o, "),rotate(").concat(c[1], ")")
+        }, a);
+      }), t.tileNums.map(function (e, a) {
+        if (7 !== e) {
+          var t = (0, C.d3)(r.tiles[a]),
+            n = (0, s.Z)(t, 2),
+            o = n[0],
+            c = n[1];
+          return (0, x.jsx)("use", {
+            xlinkHref: "#n".concat(e),
+            x: o,
+            y: c
+          }, a);
+        }
+      }), t.portTypes.map(function (e, a) {
+        var t = r.ports[a],
+          n = (0, C.d3)(r.tiles[t[0]]),
+          o = (0, s.Z)(n, 2),
+          i = o[0],
+          l = o[1];
+        return (0, x.jsxs)("g", {
+          children: [(0, x.jsx)("use", {
+            xlinkHref: "#tp",
+            transform: "translate(".concat(i, ",").concat(l, "),rotate(").concat(60 * t[1] + 240, ")")
+          }), (0, x.jsx)("use", {
+            xlinkHref: "#tp".concat(e),
+            x: i,
+            y: l,
+            className: "cursor-pointer",
+            onClick: function () {
+              return (0, c.Z)("\u76f4\u63a5\u70b9\u201c\ud83d\udcb0\u4ea4\u6613\u201d\u6309\u94ae\uff0c\u8f93\u5165\u6e2f\u53e3\u5bf9\u5e94\u6bd4\u4f8b\u7684\u8d44\u6e90\uff0c\u5c31\u4f1a\u548c\u94f6\u884c\u6309\u7167\u4f18\u60e0\u6bd4\u4f8b\u4ea4\u6613");
+            }
+          })]
+        }, a);
+      })]
+    });
+  }
+  var K = o.memo(H, function (e, a) {
+    return e.mapProp === a.mapProp;
+  });
+  var I = function (e) {
+    var a = e.n,
+      t = e.w,
+      r = e.className,
+      n = (0, o.useRef)(a),
+      s = n.current,
+      c = s !== a;
+    return n.current = a, (0, x.jsxs)("div", {
+      className: "relative font-mono text-center ".concat(r || ""),
+      children: [(0, x.jsxs)("div", {
+        className: "relative overflow-hidden",
+        children: [c && (0, x.jsx)("div", {
+          className: "ktd-last-".concat(s > a ? "top" : "bottom", " absolute"),
+          children: s
+        }), (0, x.jsx)("div", {
+          className: c ? s < a ? "text-red-500" : "text-green-500" : void 0,
+          children: a
+        }), s.toString().length - a.toString().length > 0 && (0, x.jsx)("div", {
+          "aria-hidden": "true",
+          className: "h-0 opacity-0",
+          children: s
+        }), !!t && (0, x.jsx)("div", {
+          "aria-hidden": "true",
+          className: "h-0 opacity-0",
+          children: new Array(t).fill(0).join("")
+        })]
+      }), c && (0, x.jsxs)("div", {
+        className: "absolute text-xs z-10 animate-pulse ".concat(s < a ? "text-red-500 bottom-3.5" : "text-green-500 top-3.5"),
+        children: [a > s && "+", a - s]
+      })]
+    });
+  };
+  function L(e) {
+    var a = e.hasPort,
+      t = e.map,
+      r = e.playerCount,
+      n = (0, o.useState)(!1),
+      c = (0, s.Z)(n, 2),
+      l = c[0],
+      u = c[1];
+    return (0, x.jsxs)("div", {
+      className: "text-center my-2",
+      children: [(0, x.jsx)(i.Z, {
+        small: !0,
+        onClick: function () {
+          return u(function (e) {
+            return !e;
+          });
+        },
+        children: l ? "\u9690\u85cf\u5e2e\u52a9" : "\u67e5\u770b\u5e2e\u52a9"
+      }), l && (0, x.jsx)("div", {
+        className: "mt-2 text-sm whitespace-pre-line",
+        children: "\u4e70\u53d1\u5c55\u5361\uff1a\ud83d\udc11\ud83c\udf3e".concat(h[4], "\n\u4fee\u9053\u8def\uff1a\ud83c\udf32").concat(h[1], "\n\u4fee\u6751\u5e84\uff1a\ud83c\udf32").concat(h[1], "\ud83d\udc11\ud83c\udf3e\n\u4fee\u57ce\u5e02\uff1a\ud83c\udf3e\ud83c\udf3e").concat(h[4] + h[4] + h[4], "\n\u94f6\u884c\u4ea4\u6613\u6bd4\u4f8b\n").concat(a[f.j5.Lumber] ? 2 : a[f.j5.None] ? 3 : 4, "\ud83c\udf32=1\u3001").concat(a[f.j5.Brick] ? 2 : a[f.j5.None] ? 3 : 4).concat(h[1], "=1\u3001").concat(a[f.j5.Wool] ? 2 : a[f.j5.None] ? 3 : 4, "\ud83d\udc11=1\u3001").concat(a[f.j5.Grain] ? 2 : a[f.j5.None] ? 3 : 4, "\ud83c\udf3e=1\u3001").concat(a[f.j5.Ore] ? 2 : a[f.j5.None] ? 3 : 4).concat(h[4], "=1\n\u82e5\u8981\u8ddf\u94f6\u884c\u4ea4\u6613\uff0c\u70b9\u51fb\ud83d\udcb0\u4ea4\u6613\u5e76\u6309\u94f6\u884c\u4ea4\u6613\u6bd4\u4f8b\u9009\u62e9\u8d44\u6e90\n\u4e94\u79cd\u8d44\u6e90\u5404\u6709").concat(t.resCount, "\u5f20\n\u53d1\u5c55\u5361\u5171").concat(t.devCount.reduce(function (e, a) {
+          return e + a;
+        }), "\u5f20\n").concat(t.devCount[0], "\u9a91\u58eb\ud83d\ude08\u3001").concat(t.devCount[1], "\u9053\u8def").concat(y[1], "\u3001").concat(t.devCount[2], "\u4e30\u6536\ud83c\udfe6\u3001").concat(t.devCount[3], "\u5784\u65ad\ud83d\udc6e\u3001").concat(t.devCount[4], "\u5206\u6570\ud83c\udfc6").concat(r > 4 ? "\n\ud83d\udea9\u5efa\u9020\u56de\u5408\u53ef\u4ee5\u4e70\u53d1\u5c55\u5361\u3001\u4fee\u9053\u8def\u3001\u4fee\u6751\u5e84\u3001\u4fee\u57ce\u5e02\uff0c\u4f46\u4e0d\u53ef\u4ee5\u63b7\u9ab0\u5b50\u3001\u4ea4\u6613\u3001\u7528\u53d1\u5c55\u5361\uff0c\u4e5f\u65e0\u6cd5\u5ba3\u544a\u80dc\u5229\u3002" : "", "\n\u83b7\u80dc\u6761\u4ef6\uff1a\u7387\u5148\u5f97\u523010\u5206\uff08\u82e5\u4e3a2\u4eba\u5bf9\u6218\uff0c\u9700\u5f97\u523015\u5206\uff09")
+      })]
+    });
+  }
+  var E = o.memo(L, function (e, a) {
+      return e.gameVersion === a.gameVersion;
+    }),
+    B = f.SR.map(function (e) {
+      return {
+        background: "radial-gradient(".concat(e[0], ", ").concat(e[1], ")")
+      };
+    }),
+    M = o.memo(function (e) {
+      var a = e.room,
+        t = e.game,
+        r = e.playerData,
+        n = e.i,
+        s = e.isOver,
+        o = r.cards,
+        l = r.resources,
+        u = t.bankData,
+        d = n + 1,
+        p = l.reduce(function (e, a) {
+          return e + a;
+        }),
+        h = u.maxRobberCountPos,
+        m = u.longestRoadPos;
+      return (0, x.jsxs)(x.Fragment, {
+        children: [(0, x.jsx)("div", {
+          className: "w-4 h-4 rounded-full border",
+          style: B[n]
+        }), (0, x.jsxs)("div", {
+          children: [(0, x.jsxs)("div", {
+            className: "flex items-center justify-center",
+            children: [(0, x.jsx)(I, {
+              w: 2,
+              n: r.houses.length + r.houses.filter(function (e) {
+                return 1 & e;
+              }).length + (u.longestRoadPos === d ? 2 : 0) + (u.maxRobberCountPos === d ? 2 : 0)
+            }), "\u5206"]
+          }), (s || a.position === d) && r.cards[f.pI.VP] > 0 && (0, x.jsxs)("div", {
+            className: "font-mono text-xs",
+            children: ["+", r.cards[f.pI.VP]]
+          })]
+        }), (0, x.jsx)("div", {
+          className: "ktd-card",
+          children: (0, x.jsx)("div", {
+            className: "ktd-card-r7",
+            children: p >= g.ZP[t.mapId].settings[t.playerData.length][1] ? "!" : "?"
+          })
+        }), (0, x.jsx)(I, {
+          n: p,
+          w: 2
+        }), (0, x.jsx)("div", {
+          className: "ktd-card",
+          children: (0, x.jsx)("div", {
+            className: "ktd-card-d",
+            children: "\ud83d\udd28"
+          })
+        }), (0, x.jsx)(I, {
+          n: o.reduce(function (e, a) {
+            return e + a;
+          })
+        }), (0, x.jsx)(i.Z, {
+          noStyle: !0,
+          onClick: function () {
+            return (0, c.Z)("\u6700\u5927\u519b\u961f\u5361\uff0c\u4f7f\u7528\u5f3a\u76d7\u5361\u6b21\u6570\u6700\u591a\u4e14\u8fbe\u52303\u6b21\u7684\u73a9\u5bb6\u83b7\u5f97\uff0c\u53ef\u52a02\u5206");
+          },
+          className: "text-xl".concat(h === d ? "" : " opacity-50"),
+          children: "\ud83d\ude08"
+        }), (0, x.jsx)(I, {
+          n: r.robberCount,
+          className: h === d ? "" : "opacity-50"
+        }), (0, x.jsx)(i.Z, {
+          noStyle: !0,
+          onClick: function () {
+            return (0, c.Z)("\u6700\u957f\u9053\u8def\u5361\uff0c\u4fee\u5efa\u6700\u957f\u8fde\u7eed\u9053\u8def\u4e14\u8fbe\u52305\u6761\u7684\u73a9\u5bb6\u83b7\u5f97\uff0c\u53ef\u52a02\u5206");
+          },
+          className: "text-xl".concat(m === d ? "" : " opacity-50"),
+          children: y[1]
+        }), (0, x.jsx)(I, {
+          n: r.longestRoad,
+          className: m === d ? "" : "opacity-50"
+        })]
+      });
+    }, function (e, a) {
+      return e.gameVersion === a.gameVersion;
+    });
+  function V(e) {
+    var a = e.room,
+      t = e.game,
+      r = e.hasPort,
+      n = e.gameVersion,
+      s = e.isOver,
+      c = e.send;
+    return (0, x.jsxs)(x.Fragment, {
+      children: [t.playerData.map(function (e, r) {
+        var o;
+        return (0, x.jsxs)("div", {
+          className: "flex items-center justify-center space-x-1 mb-1",
+          children: [(0, x.jsx)(w.ZP, {
+            room: a,
+            index: r,
+            send: c,
+            isTurn: t.state === r,
+            children: (16 & t.devCard || !!t.lastDice && (7 !== (0, j.bg)(t.lastDice) || (null === (o = t.lastOp) || void 0 === o ? void 0 : o.type) !== f.K8.RollDice)) && !!((t.actionRequest || 0) >> r & 1) && (0, x.jsx)("div", {
+              className: "absolute translate-x-[-50%] text-shadow text-xs top-0 left-[46px] scale-150",
+              children: "\ud83d\udea9"
+            })
+          }), (0, x.jsx)(M, {
+            room: a,
+            game: t,
+            playerData: e,
+            i: r,
+            gameVersion: n,
+            isOver: s
+          })]
+        }, r);
+      }), (0, x.jsxs)("div", {
+        className: "flex items-center justify-center mb-1",
+        children: [(0, x.jsx)("div", {
+          className: "mr-1 text-2xl",
+          children: "\ud83c\udfe6"
+        }), [0, 1, 2, 3, 4].map(function (e, a) {
+          return (0, x.jsxs)(o.Fragment, {
+            children: [(0, x.jsx)(Z, {
+              r: a
+            }), (0, x.jsx)(I, {
+              n: t.bankData.resources[a],
+              w: 2
+            })]
+          }, a);
+        }), (0, x.jsx)("div", {
+          className: "ktd-card",
+          children: (0, x.jsx)("div", {
+            className: "ktd-card-d",
+            children: "\ud83d\udd28"
+          })
+        }), (0, x.jsx)(I, {
+          n: t.bankData.cards.reduce(function (e, a) {
+            return e + a;
+          })
+        })]
+      }), (0, x.jsx)(E, {
+        hasPort: r,
+        gameVersion: n,
+        map: g.ZP[t.mapId],
+        playerCount: t.playerData.length
+      })]
+    });
+  }
+  var q = o.memo(V, function (e, a) {
+    return e.gameVersion === a.gameVersion && e.room.time === a.room.time;
+  });
+  function W(e) {
+    var a = e.d,
+      t = e.onClick;
+    return (0, x.jsxs)("div", {
+      className: "ktd-card",
+      children: [(0, x.jsx)("div", {
+        className: "ktd-card-d",
+        children: y[a]
+      }), t && (0, x.jsx)(i.Z, {
+        className: "absolute block w-full h-full top-0",
+        noStyle: !0,
+        onClick: t
+      })]
+    });
+  }
+  var S = o.memo(W);
+  var A = function (e) {
+    var a,
+      t = e.room,
+      l = e.game,
+      u = e.discardResource,
+      d = e.action0,
+      p = e.gameVersion,
+      y = e.gameMapProp,
+      m = e.setAction,
+      v = e.updateGameData,
+      b = e.gameState,
+      g = e.isOver,
+      C = e.send,
+      k = !!t.position,
+      w = (0, o.useState)([]),
+      O = (0, s.Z)(w, 2),
+      P = O[0],
+      N = O[1],
+      H = (0, o.useState)([]),
+      K = (0, s.Z)(H, 2),
+      I = K[0],
+      L = K[1],
+      E = (0, o.useState)([]),
+      B = (0, s.Z)(E, 2),
+      M = B[0],
+      V = B[1];
+    (0, o.useEffect)(function () {
+      N(function (e) {
+        return e.length ? [] : e;
+      }), L(function (e) {
+        return e.length ? [] : e;
+      }), V(function (e) {
+        return e.length ? [] : e;
+      });
+    }, [typeof u, d]);
+    var W = t.position - 1,
+      A = k && u ? l.playerData[W].resources.reduce(function (e, a) {
+        return e + a;
+      }) >> 1 : 0,
+      T = d === f.Hx.Exchange || A > 0,
+      G = k ? (0, j.tY)(l, y, W) : [],
+      F = k && d === f.Hx.Exchange && P.length && I.length < 2;
+    if (F) {
+      var U = P[0][0];
+      F = P.every(function (e) {
+        return e[0] === U;
+      }) && P.length === (G[Number(U)] ? 2 : G[f.j5.None] ? 3 : 4);
+    }
+    return (0, x.jsxs)(x.Fragment, {
+      children: [l.exchangeData && !d && (0, x.jsxs)(x.Fragment, {
+        children: [(0, x.jsxs)("div", {
+          className: "flex flex-wrap items-center justify-center",
+          children: ["\u73a9\u5bb6".concat(l.state + 1, "\u60f3\u8981"), l.exchangeData.needs.map(function (e, a) {
+            return new Array(e).fill(0).map(function (e, t) {
+              return (0, x.jsx)(Z, {
+                r: a
+              }, "".concat(a, "-").concat(t));
+            });
+          }), "\uff0c\u613f\u610f\u7ed9", l.exchangeData.costs.map(function (e, a) {
+            return new Array(e).fill(0).map(function (e, t) {
+              return (0, x.jsx)(Z, {
+                r: a
+              }, "".concat(a, "-").concat(t));
+            });
+          }), W === l.state && (0, x.jsx)(i.Z, {
+            small: !0,
+            className: "ml-2",
+            onClick: function () {
+              var e = {
+                state: l.state,
+                devCard: l.devCard,
+                robber: l.robber,
+                lastDice: l.lastDice,
+                newCards: l.newCards,
+                bankData: l.bankData,
+                playerData: l.playerData,
+                actionRequest: l.actionRequest
+              };
+              v(e);
+            },
+            children: "\u64a4\u56de"
+          })]
+        }), (0, x.jsx)("div", {
+          children: l.exchangeData.responses.map(function (e, a) {
+            if (!e) return null;
+            var t = l.exchangeData.needs,
+              s = l.exchangeData.costs,
+              o = k && t.every(function (e, a) {
+                return l.playerData[W].resources[a] >= e;
+              });
+            return (0, x.jsxs)("div", {
+              className: "flex items-center justify-center",
+              children: [(0, x.jsx)("span", {
+                className: "py-1",
+                children: "\u73a9\u5bb6".concat(a + 1, "\uff1a").concat(e < 2 ? "\ud83e\udd14" : "\u274c")
+              }), a === W && e < 2 && (0, x.jsxs)(x.Fragment, {
+                children: [(0, x.jsx)(i.Z, {
+                  small: !0,
+                  className: "ml-2",
+                  disabled: !o,
+                  onClick: function () {
+                    var e = {
+                      state: l.state,
+                      devCard: l.devCard,
+                      lastOp: {
+                        type: f.K8.ExchangeWithPlayer,
+                        playerId: l.state,
+                        withPlayerId: W,
+                        needs: t,
+                        costs: s
+                      },
+                      robber: l.robber,
+                      lastDice: l.lastDice,
+                      newCards: l.newCards,
+                      bankData: l.bankData,
+                      playerData: (0, n.Z)(l.playerData),
+                      actionRequest: l.actionRequest
+                    };
+                    e.playerData[W] = (0, r.Z)((0, r.Z)({}, e.playerData[W]), {}, {
+                      resources: e.playerData[W].resources.map(function (e, a) {
+                        return e - t[a] + s[a];
+                      })
+                    });
+                    var a = l.state;
+                    e.playerData[a] = (0, r.Z)((0, r.Z)({}, e.playerData[a]), {}, {
+                      resources: e.playerData[a].resources.map(function (e, a) {
+                        return e + t[a] - s[a];
+                      })
+                    }), v(e);
+                  },
+                  children: "\u2705\u540c\u610f"
+                }), (0, x.jsx)(i.Z, {
+                  small: !0,
+                  className: "ml-4",
+                  primary: !o,
+                  onClick: function () {
+                    var e = l.exchangeData.responses.map(function (e, a) {
+                        return a === W ? 2 : e;
+                      }),
+                      a = {
+                        state: l.state,
+                        devCard: l.devCard,
+                        robber: l.robber,
+                        lastDice: l.lastDice,
+                        newCards: l.newCards,
+                        exchangeData: (0, r.Z)((0, r.Z)({}, l.exchangeData), {}, {
+                          responses: e
+                        }),
+                        bankData: l.bankData,
+                        playerData: l.playerData,
+                        actionRequest: l.actionRequest
+                      };
+                    v(a);
+                  },
+                  children: "\u274c\u62d2\u7edd"
+                })]
+              })]
+            }, a);
+          })
+        })]
+      }), k && [f.Hx.Exchange, f.Hx.CardResource, f.Hx.CardMonopoly].includes(d) && (0, x.jsxs)(x.Fragment, {
+        children: [(0, x.jsxs)("div", {
+          className: "flex justify-center items-center flex-wrap",
+          children: [(0, x.jsx)("div", {
+            className: "h-10 leading-10",
+            children: d === f.Hx.CardResource ? "\u4e30\u6536\u5361\uff0c\u90092\u4e2a\u8d44\u6e90\u4ece\u94f6\u884c\u83b7\u5f97\uff1a" : d === f.Hx.CardMonopoly ? "\u5784\u65ad\u5361\uff0c\u6240\u6709\u4eba\u7ed9\u4f60\u8be5\u8d44\u6e90\uff1a" : "\u4f60\u60f3\u83b7\u5f97\uff1a"
+          }), I.map(function (e, a) {
+            return (0, x.jsx)(Z, {
+              r: e,
+              onClick: function () {
+                L(function (e) {
+                  return [].concat((0, n.Z)(e.slice(0, a)), (0, n.Z)(e.slice(a + 1)));
+                });
+              }
+            }, a);
+          }), [f.Hx.CardResource, f.Hx.CardMonopoly].includes(d) && (0, x.jsx)(i.Z, {
+            small: !0,
+            primary: !0,
+            className: "ml-4",
+            disabled: I.length !== (d === f.Hx.CardMonopoly ? 1 : 2),
+            onClick: d === f.Hx.CardMonopoly ? function () {
+              var e = I[0],
+                a = 0;
+              l.playerData.forEach(function (t, r) {
+                r !== W && (a += t.resources[e]);
+              });
+              var t = {
+                state: l.state,
+                devCard: 1 | l.devCard,
+                lastOp: {
+                  type: f.K8.UseCardMonopoly,
+                  playerId: W,
+                  needs: [0, 0, 0, 0, 0]
+                },
+                robber: l.robber,
+                lastDice: l.lastDice,
+                newCards: l.newCards,
+                bankData: l.bankData,
+                playerData: (0, n.Z)(l.playerData),
+                actionRequest: l.actionRequest
+              };
+              t.lastOp.needs[e] = a;
+              t.lastOp.resource = e;
+              for (var s = 0; s < t.playerData.length; s++) {
+                var o = t.playerData[s];
+                t.playerData[s] = (0, r.Z)((0, r.Z)({}, o), {}, {
+                  resources: (0, n.Z)(o.resources),
+                  cards: (0, n.Z)(o.cards)
+                }), s === W ? (t.playerData[s].resources[e] += a, t.playerData[s].cards[f.pI.Monopoly] -= 1) : t.playerData[s].resources[e] = 0;
+              }
+              v(t);
+            } : function () {
+              var e = (0, s.Z)(I, 2),
+                a = e[0],
+                t = e[1],
+                o = [0, 0, 0, 0, 0];
+              if (o[a] += 1, o[t] += 1, l.bankData.resources.findIndex(function (e, a) {
+                return e < o[a];
+              }) >= 0) return (0, c.Z)("\u94f6\u884c\u8d44\u6e90\u4e0d\u8db3");
+              var i = {
+                state: l.state,
+                devCard: 1 | l.devCard,
+                lastOp: {
+                  type: f.K8.UseCardResources,
+                  playerId: W,
+                  needs: o
+                },
+                robber: l.robber,
+                lastDice: l.lastDice,
+                newCards: l.newCards,
+                bankData: (0, r.Z)((0, r.Z)({}, l.bankData), {}, {
+                  resources: (0, n.Z)(l.bankData.resources)
+                }),
+                playerData: (0, n.Z)(l.playerData),
+                actionRequest: l.actionRequest
+              };
+              i.playerData[W] = (0, r.Z)((0, r.Z)({}, i.playerData[W]), {}, {
+                resources: (0, n.Z)(i.playerData[W].resources),
+                cards: (0, n.Z)(i.playerData[W].cards)
+              }), i.playerData[W].resources[a] += 1, i.playerData[W].resources[t] += 1, i.bankData.resources[a] -= 1, i.bankData.resources[t] -= 1, i.playerData[W].cards[f.pI.YearOfPlenty] -= 1, v(i);
+            },
+            children: "\u786e\u8ba4"
+          })]
+        }), (0, x.jsxs)("div", {
+          className: "flex items-center justify-center mt-2",
+          children: [[0, 1, 2, 3, 4].map(function (e, a) {
+            return (0, x.jsx)(Z, {
+              className: "opacity-50",
+              r: a,
+              onClick: function () {
+                return d === f.Hx.CardMonopoly ? L(function (e) {
+                  return [a];
+                }) : d === f.Hx.CardResource && I.length > 1 ? (0, c.Z)("\u53ea\u80fd\u90092\u4e2a\u8d44\u6e90") : void L(function (e) {
+                  return [].concat((0, n.Z)(e), [a]);
+                });
+              }
+            }, a);
+          }), (0, x.jsx)(i.Z, {
+            small: !0,
+            className: "ml-4",
+            onClick: function () {
+              return m([f.Hx.None, null]);
+            },
+            children: "\u53d6\u6d88"
+          })]
+        })]
+      }), k && [f.Hx.CardKnight, f.Hx.CardRoad].includes(d) && (0, x.jsxs)("div", {
+        className: "flex items-center justify-center m-1",
+        children: [(a = {}, (0, D.Z)(a, f.Hx.CardKnight, "\u9a91\u58eb\u5361\uff0c\u53ef\u5728\u5730\u56fe\u4e0a\u79fb\u52a8\u5f3a\u76d7"), (0, D.Z)(a, f.Hx.CardRoad, "\u9053\u8def\u5361\uff0c\u53ef\u5728\u5730\u56fe\u4e0a\u4fee2\u6761\u9053\u8def"), a)[d], (0, x.jsx)(i.Z, {
+          small: !0,
+          className: "ml-2",
+          onClick: function () {
+            return m([f.Hx.None, null]);
+          },
+          children: "\u53d6\u6d88"
+        })]
+      }), (0, x.jsxs)("div", {
+        className: "mt-2 text-center catan-hand-panel pt-1 text-sm",
+        children: [k && (0, x.jsxs)(x.Fragment, {
+          children: [u && (0, x.jsxs)("div", {
+            className: "mt-1 mb-2",
+            children: ["\u8bf7\u9009\u62e9\u4e22\u5f03\u7684\u8d44\u6e90\u5361\uff1a".concat(P.length, "/").concat(A), (0, x.jsx)(i.Z, {
+              className: "ml-2",
+              small: !0,
+              primary: !0,
+              disabled: P.length !== A,
+              onClick: function () {
+                var e = [0, 0, 0, 0, 0];
+                P.forEach(function (a) {
+                  var t = Number(a[0]);
+                  e[t] += 1;
+                }), u(e);
+              },
+              children: "\u786e\u8ba4"
+            })]
+          }), d === f.Hx.Exchange && (0, x.jsxs)(x.Fragment, {
+            children: [(0, x.jsxs)("div", {
+              className: "flex flex-wrap items-center justify-center",
+              children: [(0, x.jsx)("div", {
+                className: "m-1",
+                children: "\u4f60\u8981\u8ddf\u8c01\u4ea4\u6613\uff1f"
+              }), F ? "\ud83c\udfe6\u94f6\u884c" : t.playerList.map(function (e, a) {
+                return a === W ? null : (0, x.jsxs)("div", {
+                  className: "flex items-center m-1",
+                  children: [(0, x.jsx)("input", {
+                    type: "checkbox",
+                    className: "cursor-pointer",
+                    id: "box".concat(a),
+                    checked: !M.includes(a),
+                    onChange: function () {
+                      return V(function (e) {
+                        return e.includes(a) ? e.filter(function (e) {
+                          return e !== a;
+                        }) : [].concat((0, n.Z)(e), [a]);
+                      });
+                    }
+                  }), (0, x.jsxs)("label", {
+                    htmlFor: "box".concat(a),
+                    className: "cursor-pointer",
+                    children: ["\u73a9\u5bb6", a + 1]
+                  })]
+                }, a);
+              })]
+            }), (0, x.jsx)("div", {
+              className: "flex items-center justify-center pb-1",
+              children: "\u4f60\u8981\u7ed9\u51fa\u54ea\u4e9b\uff1f\u5df2\u9009".concat(P.length)
+            })]
+          }), (0, x.jsxs)("div", {
+            className: "mb-1 flex flex-wrap justify-center",
+            children: [l.playerData[t.position - 1].resources.map(function (e, a) {
+              return new Array(e).fill(0).map(function (e, t) {
+                var r = P.includes("".concat(a, "-").concat(t));
+                return (0, x.jsx)("div", {
+                  className: "my-1",
+                  children: (0, x.jsx)(Z, {
+                    r: a,
+                    className: r ? "-translate-y-2" : "",
+                    onClick: T ? function () {
+                      P.includes("".concat(a, "-").concat(t)) ? N(function (e) {
+                        return e.filter(function (e) {
+                          return e !== "".concat(a, "-").concat(t);
+                        });
+                      }) : N(function (e) {
+                        return [].concat((0, n.Z)(e), ["".concat(a, "-").concat(t)]);
+                      });
+                    } : void 0
+                  })
+                }, "".concat(a, "-").concat(t));
+              });
+            }), !l.playerData[t.position - 1].resources.reduce(function (e, a) {
+              return e + a;
+            }) && (0, x.jsx)("div", {
+              className: "catan-empty-hand",
+              children: "\u4f60\u6682\u65e0\u8d44\u6e90\u5361"
+            })]
+          }), d === f.Hx.Exchange && (0, x.jsx)("div", {
+            className: "py-4",
+            children: (0, x.jsx)(i.Z, {
+              small: !0,
+              primary: !0,
+              disabled: !P.length || !I.length,
+              onClick: function () {
+                if (P.findIndex(function (e) {
+                  return I.includes(Number(e[0]));
+                }) >= 0) return (0, c.Z)("\u7ed9\u51fa\u548c\u83b7\u5f97\u7684\u8d44\u6e90\u4e0d\u80fd\u6709\u76f8\u540c\u7684");
+                var e = [0, 0, 0, 0, 0],
+                  a = [0, 0, 0, 0, 0];
+                if (I.forEach(function (a) {
+                  e[a] += 1;
+                }), P.forEach(function (e) {
+                  a[Number(e[0])] += 1;
+                }), F) {
+                  if (l.bankData.resources.findIndex(function (a, t) {
+                    return a < e[t];
+                  }) >= 0) return (0, c.Z)("\u94f6\u884c\u8d44\u6e90\u4e0d\u8db3");
+                  var t = {
+                    state: l.state,
+                    devCard: l.devCard,
+                    lastOp: {
+                      type: f.K8.ExchangeWithBank,
+                      playerId: W,
+                      needs: e,
+                      costs: a
+                    },
+                    robber: l.robber,
+                    lastDice: l.lastDice,
+                    newCards: l.newCards,
+                    bankData: (0, r.Z)((0, r.Z)({}, l.bankData), {}, {
+                      resources: l.bankData.resources.map(function (t, r) {
+                        return t - e[r] + a[r];
+                      })
+                    }),
+                    playerData: (0, n.Z)(l.playerData),
+                    actionRequest: l.actionRequest
+                  };
+                  t.playerData[W] = (0, r.Z)((0, r.Z)({}, t.playerData[W]), {}, {
+                    resources: t.playerData[W].resources.map(function (t, r) {
+                      return t + e[r] - a[r];
+                    })
+                  }), v(t);
+                } else {
+                  var s = (0, j.Gq)(l, W),
+                    o = e.findIndex(function (e, a) {
+                      return e > s[a];
+                    });
+                  if (o >= 0) return (0, c.Z)("\u6839\u636e\u94f6\u884c\u8d44\u6e90\u63a8\u7b97\uff0c\u6ca1\u4eba\u6709\u8fd9\u4e48\u591a".concat(h[o]));
+                  var i = e.reduce(function (e, a) {
+                      return e + a;
+                    }),
+                    u = new Set([W].concat((0, n.Z)(M))),
+                    d = [];
+                  if (l.playerData.forEach(function (e, a) {
+                    !u.has(a) && e.resources.reduce(function (e, a) {
+                      return e + a;
+                    }) >= i && d.push(a);
+                  }), !d.length) return (0, c.Z)("\u6ca1\u4eba\u6709\u8fd9\u4e48\u591a\u8d44\u6e90");
+                  var p = {
+                    state: l.state,
+                    devCard: l.devCard,
+                    robber: l.robber,
+                    lastDice: l.lastDice,
+                    newCards: l.newCards,
+                    exchangeData: {
+                      needs: e,
+                      costs: a,
+                      responses: new Array(l.playerData.length).fill(0).map(function (e, a) {
+                        return d.includes(a) ? 1 : 0;
+                      })
+                    },
+                    bankData: l.bankData,
+                    playerData: l.playerData,
+                    actionRequest: l.actionRequest
+                  };
+                  v(p);
+                }
+              },
+              children: "\u7533\u8bf7\u4ea4\u6613"
+            })
+          }), (0, x.jsxs)("div", {
+            className: "mb-1 flex flex-wrap justify-center",
+            children: [l.playerData[t.position - 1].cards.map(function (e, a) {
+              return new Array(e).fill(0).map(function (e, t) {
+                return (0, x.jsx)(S, {
+                  d: a,
+                  onClick: a === f.pI.Knight ? b.allowOps.includes(f.K8.UseCardKnight) ? function () {
+                    return m([f.Hx.CardKnight, function (e, a) {
+                      var t = {
+                        state: l.state,
+                        devCard: 1 | l.devCard,
+                        lastOp: {
+                          type: f.K8.UseCardKnight,
+                          playerId: W,
+                          from: l.robber,
+                          to: e
+                        },
+                        robber: e,
+                        lastDice: l.lastDice,
+                        newCards: l.newCards,
+                        bankData: (0, r.Z)({}, l.bankData),
+                        playerData: (0, n.Z)(l.playerData),
+                        actionRequest: l.actionRequest
+                      };
+                      if (t.playerData[W] = (0, r.Z)((0, r.Z)({}, t.playerData[W]), {}, {
+                        robberCount: t.playerData[W].robberCount + 1,
+                        cards: (0, n.Z)(t.playerData[W].cards),
+                        resources: (0, n.Z)(t.playerData[W].resources)
+                      }), t.playerData[W].robberCount > 2 && t.playerData[W].robberCount > l.bankData.maxRobberCount && (t.bankData.maxRobberCount = t.playerData[W].robberCount, t.bankData.maxRobberCountPos = W + 1), t.playerData[W].cards[f.pI.Knight] -= 1, a > -1) {
+                        var s = [];
+                        if (t.playerData[a].resources.forEach(function (e, a) {
+                          for (var t = 0; t < e; t++) s.push(a);
+                        }), s.length) {
+                          var o = (0, R.M)(s.length),
+                            c = s[o];
+                          t.playerData[a] = (0, r.Z)((0, r.Z)({}, t.playerData[a]), {}, {
+                            resources: (0, n.Z)(t.playerData[a].resources)
+                          }), t.playerData[a].resources[c] -= 1, t.playerData[W].resources[c] += 1, t.lastOp.withPlayerId = a, t.lastOp.needs = [0, 0, 0, 0, 0], t.lastOp.needs[c] = 1;
+                        }
+                      }
+                      v(t);
+                    }]);
+                  } : function () {
+                    return (0, c.Z)("\u9a91\u58eb\u5361\uff0c\u53ef\u4ee5\u79fb\u52a8\u5f3a\u76d7\uff0c\u76ee\u524d\u65e0\u6cd5\u4f7f\u7528");
+                  } : a === f.pI.RoadBuilding ? b.allowOps.includes(f.K8.UseCardRoads) ? function () {
+                    return m([f.Hx.CardRoad, function (e) {
+                      var a = l.playerData[W].roads.length;
+                      if (a > 14) return (0, c.Z)("\u65e0\u6cd5\u4f7f\u7528\u4fee\u8def\u5361\uff0c\u9053\u8def\u6700\u591a\u4fee15\u6761");
+                      a > 13 && (0, c.Z)("\u9053\u8def\u6700\u591a\u4fee15\u6761\uff0c\u4f60\u53ea\u80fd\u7528\u4fee\u8def\u5361\u4fee1\u6761\u9053\u8def");
+                      var t = {
+                          state: l.state,
+                          devCard: a > 13 ? 1 | l.devCard : 3 | l.devCard,
+                          lastOp: {
+                            type: f.K8.PutRoad,
+                            playerId: W,
+                            road: e
+                          },
+                          robber: l.robber,
+                          lastDice: l.lastDice,
+                          newCards: l.newCards,
+                          bankData: l.bankData,
+                          playerData: (0, n.Z)(l.playerData),
+                          actionRequest: l.actionRequest
+                        },
+                        s = t.playerData[W];
+                      t.playerData[W] = (0, r.Z)((0, r.Z)({}, s), {}, {
+                        cards: (0, n.Z)(t.playerData[W].cards),
+                        roads: [].concat((0, n.Z)(s.roads), [e])
+                      }), t.playerData[W].cards[f.pI.RoadBuilding] -= 1, v(t, !0);
+                    }]);
+                  } : function () {
+                    return (0, c.Z)("\u9053\u8def\u5361\uff0c\u53ef\u4ee5\u4fee2\u6761\u9053\u8def\uff0c\u76ee\u524d\u65e0\u6cd5\u4f7f\u7528");
+                  } : a === f.pI.YearOfPlenty ? b.allowOps.includes(f.K8.UseCardResources) ? function () {
+                    return m([f.Hx.CardResource, null]);
+                  } : function () {
+                    return (0, c.Z)("\u4e30\u6536\u5361\uff0c\u53ef\u4ee5\u6307\u5b9a2\u4e2a\u8d44\u6e90\u4ece\u94f6\u884c\u83b7\u5f97\uff0c\u76ee\u524d\u65e0\u6cd5\u4f7f\u7528");
+                  } : a === f.pI.Monopoly ? b.allowOps.includes(f.K8.UseCardMonopoly) ? function () {
+                    return m([f.Hx.CardMonopoly, null]);
+                  } : function () {
+                    return (0, c.Z)("\u5784\u65ad\u5361\uff0c\u53ef\u4ee5\u6307\u5b9a1\u79cd\u8d44\u6e90\uff0c\u5176\u4ed6\u6240\u6709\u73a9\u5bb6\u7ed9\u4f60\u8be5\u8d44\u6e90\uff0c\u76ee\u524d\u65e0\u6cd5\u4f7f\u7528");
+                  } : a === f.pI.VP ? function () {
+                    return (0, c.Z)("\u5206\u6570\u5361\uff0c\u65e0\u9700\u4f7f\u7528\uff0c\u4f60\u6084\u6084\u52a0\u4e86\u4e00\u5206\uff0c\u7b49\u4f60\u80dc\u5229\u65f6\u518d\u544a\u8bc9\u5927\u5bb6");
+                  } : void 0
+                }, "".concat(a, "-").concat(t));
+              });
+            }), !l.playerData[t.position - 1].cards.reduce(function (e, a) {
+              return e + a;
+            }) && (0, x.jsx)("div", {
+              className: "catan-empty-hand",
+              children: "\u4f60\u6682\u65e0\u53d1\u5c55\u5361"
+            })]
+          })]
+        }), (0, x.jsx)("div", {
+          className: "catan-player-strip",
+          children: (0, x.jsx)(q, {
+            hasPort: G,
+            isOver: g,
+            room: t,
+            game: l,
+            gameVersion: p,
+            send: C
+          })
+        })]
+      })]
+    });
+  };
+  function T(e) {
+    var a = e.game,
+      t = g.ZP[a.mapId].tiles;
+    return (0, x.jsxs)(x.Fragment, {
+      children: [a.playerData.map(function (e, r) {
+        return e.roads.map(function (e, n) {
+          var o,
+            c,
+            i = (0, C.cu)(e, t),
+            l = (0, s.Z)(i, 2),
+            u = l[0],
+            d = l[1],
+            p = (0, C.$v)(e);
+          return [f.K8.PutRoad, f.K8.BuyRoad].includes(null === (o = a.lastOp) || void 0 === o ? void 0 : o.type) && a.lastOp.road === e && (c = (0, x.jsxs)(x.Fragment, {
+            children: [(0, x.jsx)("animateTransform", {
+              attributeName: "transform",
+              type: "translate",
+              calcMode: "linear",
+              from: "".concat(u, ",").concat(d - 100),
+              to: "".concat(u, ",").concat(d),
+              dur: "0.3s",
+              additive: "sum",
+              begin: "indefinite",
+              fill: "freeze"
+            }), (0, x.jsx)("animateTransform", {
+              attributeName: "transform",
+              type: "rotate",
+              calcMode: "linear",
+              from: p,
+              to: p,
+              dur: "0.3s",
+              additive: "sum",
+              begin: "indefinite",
+              fill: "freeze"
+            }), (0, x.jsx)("animateTransform", {
+              attributeName: "transform",
+              type: "scale",
+              calcMode: "linear",
+              from: "1.7",
+              to: "1",
+              dur: "0.3s",
+              additive: "sum",
+              begin: "indefinite",
+              fill: "freeze"
+            })]
+          })), (0, x.jsx)("use", {
+            xlinkHref: "#road".concat(r),
+            transform: c ? void 0 : "translate(".concat(u, ",").concat(d, "),rotate(").concat(p, ")"),
+            children: c
+          }, "r".concat(n));
+        });
+      }), a.playerData.map(function (e, r) {
+        return e.houses.map(function (e, n) {
+          var o,
+            c,
+            i = (0, C.sw)(e, t),
+            l = (0, s.Z)(i, 2),
+            u = l[0],
+            d = l[1];
+          return [f.K8.PutHouse, f.K8.BuyHouse, f.K8.BuyCity].includes(null === (o = a.lastOp) || void 0 === o ? void 0 : o.type) && a.lastOp.house === e && (c = (0, x.jsxs)(x.Fragment, {
+            children: [(0, x.jsx)("animate", {
+              attributeName: "y",
+              calcMode: "linear",
+              from: -100,
+              to: 0,
+              dur: "0.3s",
+              begin: "indefinite",
+              fill: "freeze"
+            }), (0, x.jsx)("animateTransform", {
+              attributeName: "transform",
+              type: "scale",
+              calcMode: "linear",
+              from: "1.7",
+              to: "1",
+              dur: "0.3s",
+              additive: "sum",
+              begin: "indefinite",
+              fill: "freeze"
+            })]
+          })), (0, x.jsx)("use", {
+            xlinkHref: "#".concat(1 & e ? "city" : "vill").concat(r),
+            transform: "translate(".concat(u, ",").concat(d, ")"),
+            children: c
+          }, "h".concat(n));
+        });
+      })]
+    });
+  }
+  var G = o.memo(T, function (e, a) {
+    return e.gameVersion === a.gameVersion;
+  });
+  var F = function (e) {
+      var a = e.room,
+        t = e.game,
+        r = e.putAnyHouse,
+        n = e.putHouse,
+        i = e.putRoad,
+        l = e.putCity,
+        u = e.putRoadByHouse,
+        d = e.putRobber,
+        p = (0, o.useState)([-1, null]),
+        f = (0, s.Z)(p, 2),
+        h = f[0],
+        y = f[1];
+      (0, o.useEffect)(function () {
+        y([-1, null]);
+      }, [d]);
+      var m = g.ZP[t.mapId],
+        v = a.position - 1,
+        b = r ? (0, C.q9)(t) : l ? (0, C.fH)(t, v) : n ? (0, C.xG)(t, v) : [],
+        D = i ? (0, C.jc)(t, v) : u ? (0, C.Z7)(t) : [],
+        j = d ? (0, C.v5)(t) : [],
+        k = h[0] > -1 ? (0, C.d3)(m.tiles[h[0]]) : [0, 0];
+      return (0, x.jsxs)(x.Fragment, {
+        children: [b.map(function (e, a) {
+          var t = (0, s.Z)(e, 2),
+            o = t[0],
+            c = t[1],
+            i = (0, s.Z)(o, 2),
+            u = i[0],
+            d = i[1],
+            p = (0, C.US)(o, c),
+            f = (0, s.Z)(p, 2),
+            h = f[0],
+            y = f[1];
+          return (0, x.jsx)("circle", {
+            className: "cursor-pointer",
+            r: 50,
+            cx: h,
+            cy: y,
+            opacity: "0.5",
+            onClick: function () {
+              var e = r || l || n;
+              e && e(m.xyToId.get("".concat(u, ",").concat(d)) << 2 | c << 1 | (l ? 1 : 0));
+            }
+          }, a);
+        }), D.map(function (e, a) {
+          var t = (0, s.Z)(e, 2),
+            r = t[0],
+            n = t[1],
+            o = (0, s.Z)(r, 2),
+            c = o[0],
+            l = o[1],
+            d = (0, C.gK)(r, n),
+            p = (0, s.Z)(d, 2),
+            f = p[0],
+            h = p[1];
+          return (0, x.jsx)("circle", {
+            className: "cursor-pointer",
+            r: 50,
+            cx: f,
+            cy: h,
+            opacity: "0.5",
+            onClick: function () {
+              var e = i || u;
+              e && e(m.xyToId.get("".concat(c, ",").concat(l)) << 2 | n);
+            }
+          }, a);
+        }), h[0] < 0 ? j.map(function (e, a) {
+          var r = (0, s.Z)(e, 2),
+            n = r[0],
+            o = r[1],
+            i = m.xyToId.get("".concat(n, ",").concat(o)),
+            l = (0, C.d3)(e),
+            u = (0, s.Z)(l, 2),
+            p = u[0],
+            f = u[1];
+          return (0, x.jsx)("circle", {
+            className: "cursor-pointer",
+            r: 50,
+            cx: p,
+            cy: f,
+            opacity: "0.5",
+            onClick: function () {
+              var a = d;
+              if (a) {
+                var r = new Map();
+                if (t.playerData.forEach(function (a, t) {
+                  t !== v && a.houses.forEach(function (a) {
+                    var n = a >> 2,
+                      s = (2 & a) >> 1,
+                      o = m.tiles[n];
+                    (0, C.Qp)(o, s, m).forEach(function (a) {
+                      e[0] === a[0] && e[1] === a[1] && r.set(t, [o, s]);
+                    });
+                  });
+                }), !r.size) return a(i, -1);
+                if (r.size < 2) {
+                  var n = Array.from(r.keys())[0];
+                  if (2 === t.playerData.length) {
+                    var s = t.playerData[n],
+                      o = t.bankData,
+                      l = n + 1;
+                    if (s.houses.length + s.houses.filter(function (e) {
+                      return 1 & e;
+                    }).length + (o.longestRoadPos === l ? 2 : 0) + (o.maxRobberCountPos === l ? 2 : 0) === 2) return (0, c.Z)("\u4e24\u4eba\u5bf9\u6218\u65f6\uff0c\u82e5\u5bf9\u65b9\u4e3a2\u5206\uff0c\u4f60\u4e0d\u53ef\u4ee5\u628a\ud83d\ude08\u653e\u5728\u4ed6\u7684\u623f\u5b50\u8fb9\u4e0a");
+                  }
+                  return a(i, n);
+                }
+                y([i, r]);
+              }
+            }
+          }, a);
+        }) : (0, x.jsxs)(x.Fragment, {
+          children: [(0, x.jsx)("rect", {
+            width: "400",
+            height: "64",
+            fill: "black",
+            opacity: "0.7",
+            x: k[0] - 200,
+            y: k[1] - 32
+          }), (0, x.jsx)("text", {
+            alignmentBaseline: "central",
+            dominantBaseline: "central",
+            textAnchor: "middle",
+            fill: "#fff",
+            fontSize: "46",
+            x: k[0],
+            y: k[1],
+            children: "\u62a2\u593a\u8c01\u7684\u8d44\u6e90\u5361\uff1f"
+          }), Array.from(h[1].entries()).map(function (e) {
+            var a = (0, s.Z)(e, 2),
+              t = a[0],
+              r = a[1],
+              n = (0, s.Z)(r, 2),
+              o = n[0],
+              c = n[1],
+              i = (0, C.US)(o, c),
+              l = (0, s.Z)(i, 2),
+              u = l[0],
+              p = l[1];
+            return (0, x.jsx)("circle", {
+              className: "cursor-pointer",
+              r: 50,
+              cx: u,
+              cy: p,
+              opacity: "0.5",
+              onClick: function () {
+                d && d(h[0], t);
+              }
+            }, t);
+          })]
+        })]
+      });
+    },
+    U = t(4591);
+  function z(e) {
+    var a = e.n,
+      t = e.a;
+    if (!a) return null;
+    var r = a - 1,
+      n = r % 6,
+      s = (r - n) / 6;
+    return (0, x.jsxs)("div", {
+      className: "absolute right-4 bottom-0".concat(t ? " animate-bounce" : ""),
+      children: [(0, x.jsx)(U.Z, {
+        n: n
+      }), (0, x.jsx)(U.Z, {
+        n: s
+      })]
+    });
+  }
+  var Y = o.memo(z);
+  function Q(e) {
+    var a,
+      t,
+      r,
+      n = e.game,
+      c = e.gameVersion,
+      i = e.gameMapProp;
+    (0, o.useEffect)(function () {
+      Array.from(document.getElementsByTagName("animate")).forEach(function (e) {
+        e.beginElement();
+      }), Array.from(document.getElementsByTagName("animateTransform")).forEach(function (e) {
+        e.beginElement();
+      });
+    }, [c]);
+    var l = g.ZP[n.mapId],
+      u = (0, C.d3)(l.tiles[n.robber]),
+      d = (0, s.Z)(u, 2),
+      p = d[0],
+      h = d[1];
+    if ((null === (a = n.lastOp) || void 0 === a ? void 0 : a.type) === f.K8.MoveRobber || (null === (t = n.lastOp) || void 0 === t ? void 0 : t.type) === f.K8.UseCardKnight) {
+      var y = (0, C.d3)(l.tiles[n.lastOp.from]),
+        m = (0, s.Z)(y, 2),
+        v = m[0],
+        b = m[1],
+        D = "".concat(Math.sqrt((v - p) * (v - p) + (b - h) * (b - h)) / 1024, "s");
+      return (0, x.jsxs)("use", {
+        xlinkHref: "#rob",
+        x: v,
+        y: b,
+        children: [(0, x.jsx)("animate", {
+          attributeName: "x",
+          calcMode: "linear",
+          from: v,
+          to: p,
+          dur: D,
+          begin: "indefinite",
+          fill: "freeze"
+        }), (0, x.jsx)("animate", {
+          attributeName: "y",
+          calcMode: "linear",
+          from: b,
+          to: h,
+          dur: D,
+          begin: "indefinite",
+          fill: "freeze"
+        })]
+      });
+    }
+    var k = (0, x.jsx)("use", {
+        xlinkHref: "#rob",
+        x: p,
+        y: h
+      }),
+      Z = (0, j.bg)(n.lastDice);
+    if ((null === (r = n.lastOp) || void 0 === r ? void 0 : r.type) !== f.K8.RollDice || 7 === Z) return k;
+    var R = (0, j.iG)(n, i, Z),
+      w = [];
+    return R.forEach(function (e, a) {
+      var t = a.split(",").map(function (e) {
+          return Number(e);
+        }),
+        r = (0, s.Z)(t, 2),
+        n = r[0],
+        o = r[1],
+        c = (0, C.d3)([n, o]),
+        i = (0, s.Z)(c, 2),
+        l = i[0],
+        u = i[1];
+      w.push((0, x.jsx)("use", {
+        xlinkHref: "#tile-bg1",
+        className: "animate-pulse",
+        fill: "#000",
+        opacity: "0",
+        x: l,
+        y: u
+      }, a));
+    }), (0, x.jsxs)(x.Fragment, {
+      children: [w, k]
+    });
+  }
+  var $ = o.memo(Q, function (e, a) {
+    return e.gameVersion === a.gameVersion;
+  });
+  var _ = function (e) {
+    var a,
+      t = e.room,
+      p = e.game,
+      h = e.send,
+      y = (0, o.useState)([f.Hx.None, null]),
+      m = (0, s.Z)(y, 2),
+      v = m[0],
+      D = m[1],
+      C = e.view,
+      k = (0, o.useMemo)(function () {
+        try {
+          return (0, g.sI)(C.mapId, C.mapProp);
+        } catch (e) {
+          return null;
+        }
+      }, []),
+      Z = !!t.position,
+      w = Z && t.position === t.owner,
+      N = (0, j.ky)(t, C),
+      H = N.isOver,
+      I = function (next) {
+        companionBridge.sink(companionBridge.catanIntent(C, next, t.position - 1));
+      },
+      L = function (e) {
+        return function (a) {
+          var o = t.position - 1;
+          if (1 & a) {
+            if (C.playerData[o].houses.filter(function (e) {
+              return 1 & e;
+            }).length > 4) return (0, c.Z)("\u57ce\u5e02\u6700\u591a\u4fee5\u5ea7");
+          } else if (C.playerData[o].houses.filter(function (e) {
+            return !(1 & e);
+          }).length > 4) return (0, c.Z)("\u6751\u5e84\u6700\u591a\u4fee5\u5ea7");
+          if (!e.every(function (e, a) {
+            return C.playerData[o].resources[a] >= e;
+          })) return (0, c.Z)("\u8d44\u6e90\u4e0d\u8db3");
+          var i = {
+              state: C.state,
+              devCard: C.devCard,
+              lastOp: {
+                type: f.K8.PutHouse,
+                playerId: o,
+                house: a,
+                costs: e
+              },
+              robber: C.robber,
+              lastDice: C.lastDice,
+              newCards: C.newCards,
+              bankData: C.bankData,
+              playerData: (0, n.Z)(C.playerData),
+              actionRequest: C.actionRequest
+            },
+            l = i.playerData[o];
+          if (i.playerData[o] = (0, r.Z)((0, r.Z)({}, l), {}, {
+            houses: [].concat((0, n.Z)(l.houses), [a]),
+            resources: e.map(function (e, a) {
+              return l.resources[a] - e;
+            })
+          }), i.bankData.resources = i.bankData.resources.map(function (a, t) {
+            return a + e[t];
+          }), 1 & a) i.playerData[o].houses.splice(l.houses.indexOf(a >> 1 << 1), 1);else if (1 === l.houses.length) {
+            var u = (2 & a) >> 1,
+              d = g.ZP[C.mapId],
+              p = d.tiles[a >> 2],
+              h = (0, s.Z)(p, 2),
+              y = h[0],
+              m = h[1],
+              x = [0, 0, 0, 0, 0],
+              v = function (e, a) {
+                var t = d.xyToId.get("".concat(e, ",").concat(a));
+                if (t < d.tileCount) {
+                  var r = k.tileTypes[t];
+                  r < f.j5.None && (x[r] += 1);
+                }
+              };
+            v(y, m), v(y - 1, m - 1), u ? v(y, m - 1) : v(y - 1, m), i.playerData[o].resources = x, i.bankData.resources = i.bankData.resources.map(function (e, a) {
+              return e - x[a];
+            });
+          }
+          I(i, !(1 & a));
+        };
+      },
+      E = function (e) {
+        return function (a) {
+          var s = t.position - 1;
+          if (C.playerData[s].roads.length > 14) return (0, c.Z)("\u9053\u8def\u6700\u591a\u4fee15\u6761");
+          if (!e.every(function (e, a) {
+            return C.playerData[s].resources[a] >= e;
+          })) return (0, c.Z)("\u8d44\u6e90\u4e0d\u8db3");
+          var o = {
+              state: C.state,
+              devCard: 16 & C.devCard ? C.devCard : 2 & C.devCard ? 125 & C.devCard : C.devCard,
+              lastOp: {
+                type: f.K8.PutRoad,
+                playerId: s,
+                road: a,
+                costs: e
+              },
+              robber: C.robber,
+              lastDice: C.lastDice,
+              newCards: C.newCards,
+              bankData: C.bankData,
+              playerData: (0, n.Z)(C.playerData),
+              actionRequest: C.actionRequest
+            },
+            i = o.playerData[s];
+          o.playerData[s] = (0, r.Z)((0, r.Z)({}, i), {}, {
+            roads: [].concat((0, n.Z)(i.roads), [a]),
+            resources: e.map(function (e, a) {
+              return i.resources[a] - e;
+            })
+          }), o.bankData.resources = o.bankData.resources.map(function (a, t) {
+            return a + e[t];
+          }), i.roads.length ? i.roads.length < 2 && (o.state = o.state ? o.state - 1 : 0) : o.state = o.state === C.playerData.length - 1 ? o.state : o.state + 1, I(o, !0);
+        };
+      };
+    return (0, o.useEffect)(function () {
+      var e = N.allowOps;
+      if (1 === e.length) {
+        var a = e[0];
+        if (a === f.K8.PutHouse) D([f.Hx.PutAnyHouse, L(f.Vf[f.Wj.Free])]);else if (a === f.K8.PutRoad) {
+          var s = E(f.Vf[f.Wj.Free]);
+          !(16 & C.devCard) && 2 & C.devCard ? D([f.Hx.PutRoad, s]) : D([f.Hx.PutRoadByHouse, s]);
+        } else a === f.K8.DiscardResource ? D([f.Hx.DiscardResource, function (e) {
+          var a = t.position - 1,
+            s = {
+              state: C.state,
+              devCard: C.devCard,
+              robber: C.robber,
+              lastDice: C.lastDice,
+              newCards: C.newCards,
+              bankData: (0, r.Z)((0, r.Z)({}, C.bankData), {}, {
+                resources: C.bankData.resources.map(function (a, t) {
+                  return a + e[t];
+                })
+              }),
+              playerData: (0, n.Z)(C.playerData),
+              actionRequest: C.actionRequest & (0, O.Vi)(a, t.playerList.length)
+            };
+          s.playerData[a] = (0, r.Z)((0, r.Z)({}, s.playerData[a]), {}, {
+            resources: s.playerData[a].resources.map(function (a, t) {
+              return a - e[t];
+            })
+          }), s.lastOp = {
+            type: f.K8.RollDice,
+            playerId: C.lastOp.playerId
+          }, I(s);
+        }]) : a === f.K8.MoveRobber ? D([f.Hx.MoveRobber, function (e, a) {
+          var s = t.position - 1,
+            o = {
+              state: C.state,
+              devCard: C.devCard,
+              lastOp: {
+                type: f.K8.MoveRobber,
+                playerId: s,
+                from: C.robber,
+                to: e
+              },
+              robber: e,
+              lastDice: C.lastDice,
+              newCards: C.newCards,
+              bankData: C.bankData,
+              playerData: (0, n.Z)(C.playerData),
+              actionRequest: C.actionRequest
+            };
+          if (a > -1) {
+            var c = [];
+            if (o.playerData[a].resources.forEach(function (e, a) {
+              for (var t = 0; t < e; t++) c.push(a);
+            }), c.length) {
+              var i = (0, R.M)(c.length),
+                l = c[i];
+              o.playerData[a] = (0, r.Z)((0, r.Z)({}, o.playerData[a]), {}, {
+                resources: (0, n.Z)(o.playerData[a].resources)
+              }), o.playerData[a].resources[l] -= 1, o.playerData[s] = (0, r.Z)((0, r.Z)({}, o.playerData[s]), {}, {
+                resources: (0, n.Z)(o.playerData[s].resources)
+              }), o.playerData[s].resources[l] += 1, o.lastOp.withPlayerId = a, o.lastOp.needs = [0, 0, 0, 0, 0], o.lastOp.needs[l] = 1;
+            }
+          }
+          I(o);
+        }]) : D([f.Hx.None, null]);
+      } else D([f.Hx.None, null]);
+    }, [p.version]), (0, l.N)([]), k ? (0, x.jsxs)(x.Fragment, {
+      children: [w && !H && (0, x.jsx)("div", {
+        className: "button-container",
+        children: (0, x.jsx)("div", {
+          className: "button-right",
+          children: (0, x.jsx)(i.Z, {
+            small: !0,
+            onClick: function () {
+              return (0, l.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
+                return h(u.Z.OwnerExitGame, {
+                  data: d.AD.encode({
+                    mapId: C.mapId
+                  }).finish()
+                });
+              });
+            },
+            children: "\u7ed3\u675f\u6e38\u620f"
+          })
+        })
+      }), (0, x.jsx)(companionMapBridge.mapViewport, {
+        children: (0, x.jsxs)("div", {
+          className: "max-w-3xl mx-auto w-full relative",
+          children: [(0, x.jsxs)("svg", {
+            id: "svg",
+            viewBox: g.ZP[C.mapId].box.join(" "),
+            xmlns: "http://www.w3.org/2000/svg",
+            children: [(0, x.jsx)(b, {
+              count: t.playerList.length
+            }), (0, x.jsx)(K, {
+              game: C,
+              mapProp: k
+            }), (0, x.jsx)(G, {
+              game: C,
+              gameVersion: p.version
+            }), (0, x.jsx)($, {
+              game: C,
+              gameVersion: p.version,
+              gameMapProp: k
+            }), Z && (0, x.jsx)(F, {
+              putAnyHouse: v[0] === f.Hx.PutAnyHouse && v[1],
+              putRoadByHouse: v[0] === f.Hx.PutRoadByHouse && v[1],
+              putRoad: (v[0] === f.Hx.PutRoad || v[0] === f.Hx.CardRoad) && v[1],
+              putHouse: v[0] === f.Hx.PutHouse && v[1],
+              putCity: v[0] === f.Hx.PutCity && v[1],
+              putRobber: (v[0] === f.Hx.MoveRobber || v[0] === f.Hx.CardKnight) && v[1],
+              room: t,
+              game: C
+            })]
+          }), (0, x.jsx)(Y, {
+            n: C.lastDice,
+            a: (null === (a = C.lastOp) || void 0 === a ? void 0 : a.type) === f.K8.RollDice
+          })]
+        })
+      }), (0, x.jsxs)("div", {
+        className: "text-center catan-actions",
+        children: [(0, x.jsx)("div", {
+          className: "mt-2".concat(H ? " text-2xl" : ""),
+          children: N.hint
+        }), Z ? (0, x.jsx)(P, {
+          room: t,
+          game: C,
+          gameState: N,
+          gameMapProp: k,
+          updateGameData: I,
+          send: h,
+          action: v,
+          setAction: D,
+          putRoad: E,
+          putHouse: L
+        }) : (0, x.jsx)("div", {
+          className: "text-2xl mt-2",
+          children: "\u89c2\u6218\u4e2d"
+        })]
+      }), (0, x.jsx)(A, {
+        room: t,
+        game: C,
+        gameMapProp: k,
+        gameState: N,
+        gameVersion: p.version,
+        action0: v[0],
+        setAction: D,
+        discardResource: v[0] === f.Hx.DiscardResource && v[1],
+        updateGameData: I,
+        isOver: H,
+        send: h
+      })]
+    }) : (0, x.jsxs)(x.Fragment, {
+      children: [w && !H && (0, x.jsx)("div", {
+        className: "button-container",
+        children: (0, x.jsx)("div", {
+          className: "button-right",
+          children: (0, x.jsx)(i.Z, {
+            small: !0,
+            onClick: function () {
+              return h(u.Z.OwnerExitGame, {
+                data: d.AD.encode({
+                  mapId: 0
+                }).finish()
+              });
+            },
+            children: "\u7ed3\u675f\u6e38\u620f"
+          })
+        })
+      }), (0, x.jsx)("div", {
+        className: "text-center",
+        children: "\u6570\u636e\u5f02\u5e38\uff0c\u8bf7\u6362\u522b\u7684\u623f\u95f4"
+      })]
+    });
+  };
+},
+738: function (e, a, t) {
+  t.d(a, {
+    AD: function () {
+      return i;
+    }
+  });
+  var r = t(7710),
+    n = r.Reader,
+    s = r.Writer,
+    o = r.util,
+    c = r.roots.default || (r.roots.default = {}),
+    i = (c.BankData = function () {
+      function e(e) {
+        if (this.resources = [], this.cards = [], e) for (var a = Object.keys(e), t = 0; t < a.length; ++t) null != e[a[t]] && (this[a[t]] = e[a[t]]);
+      }
+      return e.prototype.resources = o.emptyArray, e.prototype.cards = o.emptyArray, e.prototype.longestRoad = 0, e.prototype.longestRoadPos = 0, e.prototype.maxRobberCount = 0, e.prototype.maxRobberCountPos = 0, e.encode = function (e, a) {
+        if (a || (a = s.create()), null != e.resources && e.resources.length) {
+          a.uint32(10).fork();
+          for (var t = 0; t < e.resources.length; ++t) a.uint32(e.resources[t]);
+          a.ldelim();
+        }
+        if (null != e.cards && e.cards.length) {
+          a.uint32(18).fork();
+          for (t = 0; t < e.cards.length; ++t) a.uint32(e.cards[t]);
+          a.ldelim();
+        }
+        return null != e.longestRoad && Object.hasOwnProperty.call(e, "longestRoad") && a.uint32(24).uint32(e.longestRoad), null != e.longestRoadPos && Object.hasOwnProperty.call(e, "longestRoadPos") && a.uint32(32).uint32(e.longestRoadPos), null != e.maxRobberCount && Object.hasOwnProperty.call(e, "maxRobberCount") && a.uint32(40).uint32(e.maxRobberCount), null != e.maxRobberCountPos && Object.hasOwnProperty.call(e, "maxRobberCountPos") && a.uint32(48).uint32(e.maxRobberCountPos), a;
+      }, e.decode = function (e, a) {
+        e instanceof n || (e = n.create(e));
+        for (var t = void 0 === a ? e.len : e.pos + a, r = new c.BankData(); e.pos < t;) {
+          var s = e.uint32();
+          switch (s >>> 3) {
+            case 1:
+              if (r.resources && r.resources.length || (r.resources = []), 2 === (7 & s)) for (var o = e.uint32() + e.pos; e.pos < o;) r.resources.push(e.uint32());else r.resources.push(e.uint32());
+              break;
+            case 2:
+              if (r.cards && r.cards.length || (r.cards = []), 2 === (7 & s)) for (o = e.uint32() + e.pos; e.pos < o;) r.cards.push(e.uint32());else r.cards.push(e.uint32());
+              break;
+            case 3:
+              r.longestRoad = e.uint32();
+              break;
+            case 4:
+              r.longestRoadPos = e.uint32();
+              break;
+            case 5:
+              r.maxRobberCount = e.uint32();
+              break;
+            case 6:
+              r.maxRobberCountPos = e.uint32();
+              break;
+            default:
+              e.skipType(7 & s);
+          }
+        }
+        return r;
+      }, e;
+    }(), c.PlayerData = function () {
+      function e(e) {
+        if (this.resources = [], this.cards = [], this.houses = [], this.roads = [], e) for (var a = Object.keys(e), t = 0; t < a.length; ++t) null != e[a[t]] && (this[a[t]] = e[a[t]]);
+      }
+      return e.prototype.resources = o.emptyArray, e.prototype.cards = o.emptyArray, e.prototype.longestRoad = 0, e.prototype.robberCount = 0, e.prototype.houses = o.emptyArray, e.prototype.roads = o.emptyArray, e.encode = function (e, a) {
+        if (a || (a = s.create()), null != e.resources && e.resources.length) {
+          a.uint32(10).fork();
+          for (var t = 0; t < e.resources.length; ++t) a.uint32(e.resources[t]);
+          a.ldelim();
+        }
+        if (null != e.cards && e.cards.length) {
+          a.uint32(18).fork();
+          for (t = 0; t < e.cards.length; ++t) a.uint32(e.cards[t]);
+          a.ldelim();
+        }
+        if (null != e.longestRoad && Object.hasOwnProperty.call(e, "longestRoad") && a.uint32(24).uint32(e.longestRoad), null != e.robberCount && Object.hasOwnProperty.call(e, "robberCount") && a.uint32(32).uint32(e.robberCount), null != e.houses && e.houses.length) {
+          a.uint32(42).fork();
+          for (t = 0; t < e.houses.length; ++t) a.uint32(e.houses[t]);
+          a.ldelim();
+        }
+        if (null != e.roads && e.roads.length) {
+          a.uint32(50).fork();
+          for (t = 0; t < e.roads.length; ++t) a.uint32(e.roads[t]);
+          a.ldelim();
+        }
+        return a;
+      }, e.decode = function (e, a) {
+        e instanceof n || (e = n.create(e));
+        for (var t = void 0 === a ? e.len : e.pos + a, r = new c.PlayerData(); e.pos < t;) {
+          var s = e.uint32();
+          switch (s >>> 3) {
+            case 1:
+              if (r.resources && r.resources.length || (r.resources = []), 2 === (7 & s)) for (var o = e.uint32() + e.pos; e.pos < o;) r.resources.push(e.uint32());else r.resources.push(e.uint32());
+              break;
+            case 2:
+              if (r.cards && r.cards.length || (r.cards = []), 2 === (7 & s)) for (o = e.uint32() + e.pos; e.pos < o;) r.cards.push(e.uint32());else r.cards.push(e.uint32());
+              break;
+            case 3:
+              r.longestRoad = e.uint32();
+              break;
+            case 4:
+              r.robberCount = e.uint32();
+              break;
+            case 5:
+              if (r.houses && r.houses.length || (r.houses = []), 2 === (7 & s)) for (o = e.uint32() + e.pos; e.pos < o;) r.houses.push(e.uint32());else r.houses.push(e.uint32());
+              break;
+            case 6:
+              if (r.roads && r.roads.length || (r.roads = []), 2 === (7 & s)) for (o = e.uint32() + e.pos; e.pos < o;) r.roads.push(e.uint32());else r.roads.push(e.uint32());
+              break;
+            default:
+              e.skipType(7 & s);
+          }
+        }
+        return r;
+      }, e;
+    }(), c.ExchangeData = function () {
+      function e(e) {
+        if (this.needs = [], this.costs = [], this.responses = [], e) for (var a = Object.keys(e), t = 0; t < a.length; ++t) null != e[a[t]] && (this[a[t]] = e[a[t]]);
+      }
+      return e.prototype.needs = o.emptyArray, e.prototype.costs = o.emptyArray, e.prototype.responses = o.emptyArray, e.encode = function (e, a) {
+        if (a || (a = s.create()), null != e.needs && e.needs.length) {
+          a.uint32(10).fork();
+          for (var t = 0; t < e.needs.length; ++t) a.uint32(e.needs[t]);
+          a.ldelim();
+        }
+        if (null != e.costs && e.costs.length) {
+          a.uint32(18).fork();
+          for (t = 0; t < e.costs.length; ++t) a.uint32(e.costs[t]);
+          a.ldelim();
+        }
+        if (null != e.responses && e.responses.length) {
+          a.uint32(26).fork();
+          for (t = 0; t < e.responses.length; ++t) a.uint32(e.responses[t]);
+          a.ldelim();
+        }
+        return a;
+      }, e.decode = function (e, a) {
+        e instanceof n || (e = n.create(e));
+        for (var t = void 0 === a ? e.len : e.pos + a, r = new c.ExchangeData(); e.pos < t;) {
+          var s = e.uint32();
+          switch (s >>> 3) {
+            case 1:
+              if (r.needs && r.needs.length || (r.needs = []), 2 === (7 & s)) for (var o = e.uint32() + e.pos; e.pos < o;) r.needs.push(e.uint32());else r.needs.push(e.uint32());
+              break;
+            case 2:
+              if (r.costs && r.costs.length || (r.costs = []), 2 === (7 & s)) for (o = e.uint32() + e.pos; e.pos < o;) r.costs.push(e.uint32());else r.costs.push(e.uint32());
+              break;
+            case 3:
+              if (r.responses && r.responses.length || (r.responses = []), 2 === (7 & s)) for (o = e.uint32() + e.pos; e.pos < o;) r.responses.push(e.uint32());else r.responses.push(e.uint32());
+              break;
+            default:
+              e.skipType(7 & s);
+          }
+        }
+        return r;
+      }, e;
+    }(), c.KTDOperation = function () {
+      function e(e) {
+        if (this.needs = [], this.costs = [], e) for (var a = Object.keys(e), t = 0; t < a.length; ++t) null != e[a[t]] && (this[a[t]] = e[a[t]]);
+      }
+      return e.prototype.type = 0, e.prototype.playerId = 0, e.prototype.dice = 0, e.prototype.from = 0, e.prototype.to = 0, e.prototype.road = 0, e.prototype.house = 0, e.prototype.withPlayerId = 0, e.prototype.needs = o.emptyArray, e.prototype.costs = o.emptyArray, e.encode = function (e, a) {
+        if (a || (a = s.create()), null != e.type && Object.hasOwnProperty.call(e, "type") && a.uint32(8).uint32(e.type), null != e.playerId && Object.hasOwnProperty.call(e, "playerId") && a.uint32(16).uint32(e.playerId), null != e.dice && Object.hasOwnProperty.call(e, "dice") && a.uint32(24).uint32(e.dice), null != e.from && Object.hasOwnProperty.call(e, "from") && a.uint32(32).uint32(e.from), null != e.to && Object.hasOwnProperty.call(e, "to") && a.uint32(40).uint32(e.to), null != e.road && Object.hasOwnProperty.call(e, "road") && a.uint32(48).uint32(e.road), null != e.house && Object.hasOwnProperty.call(e, "house") && a.uint32(56).uint32(e.house), null != e.withPlayerId && Object.hasOwnProperty.call(e, "withPlayerId") && a.uint32(64).uint32(e.withPlayerId), null != e.needs && e.needs.length) {
+          a.uint32(74).fork();
+          for (var t = 0; t < e.needs.length; ++t) a.uint32(e.needs[t]);
+          a.ldelim();
+        }
+        if (null != e.costs && e.costs.length) {
+          a.uint32(82).fork();
+          for (t = 0; t < e.costs.length; ++t) a.uint32(e.costs[t]);
+          a.ldelim();
+        }
+        return a;
+      }, e.decode = function (e, a) {
+        e instanceof n || (e = n.create(e));
+        for (var t = void 0 === a ? e.len : e.pos + a, r = new c.KTDOperation(); e.pos < t;) {
+          var s = e.uint32();
+          switch (s >>> 3) {
+            case 1:
+              r.type = e.uint32();
+              break;
+            case 2:
+              r.playerId = e.uint32();
+              break;
+            case 3:
+              r.dice = e.uint32();
+              break;
+            case 4:
+              r.from = e.uint32();
+              break;
+            case 5:
+              r.to = e.uint32();
+              break;
+            case 6:
+              r.road = e.uint32();
+              break;
+            case 7:
+              r.house = e.uint32();
+              break;
+            case 8:
+              r.withPlayerId = e.uint32();
+              break;
+            case 9:
+              if (r.needs && r.needs.length || (r.needs = []), 2 === (7 & s)) for (var o = e.uint32() + e.pos; e.pos < o;) r.needs.push(e.uint32());else r.needs.push(e.uint32());
+              break;
+            case 10:
+              if (r.costs && r.costs.length || (r.costs = []), 2 === (7 & s)) for (o = e.uint32() + e.pos; e.pos < o;) r.costs.push(e.uint32());else r.costs.push(e.uint32());
+              break;
+            default:
+              e.skipType(7 & s);
+          }
+        }
+        return r;
+      }, e;
+    }(), c.KTDGameData = function () {
+      function e(e) {
+        if (this.newCards = [], this.playerData = [], e) for (var a = Object.keys(e), t = 0; t < a.length; ++t) null != e[a[t]] && (this[a[t]] = e[a[t]]);
+      }
+      return e.prototype.mapId = 0, e.prototype.mapProp = o.newBuffer([]), e.prototype.state = 0, e.prototype.devCard = 0, e.prototype.lastOp = null, e.prototype.robber = 0, e.prototype.lastDice = 0, e.prototype.newCards = o.emptyArray, e.prototype.exchangeData = null, e.prototype.bankData = null, e.prototype.playerData = o.emptyArray, e.prototype.actionRequest = 0, e.encode = function (e, a) {
+        if (a || (a = s.create()), null != e.mapId && Object.hasOwnProperty.call(e, "mapId") && a.uint32(8).uint32(e.mapId), null != e.mapProp && Object.hasOwnProperty.call(e, "mapProp") && a.uint32(18).bytes(e.mapProp), null != e.state && Object.hasOwnProperty.call(e, "state") && a.uint32(24).uint32(e.state), null != e.devCard && Object.hasOwnProperty.call(e, "devCard") && a.uint32(32).uint32(e.devCard), null != e.lastOp && Object.hasOwnProperty.call(e, "lastOp") && c.KTDOperation.encode(e.lastOp, a.uint32(42).fork()).ldelim(), null != e.robber && Object.hasOwnProperty.call(e, "robber") && a.uint32(48).uint32(e.robber), null != e.lastDice && Object.hasOwnProperty.call(e, "lastDice") && a.uint32(56).uint32(e.lastDice), null != e.newCards && e.newCards.length) {
+          a.uint32(66).fork();
+          for (var t = 0; t < e.newCards.length; ++t) a.uint32(e.newCards[t]);
+          a.ldelim();
+        }
+        if (null != e.exchangeData && Object.hasOwnProperty.call(e, "exchangeData") && c.ExchangeData.encode(e.exchangeData, a.uint32(74).fork()).ldelim(), null != e.bankData && Object.hasOwnProperty.call(e, "bankData") && c.BankData.encode(e.bankData, a.uint32(82).fork()).ldelim(), null != e.playerData && e.playerData.length) for (t = 0; t < e.playerData.length; ++t) c.PlayerData.encode(e.playerData[t], a.uint32(90).fork()).ldelim();
+        return null != e.actionRequest && Object.hasOwnProperty.call(e, "actionRequest") && a.uint32(96).uint32(e.actionRequest), a;
+      }, e.decode = function (e, a) {
+        e instanceof n || (e = n.create(e));
+        for (var t = void 0 === a ? e.len : e.pos + a, r = new c.KTDGameData(); e.pos < t;) {
+          var s = e.uint32();
+          switch (s >>> 3) {
+            case 1:
+              r.mapId = e.uint32();
+              break;
+            case 2:
+              r.mapProp = e.bytes();
+              break;
+            case 3:
+              r.state = e.uint32();
+              break;
+            case 4:
+              r.devCard = e.uint32();
+              break;
+            case 5:
+              r.lastOp = c.KTDOperation.decode(e, e.uint32());
+              break;
+            case 6:
+              r.robber = e.uint32();
+              break;
+            case 7:
+              r.lastDice = e.uint32();
+              break;
+            case 8:
+              if (r.newCards && r.newCards.length || (r.newCards = []), 2 === (7 & s)) for (var o = e.uint32() + e.pos; e.pos < o;) r.newCards.push(e.uint32());else r.newCards.push(e.uint32());
+              break;
+            case 9:
+              r.exchangeData = c.ExchangeData.decode(e, e.uint32());
+              break;
+            case 10:
+              r.bankData = c.BankData.decode(e, e.uint32());
+              break;
+            case 11:
+              r.playerData && r.playerData.length || (r.playerData = []), r.playerData.push(c.PlayerData.decode(e, e.uint32()));
+              break;
+            case 12:
+              r.actionRequest = e.uint32();
+              break;
+            default:
+              e.skipType(7 & s);
+          }
+        }
+        return r;
+      }, e;
+    }());
+},
+6634: function (e, a, t) {
+  var r, n, s, o;
+  t.d(a, {
+    DM: function () {
+      return l;
+    },
+    Hx: function () {
+      return o;
+    },
+    K8: function () {
+      return s;
+    },
+    SR: function () {
+      return u;
+    },
+    Vf: function () {
+      return i;
+    },
+    Wj: function () {
+      return c;
+    },
+    j5: function () {
+      return r;
+    },
+    pI: function () {
+      return n;
+    }
+  }), function (e) {
+    e[e.Lumber = 0] = "Lumber", e[e.Brick = 1] = "Brick", e[e.Wool = 2] = "Wool", e[e.Grain = 3] = "Grain", e[e.Ore = 4] = "Ore", e[e.None = 7] = "None";
+  }(r || (r = {})), function (e) {
+    e[e.Knight = 0] = "Knight", e[e.RoadBuilding = 1] = "RoadBuilding", e[e.YearOfPlenty = 2] = "YearOfPlenty", e[e.Monopoly = 3] = "Monopoly", e[e.VP = 4] = "VP";
+  }(n || (n = {})), function (e) {
+    e[e.None = 0] = "None", e[e.PutHouse = 1] = "PutHouse", e[e.PutRoad = 2] = "PutRoad", e[e.RollDice = 3] = "RollDice", e[e.UseCardKnight = 4] = "UseCardKnight", e[e.UseCardRoads = 5] = "UseCardRoads", e[e.UseCardResources = 6] = "UseCardResources", e[e.UseCardMonopoly = 7] = "UseCardMonopoly", e[e.MoveRobber = 8] = "MoveRobber", e[e.DiscardResource = 9] = "DiscardResource", e[e.BuyHouse = 10] = "BuyHouse", e[e.BuyRoad = 11] = "BuyRoad", e[e.BuyDevCard = 12] = "BuyDevCard", e[e.BuyCity = 13] = "BuyCity", e[e.ExchangeWithBank = 14] = "ExchangeWithBank", e[e.ExchangeWithPlayer = 15] = "ExchangeWithPlayer";
+  }(s || (s = {})), function (e) {
+    e[e.None = 0] = "None", e[e.PutAnyHouse = 1] = "PutAnyHouse", e[e.PutRoadByHouse = 2] = "PutRoadByHouse", e[e.PutHouse = 3] = "PutHouse", e[e.PutRoad = 4] = "PutRoad", e[e.PutCity = 5] = "PutCity", e[e.Exchange = 6] = "Exchange", e[e.MoveRobber = 7] = "MoveRobber", e[e.CardKnight = 8] = "CardKnight", e[e.CardRoad = 9] = "CardRoad", e[e.CardResource = 10] = "CardResource", e[e.CardMonopoly = 11] = "CardMonopoly", e[e.DiscardResource = 12] = "DiscardResource", e[e.BuyDevCard = 13] = "BuyDevCard", e[e.End = 14] = "End";
+  }(o || (o = {}));
+  var c,
+    i = [[0, 0, 0, 0, 0], [1, 1, 0, 0, 0], [1, 1, 1, 1, 0], [0, 0, 0, 2, 3], [0, 0, 1, 1, 1]];
+  !function (e) {
+    e[e.Free = 0] = "Free", e[e.Road = 1] = "Road", e[e.Village = 2] = "Village", e[e.City = 3] = "City", e[e.DevCard = 4] = "DevCard";
+  }(c || (c = {}));
+  var l = ["red", "blue", "green", "orange", "white", "black", "purple", "pink"],
+    u = [["#ff3636", "#b41010", "#710f39"], ["#10abef", "#4f4fef", "#1010c0"], ["#06ff1b", "#4ea85f", "#096a08"], ["#fe993e", "#f47507", "#763903"], ["#fefcf3", "#cee2e2", "#8eafaf"], ["#7d7c7f", "#424242", "#231F21"], ["#d14ef8", "#6f06a4", "#550870"], ["#fecdda", "#fe8ead", "#d8466e"]];
+},
+4929: function (e, t, n) {
+  "use strict";
+
+  var i = n(1413),
+    a = n(7313),
+    r = n(6417);
+  function o(e) {
+    return (0, r.jsx)("text", (0, i.Z)({
+      alignmentBaseline: "central",
+      dominantBaseline: "central",
+      textAnchor: "middle"
+    }, e));
+  }
+  t.Z = a.memo(o);
+},
+552: function (e, a, t) {
+  t.d(a, {
+    Bx: function () {
+      return p;
+    },
+    Gq: function () {
+      return x;
+    },
+    HU: function () {
+      return g;
+    },
+    bb: function () {
+      return h;
+    },
+    bg: function () {
+      return f;
+    },
+    d7: function () {
+      return C;
+    },
+    iG: function () {
+      return y;
+    },
+    ky: function () {
+      return b;
+    },
+    my: function () {
+      return D;
+    },
+    tY: function () {
+      return m;
+    }
+  });
+  var r = t(1413),
+    n = t(2982),
+    s = t(885),
+    o = t(738),
+    c = t(9796),
+    i = t(6634),
+    l = t(6805),
+    u = t(4420),
+    d = t(6912),
+    p = function (e, a) {
+      var t,
+        r,
+        n,
+        s = o.AD.decode(a).mapId,
+        l = c.ZP[s];
+      s ? s < 2 ? (t = (0, u.T)([i.j5.None, i.j5.None, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Brick, i.j5.Brick, i.j5.Brick, i.j5.Brick, i.j5.Brick, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Ore, i.j5.Ore, i.j5.Ore, i.j5.Ore, i.j5.Ore]), r = (0, u.T)([i.j5.None, i.j5.None, i.j5.None, i.j5.None, i.j5.None, i.j5.Lumber, i.j5.Brick, i.j5.Wool, i.j5.Wool, i.j5.Grain, i.j5.Ore]), n = [2, 5, 4, 6, 3, 9, 8, 11, 11, 10, 6, 3, 8, 4, 8, 10, 11, 12, 10, 5, 4, 9, 5, 9, 12, 3, 2, 6]) : (t = (0, u.T)([i.j5.None, i.j5.None, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Brick, i.j5.Brick, i.j5.Brick, i.j5.Brick, i.j5.Brick, i.j5.Brick, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Ore, i.j5.Ore, i.j5.Ore, i.j5.Ore, i.j5.Ore, i.j5.Ore]), r = (0, u.T)([i.j5.None, i.j5.None, i.j5.None, i.j5.None, i.j5.None, i.j5.None, i.j5.Lumber, i.j5.Brick, i.j5.Wool, i.j5.Wool, i.j5.Grain, i.j5.Ore]), n = [6, 4, 5, 6, 12, 11, 10, 8, 4, 6, 3, 10, 8, 11, 11, 8, 9, 3, 5, 10, 3, 5, 2, 3, 12, 9, 5, 9, 4, 6, 2, 8, 9, 4, 10]) : (t = (0, u.T)([i.j5.None, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Lumber, i.j5.Brick, i.j5.Brick, i.j5.Brick, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Wool, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Grain, i.j5.Ore, i.j5.Ore, i.j5.Ore]), r = (0, u.T)([i.j5.None, i.j5.None, i.j5.None, i.j5.None, i.j5.Lumber, i.j5.Brick, i.j5.Wool, i.j5.Grain, i.j5.Ore]), n = [5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11]), t.forEach(function (e, a) {
+        e === i.j5.None && n.splice(a, 0, 7);
+      });
+      return {
+        mapId: s,
+        mapProp: (0, c.jj)(s, t, n, r),
+        state: 0,
+        devCard: 0,
+        robber: n.indexOf(7),
+        lastDice: 0,
+        newCards: [0, 0, 0, 0, 0],
+        bankData: {
+          resources: new Array(5).fill(l.resCount),
+          cards: l.devCount,
+          longestRoad: 0,
+          longestRoadPos: 0,
+          maxRobberCount: 0,
+          maxRobberCountPos: 0
+        },
+        playerData: new Array(e.playerList.length).fill({
+          resources: [0, 0, 0, 0, 0],
+          cards: [0, 0, 0, 0, 0],
+          longestRoad: 0,
+          robberCount: 0,
+          houses: [],
+          roads: []
+        })
+      };
+    },
+    f = function (e) {
+      var a = e - 1;
+      return a % 6 + Math.floor(a / 6) + 2;
+    },
+    h = function (e) {
+      var a;
+      return !(16 & e.devCard) && (null === (a = e.lastOp) || void 0 === a ? void 0 : a.type) === i.K8.RollDice && 7 === f(e.lastDice) && !!e.actionRequest;
+    },
+    y = function (e, a, t) {
+      var r = new Map(),
+        n = c.ZP[e.mapId];
+      return a.tileNums.forEach(function (o, c) {
+        if (o === t && e.robber !== c) {
+          var i = a.tileTypes[c],
+            l = (0, s.Z)(n.tiles[c], 2),
+            u = l[0],
+            d = l[1];
+          r.set("".concat(u, ",").concat(d), i);
+        }
+      }), r;
+    },
+    m = function (e, a, t) {
+      if (t < 0) return new Array(i.j5.None + 1).fill(!1);
+      var r = c.ZP[e.mapId],
+        n = new Map();
+      r.ports.forEach(function (e, a) {
+        var t = (0, s.Z)(e, 2),
+          o = t[0],
+          c = t[1],
+          i = (0, s.Z)(r.tiles[o], 2),
+          l = i[0],
+          u = i[1];
+        c ? c < 2 ? (n.set("".concat(l, ",").concat(u, ",0"), a), n.set("".concat(l, ",").concat(u, ",1"), a)) : c < 3 ? (n.set("".concat(l, ",").concat(u, ",1"), a), n.set("".concat(l + 1, ",").concat(u, ",0"), a)) : c < 4 ? (n.set("".concat(l + 1, ",").concat(u, ",0"), a), n.set("".concat(l + 1, ",").concat(u + 1, ",1"), a)) : c < 5 ? (n.set("".concat(l + 1, ",").concat(u + 1, ",0"), a), n.set("".concat(l + 1, ",").concat(u + 1, ",1"), a)) : (n.set("".concat(l + 1, ",").concat(u + 1, ",0"), a), n.set("".concat(l, ",").concat(u + 1, ",1"), a)) : (n.set("".concat(l, ",").concat(u, ",0"), a), n.set("".concat(l, ",").concat(u + 1, ",1"), a));
+      });
+      var o = new Array(i.j5.None + 1).fill(!1);
+      return e.playerData[t].houses.forEach(function (e) {
+        var t = (2 & e) >> 1,
+          c = e >> 2,
+          i = (0, s.Z)(r.tiles[c], 2),
+          l = i[0],
+          u = i[1],
+          d = n.get("".concat(l, ",").concat(u, ",").concat(t));
+        void 0 !== d && (o[a.portTypes[d]] = !0);
+      }), o;
+    },
+    x = function (e, a) {
+      var t = c.ZP[e.mapId].resCount;
+      return e.bankData.resources.map(function (r, n) {
+        return t - r - e.playerData[a].resources[n];
+      });
+    },
+    v = function (e) {
+      var a = [],
+        t = e.bankData;
+      return e.playerData.forEach(function (e, r) {
+        var n = r + 1;
+        a.push(e.houses.length + e.houses.filter(function (e) {
+          return 1 & e;
+        }).length + (t.longestRoadPos === n ? 2 : 0) + (t.maxRobberCountPos === n ? 2 : 0) + e.cards[i.pI.VP]);
+      }), a;
+    },
+    b = function (e, a) {
+      var t,
+        r,
+        n = a.state,
+        s = e.position - 1,
+        o = e.position && n === s ? "\u4f60" : "\u73a9\u5bb6".concat(n + 1),
+        u = [],
+        d = a.playerData[n],
+        p = d.houses.length,
+        h = d.roads.length,
+        y = v(a);
+      if (!(16 & a.devCard) && y[a.state] >= c.ZP[a.mapId].settings[e.playerList.length][0]) return r = "\u606d\u559c".concat(o, "\u80dc\u5229"), {
+        isOver: !0,
+        waitFor: n,
+        allowOps: u,
+        hint: r
+      };
+      if (h < 2 && h < p) u.push(i.K8.PutRoad), r = "\u7b49\u5f85".concat(o, "\u4fee\u5efa\u9053\u8def");else if (p < 2) u.push(i.K8.PutHouse), r = "\u7b49\u5f85".concat(o, "\u4fee\u5efa\u6751\u5e84");else if (16 & a.devCard) u.push(i.K8.BuyHouse, i.K8.BuyRoad, i.K8.BuyDevCard, i.K8.BuyCity), r = "\ud83d\udea9\u7b49\u5f85".concat(o, "\u5efa\u9020");else if (2 & a.devCard) u.push(i.K8.PutRoad), r = "\u7b49\u5f85".concat(o, "\u4fee\u5efa\u9053\u8def");else if (a.lastDice) {
+        if ((null === (t = a.lastOp) || void 0 === t ? void 0 : t.type) === i.K8.RollDice && 7 === f(a.lastDice)) {
+          if (a.actionRequest) {
+            var m = (0, l.H0)(a.actionRequest, a.playerData.length),
+              x = !1;
+            m[s] && (x = !0, m[s] = !1, u.push(i.K8.DiscardResource));
+            var b = m.map(function (e, a) {
+              return e ? a + 1 : 0;
+            }).filter(function (e) {
+              return e > 0;
+            });
+            return r = b.length ? "\u7b49\u5f85".concat(x ? "\u4f60\u548c" : "", "\u73a9\u5bb6").concat(b.join("\u3001"), "\u4e22\u5f03\u8d44\u6e90\u5361") : "\u7b49\u5f85\u4f60\u4e22\u5f03\u8d44\u6e90\u5361", {
+              waitFor: n,
+              isOver: !1,
+              allowOps: u,
+              hint: r
+            };
+          }
+          u.push(i.K8.MoveRobber), r = "\u7b49\u5f85".concat(o, "\u79fb\u52a8\u5f3a\u76d7");
+        } else a.exchangeData && a.exchangeData.responses.indexOf(1) >= 0 ? r = "\u7b49\u5f85".concat(o, "\u534f\u5546\u4ea4\u6362\u8d44\u6e90") : (1 & a.devCard || [0, 1, 2, 3].forEach(function (e) {
+          d.cards[e] > a.newCards[e] && u.push(i.K8.UseCardKnight + e);
+        }), u.push(i.K8.BuyRoad), u.push(i.K8.BuyHouse), u.push(i.K8.BuyCity), u.push(i.K8.BuyDevCard, i.K8.ExchangeWithPlayer, i.K8.ExchangeWithBank), r = "\u7b49\u5f85".concat(o, "\u884c\u52a8"));
+      } else u.push(i.K8.RollDice), r = "\u7b49\u5f85".concat(o, "\u6447\u9ab0\u5b50\uff08\u6b64\u65f6\u53ef\u7528\u9a91\u58eb\u5361\uff09"), 1 & a.devCard || u.push(i.K8.UseCardKnight);
+      return "\u4f60" !== o && (u.length = 0), {
+        waitFor: n,
+        isOver: !1,
+        allowOps: u,
+        hint: r
+      };
+    },
+    D = function (e, a) {
+      var t,
+        r = a.state,
+        n = r,
+        s = [],
+        o = a.playerData[r],
+        u = o.houses.length,
+        d = o.roads.length,
+        p = v(a);
+      if (!(16 & a.devCard) && p[a.state] >= c.ZP[a.mapId].settings[e.playerList.length][0]) return {
+        isOver: !0,
+        waitFor: r,
+        allowOps: s,
+        hint: ""
+      };
+      if (d < 2 && d < u) s.push(i.K8.PutRoad);else if (u < 2) s.push(i.K8.PutHouse);else if (16 & a.devCard) s.push(i.K8.BuyHouse, i.K8.BuyRoad, i.K8.BuyDevCard, i.K8.BuyCity);else if (2 & a.devCard) s.push(i.K8.PutRoad);else if (a.lastDice) {
+        if ((null === (t = a.lastOp) || void 0 === t ? void 0 : t.type) === i.K8.RollDice && 7 === f(a.lastDice)) {
+          if (a.actionRequest) {
+            var h = (0, l.H0)(a.actionRequest, a.playerData.length);
+            h[n] && (h[n] = !1, s.push(i.K8.DiscardResource));
+            h.map(function (e, a) {
+              return e ? a + 1 : 0;
+            }).filter(function (e) {
+              return e > 0;
+            });
+            return {
+              waitFor: r,
+              isOver: !1,
+              allowOps: s,
+              hint: ""
+            };
+          }
+          s.push(i.K8.MoveRobber);
+        } else a.exchangeData && a.exchangeData.responses.indexOf(1) >= 0 || (1 & a.devCard || [0, 1, 2, 3].forEach(function (e) {
+          o.cards[e] > a.newCards[e] && s.push(i.K8.UseCardKnight + e);
+        }), s.push(i.K8.BuyRoad), s.push(i.K8.BuyHouse), s.push(i.K8.BuyCity), s.push(i.K8.BuyDevCard, i.K8.ExchangeWithPlayer, i.K8.ExchangeWithBank));
+      } else s.push(i.K8.RollDice), 1 & a.devCard || s.push(i.K8.UseCardKnight);
+      return {
+        waitFor: r,
+        isOver: !1,
+        allowOps: s,
+        hint: ""
+      };
+    },
+    j = function (e, a, t) {
+      for (var r = e, n = 0; n < t; n++) if (1 << (r = (r + 1) % t) & a) return r;
+      return r;
+    },
+    g = function (e, a, t, o) {
+      var l = t.waitFor,
+        p = e.playerData.length,
+        h = null !== o && void 0 !== o ? o : (0, u.M)(36) + 1,
+        m = {
+          state: e.state,
+          devCard: e.devCard,
+          lastOp: {
+            type: i.K8.RollDice,
+            playerId: l
+          },
+          robber: e.robber,
+          lastDice: h,
+          newCards: [0, 0, 0, 0, 0],
+          bankData: e.bankData,
+          playerData: (0, n.Z)(e.playerData),
+          actionRequest: 0
+        },
+        x = f(h);
+      if (7 !== x) !function () {
+        var t = c.ZP[e.mapId],
+          o = y(e, a, x),
+          i = new Array(p).fill(0).map(function () {
+            return [0, 0, 0, 0, 0];
+          }),
+          l = [0, 0, 0, 0, 0];
+        e.playerData.forEach(function (e, a) {
+          e.houses.forEach(function (e) {
+            var r = e >> 2,
+              n = (2 & e) >> 1;
+            (0, d.Qp)(t.tiles[r], n, t).forEach(function (t) {
+              var r = (0, s.Z)(t, 2),
+                n = r[0],
+                c = r[1],
+                u = o.get("".concat(n, ",").concat(c));
+              if (void 0 !== u) {
+                var d = 1 + (1 & e);
+                i[a][u] += d, l[u] += d;
+              }
+            });
+          });
+        });
+        for (var u = function (a) {
+            if (l[a] > e.bankData.resources[a]) {
+              var t = i.findIndex(function (e) {
+                return e[a] === l[a];
+              });
+              if (t >= 0) {
+                var r = e.bankData.resources[a];
+                i[t][a] = r, l[a] = r;
+              } else i.forEach(function (e) {
+                e[a] = 0;
+              }), l[a] = 0;
+            }
+          }, f = 0; f < 5; f++) u(f);
+        i.forEach(function (e, a) {
+          m.playerData[a] = (0, r.Z)((0, r.Z)({}, m.playerData[a]), {}, {
+            resources: (0, n.Z)(m.playerData[a].resources)
+          }), e.forEach(function (e, t) {
+            m.playerData[a].resources[t] += e;
+          });
+        }), m.bankData = (0, r.Z)((0, r.Z)({}, m.bankData), {}, {
+          resources: (0, n.Z)(m.bankData.resources)
+        }), l.forEach(function (e, a) {
+          m.bankData.resources[a] -= e;
+        });
+      }();else {
+        var v = 0;
+        m.playerData.forEach(function (a, t) {
+          a.resources.reduce(function (e, a) {
+            return e + a;
+          }) >= c.ZP[e.mapId].settings[p][1] && (v |= 1 << t);
+        }), m.actionRequest = v;
+      }
+      return m;
+    },
+    C = function (e) {
+      if (h(e)) return e;
+      var a = e.playerData.length;
+      if (a > 4) {
+        if (16 & e.devCard) {
+          var t = e.actionRequest || 0;
+          if (t) {
+            var r = j(e.state, t, a);
+            return {
+              state: r,
+              devCard: e.devCard,
+              robber: e.robber,
+              newCards: [0, 0, 0, 0, 0],
+              bankData: e.bankData,
+              playerData: e.playerData,
+              actionRequest: t & (0, l.Vi)(r, a)
+            };
+          }
+          return {
+            state: 15 & e.devCard,
+            robber: e.robber,
+            newCards: [0, 0, 0, 0, 0],
+            bankData: e.bankData,
+            playerData: e.playerData
+          };
+        }
+        var n = e.actionRequest;
+        if (n) {
+          var s = j(e.state, n, a);
+          return {
+            state: s,
+            devCard: 16 | (e.state + 1) % a,
+            robber: e.robber,
+            newCards: [0, 0, 0, 0, 0],
+            bankData: e.bankData,
+            playerData: e.playerData,
+            actionRequest: n & (0, l.Vi)(s, a)
+          };
+        }
+      }
+      return {
+        state: (e.state + 1) % a,
+        robber: e.robber,
+        newCards: [0, 0, 0, 0, 0],
+        bankData: e.bankData,
+        playerData: e.playerData,
+        actionRequest: e.actionRequest
+      };
+    };
+  var J = function e(a, t, r, o, c) {
+      for (var i = function (e, a, t, r) {
+          var n = (0, s.Z)(e, 2),
+            o = (0, s.Z)(n[0], 2),
+            c = o[0],
+            i = o[1],
+            l = n[1],
+            u = r || [[0, 0], 0],
+            d = (0, s.Z)(u, 2),
+            p = (0, s.Z)(d[0], 2),
+            f = p[0],
+            h = p[1],
+            y = d[1],
+            m = [];
+          return l ? l < 2 ? a.forEach(function (e) {
+            var a = (0, s.Z)(e, 2),
+              n = (0, s.Z)(a[0], 2),
+              o = n[0],
+              l = n[1],
+              u = a[1];
+            !t.has("".concat(c, ",").concat(i, ",0")) && (!r || !y && h < i || y && f === c) && (o !== c || l !== i || u || m.push(e), o === c - 1 && l === i && 2 === u && m.push(e)), !t.has("".concat(c, ",").concat(i, ",1")) && (!r || !y && h === i || y && f < c) && (o === c && l === i && 2 === u && m.push(e), o === c && l === i - 1 && 0 === u && m.push(e));
+          }) : a.forEach(function (e) {
+            var a = (0, s.Z)(e, 2),
+              n = (0, s.Z)(a[0], 2),
+              o = n[0],
+              l = n[1],
+              u = a[1];
+            t.has("".concat(c, ",").concat(i, ",1")) || r && !(f > c) || (o === c && l === i && 1 === u && m.push(e), o !== c || l !== i - 1 || u || m.push(e)), !t.has("".concat(c + 1, ",").concat(i, ",0")) && (!r || f <= c) && o === c + 1 && l === i && u < 2 && m.push(e);
+          }) : a.forEach(function (e) {
+            var a = (0, s.Z)(e, 2),
+              n = (0, s.Z)(a[0], 2),
+              o = n[0],
+              l = n[1],
+              u = a[1];
+            t.has("".concat(c, ",").concat(i, ",0")) || r && !(h > i) || (o === c && l === i && 1 === u && m.push(e), o === c - 1 && l === i && 2 === u && m.push(e)), !t.has("".concat(c, ",").concat(i + 1, ",1")) && (!r || h <= i) && o === c && l === i + 1 && u && m.push(e);
+          }), m;
+        }(t, r, o, c), l = a, u = 0; u < i.length; u++) {
+        var d = i[u],
+          p = r.indexOf(d),
+          f = e(a + 1, d, [].concat((0, n.Z)(r.slice(0, p)), (0, n.Z)(r.slice(p + 1))), o, t);
+        f > l && (l = f);
+      }
+      return l;
+    },
+    X = function (e, a) {
+      for (var t = 0, r = 0; r < e.length; r++) {
+        var s = e[r],
+          o = [].concat((0, n.Z)(e.slice(0, r)), (0, n.Z)(e.slice(r + 1))),
+          c = J(1, s, o, a, null);
+        c > t && (t = c);
+      }
+      return t;
+    };
+  a.longestRoad = X;
+},
+9796: function (e, a, t) {
+  t.d(a, {
+    jj: function () {
+      return l;
+    },
+    sI: function () {
+      return i;
+    }
+  });
+  var r = t(2982),
+    n = t(885),
+    s = t(6805),
+    o = [{
+      box: [-988, -980, 2080, 1942],
+      tiles: [[0, -2], [-1, -2], [-2, -2], [-2, -1], [-2, 0], [-1, 1], [0, 2], [1, 2], [2, 2], [2, 1], [2, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [0, 1], [1, 1], [1, 0], [0, 0]],
+      tileCount: 19,
+      ports: [[21, 5], [23, 4], [25, 3], [26, 3], [29, 2], [31, 1], [33, 1], [35, 0], [19, 5]],
+      settings: {
+        2: [15, 9],
+        3: [10, 8],
+        4: [10, 8],
+        5: [10, 8],
+        6: [10, 8],
+        7: [10, 8],
+        8: [10, 8]
+      },
+      xyToId: new Map(),
+      resCount: 19,
+      devCount: [14, 2, 2, 2, 5]
+    }, {
+      box: [-988, -1280, 2427, 2542],
+      tiles: [[-2, 0], [-1, 1], [0, 2], [1, 3], [2, 3], [3, 3], [3, 2], [3, 1], [3, 0], [2, -1], [1, -2], [0, -3], [-1, -3], [-2, -3], [-2, -2], [-2, -1], [-1, 0], [0, 1], [1, 2], [2, 2], [2, 1], [2, 0], [1, -1], [0, -2], [-1, -2], [-1, -1], [0, 0], [1, 1], [1, 0], [0, -1]],
+      tileCount: 30,
+      ports: [[30, 3], [33, 3], [35, 2], [37, 1], [39, 0], [40, 1], [42, 0], [45, 5], [47, 5], [49, 4], [31, 3]],
+      settings: {
+        2: [15, 9],
+        3: [10, 8],
+        4: [10, 8],
+        5: [10, 8],
+        6: [10, 8],
+        7: [10, 8],
+        8: [10, 8]
+      },
+      xyToId: new Map(),
+      resCount: 24,
+      devCount: [20, 3, 3, 3, 5]
+    }, {
+      box: [-1334, -1280, 2772, 2542],
+      tiles: [[-3, 0], [-2, 1], [-1, 2], [0, 3], [1, 3], [2, 3], [3, 3], [3, 2], [3, 1], [3, 0], [2, -1], [1, -2], [0, -3], [-1, -3], [-2, -3], [-3, -3], [-3, -2], [-3, -1], [-2, 0], [-1, 1], [0, 2], [1, 2], [2, 2], [2, 1], [2, 0], [1, -1], [0, -2], [-1, -2], [-2, -2], [-2, -1], [-1, 0], [0, 1], [1, 1], [1, 0], [0, -1], [-1, -1], [0, 0]],
+      tileCount: 37,
+      ports: [[37, 3], [41, 2], [43, 2], [45, 1], [47, 0], [48, 1], [50, 0], [53, 5], [55, 5], [57, 4], [59, 4], [38, 3]],
+      settings: {
+        2: [15, 9],
+        3: [10, 8],
+        4: [10, 8],
+        5: [10, 8],
+        6: [10, 8],
+        7: [10, 8],
+        8: [10, 8]
+      },
+      xyToId: new Map(),
+      resCount: 29,
+      devCount: [26, 4, 4, 4, 5]
+    }],
+    c = function (e, a) {
+      return (e << 5) + a;
+    };
+  o.forEach(function (e) {
+    var a = e.tiles.length;
+    e.tileCount = a;
+    var t = new Set(),
+      r = new Set(),
+      s = new Map();
+    e.tiles.forEach(function (e) {
+      var a = c(e[0], e[1]);
+      t.add(a), r.add(a);
+    });
+    for (var o = function (a) {
+        var o = e.tiles[a];
+        [[0, 1], [1, 1], [1, 0], [0, -1], [-1, -1], [-1, 0]].forEach(function (a, i) {
+          var l = (0, n.Z)(a, 2),
+            u = l[0],
+            d = l[1];
+          !function (e, a, t, r, n, s, o) {
+            var i = c(a, t);
+            r.has(i) || (r.add(i), s.set(i, o.tiles.length), o.tiles.push([a, t, 0])), n.has(i) || (o.tiles[s.get(i)][2] |= 1 << e);
+          }(i, o[0] + u, o[1] + d, t, r, s, e);
+        });
+      }, i = 0; i < a; i++) o(i);
+    e.tiles.forEach(function (a, t) {
+      e.xyToId.set("".concat(a[0], ",").concat(a[1]), t);
+    });
+  });
+  var i = function (e, a) {
+      for (var t, r = [], c = [], i = [], l = o[e], u = 0, d = 0; d < l.tileCount; d++) {
+        var p = (0, s.lS)(a, u, 3),
+          f = (0, n.Z)(p, 2);
+        t = f[0], u = f[1], r.push(t);
+      }
+      for (var h = 0; h < l.tileCount; h++) {
+        var y = (0, s.lS)(a, u, 4),
+          m = (0, n.Z)(y, 2);
+        t = m[0], u = m[1], c.push(t);
+      }
+      for (var x = 0; x < l.ports.length; x++) {
+        var v = (0, s.lS)(a, u, 3),
+          b = (0, n.Z)(v, 2);
+        t = b[0], u = b[1], i.push(t);
+      }
+      return {
+        tileTypes: r,
+        tileNums: c,
+        portTypes: i
+      };
+    },
+    l = function (e, a, t, c) {
+      for (var i, l = [], u = o[e], d = 0, p = 0, f = 0; f < u.tileCount; f++) {
+        var h = (0, s.F)(p, d, a[f], 3),
+          y = (0, n.Z)(h, 3);
+        p = y[0], d = y[1], i = y[2], l.push.apply(l, (0, r.Z)(i));
+      }
+      for (var m = 0; m < u.tileCount; m++) {
+        var x = (0, s.F)(p, d, t[m], 4),
+          v = (0, n.Z)(x, 3);
+        p = v[0], d = v[1], i = v[2], l.push.apply(l, (0, r.Z)(i));
+      }
+      for (var b = 0; b < u.ports.length; b++) {
+        var D = (0, s.F)(p, d, c[b], 3),
+          j = (0, n.Z)(D, 3);
+        p = j[0], d = j[1], i = j[2], l.push.apply(l, (0, r.Z)(i));
+      }
+      return d && (p |= Math.pow(2, 8 - d) - 1, l.push(p)), Uint8Array.from(l);
+    };
+  a.ZP = o;
+},
+6805: function (e, a, t) {
+  function r(e, a, t, r) {
+    var n = e,
+      s = a,
+      o = [];
+    return a + r < 8 ? (n |= t << 8 - r - a, s += r) : a + r === 8 ? (o.push(e | t), n = 0, s = 0) : (n |= t >> a - 8 + r, o.push(n), n = t << 16 - a - r & 255, s = a - 8 + r), [n, s, o];
+  }
+  function n(e, a, t) {
+    var r = a % 8,
+      n = Math.floor(a / 8);
+    if (r + t > 8 && n + 1 >= e.length || r + t <= 8 && n >= e.length) throw new Error("readBitsError");
+    var s = r + t <= 8 ? e[n] : e[n] << 8 | e[n + 1];
+    return s >>= (r + t <= 8 ? 8 : 16) - t - r, [s &= [0, 1, 3, 7, 15, 31, 63, 127][t], a + t];
+  }
+  function s(e, a) {
+    for (var t = [], r = 0; r < a; r++) t.push(!!(e >> r & 1));
+    return t;
+  }
+  function o(e, a) {
+    for (var t = 0, r = 0; r < a; r++) r !== e && (t |= 1 << r);
+    return t;
+  }
+  t.d(a, {
+    F: function () {
+      return r;
+    },
+    H0: function () {
+      return s;
+    },
+    Vi: function () {
+      return o;
+    },
+    lS: function () {
+      return n;
+    }
+  });
+},
+6912: function (e, a, t) {
+  t.d(a, {
+    $v: function () {
+      return d;
+    },
+    Qp: function () {
+      return v;
+    },
+    US: function () {
+      return c;
+    },
+    Z7: function () {
+      return x;
+    },
+    cu: function () {
+      return u;
+    },
+    d3: function () {
+      return o;
+    },
+    fH: function () {
+      return y;
+    },
+    gK: function () {
+      return l;
+    },
+    jc: function () {
+      return m;
+    },
+    q9: function () {
+      return f;
+    },
+    sw: function () {
+      return i;
+    },
+    v5: function () {
+      return b;
+    },
+    xG: function () {
+      return h;
+    }
+  });
+  var r = t(885),
+    n = t(9796),
+    s = 200,
+    o = function (e) {
+      var a = e[0],
+        t = e[1];
+      return [346.41 * (a - t / 2), 1.5 * t * s];
+    },
+    c = function (e, a) {
+      var t = o(e),
+        n = (0, r.Z)(t, 2),
+        c = n[0],
+        i = n[1];
+      return a ? [c, i - s] : [c - 173.205, i - 100];
+    },
+    i = function (e, a) {
+      var t = (2 & e) >> 1,
+        r = a[e >> 2];
+      return c(r, t);
+    },
+    l = function (e, a) {
+      var t = o(e),
+        n = (0, r.Z)(t, 2),
+        s = n[0],
+        c = n[1];
+      return a ? a < 2 ? [s - 86.6025, c - 150] : [s + 86.6025, c - 150] : [s - 173.205, c];
+    },
+    u = function (e, a) {
+      var t = 3 & e,
+        r = a[e >> 2];
+      return l(r, t);
+    },
+    d = function (e) {
+      var a = 3 & e;
+      return a ? a < 2 ? 60 : 120 : 0;
+    },
+    p = function (e) {
+      var a = e.mapId,
+        t = n.ZP[a],
+        s = new Set();
+      return e.playerData.forEach(function (e) {
+        e.houses.forEach(function (e) {
+          var a = e >> 2,
+            n = (0, r.Z)(t.tiles[a], 2),
+            o = n[0],
+            c = n[1],
+            i = e >> 1 & 1;
+          s.add("".concat(o, ",").concat(c, ",0")), s.add("".concat(o, ",").concat(c, ",1")), i ? (s.add("".concat(o, ",").concat(c - 1, ",0")), s.add("".concat(o + 1, ",").concat(c, ",0"))) : (s.add("".concat(o, ",").concat(c + 1, ",1")), s.add("".concat(o - 1, ",").concat(c, ",1")));
+        });
+      }), s;
+    },
+    f = function (e) {
+      var a = e.mapId,
+        t = n.ZP[a],
+        r = p(e),
+        s = [],
+        o = t.tileCount,
+        c = function (e, a) {
+          r.has("".concat(e[0], ",").concat(e[1], ",").concat(a)) || s.push([e, a]);
+        };
+      return t.tiles.forEach(function (e, a) {
+        if (a < o) c(e, 0), c(e, 1);else {
+          var t = e[2];
+          2 & t ? (c(e, 0), c(e, 1)) : (1 & t && c(e, 1), 4 & t && c(e, 0));
+        }
+      }), s;
+    },
+    h = function (e, a) {
+      var t = e.mapId,
+        s = n.ZP[t],
+        o = p(e),
+        c = [],
+        i = new Set(),
+        l = function (e, a) {
+          if (!o.has("".concat(e[0], ",").concat(e[1], ",").concat(a))) {
+            var t = "".concat(e[0], ",").concat(e[1], ",").concat(a);
+            i.has(t) || (i.add(t), c.push([e, a]));
+          }
+        };
+      return e.playerData[a].roads.forEach(function (e) {
+        var a = s.tiles[e >> 2],
+          t = (0, r.Z)(a, 2),
+          n = t[0],
+          o = t[1],
+          c = 3 & e;
+        c ? c < 2 ? (l([n, o], 0), l([n, o], 1)) : (l([n, o], 1), l([n + 1, o], 0)) : (l([n, o], 0), l([n, o + 1], 1));
+      }), c;
+    },
+    y = function (e, a) {
+      var t = e.mapId,
+        r = n.ZP[t],
+        s = [];
+      return e.playerData[a].houses.forEach(function (e) {
+        1 & e || s.push([r.tiles[e >> 2], (2 & e) >> 1]);
+      }), s;
+    },
+    m = function (e, a) {
+      var t = e.mapId,
+        s = n.ZP[t],
+        o = new Set();
+      e.playerData.forEach(function (e) {
+        e.roads.forEach(function (e) {
+          var a = s.tiles[e >> 2],
+            t = 3 & e;
+          o.add("".concat(a[0], ",").concat(a[1], ",").concat(t));
+        });
+      });
+      var c = [],
+        i = new Set(),
+        l = function (e, a) {
+          var t = (0, r.Z)(e, 2),
+            n = t[0],
+            l = t[1];
+          if (!o.has("".concat(n, ",").concat(l, ",").concat(a))) {
+            var u = s.xyToId.get("".concat(n, ",").concat(l));
+            if (u >= s.tileCount) {
+              var d = s.tiles[u][2];
+              if (0 === a && !(4 & d)) return;
+              if (1 === a && !(2 & d)) return;
+              if (2 === a && !(1 & d)) return;
+            }
+            var p = "".concat(e[0], ",").concat(e[1], ",").concat(a);
+            i.has(p) || (i.add(p), c.push([e, a]));
+          }
+        },
+        u = new Set();
+      return e.playerData.forEach(function (e, t) {
+        t !== a && e.houses.forEach(function (e) {
+          var a = (0, r.Z)(s.tiles[e >> 2], 2),
+            t = a[0],
+            n = a[1],
+            o = (2 & e) >> 1;
+          u.add("".concat(t, ",").concat(n, ",").concat(o));
+        });
+      }), e.playerData[a].roads.forEach(function (e) {
+        var a = s.tiles[e >> 2],
+          t = (0, r.Z)(a, 2),
+          n = t[0],
+          o = t[1],
+          c = 3 & e;
+        c ? c < 2 ? (u.has("".concat(n, ",").concat(o, ",1")) || (l([n, o - 1], 0), l([n, o], 2)), u.has("".concat(n, ",").concat(o, ",0")) || (l([n, o], 0), l([n - 1, o], 2))) : (u.has("".concat(n, ",").concat(o, ",1")) || (l([n, o], 1), l([n, o - 1], 0)), u.has("".concat(n + 1, ",").concat(o, ",0")) || (l([n + 1, o], 0), l([n + 1, o], 1))) : (u.has("".concat(n, ",").concat(o, ",0")) || (l([n, o], 1), l([n - 1, o], 2)), u.has("".concat(n, ",").concat(o + 1, ",1")) || (l([n, o + 1], 1), l([n, o + 1], 2)));
+      }), c;
+    },
+    x = function (e) {
+      var a = e.mapId,
+        t = n.ZP[a],
+        s = [],
+        o = function (e, a) {
+          var n = (0, r.Z)(e, 2),
+            o = n[0],
+            c = n[1],
+            i = t.xyToId.get("".concat(o, ",").concat(c));
+          if (i >= t.tileCount) {
+            var l = t.tiles[i][2];
+            if (!a && !(4 & l)) return;
+            if (1 === a && !(2 & l)) return;
+            if (2 === a && !(1 & l)) return;
+          }
+          s.push([e, a]);
+        },
+        c = e.lastOp.house,
+        i = t.tiles[c >> 2],
+        l = (0, r.Z)(i, 2),
+        u = l[0],
+        d = l[1];
+      return (2 & c) >> 1 ? (o([u, d - 1], 0), o([u, d], 1), o([u, d], 2)) : (o([u, d], 0), o([u, d], 1), o([u - 1, d], 2)), s;
+    },
+    v = function (e, a, t) {
+      var n = (0, r.Z)(e, 2),
+        s = n[0],
+        o = n[1],
+        c = [],
+        i = function (e, a) {
+          t.xyToId.get("".concat(e, ",").concat(a)) < t.tileCount && c.push([e, a]);
+        };
+      return i(s, o), i(s - 1, o - 1), a ? i(s, o - 1) : i(s - 1, o), c;
+    },
+    b = function (e) {
+      var a = e.mapId,
+        t = e.robber,
+        r = n.ZP[a];
+      return r.tiles.slice(0, r.tileCount).filter(function (e, a) {
+        return a !== t;
+      });
+    };
+},
+4591: function (e, t, n) {
+  "use strict";
+
+  var i = n(7313),
+    a = n(6417);
+  t.Z = i.memo(function (e) {
+    var t = e.n,
+      n = e.className;
+    return (0, a.jsx)("div", {
+      className: "game-dice ".concat(n || ""),
+      children: t % 2 ? new Array((t + 1) / 2).fill(0).map(function (e, n) {
+        return (0, a.jsxs)(i.Fragment, {
+          children: [(0, a.jsx)("div", {
+            style: {
+              left: t < 2 ? 1 : -1,
+              top: (n - t / 4 + .25) * [0, 16, 8][(t - 1) / 2] + 7
+            }
+          }), (0, a.jsx)("div", {
+            style: {
+              right: t < 2 ? 1 : -1,
+              top: (n - t / 4 + .25) * [0, 16, 8][(t - 1) / 2] + 7
+            }
+          })]
+        }, n);
+      }) : (0, a.jsxs)(a.Fragment, {
+        children: [(0, a.jsx)("div", {
+          className: "m-auto inset-0"
+        }), t > 1 && (0, a.jsxs)(a.Fragment, {
+          children: [(0, a.jsx)("div", {
+            style: {
+              right: -1,
+              top: -1
+            }
+          }), (0, a.jsx)("div", {
+            style: {
+              left: -1,
+              bottom: -1
+            }
+          })]
+        }), t > 3 && (0, a.jsxs)(a.Fragment, {
+          children: [(0, a.jsx)("div", {
+            style: {
+              left: -1,
+              top: -1
+            }
+          }), (0, a.jsx)("div", {
+            style: {
+              right: -1,
+              bottom: -1
+            }
+          })]
+        })]
+      })
+    });
+  });
+},
+3405: function (t, e, n) {
+  var companionBridge = n.bridge;
+  n.r(e), n.d(e, {
+    default: function () {
+      return O;
+    }
+  });
+  var a = n(7313),
+    r = n(5982),
+    s = n(4595),
+    i = n(4473),
+    o = n(2437),
+    c = n(1413),
+    l = n(2982),
+    u = n(885),
+    d = n(6417);
+  var p = function (t) {
+    var e = t.id,
+      n = t.style,
+      a = t.isNew,
+      r = t.onClick,
+      s = (0, o.nX)(e),
+      i = (0, u.Z)(s, 2),
+      c = i[0],
+      l = i[1];
+    return (0, d.jsxs)("div", {
+      className: "dy-card dy-card-".concat(c, " border ").concat(a ? "border-red-500 border-2" : ""),
+      style: n,
+      onClick: r,
+      children: [(0, d.jsx)("div", {
+        className: "text-2xl font-bold text-black",
+        children: l
+      }), (0, d.jsx)("div", {
+        children: o.DM[c]
+      })],
+      role: "button",
+      tabIndex: 0,
+      onKeyDown: function (event) {
+        if (!event.repeat && !event.isComposing && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.currentTarget.click();
+        }
+      }
+    });
+  };
+  var f = function (t) {
+    var e = t.ids,
+      n = t.className,
+      r = t.selected,
+      s = t.setSelected;
+    return (0, a.useEffect)(function () {
+      s(null);
+    }, [e.length]), (0, d.jsx)("div", {
+      className: "relative w-fit mx-auto overflow-x-auto ".concat(n),
+      style: {
+        height: 106,
+        maxWidth: "100%",
+        width: Math.ceil(30 * e.length + 22)
+      },
+      children: e.map(function (t, e) {
+        return (0, d.jsx)(p, {
+          id: t,
+          style: {
+            left: 30 * e,
+            top: r === t ? 0 : 20
+          },
+          onClick: function () {
+            s(function (e) {
+              return e === t ? null : t;
+            });
+          }
+        }, t);
+      })
+    });
+  };
+  var h = function (t) {
+      var e = t.ids,
+        n = t.op && t.op.playerId ? t.op : {};
+      return (0, d.jsx)("div", {
+        className: "relative w-fit mx-auto overflow-x-auto",
+        style: {
+          height: 86,
+          maxWidth: "100%",
+          width: Math.ceil(30 * e.length + 22)
+        },
+        children: e.map(function (t, e) {
+          return (0, d.jsx)(p, {
+            id: t,
+            isNew: n.putCard === t,
+            style: {
+              left: 30 * e
+            }
+          }, t);
+        })
+      });
+    },
+    m = n(7992),
+    v = n(4420);
+  var x = function (t) {
+    var e = t.view,
+      n = t.room,
+      r = t.updateGameData,
+      i = n.position - 1,
+      c = (0, a.useState)(null),
+      p = (0, u.Z)(c, 2),
+      x = p[0],
+      y = p[1],
+      j = null !== x ? (0, o.nX)(x)[0] : 1,
+      O = n.playerList.length;
+    return (0, d.jsxs)("div", {
+      className: "mt-auto",
+      children: [e.eats[i].length > 0 && (0, d.jsxs)("div", {
+        children: [(0, d.jsx)("div", {
+          className: "text-center my-2",
+          children: "\u4f60\u5df2\u7ecf\u559d\u4e0b\u7684\u836f\uff1a"
+        }), (0, d.jsx)(h, {
+          ids: e.eats[i]
+        })]
+      }), !e.finish && e.state !== i && (0, m.Yw)(n, e.state) && (0, d.jsx)("div", {
+        className: "text-center mt-4",
+        children: (0, d.jsx)(s.Z, {
+          small: !0,
+          primary: !0,
+          onClick: function () {
+            var t = e.players[e.state],
+              n = t[(0, v.M)(t.length)],
+              a = (0, o.nX)(n)[0],
+              s = (0, l.Z)(e.pots),
+              i = (e.state + 1) % O,
+              c = {
+                playerId: e.state + 1,
+                putCard: n,
+                eatCardList: []
+              },
+              u = e.eats.map(function (t) {
+                return (0, l.Z)(t);
+              });
+            if (a) s[a - 1] = [].concat((0, l.Z)(s[a - 1]), [n]), r({
+              state: i,
+              lastOp: c,
+              pots: s,
+              eats: u
+            });else {
+              var d = (0, v.M)(3);
+              s[d] = [].concat((0, l.Z)(s[d]), [n]), r({
+                state: i,
+                lastOp: c,
+                pots: s,
+                eats: u
+              });
+            }
+          },
+          children: "\u8be5\u73a9\u5bb6\u5df2\u6302\u673a\uff0c\u70b9\u6b64\u8df3\u8fc7\u4ed6\u7684\u56de\u5408"
+        })
+      }), (0, d.jsx)("div", {
+        className: "flex items-center justify-center space-x-6 mt-4".concat(e.finish || e.state !== i ? " invisible" : ""),
+        children: j ? (0, d.jsx)(s.Z, {
+          primary: !0,
+          disabled: null === x,
+          onClick: function () {
+            var t = (0, l.Z)(e.pots);
+            t[j - 1] = [].concat((0, l.Z)(t[j - 1]), [x]), r({
+              state: (e.state + 1) % O,
+              lastOp: {
+                playerId: i + 1,
+                putCard: x,
+                eatCardList: []
+              },
+              pots: t,
+              eats: e.eats.map(function (t) {
+                return (0, l.Z)(t);
+              })
+            });
+          },
+          children: "\u51fa\u724c"
+        }) : (0, d.jsx)(d.Fragment, {
+          children: [0, 1, 2].map(function (t) {
+            return (0, d.jsx)(s.Z, {
+              onClick: function () {
+                var n = (0, l.Z)(e.pots);
+                n[t] = [].concat((0, l.Z)(n[t]), [x]), r({
+                  state: (e.state + 1) % O,
+                  lastOp: {
+                    playerId: i + 1,
+                    putCard: x,
+                    eatCardList: []
+                  },
+                  pots: n,
+                  eats: e.eats.map(function (t) {
+                    return (0, l.Z)(t);
+                  })
+                });
+              },
+              children: "\u9009".concat(["\u7ea2", "\u84dd", "\u7d2b"][t]).concat(o.DM[t + 1])
+            }, t);
+          })
+        })
+      }), (0, d.jsx)(f, {
+        ids: e.players[i],
+        selected: x,
+        setSelected: y,
+        className: "mt-4"
+      })]
+    });
+  };
+  var y = function (t) {
+      var e,
+        n = t.view,
+        a = t.room,
+        s = t.send,
+        l = !!a.position;
+      if (n.finish) {
+        var u = function (t) {
+          for (var e = 999, n = [], a = 0; a < t.length; a++) t[a] < e && (e = t[a]);
+          for (var r = 0; r < t.length; r++) t[r] === e && n.push(r);
+          return n;
+        }(n.scores);
+        e = "\u606d\u559c\u73a9\u5bb6".concat(u.map(function (t) {
+          return t + 1;
+        }).join("\u3001\u73a9\u5bb6"), "\u80dc\u5229\ud83c\udf89");
+      } else e = "\u7b49\u5f85\u73a9\u5bb6".concat(n.state + 1, "\u884c\u52a8");
+      return l && (e = e.replaceAll("\u73a9\u5bb6".concat(a.position), "\u4f60")), (0, d.jsxs)(d.Fragment, {
+        children: [(0, d.jsx)("div", {
+          className: "text-center text-xl mt-4",
+          children: e
+        }), n.lastOp.playerId > 0 && n.lastOp.eatCardList.length > 0 && (0, d.jsxs)("div", {
+          className: "mt-2 flex items-center justify-center",
+          children: [(0, d.jsx)("div", {
+            className: "text-center mr-2",
+            children: "\u73a9\u5bb6".concat(n.lastOp.playerId, "\u521a\u521a\u559d\u6389\u4e86").replace("\u73a9\u5bb6".concat(a.position), "\u4f60")
+          }), (0, d.jsx)("div", {
+            style: {
+              height: 43
+            },
+            children: (0, d.jsx)("div", {
+              className: "scale-50 origin-top-left",
+              children: (0, d.jsx)(h, {
+                ids: n.lastOp.eatCardList
+              })
+            })
+          })]
+        }), (0, d.jsxs)("div", {
+          className: "poison-pots",
+          children: [(0, d.jsx)("div", {
+            className: "bg-red-100 bg-opacity-75 mt-4",
+            children: (0, d.jsx)(h, {
+              ids: n.pots[0],
+              op: n.lastOp
+            })
+          }), (0, d.jsx)("div", {
+            className: "bg-blue-100 bg-opacity-75 mt-4",
+            children: (0, d.jsx)(h, {
+              ids: n.pots[1],
+              op: n.lastOp
+            })
+          }), (0, d.jsx)("div", {
+            className: "bg-purple-100 bg-opacity-75 mt-4 mb-4",
+            children: (0, d.jsx)(h, {
+              ids: n.pots[2],
+              op: n.lastOp
+            })
+          })]
+        }), !!n.finish && n.eats.map(function (t, e) {
+          return (0, d.jsxs)("div", {
+            className: "mb-2",
+            children: [(0, d.jsx)("div", {
+              className: "text-center my-2",
+              children: "".concat(a.position === e + 1 ? "\u4f60" : "\u73a9\u5bb6".concat(e + 1), "\u7684\u5206\u6570\uff1a").concat(-n.scores[e])
+            }), (0, d.jsx)(h, {
+              ids: t
+            })]
+          }, e);
+        }), l && !n.finish && (0, d.jsx)(x, {
+          view: n,
+          room: a,
+          updateGameData: function (t) {
+            companionBridge.sink({
+              type: "dy-play",
+              card: t.lastOp.putCard,
+              pot: t.pots.findIndex(function (pot) {
+                return pot.includes(t.lastOp.putCard);
+              })
+            });
+          }
+        }), !l && (0, d.jsx)("div", {
+          className: "text-2xl mt-2 text-center",
+          children: "\u89c2\u6218\u4e2d"
+        })]
+      });
+    },
+    j = n(3953);
+  var O = function (t) {
+    var e = t.room,
+      n = t.game,
+      a = t.send,
+      c = undefined,
+      l = t.view,
+      u = !!e.position && e.owner === e.position;
+    return (0, j.N)([]), (0, d.jsxs)(d.Fragment, {
+      children: [u && (0, d.jsx)("div", {
+        className: "button-container",
+        children: (0, d.jsx)("div", {
+          className: "button-right",
+          children: (0, d.jsx)(s.Z, {
+            small: !0,
+            onClick: function () {
+              return (0, j.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
+                return a(r.Z.OwnerExitGame);
+              });
+            },
+            children: "\u7ed3\u675f\u6e38\u620f"
+          })
+        })
+      }), (0, d.jsx)("div", {
+        className: "flex justify-evenly mt-4",
+        children: e.playerList.map(function (t, n) {
+          return (0, d.jsxs)("div", {
+            children: [(0, d.jsx)(m.ZP, {
+              room: e,
+              index: n,
+              send: a,
+              isTurn: !l.finish && l.state === n
+            }), !l.finish && (0, d.jsx)("div", {
+              className: "text-center mt-2",
+              children: "\u5269 ".concat(l.players[n].length, " \u5f20")
+            })]
+          }, n);
+        })
+      }), (0, d.jsx)(y, {
+        view: l,
+        version: n.version,
+        room: e,
+        send: a
+      })]
+    });
+  };
+},
+4473: function (t, e, n) {
+  n.d(e, {
+    UG: function () {
+      return c;
+    }
+  });
+  var a = n(7710),
+    r = a.Reader,
+    s = a.Writer,
+    i = a.util,
+    o = a.roots.default || (a.roots.default = {}),
+    c = (o.DYOperation = function () {
+      function t(t) {
+        if (this.eatCardList = [], t) for (var e = Object.keys(t), n = 0; n < e.length; ++n) null != t[e[n]] && (this[e[n]] = t[e[n]]);
+      }
+      return t.prototype.playerId = 0, t.prototype.putCard = 0, t.prototype.eatCardList = i.emptyArray, t.encode = function (t, e) {
+        if (e || (e = s.create()), null != t.playerId && Object.hasOwnProperty.call(t, "playerId") && e.uint32(8).uint32(t.playerId), null != t.putCard && Object.hasOwnProperty.call(t, "putCard") && e.uint32(16).uint32(t.putCard), null != t.eatCardList && t.eatCardList.length) {
+          e.uint32(42).fork();
+          for (var n = 0; n < t.eatCardList.length; ++n) e.uint32(t.eatCardList[n]);
+          e.ldelim();
+        }
+        return e;
+      }, t.decode = function (t, e) {
+        t instanceof r || (t = r.create(t));
+        for (var n = void 0 === e ? t.len : t.pos + e, a = new o.DYOperation(); t.pos < n;) {
+          var s = t.uint32();
+          switch (s >>> 3) {
+            case 1:
+              a.playerId = t.uint32();
+              break;
+            case 2:
+              a.putCard = t.uint32();
+              break;
+            case 5:
+              if (a.eatCardList && a.eatCardList.length || (a.eatCardList = []), 2 === (7 & s)) for (var i = t.uint32() + t.pos; t.pos < i;) a.eatCardList.push(t.uint32());else a.eatCardList.push(t.uint32());
+              break;
+            default:
+              t.skipType(7 & s);
+          }
+        }
+        return a;
+      }, t;
+    }(), o.DYGameData = function () {
+      function t(t) {
+        if (this.cardPositionList = [], t) for (var e = Object.keys(t), n = 0; n < e.length; ++n) null != t[e[n]] && (this[e[n]] = t[e[n]]);
+      }
+      return t.prototype.rule = 0, t.prototype.state = 0, t.prototype.cardPositionList = i.emptyArray, t.prototype.lastOp = null, t.encode = function (t, e) {
+        if (e || (e = s.create()), null != t.rule && Object.hasOwnProperty.call(t, "rule") && e.uint32(8).uint32(t.rule), null != t.state && Object.hasOwnProperty.call(t, "state") && e.uint32(16).uint32(t.state), null != t.cardPositionList && t.cardPositionList.length) {
+          e.uint32(26).fork();
+          for (var n = 0; n < t.cardPositionList.length; ++n) e.uint32(t.cardPositionList[n]);
+          e.ldelim();
+        }
+        return null != t.lastOp && Object.hasOwnProperty.call(t, "lastOp") && o.DYOperation.encode(t.lastOp, e.uint32(34).fork()).ldelim(), e;
+      }, t.decode = function (t, e) {
+        t instanceof r || (t = r.create(t));
+        for (var n = void 0 === e ? t.len : t.pos + e, a = new o.DYGameData(); t.pos < n;) {
+          var s = t.uint32();
+          switch (s >>> 3) {
+            case 1:
+              a.rule = t.uint32();
+              break;
+            case 2:
+              a.state = t.uint32();
+              break;
+            case 3:
+              if (a.cardPositionList && a.cardPositionList.length || (a.cardPositionList = []), 2 === (7 & s)) for (var i = t.uint32() + t.pos; t.pos < i;) a.cardPositionList.push(t.uint32());else a.cardPositionList.push(t.uint32());
+              break;
+            case 4:
+              a.lastOp = o.DYOperation.decode(t, t.uint32());
+              break;
+            default:
+              t.skipType(7 & s);
+          }
+        }
+        return a;
+      }, t;
+    }());
+},
+2437: function (t, e, n) {
+  n.d(e, {
+    Bx: function () {
+      return u;
+    },
+    DM: function () {
+      return i;
+    },
+    my: function () {
+      return c;
+    },
+    nX: function () {
+      return o;
+    },
+    qA: function () {
+      return l;
+    }
+  });
+  var a = n(2982),
+    r = n(885),
+    s = n(4420),
+    i = ["\u26ab\ufe0f", "\ud83d\udd34", "\ud83d\udd35", "\ud83d\udfe3"];
+  function o(t) {
+    if (t >= 42) return [0, 4];
+    var e = [1, 1, 1, 2, 2, 2, 4, 4, 5, 5, 5, 7, 7, 7][t % 14];
+    return [Math.floor(t / 14) + 1, e];
+  }
+  function c(t, e) {
+    var n = [[], [], []],
+      a = [0, 0, 0],
+      s = new Array(e).fill(0).map(function () {
+        return [];
+      }),
+      i = new Array(e).fill(0).map(function () {
+        return [];
+      }),
+      c = new Array(e).fill(0),
+      l = 1;
+    t.cardPositionList.forEach(function (t, e) {
+      var c = o(e),
+        u = (0, r.Z)(c, 2),
+        d = (u[0], u[1]);
+      if (t) if (t < 4) n[t - 1].push(e), a[t - 1] += d;else {
+        var p = t - 4,
+          f = p >> 1;
+        1 & p ? i[f].push(e) : (s[f].push(e), l = 0);
+      }
+    });
+    var u = [[], [], []],
+      d = [0, 0, 0];
+    return i.forEach(function (t, e) {
+      var n = [0, 0, 0];
+      t.forEach(function (t) {
+        var e = o(t)[0];
+        e && (n[e - 1] += 1);
+      });
+      for (var a = 0; a < 3; a++) n[a] > d[a] ? (d[a] = n[a], u[a] = [e]) : n[a] === d[a] && u[a].push(e);
+    }), i.forEach(function (t, e) {
+      t.forEach(function (t) {
+        var n = o(t),
+          a = (0, r.Z)(n, 1)[0];
+        a ? 1 === u[a - 1].length && u[a - 1][0] === e || (c[e] += 1) : c[e] += 2;
+      });
+    }), {
+      rule: t.rule,
+      state: t.state,
+      lastOp: t.lastOp,
+      pots: n,
+      potValues: a,
+      players: s,
+      eats: i,
+      scores: c,
+      finish: l
+    };
+  }
+  function l(t) {
+    var e = new Array(50).fill(0);
+    return t.players.forEach(function (t, n) {
+      t.forEach(function (t) {
+        e[t] = 4 + (n << 1);
+      });
+    }), t.pots.forEach(function (e, n) {
+      var a = 0;
+      e.forEach(function (t) {
+        a += o(t)[1];
+      }), a > 13 && (e.forEach(function (e) {
+        e !== t.lastOp.putCard && (t.eats[t.lastOp.playerId - 1].push(e), t.lastOp.eatCardList.push(e));
+      }), t.pots[n] = [t.lastOp.putCard]);
+    }), t.pots.forEach(function (t, n) {
+      t.forEach(function (t) {
+        e[t] = n + 1;
+      });
+    }), t.eats.forEach(function (t, n) {
+      t.forEach(function (t) {
+        e[t] = 5 + (n << 1);
+      });
+    }), {
+      rule: t.rule,
+      state: t.state,
+      cardPositionList: e,
+      lastOp: t.lastOp
+    };
+  }
+  function u(t, e) {
+    for (var n = t.playerList.length, r = new Array(n).fill(0).map(function () {
+        return [];
+      }), i = (0, s.T)(new Array(50).fill(0).map(function (t, e) {
+        return e;
+      })), o = [12, 12, 12, 10, 8, 7, 6][n - 2], c = 0; c < n; c++) {
+      var u;
+      (u = r[c]).push.apply(u, (0, a.Z)(i.slice(c * o, (c + 1) * o)));
+    }
+    return l({
+      rule: 0,
+      state: (0, s.M)(n),
+      lastOp: {
+        playerId: 0
+      },
+      pots: [[], [], []],
+      players: r,
+      eats: new Array(n).fill([])
+    });
+  }
+},
 6544: function (e, t, r) {
   r.r(t), r.d(t, {
     default: function () {
@@ -1361,23 +9966,6 @@ export default {
     });
   };
 },
-5982: function (e, t, n) {
-  "use strict";
-
-  var i, a;
-  n.d(t, {
-    Z: function () {
-      return i;
-    },
-    q: function () {
-      return a;
-    }
-  }), function (e) {
-    e[e.PlayerUpdateGameData = 0] = "PlayerUpdateGameData", e[e.VisitorJoinGame = 1] = "VisitorJoinGame", e[e.PlayerUpdateUserInfo = 2] = "PlayerUpdateUserInfo", e[e.PlayerChangeSeat = 3] = "PlayerChangeSeat", e[e.OwnerStartGame = 4] = "OwnerStartGame", e[e.OwnerExitGame = 5] = "OwnerExitGame", e[e.OwnerChangePlayerCount = 6] = "OwnerChangePlayerCount", e[e.OwnerKickOut = 7] = "OwnerKickOut", e[e.OwnerUpdateGameData = 9] = "OwnerUpdateGameData", e[e.PlayerUpdatePlayerData = 10] = "PlayerUpdatePlayerData", e[e.PlayerInteraction = 11] = "PlayerInteraction";
-  }(i || (i = {})), function (e) {
-    e[e.UpdateGameData = 0] = "UpdateGameData", e[e.UpdatePlayerOffline = 1] = "UpdatePlayerOffline", e[e.UpdatePlayerData = 2] = "UpdatePlayerData", e[e.UpdatePlayerState = 3] = "UpdatePlayerState", e[e.ShowPlayerInteraction = 4] = "ShowPlayerInteraction", e[e.UpdateVisitorCount = 5] = "UpdateVisitorCount";
-  }(a || (a = {}));
-},
 9474: function (e, t, r) {
   r.d(t, {
     w: function () {
@@ -1476,749 +10064,6 @@ export default {
         return n;
       }, e;
     }();
-},
-7710: function (e, t, n) {
-  "use strict";
-
-  e.exports = n(9488);
-},
-9488: function (e, t, n) {
-  "use strict";
-
-  var r = t;
-  function a() {
-    r.util._configure(), r.Writer._configure(r.BufferWriter), r.Reader._configure(r.BufferReader);
-  }
-  r.build = "minimal", r.Writer = n(8050), r.BufferWriter = n(2149), r.Reader = n(2422), r.BufferReader = n(4148), r.util = n(9716), r.rpc = n(7523), r.roots = n(3107), r.configure = a, a();
-},
-8050: function (e, t, n) {
-  "use strict";
-
-  e.exports = f;
-  var r,
-    a = n(9716),
-    l = a.LongBits,
-    o = a.base64,
-    i = a.utf8;
-  function u(e, t, n) {
-    this.fn = e, this.len = t, this.next = void 0, this.val = n;
-  }
-  function s() {}
-  function c(e) {
-    this.head = e.head, this.tail = e.tail, this.len = e.len, this.next = e.states;
-  }
-  function f() {
-    this.len = 0, this.head = new u(s, 0, 0), this.tail = this.head, this.states = null;
-  }
-  var d = function () {
-    return a.Buffer ? function () {
-      return (f.create = function () {
-        return new r();
-      })();
-    } : function () {
-      return new f();
-    };
-  };
-  function p(e, t, n) {
-    t[n] = 255 & e;
-  }
-  function h(e, t) {
-    this.len = e, this.next = void 0, this.val = t;
-  }
-  function m(e, t, n) {
-    for (; e.hi;) t[n++] = 127 & e.lo | 128, e.lo = (e.lo >>> 7 | e.hi << 25) >>> 0, e.hi >>>= 7;
-    for (; e.lo > 127;) t[n++] = 127 & e.lo | 128, e.lo = e.lo >>> 7;
-    t[n++] = e.lo;
-  }
-  function v(e, t, n) {
-    t[n] = 255 & e, t[n + 1] = e >>> 8 & 255, t[n + 2] = e >>> 16 & 255, t[n + 3] = e >>> 24;
-  }
-  f.create = d(), f.alloc = function (e) {
-    return new a.Array(e);
-  }, a.Array !== Array && (f.alloc = a.pool(f.alloc, a.Array.prototype.subarray)), f.prototype._push = function (e, t, n) {
-    return this.tail = this.tail.next = new u(e, t, n), this.len += t, this;
-  }, h.prototype = Object.create(u.prototype), h.prototype.fn = function (e, t, n) {
-    for (; e > 127;) t[n++] = 127 & e | 128, e >>>= 7;
-    t[n] = e;
-  }, f.prototype.uint32 = function (e) {
-    return this.len += (this.tail = this.tail.next = new h((e >>>= 0) < 128 ? 1 : e < 16384 ? 2 : e < 2097152 ? 3 : e < 268435456 ? 4 : 5, e)).len, this;
-  }, f.prototype.int32 = function (e) {
-    return e < 0 ? this._push(m, 10, l.fromNumber(e)) : this.uint32(e);
-  }, f.prototype.sint32 = function (e) {
-    return this.uint32((e << 1 ^ e >> 31) >>> 0);
-  }, f.prototype.uint64 = function (e) {
-    var t = l.from(e);
-    return this._push(m, t.length(), t);
-  }, f.prototype.int64 = f.prototype.uint64, f.prototype.sint64 = function (e) {
-    var t = l.from(e).zzEncode();
-    return this._push(m, t.length(), t);
-  }, f.prototype.bool = function (e) {
-    return this._push(p, 1, e ? 1 : 0);
-  }, f.prototype.fixed32 = function (e) {
-    return this._push(v, 4, e >>> 0);
-  }, f.prototype.sfixed32 = f.prototype.fixed32, f.prototype.fixed64 = function (e) {
-    var t = l.from(e);
-    return this._push(v, 4, t.lo)._push(v, 4, t.hi);
-  }, f.prototype.sfixed64 = f.prototype.fixed64, f.prototype.float = function (e) {
-    return this._push(a.float.writeFloatLE, 4, e);
-  }, f.prototype.double = function (e) {
-    return this._push(a.float.writeDoubleLE, 8, e);
-  };
-  var y = a.Array.prototype.set ? function (e, t, n) {
-    t.set(e, n);
-  } : function (e, t, n) {
-    for (var r = 0; r < e.length; ++r) t[n + r] = e[r];
-  };
-  f.prototype.bytes = function (e) {
-    var t = e.length >>> 0;
-    if (!t) return this._push(p, 1, 0);
-    if (a.isString(e)) {
-      var n = f.alloc(t = o.length(e));
-      o.decode(e, n, 0), e = n;
-    }
-    return this.uint32(t)._push(y, t, e);
-  }, f.prototype.string = function (e) {
-    var t = i.length(e);
-    return t ? this.uint32(t)._push(i.write, t, e) : this._push(p, 1, 0);
-  }, f.prototype.fork = function () {
-    return this.states = new c(this), this.head = this.tail = new u(s, 0, 0), this.len = 0, this;
-  }, f.prototype.reset = function () {
-    return this.states ? (this.head = this.states.head, this.tail = this.states.tail, this.len = this.states.len, this.states = this.states.next) : (this.head = this.tail = new u(s, 0, 0), this.len = 0), this;
-  }, f.prototype.ldelim = function () {
-    var e = this.head,
-      t = this.tail,
-      n = this.len;
-    return this.reset().uint32(n), n && (this.tail.next = e.next, this.tail = t, this.len += n), this;
-  }, f.prototype.finish = function () {
-    for (var e = this.head.next, t = this.constructor.alloc(this.len), n = 0; e;) e.fn(e.val, t, n), n += e.len, e = e.next;
-    return t;
-  }, f._configure = function (e) {
-    r = e, f.create = d(), r._configure();
-  };
-},
-9716: function (e, t, n) {
-  "use strict";
-
-  var r = t;
-  function a(e, t, n) {
-    for (var r = Object.keys(t), a = 0; a < r.length; ++a) void 0 !== e[r[a]] && n || (e[r[a]] = t[r[a]]);
-    return e;
-  }
-  function l(e) {
-    function t(e, n) {
-      if (!(this instanceof t)) return new t(e, n);
-      Object.defineProperty(this, "message", {
-        get: function () {
-          return e;
-        }
-      }), Error.captureStackTrace ? Error.captureStackTrace(this, t) : Object.defineProperty(this, "stack", {
-        value: new Error().stack || ""
-      }), n && a(this, n);
-    }
-    return t.prototype = Object.create(Error.prototype, {
-      constructor: {
-        value: t,
-        writable: !0,
-        enumerable: !1,
-        configurable: !0
-      },
-      name: {
-        get: function () {
-          return e;
-        },
-        set: void 0,
-        enumerable: !1,
-        configurable: !0
-      },
-      toString: {
-        value: function () {
-          return this.name + ": " + this.message;
-        },
-        writable: !0,
-        enumerable: !1,
-        configurable: !0
-      }
-    }), t;
-  }
-  r.asPromise = n(7223), r.base64 = n(1938), r.EventEmitter = n(6597), r.float = n(2678), r.inquire = n(7640), r.utf8 = n(2842), r.pool = n(110), r.LongBits = n(6112), r.isNode = Boolean("undefined" !== typeof n.g && n.g && n.g.process && n.g.process.versions && n.g.process.versions.node), r.global = r.isNode && n.g || "undefined" !== typeof window && window || "undefined" !== typeof self && self || this, r.emptyArray = Object.freeze ? Object.freeze([]) : [], r.emptyObject = Object.freeze ? Object.freeze({}) : {}, r.isInteger = Number.isInteger || function (e) {
-    return "number" === typeof e && isFinite(e) && Math.floor(e) === e;
-  }, r.isString = function (e) {
-    return "string" === typeof e || e instanceof String;
-  }, r.isObject = function (e) {
-    return e && "object" === typeof e;
-  }, r.isset = r.isSet = function (e, t) {
-    var n = e[t];
-    return !(null == n || !e.hasOwnProperty(t)) && ("object" !== typeof n || (Array.isArray(n) ? n.length : Object.keys(n).length) > 0);
-  }, r.Buffer = function () {
-    try {
-      var e = r.inquire("buffer").Buffer;
-      return e.prototype.utf8Write ? e : null;
-    } catch (t) {
-      return null;
-    }
-  }(), r._Buffer_from = null, r._Buffer_allocUnsafe = null, r.newBuffer = function (e) {
-    return "number" === typeof e ? r.Buffer ? r._Buffer_allocUnsafe(e) : new r.Array(e) : r.Buffer ? r._Buffer_from(e) : "undefined" === typeof Uint8Array ? e : new Uint8Array(e);
-  }, r.Array = "undefined" !== typeof Uint8Array ? Uint8Array : Array, r.Long = r.global.dcodeIO && r.global.dcodeIO.Long || r.global.Long || r.inquire("long"), r.key2Re = /^true|false|0|1$/, r.key32Re = /^-?(?:0|[1-9][0-9]*)$/, r.key64Re = /^(?:[\\x00-\\xff]{8}|-?(?:0|[1-9][0-9]*))$/, r.longToHash = function (e) {
-    return e ? r.LongBits.from(e).toHash() : r.LongBits.zeroHash;
-  }, r.longFromHash = function (e, t) {
-    var n = r.LongBits.fromHash(e);
-    return r.Long ? r.Long.fromBits(n.lo, n.hi, t) : n.toNumber(Boolean(t));
-  }, r.merge = a, r.lcFirst = function (e) {
-    return e.charAt(0).toLowerCase() + e.substring(1);
-  }, r.newError = l, r.ProtocolError = l("ProtocolError"), r.oneOfGetter = function (e) {
-    for (var t = {}, n = 0; n < e.length; ++n) t[e[n]] = 1;
-    return function () {
-      for (var e = Object.keys(this), n = e.length - 1; n > -1; --n) if (1 === t[e[n]] && void 0 !== this[e[n]] && null !== this[e[n]]) return e[n];
-    };
-  }, r.oneOfSetter = function (e) {
-    return function (t) {
-      for (var n = 0; n < e.length; ++n) e[n] !== t && delete this[e[n]];
-    };
-  }, r.toJSONOptions = {
-    longs: String,
-    enums: String,
-    bytes: String,
-    json: !0
-  }, r._configure = function () {
-    var e = r.Buffer;
-    e ? (r._Buffer_from = e.from !== Uint8Array.from && e.from || function (t, n) {
-      return new e(t, n);
-    }, r._Buffer_allocUnsafe = e.allocUnsafe || function (t) {
-      return new e(t);
-    }) : r._Buffer_from = r._Buffer_allocUnsafe = null;
-  };
-},
-7223: function (e) {
-  "use strict";
-
-  e.exports = function (e, t) {
-    var n = new Array(arguments.length - 1),
-      r = 0,
-      a = 2,
-      l = !0;
-    for (; a < arguments.length;) n[r++] = arguments[a++];
-    return new Promise(function (a, o) {
-      n[r] = function (e) {
-        if (l) if (l = !1, e) o(e);else {
-          for (var t = new Array(arguments.length - 1), n = 0; n < t.length;) t[n++] = arguments[n];
-          a.apply(null, t);
-        }
-      };
-      try {
-        e.apply(t || null, n);
-      } catch (i) {
-        l && (l = !1, o(i));
-      }
-    });
-  };
-},
-1938: function (e, t) {
-  "use strict";
-
-  var n = t;
-  n.length = function (e) {
-    var t = e.length;
-    if (!t) return 0;
-    for (var n = 0; --t % 4 > 1 && "=" === e.charAt(t);) ++n;
-    return Math.ceil(3 * e.length) / 4 - n;
-  };
-  for (var r = new Array(64), a = new Array(123), l = 0; l < 64;) a[r[l] = l < 26 ? l + 65 : l < 52 ? l + 71 : l < 62 ? l - 4 : l - 59 | 43] = l++;
-  n.encode = function (e, t, n) {
-    for (var a, l = null, o = [], i = 0, u = 0; t < n;) {
-      var s = e[t++];
-      switch (u) {
-        case 0:
-          o[i++] = r[s >> 2], a = (3 & s) << 4, u = 1;
-          break;
-        case 1:
-          o[i++] = r[a | s >> 4], a = (15 & s) << 2, u = 2;
-          break;
-        case 2:
-          o[i++] = r[a | s >> 6], o[i++] = r[63 & s], u = 0;
-      }
-      i > 8191 && ((l || (l = [])).push(String.fromCharCode.apply(String, o)), i = 0);
-    }
-    return u && (o[i++] = r[a], o[i++] = 61, 1 === u && (o[i++] = 61)), l ? (i && l.push(String.fromCharCode.apply(String, o.slice(0, i))), l.join("")) : String.fromCharCode.apply(String, o.slice(0, i));
-  };
-  var o = "invalid encoding";
-  n.decode = function (e, t, n) {
-    for (var r, l = n, i = 0, u = 0; u < e.length;) {
-      var s = e.charCodeAt(u++);
-      if (61 === s && i > 1) break;
-      if (void 0 === (s = a[s])) throw Error(o);
-      switch (i) {
-        case 0:
-          r = s, i = 1;
-          break;
-        case 1:
-          t[n++] = r << 2 | (48 & s) >> 4, r = s, i = 2;
-          break;
-        case 2:
-          t[n++] = (15 & r) << 4 | (60 & s) >> 2, r = s, i = 3;
-          break;
-        case 3:
-          t[n++] = (3 & r) << 6 | s, i = 0;
-      }
-    }
-    if (1 === i) throw Error(o);
-    return n - l;
-  }, n.test = function (e) {
-    return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(e);
-  };
-},
-6597: function (e) {
-  "use strict";
-
-  function t() {
-    this._listeners = {};
-  }
-  e.exports = t, t.prototype.on = function (e, t, n) {
-    return (this._listeners[e] || (this._listeners[e] = [])).push({
-      fn: t,
-      ctx: n || this
-    }), this;
-  }, t.prototype.off = function (e, t) {
-    if (void 0 === e) this._listeners = {};else if (void 0 === t) this._listeners[e] = [];else for (var n = this._listeners[e], r = 0; r < n.length;) n[r].fn === t ? n.splice(r, 1) : ++r;
-    return this;
-  }, t.prototype.emit = function (e) {
-    var t = this._listeners[e];
-    if (t) {
-      for (var n = [], r = 1; r < arguments.length;) n.push(arguments[r++]);
-      for (r = 0; r < t.length;) t[r].fn.apply(t[r++].ctx, n);
-    }
-    return this;
-  };
-},
-2678: function (e) {
-  "use strict";
-
-  function t(e) {
-    return "undefined" !== typeof Float32Array ? function () {
-      var t = new Float32Array([-0]),
-        n = new Uint8Array(t.buffer),
-        r = 128 === n[3];
-      function a(e, r, a) {
-        t[0] = e, r[a] = n[0], r[a + 1] = n[1], r[a + 2] = n[2], r[a + 3] = n[3];
-      }
-      function l(e, r, a) {
-        t[0] = e, r[a] = n[3], r[a + 1] = n[2], r[a + 2] = n[1], r[a + 3] = n[0];
-      }
-      function o(e, r) {
-        return n[0] = e[r], n[1] = e[r + 1], n[2] = e[r + 2], n[3] = e[r + 3], t[0];
-      }
-      function i(e, r) {
-        return n[3] = e[r], n[2] = e[r + 1], n[1] = e[r + 2], n[0] = e[r + 3], t[0];
-      }
-      e.writeFloatLE = r ? a : l, e.writeFloatBE = r ? l : a, e.readFloatLE = r ? o : i, e.readFloatBE = r ? i : o;
-    }() : function () {
-      function t(e, t, n, r) {
-        var a = t < 0 ? 1 : 0;
-        if (a && (t = -t), 0 === t) e(1 / t > 0 ? 0 : 2147483648, n, r);else if (isNaN(t)) e(2143289344, n, r);else if (t > 34028234663852886e22) e((a << 31 | 2139095040) >>> 0, n, r);else if (t < 11754943508222875e-54) e((a << 31 | Math.round(t / 1401298464324817e-60)) >>> 0, n, r);else {
-          var l = Math.floor(Math.log(t) / Math.LN2);
-          e((a << 31 | l + 127 << 23 | 8388607 & Math.round(t * Math.pow(2, -l) * 8388608)) >>> 0, n, r);
-        }
-      }
-      function o(e, t, n) {
-        var r = e(t, n),
-          a = 2 * (r >> 31) + 1,
-          l = r >>> 23 & 255,
-          o = 8388607 & r;
-        return 255 === l ? o ? NaN : a * (1 / 0) : 0 === l ? 1401298464324817e-60 * a * o : a * Math.pow(2, l - 150) * (o + 8388608);
-      }
-      e.writeFloatLE = t.bind(null, n), e.writeFloatBE = t.bind(null, r), e.readFloatLE = o.bind(null, a), e.readFloatBE = o.bind(null, l);
-    }(), "undefined" !== typeof Float64Array ? function () {
-      var t = new Float64Array([-0]),
-        n = new Uint8Array(t.buffer),
-        r = 128 === n[7];
-      function a(e, r, a) {
-        t[0] = e, r[a] = n[0], r[a + 1] = n[1], r[a + 2] = n[2], r[a + 3] = n[3], r[a + 4] = n[4], r[a + 5] = n[5], r[a + 6] = n[6], r[a + 7] = n[7];
-      }
-      function l(e, r, a) {
-        t[0] = e, r[a] = n[7], r[a + 1] = n[6], r[a + 2] = n[5], r[a + 3] = n[4], r[a + 4] = n[3], r[a + 5] = n[2], r[a + 6] = n[1], r[a + 7] = n[0];
-      }
-      function o(e, r) {
-        return n[0] = e[r], n[1] = e[r + 1], n[2] = e[r + 2], n[3] = e[r + 3], n[4] = e[r + 4], n[5] = e[r + 5], n[6] = e[r + 6], n[7] = e[r + 7], t[0];
-      }
-      function i(e, r) {
-        return n[7] = e[r], n[6] = e[r + 1], n[5] = e[r + 2], n[4] = e[r + 3], n[3] = e[r + 4], n[2] = e[r + 5], n[1] = e[r + 6], n[0] = e[r + 7], t[0];
-      }
-      e.writeDoubleLE = r ? a : l, e.writeDoubleBE = r ? l : a, e.readDoubleLE = r ? o : i, e.readDoubleBE = r ? i : o;
-    }() : function () {
-      function t(e, t, n, r, a, l) {
-        var o = r < 0 ? 1 : 0;
-        if (o && (r = -r), 0 === r) e(0, a, l + t), e(1 / r > 0 ? 0 : 2147483648, a, l + n);else if (isNaN(r)) e(0, a, l + t), e(2146959360, a, l + n);else if (r > 17976931348623157e292) e(0, a, l + t), e((o << 31 | 2146435072) >>> 0, a, l + n);else {
-          var i;
-          if (r < 22250738585072014e-324) e((i = r / 5e-324) >>> 0, a, l + t), e((o << 31 | i / 4294967296) >>> 0, a, l + n);else {
-            var u = Math.floor(Math.log(r) / Math.LN2);
-            1024 === u && (u = 1023), e(4503599627370496 * (i = r * Math.pow(2, -u)) >>> 0, a, l + t), e((o << 31 | u + 1023 << 20 | 1048576 * i & 1048575) >>> 0, a, l + n);
-          }
-        }
-      }
-      function o(e, t, n, r, a) {
-        var l = e(r, a + t),
-          o = e(r, a + n),
-          i = 2 * (o >> 31) + 1,
-          u = o >>> 20 & 2047,
-          s = 4294967296 * (1048575 & o) + l;
-        return 2047 === u ? s ? NaN : i * (1 / 0) : 0 === u ? 5e-324 * i * s : i * Math.pow(2, u - 1075) * (s + 4503599627370496);
-      }
-      e.writeDoubleLE = t.bind(null, n, 0, 4), e.writeDoubleBE = t.bind(null, r, 4, 0), e.readDoubleLE = o.bind(null, a, 0, 4), e.readDoubleBE = o.bind(null, l, 4, 0);
-    }(), e;
-  }
-  function n(e, t, n) {
-    t[n] = 255 & e, t[n + 1] = e >>> 8 & 255, t[n + 2] = e >>> 16 & 255, t[n + 3] = e >>> 24;
-  }
-  function r(e, t, n) {
-    t[n] = e >>> 24, t[n + 1] = e >>> 16 & 255, t[n + 2] = e >>> 8 & 255, t[n + 3] = 255 & e;
-  }
-  function a(e, t) {
-    return (e[t] | e[t + 1] << 8 | e[t + 2] << 16 | e[t + 3] << 24) >>> 0;
-  }
-  function l(e, t) {
-    return (e[t] << 24 | e[t + 1] << 16 | e[t + 2] << 8 | e[t + 3]) >>> 0;
-  }
-  e.exports = t(t);
-},
-7640: function (module) {
-  module.exports = function (name) {
-    return name === "buffer" && typeof Buffer !== "undefined" ? {
-      Buffer
-    } : null;
-  };
-},
-2842: function (e, t) {
-  "use strict";
-
-  var n = t;
-  n.length = function (e) {
-    for (var t = 0, n = 0, r = 0; r < e.length; ++r) (n = e.charCodeAt(r)) < 128 ? t += 1 : n < 2048 ? t += 2 : 55296 === (64512 & n) && 56320 === (64512 & e.charCodeAt(r + 1)) ? (++r, t += 4) : t += 3;
-    return t;
-  }, n.read = function (e, t, n) {
-    if (n - t < 1) return "";
-    for (var r, a = null, l = [], o = 0; t < n;) (r = e[t++]) < 128 ? l[o++] = r : r > 191 && r < 224 ? l[o++] = (31 & r) << 6 | 63 & e[t++] : r > 239 && r < 365 ? (r = ((7 & r) << 18 | (63 & e[t++]) << 12 | (63 & e[t++]) << 6 | 63 & e[t++]) - 65536, l[o++] = 55296 + (r >> 10), l[o++] = 56320 + (1023 & r)) : l[o++] = (15 & r) << 12 | (63 & e[t++]) << 6 | 63 & e[t++], o > 8191 && ((a || (a = [])).push(String.fromCharCode.apply(String, l)), o = 0);
-    return a ? (o && a.push(String.fromCharCode.apply(String, l.slice(0, o))), a.join("")) : String.fromCharCode.apply(String, l.slice(0, o));
-  }, n.write = function (e, t, n) {
-    for (var r, a, l = n, o = 0; o < e.length; ++o) (r = e.charCodeAt(o)) < 128 ? t[n++] = r : r < 2048 ? (t[n++] = r >> 6 | 192, t[n++] = 63 & r | 128) : 55296 === (64512 & r) && 56320 === (64512 & (a = e.charCodeAt(o + 1))) ? (r = 65536 + ((1023 & r) << 10) + (1023 & a), ++o, t[n++] = r >> 18 | 240, t[n++] = r >> 12 & 63 | 128, t[n++] = r >> 6 & 63 | 128, t[n++] = 63 & r | 128) : (t[n++] = r >> 12 | 224, t[n++] = r >> 6 & 63 | 128, t[n++] = 63 & r | 128);
-    return n - l;
-  };
-},
-110: function (e) {
-  "use strict";
-
-  e.exports = function (e, t, n) {
-    var r = n || 8192,
-      a = r >>> 1,
-      l = null,
-      o = r;
-    return function (n) {
-      if (n < 1 || n > a) return e(n);
-      o + n > r && (l = e(r), o = 0);
-      var i = t.call(l, o, o += n);
-      return 7 & o && (o = 1 + (7 | o)), i;
-    };
-  };
-},
-6112: function (e, t, n) {
-  "use strict";
-
-  e.exports = a;
-  var r = n(9716);
-  function a(e, t) {
-    this.lo = e >>> 0, this.hi = t >>> 0;
-  }
-  var l = a.zero = new a(0, 0);
-  l.toNumber = function () {
-    return 0;
-  }, l.zzEncode = l.zzDecode = function () {
-    return this;
-  }, l.length = function () {
-    return 1;
-  };
-  var o = a.zeroHash = "\0\0\0\0\0\0\0\0";
-  a.fromNumber = function (e) {
-    if (0 === e) return l;
-    var t = e < 0;
-    t && (e = -e);
-    var n = e >>> 0,
-      r = (e - n) / 4294967296 >>> 0;
-    return t && (r = ~r >>> 0, n = ~n >>> 0, ++n > 4294967295 && (n = 0, ++r > 4294967295 && (r = 0))), new a(n, r);
-  }, a.from = function (e) {
-    if ("number" === typeof e) return a.fromNumber(e);
-    if (r.isString(e)) {
-      if (!r.Long) return a.fromNumber(parseInt(e, 10));
-      e = r.Long.fromString(e);
-    }
-    return e.low || e.high ? new a(e.low >>> 0, e.high >>> 0) : l;
-  }, a.prototype.toNumber = function (e) {
-    if (!e && this.hi >>> 31) {
-      var t = 1 + ~this.lo >>> 0,
-        n = ~this.hi >>> 0;
-      return t || (n = n + 1 >>> 0), -(t + 4294967296 * n);
-    }
-    return this.lo + 4294967296 * this.hi;
-  }, a.prototype.toLong = function (e) {
-    return r.Long ? new r.Long(0 | this.lo, 0 | this.hi, Boolean(e)) : {
-      low: 0 | this.lo,
-      high: 0 | this.hi,
-      unsigned: Boolean(e)
-    };
-  };
-  var i = String.prototype.charCodeAt;
-  a.fromHash = function (e) {
-    return e === o ? l : new a((i.call(e, 0) | i.call(e, 1) << 8 | i.call(e, 2) << 16 | i.call(e, 3) << 24) >>> 0, (i.call(e, 4) | i.call(e, 5) << 8 | i.call(e, 6) << 16 | i.call(e, 7) << 24) >>> 0);
-  }, a.prototype.toHash = function () {
-    return String.fromCharCode(255 & this.lo, this.lo >>> 8 & 255, this.lo >>> 16 & 255, this.lo >>> 24, 255 & this.hi, this.hi >>> 8 & 255, this.hi >>> 16 & 255, this.hi >>> 24);
-  }, a.prototype.zzEncode = function () {
-    var e = this.hi >> 31;
-    return this.hi = ((this.hi << 1 | this.lo >>> 31) ^ e) >>> 0, this.lo = (this.lo << 1 ^ e) >>> 0, this;
-  }, a.prototype.zzDecode = function () {
-    var e = -(1 & this.lo);
-    return this.lo = ((this.lo >>> 1 | this.hi << 31) ^ e) >>> 0, this.hi = (this.hi >>> 1 ^ e) >>> 0, this;
-  }, a.prototype.length = function () {
-    var e = this.lo,
-      t = (this.lo >>> 28 | this.hi << 4) >>> 0,
-      n = this.hi >>> 24;
-    return 0 === n ? 0 === t ? e < 16384 ? e < 128 ? 1 : 2 : e < 2097152 ? 3 : 4 : t < 16384 ? t < 128 ? 5 : 6 : t < 2097152 ? 7 : 8 : n < 128 ? 9 : 10;
-  };
-},
-2149: function (e, t, n) {
-  "use strict";
-
-  e.exports = l;
-  var r = n(8050);
-  (l.prototype = Object.create(r.prototype)).constructor = l;
-  var a = n(9716);
-  function l() {
-    r.call(this);
-  }
-  function o(e, t, n) {
-    e.length < 40 ? a.utf8.write(e, t, n) : t.utf8Write ? t.utf8Write(e, n) : t.write(e, n);
-  }
-  l._configure = function () {
-    l.alloc = a._Buffer_allocUnsafe, l.writeBytesBuffer = a.Buffer && a.Buffer.prototype instanceof Uint8Array && "set" === a.Buffer.prototype.set.name ? function (e, t, n) {
-      t.set(e, n);
-    } : function (e, t, n) {
-      if (e.copy) e.copy(t, n, 0, e.length);else for (var r = 0; r < e.length;) t[n++] = e[r++];
-    };
-  }, l.prototype.bytes = function (e) {
-    a.isString(e) && (e = a._Buffer_from(e, "base64"));
-    var t = e.length >>> 0;
-    return this.uint32(t), t && this._push(l.writeBytesBuffer, t, e), this;
-  }, l.prototype.string = function (e) {
-    var t = a.Buffer.byteLength(e);
-    return this.uint32(t), t && this._push(o, t, e), this;
-  }, l._configure();
-},
-2422: function (e, t, n) {
-  "use strict";
-
-  e.exports = u;
-  var r,
-    a = n(9716),
-    l = a.LongBits,
-    o = a.utf8;
-  function i(e, t) {
-    return RangeError("index out of range: " + e.pos + " + " + (t || 1) + " > " + e.len);
-  }
-  function u(e) {
-    this.buf = e, this.pos = 0, this.len = e.length;
-  }
-  var s = "undefined" !== typeof Uint8Array ? function (e) {
-      if (e instanceof Uint8Array || Array.isArray(e)) return new u(e);
-      throw Error("illegal buffer");
-    } : function (e) {
-      if (Array.isArray(e)) return new u(e);
-      throw Error("illegal buffer");
-    },
-    c = function () {
-      return a.Buffer ? function (e) {
-        return (u.create = function (e) {
-          return a.Buffer.isBuffer(e) ? new r(e) : s(e);
-        })(e);
-      } : s;
-    };
-  function f() {
-    var e = new l(0, 0),
-      t = 0;
-    if (!(this.len - this.pos > 4)) {
-      for (; t < 3; ++t) {
-        if (this.pos >= this.len) throw i(this);
-        if (e.lo = (e.lo | (127 & this.buf[this.pos]) << 7 * t) >>> 0, this.buf[this.pos++] < 128) return e;
-      }
-      return e.lo = (e.lo | (127 & this.buf[this.pos++]) << 7 * t) >>> 0, e;
-    }
-    for (; t < 4; ++t) if (e.lo = (e.lo | (127 & this.buf[this.pos]) << 7 * t) >>> 0, this.buf[this.pos++] < 128) return e;
-    if (e.lo = (e.lo | (127 & this.buf[this.pos]) << 28) >>> 0, e.hi = (e.hi | (127 & this.buf[this.pos]) >> 4) >>> 0, this.buf[this.pos++] < 128) return e;
-    if (t = 0, this.len - this.pos > 4) {
-      for (; t < 5; ++t) if (e.hi = (e.hi | (127 & this.buf[this.pos]) << 7 * t + 3) >>> 0, this.buf[this.pos++] < 128) return e;
-    } else for (; t < 5; ++t) {
-      if (this.pos >= this.len) throw i(this);
-      if (e.hi = (e.hi | (127 & this.buf[this.pos]) << 7 * t + 3) >>> 0, this.buf[this.pos++] < 128) return e;
-    }
-    throw Error("invalid varint encoding");
-  }
-  function d(e, t) {
-    return (e[t - 4] | e[t - 3] << 8 | e[t - 2] << 16 | e[t - 1] << 24) >>> 0;
-  }
-  function p() {
-    if (this.pos + 8 > this.len) throw i(this, 8);
-    return new l(d(this.buf, this.pos += 4), d(this.buf, this.pos += 4));
-  }
-  u.create = c(), u.prototype._slice = a.Array.prototype.subarray || a.Array.prototype.slice, u.prototype.uint32 = function () {
-    var e = 4294967295;
-    return function () {
-      if (e = (127 & this.buf[this.pos]) >>> 0, this.buf[this.pos++] < 128) return e;
-      if (e = (e | (127 & this.buf[this.pos]) << 7) >>> 0, this.buf[this.pos++] < 128) return e;
-      if (e = (e | (127 & this.buf[this.pos]) << 14) >>> 0, this.buf[this.pos++] < 128) return e;
-      if (e = (e | (127 & this.buf[this.pos]) << 21) >>> 0, this.buf[this.pos++] < 128) return e;
-      if (e = (e | (15 & this.buf[this.pos]) << 28) >>> 0, this.buf[this.pos++] < 128) return e;
-      if ((this.pos += 5) > this.len) throw this.pos = this.len, i(this, 10);
-      return e;
-    };
-  }(), u.prototype.int32 = function () {
-    return 0 | this.uint32();
-  }, u.prototype.sint32 = function () {
-    var e = this.uint32();
-    return e >>> 1 ^ -(1 & e) | 0;
-  }, u.prototype.bool = function () {
-    return 0 !== this.uint32();
-  }, u.prototype.fixed32 = function () {
-    if (this.pos + 4 > this.len) throw i(this, 4);
-    return d(this.buf, this.pos += 4);
-  }, u.prototype.sfixed32 = function () {
-    if (this.pos + 4 > this.len) throw i(this, 4);
-    return 0 | d(this.buf, this.pos += 4);
-  }, u.prototype.float = function () {
-    if (this.pos + 4 > this.len) throw i(this, 4);
-    var e = a.float.readFloatLE(this.buf, this.pos);
-    return this.pos += 4, e;
-  }, u.prototype.double = function () {
-    if (this.pos + 8 > this.len) throw i(this, 4);
-    var e = a.float.readDoubleLE(this.buf, this.pos);
-    return this.pos += 8, e;
-  }, u.prototype.bytes = function () {
-    var e = this.uint32(),
-      t = this.pos,
-      n = this.pos + e;
-    if (n > this.len) throw i(this, e);
-    return this.pos += e, Array.isArray(this.buf) ? this.buf.slice(t, n) : t === n ? new this.buf.constructor(0) : this._slice.call(this.buf, t, n);
-  }, u.prototype.string = function () {
-    var e = this.bytes();
-    return o.read(e, 0, e.length);
-  }, u.prototype.skip = function (e) {
-    if ("number" === typeof e) {
-      if (this.pos + e > this.len) throw i(this, e);
-      this.pos += e;
-    } else do {
-      if (this.pos >= this.len) throw i(this);
-    } while (128 & this.buf[this.pos++]);
-    return this;
-  }, u.prototype.skipType = function (e) {
-    switch (e) {
-      case 0:
-        this.skip();
-        break;
-      case 1:
-        this.skip(8);
-        break;
-      case 2:
-        this.skip(this.uint32());
-        break;
-      case 3:
-        for (; 4 !== (e = 7 & this.uint32());) this.skipType(e);
-        break;
-      case 5:
-        this.skip(4);
-        break;
-      default:
-        throw Error("invalid wire type " + e + " at offset " + this.pos);
-    }
-    return this;
-  }, u._configure = function (e) {
-    r = e, u.create = c(), r._configure();
-    var t = a.Long ? "toLong" : "toNumber";
-    a.merge(u.prototype, {
-      int64: function () {
-        return f.call(this)[t](!1);
-      },
-      uint64: function () {
-        return f.call(this)[t](!0);
-      },
-      sint64: function () {
-        return f.call(this).zzDecode()[t](!1);
-      },
-      fixed64: function () {
-        return p.call(this)[t](!0);
-      },
-      sfixed64: function () {
-        return p.call(this)[t](!1);
-      }
-    });
-  };
-},
-4148: function (e, t, n) {
-  "use strict";
-
-  e.exports = l;
-  var r = n(2422);
-  (l.prototype = Object.create(r.prototype)).constructor = l;
-  var a = n(9716);
-  function l(e) {
-    r.call(this, e);
-  }
-  l._configure = function () {
-    a.Buffer && (l.prototype._slice = a.Buffer.prototype.slice);
-  }, l.prototype.string = function () {
-    var e = this.uint32();
-    return this.buf.utf8Slice ? this.buf.utf8Slice(this.pos, this.pos = Math.min(this.pos + e, this.len)) : this.buf.toString("utf-8", this.pos, this.pos = Math.min(this.pos + e, this.len));
-  }, l._configure();
-},
-7523: function (e, t, n) {
-  "use strict";
-
-  t.Service = n(1331);
-},
-1331: function (e, t, n) {
-  "use strict";
-
-  e.exports = a;
-  var r = n(9716);
-  function a(e, t, n) {
-    if ("function" !== typeof e) throw TypeError("rpcImpl must be a function");
-    r.EventEmitter.call(this), this.rpcImpl = e, this.requestDelimited = Boolean(t), this.responseDelimited = Boolean(n);
-  }
-  (a.prototype = Object.create(r.EventEmitter.prototype)).constructor = a, a.prototype.rpcCall = function e(t, n, a, l, o) {
-    if (!l) throw TypeError("request must be specified");
-    var i = this;
-    if (!o) return r.asPromise(e, i, t, n, a, l);
-    if (i.rpcImpl) try {
-      return i.rpcImpl(t, n[i.requestDelimited ? "encodeDelimited" : "encode"](l).finish(), function (e, n) {
-        if (e) return i.emit("error", e, t), o(e);
-        if (null !== n) {
-          if (!(n instanceof a)) try {
-            n = a[i.responseDelimited ? "decodeDelimited" : "decode"](n);
-          } catch (e) {
-            return i.emit("error", e, t), o(e);
-          }
-          return i.emit("data", n, t), o(null, n);
-        }
-        i.end(!0);
-      });
-    } catch (u) {
-      return i.emit("error", u, t), void setTimeout(function () {
-        o(u);
-      }, 0);
-    } else setTimeout(function () {
-      o(Error("already ended"));
-    }, 0);
-  }, a.prototype.end = function (e) {
-    return this.rpcImpl && (e || this.rpcImpl(null, null, null), this.rpcImpl = null, this.emit("end").off()), this;
-  };
-},
-3107: function (e) {
-  "use strict";
-
-  e.exports = {};
 },
 6139: function (e, t, r) {
   r.d(t, {
@@ -2602,153 +10447,6 @@ export default {
       return w(e.rule, t);
     };
 },
-885: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    Z: function () {
-      return a;
-    }
-  });
-  var r = n(181);
-  function a(e, t) {
-    return function (e) {
-      if (Array.isArray(e)) return e;
-    }(e) || function (e, t) {
-      var n = null == e ? null : "undefined" !== typeof Symbol && e[Symbol.iterator] || e["@@iterator"];
-      if (null != n) {
-        var r,
-          a,
-          l = [],
-          o = !0,
-          i = !1;
-        try {
-          for (n = n.call(e); !(o = (r = n.next()).done) && (l.push(r.value), !t || l.length !== t); o = !0);
-        } catch (u) {
-          i = !0, a = u;
-        } finally {
-          try {
-            o || null == n.return || n.return();
-          } finally {
-            if (i) throw a;
-          }
-        }
-        return l;
-      }
-    }(e, t) || (0, r.Z)(e, t) || function () {
-      throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }();
-  }
-},
-181: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    Z: function () {
-      return a;
-    }
-  });
-  var r = n(907);
-  function a(e, t) {
-    if (e) {
-      if ("string" === typeof e) return (0, r.Z)(e, t);
-      var n = Object.prototype.toString.call(e).slice(8, -1);
-      return "Object" === n && e.constructor && (n = e.constructor.name), "Map" === n || "Set" === n ? Array.from(e) : "Arguments" === n || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? (0, r.Z)(e, t) : void 0;
-    }
-  }
-},
-907: function (e, t, n) {
-  "use strict";
-
-  function r(e, t) {
-    (null == t || t > e.length) && (t = e.length);
-    for (var n = 0, r = new Array(t); n < t; n++) r[n] = e[n];
-    return r;
-  }
-  n.d(t, {
-    Z: function () {
-      return r;
-    }
-  });
-},
-7762: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    Z: function () {
-      return a;
-    }
-  });
-  var r = n(181);
-  function a(e, t) {
-    var n = "undefined" !== typeof Symbol && e[Symbol.iterator] || e["@@iterator"];
-    if (!n) {
-      if (Array.isArray(e) || (n = (0, r.Z)(e)) || t && e && "number" === typeof e.length) {
-        n && (e = n);
-        var a = 0,
-          l = function () {};
-        return {
-          s: l,
-          n: function () {
-            return a >= e.length ? {
-              done: !0
-            } : {
-              done: !1,
-              value: e[a++]
-            };
-          },
-          e: function (e) {
-            throw e;
-          },
-          f: l
-        };
-      }
-      throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }
-    var o,
-      i = !0,
-      u = !1;
-    return {
-      s: function () {
-        n = n.call(e);
-      },
-      n: function () {
-        var e = n.next();
-        return i = e.done, e;
-      },
-      e: function (e) {
-        u = !0, o = e;
-      },
-      f: function () {
-        try {
-          i || null == n.return || n.return();
-        } finally {
-          if (u) throw o;
-        }
-      }
-    };
-  }
-},
-2982: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    Z: function () {
-      return l;
-    }
-  });
-  var r = n(907);
-  var a = n(181);
-  function l(e) {
-    return function (e) {
-      if (Array.isArray(e)) return (0, r.Z)(e);
-    }(e) || function (e) {
-      if ("undefined" !== typeof Symbol && null != e[Symbol.iterator] || null != e["@@iterator"]) return Array.from(e);
-    }(e) || (0, a.Z)(e) || function () {
-      throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-    }();
-  }
-},
 5911: function (e, t, r) {
   var n;
   r.d(t, {
@@ -2758,1199 +10456,6 @@ export default {
   }), function (e) {
     e[e.CallLandlord = 0] = "CallLandlord", e[e.WaitPlayer1 = 1] = "WaitPlayer1", e[e.WaitPlayer2 = 2] = "WaitPlayer2", e[e.WaitPlayer3 = 3] = "WaitPlayer3", e[e.WaitPlayer4 = 4] = "WaitPlayer4", e[e.Player1Win = 9] = "Player1Win", e[e.Player2Win = 10] = "Player2Win", e[e.Player3Win = 11] = "Player3Win", e[e.Player4Win = 12] = "Player4Win";
   }(n || (n = {}));
-},
-1413: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    Z: function () {
-      return l;
-    }
-  });
-  var r = n(4942);
-  function a(e, t) {
-    var n = Object.keys(e);
-    if (Object.getOwnPropertySymbols) {
-      var r = Object.getOwnPropertySymbols(e);
-      t && (r = r.filter(function (t) {
-        return Object.getOwnPropertyDescriptor(e, t).enumerable;
-      })), n.push.apply(n, r);
-    }
-    return n;
-  }
-  function l(e) {
-    for (var t = 1; t < arguments.length; t++) {
-      var n = null != arguments[t] ? arguments[t] : {};
-      t % 2 ? a(Object(n), !0).forEach(function (t) {
-        (0, r.Z)(e, t, n[t]);
-      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(n)) : a(Object(n)).forEach(function (t) {
-        Object.defineProperty(e, t, Object.getOwnPropertyDescriptor(n, t));
-      });
-    }
-    return e;
-  }
-},
-4942: function (e, t, n) {
-  "use strict";
-
-  function r(e, t, n) {
-    return t in e ? Object.defineProperty(e, t, {
-      value: n,
-      enumerable: !0,
-      configurable: !0,
-      writable: !0
-    }) : e[t] = n, e;
-  }
-  n.d(t, {
-    Z: function () {
-      return r;
-    }
-  });
-},
-7992: function (e, t, n) {
-  "use strict";
-
-  var companionAvatarBridge = n.bridge;
-  n.d(t, {
-    Yw: function () {
-      return m;
-    }
-  });
-  var i,
-    a = n(885),
-    r = n(7313),
-    o = n(3299),
-    s = n(5982),
-    c = n(4595),
-    l = n(2335),
-    u = n(3366),
-    d = n(6417);
-  !function (e) {
-    e[e.None = 0] = "None", e[e.OK = 1] = "OK", e[e.NO = 2] = "NO", e[e.AddPosition = 3] = "AddPosition", e[e.LetsStart = 4] = "LetsStart", e[e.SitBeforeAndStart = 5] = "SitBeforeAndStart", e[e.AreYouReady = 6] = "AreYouReady", e[e.WaitFiveMin = 7] = "WaitFiveMin", e[e.WaitThreeMin = 8] = "WaitThreeMin", e[e.WaitOneMin = 9] = "WaitOneMin", e[e.INeedLeave = 10] = "INeedLeave", e[e.Bye = 11] = "Bye", e[e.IHaveToHangUp = 12] = "IHaveToHangUp", e[e.MyLastGame = 13] = "MyLastGame", e[e.StartAgain = 14] = "StartAgain", e[e.BeQuick = 15] = "BeQuick", e[e.Wait30S = 16] = "Wait30S", e[e.Wait60S = 17] = "Wait60S", e[e.Wait120S = 18] = "Wait120S", e[e.WaitMore = 19] = "WaitMore", e[e.Proud = 20] = "Proud", e[e.Sad = 21] = "Sad", e[e.Help = 22] = "Help", e[e.Thanks = 23] = "Thanks", e[e.Haha = 24] = "Haha";
-  }(i || (i = {}));
-  var m = function (e, t) {
-      var n = e.playerList[t];
-      return n.state === i.IHaveToHangUp || n.offline && +new Date() - n.offlineTime > 6e4;
-    },
-    f = [i.WaitFiveMin, i.WaitThreeMin, i.WaitOneMin, i.IHaveToHangUp, i.Wait30S, i.Wait60S, i.Wait120S, i.WaitMore],
-    h = [[i.WaitFiveMin, 300], [i.WaitThreeMin, 180], [i.WaitOneMin, 60], [i.Wait30S, 30], [i.Wait60S, 60], [i.Wait120S, 120]],
-    x = ["", "\u597d\u554a", "\u62b1\u6b49\uff0c\u4e0d\u884c", "\u623f\u4e3b\u52a0\u4e2a\u4f4d\u7f6e", "\u5f00\u59cb\u5427", "\u5927\u5bb6\u5f80\u524d\u5750\uff0c\u4e0d\u7b49\u4e86\uff0c\u51c6\u5907\u5f00", "\u51c6\u5907\u597d\u4e86\u5417\uff1f\u8981\u5f00\u59cb\u4e86", "\u7b49\u4e94\u5206\u949f\u5f00", "\u7b49\u4e09\u5206\u949f\u5f00", "\u7b49\u4e00\u5206\u949f\u5f00", "\u6211\u6709\u4e8b\u4e0d\u73a9\u4e86\uff0c\u62dc\u62dc", "\u62dc\u62dc", "\u6211\u6302\u673a\u4e86\uff0c\u4f60\u4eec\u73a9", "\u6700\u540e\u4e00\u5c40\uff0c\u73a9\u5b8c\u8fd9\u5c40\u6211\u4e0b\u4e86", "\u518d\u6765\u4e00\u5c40", "\u8bf7\u64cd\u4f5c\u5feb\u4e00\u70b9", "\u7b49\u6211\u601d\u800330\u79d2", "\u7b49\u6211\u601d\u800360\u79d2", "\u7b49\u6211\u601d\u8003120\u79d2", "\u6211\u4e34\u65f6\u6709\u4e8b\uff0c\u7b49\u6211\u51e0\u5206\u949f", "\u563f\u563f", "\u545c\u545c", "\u9976\u547d", "\u8c22\u8c22", "\u54c8\u54c8"],
-    p = ["", "\ud83c\udd97", "\u274c", "\u2795", "\ud83c\udfae", "", "", "\u23f3", "\u23f3", "\u23f3", "\ud83d\udc4b", "\ud83d\udc4b", "\ud83c\udfc3", "\ud83d\udc4b", "\ud83c\udfae", "\ud83e\udd40", "\u23f3", "\u23f3", "\u23f3", "\ud83d\ude4f", "\ud83d\ude0e", "\ud83d\ude2d", "\ud83e\udd7a", "\ud83d\ude4f", "\ud83d\ude02"];
-  t.ZP = function (e) {
-    var t,
-      n,
-      m,
-      j,
-      y,
-      b,
-      g = e.room,
-      v = e.index,
-      w = e.isTurn,
-      W = e.className,
-      k = e.empty,
-      A = e.children,
-      z = e.send,
-      Z = e.player,
-      N = e.isMe,
-      L = e.isOwner,
-      C = e.position;
-    g && void 0 !== v && (Z = g.playerList[v], N = g.position === v + 1, L = g.owner === v + 1, void 0 === C && (C = v + 1));
-    var q = Z || {},
-      O = q.source,
-      T = void 0 === O ? 0 : O,
-      S = q.emoji,
-      D = void 0 === S ? "" : S,
-      I = (q.name, q.imgUrl),
-      P = void 0 === I ? "" : I,
-      E = q.offline,
-      U = (0, r.useState)(!1),
-      G = (0, a.Z)(U, 2),
-      M = G[0],
-      K = G[1],
-      B = (0, r.useState)(!1),
-      _ = (0, a.Z)(B, 2),
-      R = _[0],
-      H = _[1],
-      Y = (0, r.useState)(0),
-      Q = (0, a.Z)(Y, 2),
-      V = Q[0],
-      F = Q[1],
-      J = (0, r.useRef)(+new Date()),
-      X = (0, r.useRef)(null),
-      $ = (0, r.useRef)(0),
-      ee = !E,
-      te = (0, r.useMemo)(function () {
-        return !D || T && P ? D : (0, o.ZF)(D) ? (0, o.mY)(D) > o.Dj + 5 ? D.substring(0, 2) : D : "\ud83d\ude0a";
-      }, [D]),
-      ne = !T && !D,
-      ie = "absolute whitespace-nowrap px-1 translate-x-[-50%] rounded-full text-white text-xs ".concat(N ? "bg-orange-600" : "bg-gray-600"),
-      ae = null !== (t = Z) && void 0 !== t && t.state ? Math.ceil((+new Date() - Z.stateTime) / 1e3) : 999999,
-      re = !(null === (n = Z) || void 0 === n || !n.state) && ae < (f.includes(Z.state) ? 86400 : 30),
-      oe = !ne && !!z && (!N || !R),
-      se = (0, r.useState)(+new Date()),
-      ce = (0, a.Z)(se, 2),
-      le = ce[0],
-      ue = ce[1];
-    (0, r.useEffect)(function () {
-      H(!1), K(!1), F(0), ue(+new Date());
-    }, [T, D]), (0, r.useEffect)(function () {
-      var e;
-      if (null !== (e = Z) && void 0 !== e && e.state && !(+new Date() - J.current < 150 && ae > 3)) {
-        H(!0);
-        var t = window.setTimeout(function () {
-          H(!1);
-        }, 3e3);
-        return function () {
-          window.clearTimeout(t);
-        };
-      }
-    }, [null === (m = Z) || void 0 === m ? void 0 : m.stateTime]), (0, r.useEffect)(function () {
-      var e,
-        t,
-        n = null;
-      return re && null !== (e = Z) && void 0 !== e && e.stateTime && null !== (t = Z) && void 0 !== t && t.state && h.findIndex(function (e) {
-        var t;
-        return e[0] === (null === (t = Z) || void 0 === t ? void 0 : t.state) || 0;
-      }) >= 0 && (n = window.setInterval(function () {
-        var e = +new Date();
-        e - Z.stateTime > 303e3 ? (null !== n && window.clearInterval(n), n = null) : null !== n && ue(e);
-      }, 300)), function () {
-        null !== n && window.clearInterval(n), n = null;
-      };
-    }, [null === (j = Z) || void 0 === j ? void 0 : j.state, null === (y = Z) || void 0 === y ? void 0 : y.stateTime, re, h.findIndex(function (e) {
-      var t;
-      return e[0] === (null === (t = Z) || void 0 === t ? void 0 : t.state) || 0;
-    }) >= 0]);
-    var de = re && h.findIndex(function (e) {
-      var t;
-      return e[0] === (null === (t = Z) || void 0 === t ? void 0 : t.state) || 0;
-    }) >= 0 ? h.find(function (e) {
-      return e[0] === Z.state;
-    })[1] : 60;
-    return (0, d.jsxs)("div", {
-      id: g ? "userseat".concat(v) : void 0,
-      ref: X,
-      className: "relative box-shadow w-14 h-14 rounded-full border text-center flex items-center justify-center ".concat(W || ""),
-      children: [ne ? k : T && P ? (0, d.jsx)("div", {
-        className: "head-image",
-        style: {
-          backgroundImage: 'url("'.concat(P, '")')
-        }
-      }) : (0, d.jsx)("div", {
-        className: "text-2xl overflow-hidden",
-        children: te
-      }), L && (0, d.jsx)("div", {
-        className: "".concat(ie, " top-0 left-[7px]"),
-        children: "\u623f\u4e3b"
-      }), !!C && (0, d.jsx)("div", {
-        className: "".concat(ie, " font-mono top-[39px] left-[46px]"),
-        children: C
-      }), N ? (0, d.jsx)("div", {
-        className: "".concat(ie, " top-[39px] left-[7px]"),
-        children: "\u6211"
-      }) : !ne && (0, d.jsx)("div", {
-        className: "absolute left-[3px] top-[42px] border border-black rounded-full w-2.5 h-2.5 ".concat(ee ? "bg-green-500" : "bg-gray-500")
-      }), re && (0, d.jsx)("div", {
-        className: "absolute rounded-full w-4 h-4 leading-4 text-xs top-[20px] left-[-8px] text-black bg-white",
-        children: p[Z.state] || "\ud83d\udcac"
-      }), w && (0, d.jsx)("div", {
-        className: "absolute text-lg top-[-6px] left-[37px] text-black ".concat(N ? " game-swing" : ""),
-        children: "\u23f0\ufe0f"
-      }), re && h.findIndex(function (e) {
-        var t;
-        return e[0] === (null === (t = Z) || void 0 === t ? void 0 : t.state) || 0;
-      }) >= 0 && le - Z.stateTime < 1e3 * de && (0, d.jsx)("div", {
-        className: "absolute h-1 rounded-full bg-black",
-        style: {
-          width: 56,
-          top: -5
-        },
-        children: (0, d.jsx)("div", {
-          className: "absolute h-1 transition-all rounded-full bg-purple-400",
-          style: {
-            minWidth: 0,
-            maxWidth: 56,
-            width: 56 * (1 - (le - Z.stateTime) / 1e3 / de)
-          }
-        })
-      }), oe && (0, d.jsx)(c.Z, {
-        noStyle: !0,
-        className: "block absolute w-14 h-14 rounded-full",
-        onClick: function () {
-          if (M) K(!1);else if (X.current) {
-            var e = X.current.getBoundingClientRect(),
-              t = e.left + e.width / 2;
-            t - 120 < 1 ? F(120 - t + 1) : t + 120 > window.innerWidth - 1 && F(-(t + 120 - window.innerWidth + 1)), K(!0);
-          }
-        }
-      }), A, (0, d.jsxs)("div", {
-        className: "absolute w-0 h-0",
-        children: [R && !(null === (b = Z) || void 0 === b || !b.state) && (0, d.jsxs)("div", {
-          className: "relative translate-x-[-50%] translate-y-[-50%] break-all text-center min-w-[72px] px-1 py-0.5 border rounded text-white text-xs border-black bg-gray-700 bg-opacity-90",
-          style: {
-            zIndex: 1008
-          },
-          children: [f.includes(Z.state) ? ae < 4 ? "" : ae < 121 ? "".concat(ae, "\u79d2\u524d:") : ae < 3600 ? "".concat(Math.ceil(ae / 60), "\u5206\u949f\u524d:") : "".concat((ae / 3600).toFixed(1), "\u5c0f\u65f6\u524d:") : "", p[Z.state] || "\ud83d\udcac", x[Z.state]]
-        }), M && oe && (0, d.jsxs)("div", {
-          className: "relative border translate-x-[-50%] overflow-y-auto rounded text-white text-sm border-black bg-gray-700 bg-opacity-90",
-          style: {
-            left: V,
-            width: 240,
-            maxHeight: 450,
-            zIndex: 1009
-          },
-          children: [(0, d.jsx)("div", {
-            className: "text-center",
-            children: (0, d.jsx)(c.Z, {
-              small: !0,
-              className: "w-full",
-              onClick: function () {
-                return K(!1);
-              },
-              children: "\u5173\u95ed\u804a\u5929\u9762\u677f"
-            })
-          }), (0, d.jsx)("div", {
-            children: N ? x.map(function (e, t) {
-              var n;
-              if (!t) return null;
-              if (g) if (g.state) {
-                if (t === i.IHaveToHangUp && !["ccbs", "ktd", "bzm", "fxq", "lm", "dy"].includes(l.s_.key)) return null;
-                if ([i.AddPosition, i.LetsStart, i.SitBeforeAndStart, i.AreYouReady, i.WaitFiveMin, i.WaitThreeMin, i.WaitOneMin, i.INeedLeave, i.Bye].includes(t)) return null;
-              } else {
-                if (N && L && [i.AddPosition, i.LetsStart].includes(t)) return null;
-                if (N && !L && [i.SitBeforeAndStart, i.AreYouReady, i.WaitFiveMin, i.WaitThreeMin, i.WaitOneMin].includes(t)) return null;
-                if ([i.IHaveToHangUp, i.MyLastGame, i.StartAgain, i.BeQuick, i.Wait30S, i.Wait60S, i.Wait120S, i.WaitMore, i.Proud, i.Sad, i.Help, i.Thanks, i.Haha].includes(t)) return null;
-              }
-              return (0, d.jsx)(c.Z, {
-                className: "block w-full leading-6".concat(t === (null === (n = Z) || void 0 === n ? void 0 : n.state) && re && f.includes(Z.state) ? " text-red-400" : ""),
-                noStyle: !0,
-                onClick: function () {
-                  z(s.Z.PlayerUpdateUserInfo, {
-                    payload: t
-                  }), K(!1);
-                },
-                children: e
-              }, t);
-            }) : [["\u9001\ud83c\udf39", 3], ["\u9001\uD83D\uDC4D", 9], ["\u6254\ud83e\udd5a", 15], ["\u6254\ud83e\ude74", 15]].map(function (e, t) {
-              var n = (0, a.Z)(e, 2),
-                i = n[0],
-                r = n[1];
-              return (0, d.jsx)(c.Z, {
-                className: "block w-full leading-6",
-                noStyle: !0,
-                onClick: function () {
-                  K(false);
-                  companionAvatarBridge.interact?.(v, ["flower", "like", "egg", "slipper"][t]);
-                },
-                children: i
-              }, t);
-            })
-          })]
-        })]
-      })]
-    });
-  };
-},
-3299: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    Dj: function () {
-      return r;
-    },
-    Vo: function () {
-      return o;
-    },
-    ZF: function () {
-      return s;
-    },
-    mY: function () {
-      return a;
-    }
-  });
-  var i = new Map(),
-    a = function (e) {
-      var t = i.get(e);
-      if (t) return t;
-      var n = document.createElement("span");
-      n.setAttribute("aria-hidden", "true"), n.setAttribute("class", "absolute top-0 opacity-0"), n.setAttribute("style", 'font-size:16px!important;font-family:Consolas,"Liberation Mono","Courier New",monospace'), n.textContent = e, document.body.appendChild(n);
-      var a = n.clientWidth;
-      return document.body.removeChild(n), i.set(e, a), a;
-    },
-    r = typeof document === "undefined" ? 16 : a("😀"),
-    o = function (e, t) {
-      return function (e) {
-        return Math.abs(a(e) - r) < 7;
-      }(e) ? e : t;
-    },
-    s = function (e) {
-      return !new RegExp("\ud83c\uddf9\u200d?\ud83c\uddfc|[\\u" + "9a9a5c4c5c447fe07fd24e605201535267406bba6b7b4ea1827260278d4c8d3c8cca8ced6bd25ad65a3c903c64cd8279808f5993809b8fb17a2357fa9e2172d77f05819c86e48bc89a975f115a4a".match(/.{4}/g).join("\\u") + "]").test(e) && !["sb", "jb"].includes(e.toLowerCase());
-    };
-},
-4595: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    P: function () {
-      return l;
-    }
-  });
-  var i = n(1413),
-    a = n(7313),
-    r = n(7890),
-    o = n(9466),
-    s = n(161),
-    c = n(6417);
-  function l(e) {
-    var t = (0, r.s0)(),
-      n = (0, r.TH)().state,
-      i = null === n || void 0 === n ? void 0 : n.keepSession;
-    return function () {
-      i ? t(-1) : 1 === window.history.length ? t(e, {
-        replace: !0
-      }) : (t(e, {
-        replace: !0
-      }), t(e), t(-1));
-    };
-  }
-  function u(e) {
-    var t = e.to,
-      n = e.children,
-      i = e.className,
-      a = e.lastClickTime,
-      r = l(t);
-    return (0, c.jsx)(o.rU, {
-      to: t,
-      className: i,
-      onClick: function (e) {
-        if (0 === e.button && !(e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)) {
-          e.preventDefault();
-          var t = new Date().getTime();
-          t - a.current > 100 && (a.current = t, r());
-        }
-      },
-      children: n
-    });
-  }
-  t.Z = function (e) {
-    var t,
-      n = e.to,
-      r = e.state,
-      l = e.replace,
-      d = e.back,
-      m = e.children,
-      f = e.onClick,
-      h = e.disabled,
-      x = e.small,
-      p = e.primary,
-      j = e.noStyle,
-      y = e.className,
-      b = (0, a.useRef)(0),
-      g = n && !h;
-    j ? t = y || "" : (t = "inline-block flex-shrink-0 overflow-hidden whitespace-nowrap transition-colors rounded-full box-shadow ", t += x ? "h-6 leading-6 px-2 text-xs " : "h-10 leading-10 px-4 text-base ", t += h ? "text-black/40 bg-gray-200 cursor-not-allowed" : p ? "text-white primary" : "text-black/90 bg-slate-200/80 active:bg-slate-300/70", y && (t += " ".concat(y)));
-    var v = h || !f ? void 0 : function (e) {
-      if (g) {
-        if (0 !== e.button) return;
-        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-        e.preventDefault();
-      }
-      var t = new Date().getTime();
-      t - b.current > 100 && (b.current = t, f(e));
-    };
-    return g ? d ? (0, c.jsx)(u, {
-      to: n,
-      className: t,
-      lastClickTime: b,
-      children: m
-    }) : n.startsWith("http") ? s.ot && !n.startsWith("https://mp.weixin.qq.com") || s.ot && !s.at ? null : (0, c.jsx)("a", {
-      href: n,
-      target: "_blank",
-      rel: "noreferrer noopener",
-      className: t,
-      onClick: v,
-      children: m
-    }) : (0, c.jsx)(o.rU, {
-      to: n,
-      state: (0, i.Z)((0, i.Z)({}, r), {}, {
-        keepSession: !0
-      }),
-      replace: l,
-      className: t,
-      onClick: v,
-      children: m
-    }) : (0, c.jsx)("button", {
-      type: "button",
-      className: t,
-      onClick: v,
-      children: m,
-      disabled: h
-    });
-  };
-},
-7890: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    AW: function () {
-      return T;
-    },
-    F0: function () {
-      return R;
-    },
-    TH: function () {
-      return _;
-    },
-    UO: function () {
-      return N;
-    },
-    WU: function () {
-      return z;
-    },
-    Z5: function () {
-      return M;
-    },
-    j3: function () {
-      return L;
-    },
-    oQ: function () {
-      return x;
-    },
-    s0: function () {
-      return C;
-    }
-  });
-  var r = n(885),
-    a = n(5216),
-    l = n(7313),
-    o = (0, l.createContext)(null);
-  var i = (0, l.createContext)(null);
-  var u = (0, l.createContext)({
-    outlet: null,
-    matches: []
-  });
-  function s(e, t) {
-    if (!e) throw new Error(t);
-  }
-  function c(e, t, n) {
-    void 0 === n && (n = "/");
-    var r = g(("string" === typeof t ? (0, a.cP)(t) : t).pathname || "/", n);
-    if (null == r) return null;
-    var l = f(e);
-    !function (e) {
-      e.sort(function (e, t) {
-        return e.score !== t.score ? t.score - e.score : function (e, t) {
-          var n = e.length === t.length && e.slice(0, -1).every(function (e, n) {
-            return e === t[n];
-          });
-          return n ? e[e.length - 1] - t[t.length - 1] : 0;
-        }(e.routesMeta.map(function (e) {
-          return e.childrenIndex;
-        }), t.routesMeta.map(function (e) {
-          return e.childrenIndex;
-        }));
-      });
-    }(l);
-    for (var o = null, i = 0; null == o && i < l.length; ++i) o = m(l[i], r);
-    return o;
-  }
-  function f(e, t, n, r) {
-    return void 0 === t && (t = []), void 0 === n && (n = []), void 0 === r && (r = ""), e.forEach(function (e, a) {
-      var l = {
-        relativePath: e.path || "",
-        caseSensitive: !0 === e.caseSensitive,
-        childrenIndex: a,
-        route: e
-      };
-      l.relativePath.startsWith("/") && (l.relativePath.startsWith(r) || s(!1), l.relativePath = l.relativePath.slice(r.length));
-      var o = b([r, l.relativePath]),
-        i = n.concat(l);
-      e.children && e.children.length > 0 && (!0 === e.index && s(!1), f(e.children, t, i, o)), (null != e.path || e.index) && t.push({
-        path: o,
-        score: h(o, e.index),
-        routesMeta: i
-      });
-    }), t;
-  }
-  var d = /^:\w+$/,
-    p = function (e) {
-      return "*" === e;
-    };
-  function h(e, t) {
-    var n = e.split("/"),
-      r = n.length;
-    return n.some(p) && (r += -2), t && (r += 2), n.filter(function (e) {
-      return !p(e);
-    }).reduce(function (e, t) {
-      return e + (d.test(t) ? 3 : "" === t ? 1 : 10);
-    }, r);
-  }
-  function m(e, t) {
-    for (var n = e.routesMeta, r = {}, a = "/", l = [], o = 0; o < n.length; ++o) {
-      var i = n[o],
-        u = o === n.length - 1,
-        s = "/" === a ? t : t.slice(a.length) || "/",
-        c = v({
-          path: i.relativePath,
-          caseSensitive: i.caseSensitive,
-          end: u
-        }, s);
-      if (!c) return null;
-      Object.assign(r, c.params);
-      var f = i.route;
-      l.push({
-        params: r,
-        pathname: b([a, c.pathname]),
-        pathnameBase: w(b([a, c.pathnameBase])),
-        route: f
-      }), "/" !== c.pathnameBase && (a = b([a, c.pathnameBase]));
-    }
-    return l;
-  }
-  function v(e, t) {
-    "string" === typeof e && (e = {
-      path: e,
-      caseSensitive: !1,
-      end: !0
-    });
-    var n = function (e, t, n) {
-        void 0 === t && (t = !1);
-        void 0 === n && (n = !0);
-        var r = [],
-          a = "^" + e.replace(/\/*\*?$/, "").replace(/^\/*/, "/").replace(/[\\.*+^$?{}|()[\]]/g, "\\$&").replace(/:(\w+)/g, function (e, t) {
-            return r.push(t), "([^\\/]+)";
-          });
-        e.endsWith("*") ? (r.push("*"), a += "*" === e || "/*" === e ? "(.*)$" : "(?:\\/(.+)|\\/*)$") : a += n ? "\\/*$" : "(?:(?=[.~-]|%[0-9A-F]{2})|\\b|\\/|$)";
-        return [new RegExp(a, t ? void 0 : "i"), r];
-      }(e.path, e.caseSensitive, e.end),
-      a = (0, r.Z)(n, 2),
-      l = a[0],
-      o = a[1],
-      i = t.match(l);
-    if (!i) return null;
-    var u = i[0],
-      s = u.replace(/(.)\/+$/, "$1"),
-      c = i.slice(1);
-    return {
-      params: o.reduce(function (e, t, n) {
-        if ("*" === t) {
-          var r = c[n] || "";
-          s = u.slice(0, u.length - r.length).replace(/(.)\/+$/, "$1");
-        }
-        return e[t] = function (e, t) {
-          try {
-            return decodeURIComponent(e);
-          } catch (n) {
-            return e;
-          }
-        }(c[n] || ""), e;
-      }, {}),
-      pathname: u,
-      pathnameBase: s,
-      pattern: e
-    };
-  }
-  function y(e, t, n) {
-    var r,
-      l = "string" === typeof e ? (0, a.cP)(e) : e,
-      o = "" === e || "" === l.pathname ? "/" : l.pathname;
-    if (null == o) r = n;else {
-      var i = t.length - 1;
-      if (o.startsWith("..")) {
-        for (var u = o.split("/"); ".." === u[0];) u.shift(), i -= 1;
-        l.pathname = u.join("/");
-      }
-      r = i >= 0 ? t[i] : "/";
-    }
-    var s = function (e, t) {
-      void 0 === t && (t = "/");
-      var n = "string" === typeof e ? (0, a.cP)(e) : e,
-        r = n.pathname,
-        l = n.search,
-        o = void 0 === l ? "" : l,
-        i = n.hash,
-        u = void 0 === i ? "" : i,
-        s = r ? r.startsWith("/") ? r : function (e, t) {
-          var n = t.replace(/\/+$/, "").split("/");
-          return e.split("/").forEach(function (e) {
-            ".." === e ? n.length > 1 && n.pop() : "." !== e && n.push(e);
-          }), n.length > 1 ? n.join("/") : "/";
-        }(r, t) : t;
-      return {
-        pathname: s,
-        search: k(o),
-        hash: S(u)
-      };
-    }(l, r);
-    return o && "/" !== o && o.endsWith("/") && !s.pathname.endsWith("/") && (s.pathname += "/"), s;
-  }
-  function g(e, t) {
-    if ("/" === t) return e;
-    if (!e.toLowerCase().startsWith(t.toLowerCase())) return null;
-    var n = e.charAt(t.length);
-    return n && "/" !== n ? null : e.slice(t.length) || "/";
-  }
-  var b = function (e) {
-      return e.join("/").replace(/\/\/+/g, "/");
-    },
-    w = function (e) {
-      return e.replace(/\/+$/, "").replace(/^\/*/, "/");
-    },
-    k = function (e) {
-      return e && "?" !== e ? e.startsWith("?") ? e : "?" + e : "";
-    },
-    S = function (e) {
-      return e && "#" !== e ? e.startsWith("#") ? e : "#" + e : "";
-    };
-  function x(e) {
-    E() || s(!1);
-    var t = (0, l.useContext)(o),
-      n = t.basename,
-      r = t.navigator,
-      i = z(e),
-      u = i.hash,
-      c = i.pathname,
-      f = i.search,
-      d = c;
-    if ("/" !== n) {
-      var p = function (e) {
-          return "" === e || "" === e.pathname ? "/" : "string" === typeof e ? (0, a.cP)(e).pathname : e.pathname;
-        }(e),
-        h = null != p && p.endsWith("/");
-      d = "/" === c ? n + (h ? "/" : "") : b([n, c]);
-    }
-    return r.createHref({
-      pathname: d,
-      search: f,
-      hash: u
-    });
-  }
-  function E() {
-    return null != (0, l.useContext)(i);
-  }
-  function _() {
-    return E() || s(!1), (0, l.useContext)(i).location;
-  }
-  function C() {
-    E() || s(!1);
-    var e = (0, l.useContext)(o),
-      t = e.basename,
-      n = e.navigator,
-      r = (0, l.useContext)(u).matches,
-      a = _().pathname,
-      i = JSON.stringify(r.map(function (e) {
-        return e.pathnameBase;
-      })),
-      c = (0, l.useRef)(!1);
-    return (0, l.useEffect)(function () {
-      c.current = !0;
-    }), (0, l.useCallback)(function (e, r) {
-      if (void 0 === r && (r = {}), c.current) if ("number" !== typeof e) {
-        var l = y(e, JSON.parse(i), a);
-        "/" !== t && (l.pathname = b([t, l.pathname])), (r.replace ? n.replace : n.push)(l, r.state);
-      } else n.go(e);
-    }, [t, n, i, a]);
-  }
-  var P = (0, l.createContext)(null);
-  function N() {
-    var e = (0, l.useContext)(u).matches,
-      t = e[e.length - 1];
-    return t ? t.params : {};
-  }
-  function z(e) {
-    var t = (0, l.useContext)(u).matches,
-      n = _().pathname,
-      r = JSON.stringify(t.map(function (e) {
-        return e.pathnameBase;
-      }));
-    return (0, l.useMemo)(function () {
-      return y(e, JSON.parse(r), n);
-    }, [e, r, n]);
-  }
-  function O(e, t) {
-    return void 0 === t && (t = []), null == e ? null : e.reduceRight(function (n, r, a) {
-      return (0, l.createElement)(u.Provider, {
-        children: void 0 !== r.route.element ? r.route.element : n,
-        value: {
-          outlet: n,
-          matches: t.concat(e.slice(0, a + 1))
-        }
-      });
-    }, null);
-  }
-  function L(e) {
-    return function (e) {
-      var t = (0, l.useContext)(u).outlet;
-      return t ? (0, l.createElement)(P.Provider, {
-        value: e
-      }, t) : t;
-    }(e.context);
-  }
-  function T(e) {
-    s(!1);
-  }
-  function R(e) {
-    var t = e.basename,
-      n = void 0 === t ? "/" : t,
-      r = e.children,
-      u = void 0 === r ? null : r,
-      c = e.location,
-      f = e.navigationType,
-      d = void 0 === f ? a.aU.Pop : f,
-      p = e.navigator,
-      h = e.static,
-      m = void 0 !== h && h;
-    E() && s(!1);
-    var v = w(n),
-      y = (0, l.useMemo)(function () {
-        return {
-          basename: v,
-          navigator: p,
-          static: m
-        };
-      }, [v, p, m]);
-    "string" === typeof c && (c = (0, a.cP)(c));
-    var b = c,
-      k = b.pathname,
-      S = void 0 === k ? "/" : k,
-      x = b.search,
-      _ = void 0 === x ? "" : x,
-      C = b.hash,
-      P = void 0 === C ? "" : C,
-      N = b.state,
-      z = void 0 === N ? null : N,
-      O = b.key,
-      L = void 0 === O ? "default" : O,
-      T = (0, l.useMemo)(function () {
-        var e = g(S, v);
-        return null == e ? null : {
-          pathname: e,
-          search: _,
-          hash: P,
-          state: z,
-          key: L
-        };
-      }, [v, S, _, P, z, L]);
-    return null == T ? null : (0, l.createElement)(o.Provider, {
-      value: y
-    }, (0, l.createElement)(i.Provider, {
-      children: u,
-      value: {
-        location: T,
-        navigationType: d
-      }
-    }));
-  }
-  function M(e) {
-    var t = e.children,
-      n = e.location;
-    return function (e, t) {
-      E() || s(!1);
-      var n,
-        r = (0, l.useContext)(u).matches,
-        o = r[r.length - 1],
-        i = o ? o.params : {},
-        f = (o && o.pathname, o ? o.pathnameBase : "/"),
-        d = (o && o.route, _());
-      if (t) {
-        var p,
-          h = "string" === typeof t ? (0, a.cP)(t) : t;
-        "/" === f || (null == (p = h.pathname) ? void 0 : p.startsWith(f)) || s(!1), n = h;
-      } else n = d;
-      var m = n.pathname || "/",
-        v = c(e, {
-          pathname: "/" === f ? m : m.slice(f.length) || "/"
-        });
-      return O(v && v.map(function (e) {
-        return Object.assign({}, e, {
-          params: Object.assign({}, i, e.params),
-          pathname: b([f, e.pathname]),
-          pathnameBase: "/" === e.pathnameBase ? f : b([f, e.pathnameBase])
-        });
-      }), r);
-    }(F(t), n);
-  }
-  function F(e) {
-    var t = [];
-    return l.Children.forEach(e, function (e) {
-      if ((0, l.isValidElement)(e)) if (e.type !== l.Fragment) {
-        e.type !== T && s(!1);
-        var n = {
-          caseSensitive: e.props.caseSensitive,
-          element: e.props.element,
-          index: e.props.index,
-          path: e.props.path
-        };
-        e.props.children && (n.children = F(e.props.children)), t.push(n);
-      } else t.push.apply(t, F(e.props.children));
-    }), t;
-  }
-},
-5216: function (e, t, n) {
-  "use strict";
-
-  function r() {
-    return r = Object.assign ? Object.assign.bind() : function (e) {
-      for (var t = 1; t < arguments.length; t++) {
-        var n = arguments[t];
-        for (var r in n) Object.prototype.hasOwnProperty.call(n, r) && (e[r] = n[r]);
-      }
-      return e;
-    }, r.apply(this, arguments);
-  }
-  var a;
-  n.d(t, {
-    aU: function () {
-      return a;
-    },
-    lX: function () {
-      return u;
-    },
-    Ep: function () {
-      return d;
-    },
-    cP: function () {
-      return p;
-    }
-  }), function (e) {
-    e.Pop = "POP", e.Push = "PUSH", e.Replace = "REPLACE";
-  }(a || (a = {}));
-  var l = function (e) {
-    return e;
-  };
-  var o = "beforeunload",
-    i = "popstate";
-  function u(e) {
-    void 0 === e && (e = {});
-    var t = e.window,
-      n = void 0 === t ? document.defaultView : t,
-      u = n.history;
-    function h() {
-      var e = n.location,
-        t = e.pathname,
-        r = e.search,
-        a = e.hash,
-        o = u.state || {};
-      return [o.idx, l({
-        pathname: t,
-        search: r,
-        hash: a,
-        state: o.usr || null,
-        key: o.key || "default"
-      })];
-    }
-    var m = null;
-    n.addEventListener(i, function () {
-      if (m) k.call(m), m = null;else {
-        var e = a.Pop,
-          t = h(),
-          n = t[0],
-          r = t[1];
-        if (k.length) {
-          if (null != n) {
-            var l = g - n;
-            l && (m = {
-              action: e,
-              location: r,
-              retry: function () {
-                P(-1 * l);
-              }
-            }, P(l));
-          }
-        } else C(e);
-      }
-    });
-    var v = a.Pop,
-      y = h(),
-      g = y[0],
-      b = y[1],
-      w = c(),
-      k = c();
-    function S(e) {
-      return "string" === typeof e ? e : d(e);
-    }
-    function x(e, t) {
-      return void 0 === t && (t = null), l(r({
-        pathname: b.pathname,
-        hash: "",
-        search: ""
-      }, "string" === typeof e ? p(e) : e, {
-        state: t,
-        key: f()
-      }));
-    }
-    function E(e, t) {
-      return [{
-        usr: e.state,
-        key: e.key,
-        idx: t
-      }, S(e)];
-    }
-    function _(e, t, n) {
-      return !k.length || (k.call({
-        action: e,
-        location: t,
-        retry: n
-      }), !1);
-    }
-    function C(e) {
-      v = e;
-      var t = h();
-      g = t[0], b = t[1], w.call({
-        action: v,
-        location: b
-      });
-    }
-    function P(e) {
-      u.go(e);
-    }
-    null == g && (g = 0, u.replaceState(r({}, u.state, {
-      idx: g
-    }), ""));
-    var N = {
-      get action() {
-        return v;
-      },
-      get location() {
-        return b;
-      },
-      createHref: S,
-      push: function e(t, r) {
-        var l = a.Push,
-          o = x(t, r);
-        if (_(l, o, function () {
-          e(t, r);
-        })) {
-          var i = E(o, g + 1),
-            s = i[0],
-            c = i[1];
-          try {
-            u.pushState(s, "", c);
-          } catch (f) {
-            n.location.assign(c);
-          }
-          C(l);
-        }
-      },
-      replace: function e(t, n) {
-        var r = a.Replace,
-          l = x(t, n);
-        if (_(r, l, function () {
-          e(t, n);
-        })) {
-          var o = E(l, g),
-            i = o[0],
-            s = o[1];
-          u.replaceState(i, "", s), C(r);
-        }
-      },
-      go: P,
-      back: function () {
-        P(-1);
-      },
-      forward: function () {
-        P(1);
-      },
-      listen: function (e) {
-        return w.push(e);
-      },
-      block: function (e) {
-        var t = k.push(e);
-        return 1 === k.length && n.addEventListener(o, s), function () {
-          t(), k.length || n.removeEventListener(o, s);
-        };
-      }
-    };
-    return N;
-  }
-  function s(e) {
-    e.preventDefault(), e.returnValue = "";
-  }
-  function c() {
-    var e = [];
-    return {
-      get length() {
-        return e.length;
-      },
-      push: function (t) {
-        return e.push(t), function () {
-          e = e.filter(function (e) {
-            return e !== t;
-          });
-        };
-      },
-      call: function (t) {
-        e.forEach(function (e) {
-          return e && e(t);
-        });
-      }
-    };
-  }
-  function f() {
-    return Math.random().toString(36).substr(2, 8);
-  }
-  function d(e) {
-    var t = e.pathname,
-      n = void 0 === t ? "/" : t,
-      r = e.search,
-      a = void 0 === r ? "" : r,
-      l = e.hash,
-      o = void 0 === l ? "" : l;
-    return a && "?" !== a && (n += "?" === a.charAt(0) ? a : "?" + a), o && "#" !== o && (n += "#" === o.charAt(0) ? o : "#" + o), n;
-  }
-  function p(e) {
-    var t = {};
-    if (e) {
-      var n = e.indexOf("#");
-      n >= 0 && (t.hash = e.substr(n), e = e.substr(0, n));
-      var r = e.indexOf("?");
-      r >= 0 && (t.search = e.substr(r), e = e.substr(0, r)), e && (t.pathname = e);
-    }
-    return t;
-  }
-},
-9466: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    VK: function () {
-      return f;
-    },
-    lr: function () {
-      return p;
-    },
-    rU: function () {
-      return d;
-    }
-  });
-  var r = n(7762),
-    a = n(885),
-    l = n(7313),
-    o = n(5216),
-    i = n(7890);
-  function u() {
-    return u = Object.assign || function (e) {
-      for (var t = 1; t < arguments.length; t++) {
-        var n = arguments[t];
-        for (var r in n) Object.prototype.hasOwnProperty.call(n, r) && (e[r] = n[r]);
-      }
-      return e;
-    }, u.apply(this, arguments);
-  }
-  function s(e, t) {
-    if (null == e) return {};
-    var n,
-      r,
-      a = {},
-      l = Object.keys(e);
-    for (r = 0; r < l.length; r++) n = l[r], t.indexOf(n) >= 0 || (a[n] = e[n]);
-    return a;
-  }
-  var c = ["onClick", "reloadDocument", "replace", "state", "target", "to"];
-  function f(e) {
-    var t = e.basename,
-      n = e.children,
-      r = e.window,
-      u = (0, l.useRef)();
-    null == u.current && (u.current = (0, o.lX)({
-      window: r
-    }));
-    var s = u.current,
-      c = (0, l.useState)({
-        action: s.action,
-        location: s.location
-      }),
-      f = (0, a.Z)(c, 2),
-      d = f[0],
-      p = f[1];
-    return (0, l.useLayoutEffect)(function () {
-      return s.listen(p);
-    }, [s]), (0, l.createElement)(i.F0, {
-      basename: t,
-      children: n,
-      location: d.location,
-      navigationType: d.action,
-      navigator: s
-    });
-  }
-  var d = (0, l.forwardRef)(function (e, t) {
-    var n = e.onClick,
-      r = e.reloadDocument,
-      a = e.replace,
-      f = void 0 !== a && a,
-      d = e.state,
-      p = e.target,
-      h = e.to,
-      m = s(e, c),
-      v = (0, i.oQ)(h),
-      y = function (e, t) {
-        var n = void 0 === t ? {} : t,
-          r = n.target,
-          a = n.replace,
-          u = n.state,
-          s = (0, i.s0)(),
-          c = (0, i.TH)(),
-          f = (0, i.WU)(e);
-        return (0, l.useCallback)(function (t) {
-          if (0 === t.button && (!r || "_self" === r) && !function (e) {
-            return !!(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey);
-          }(t)) {
-            t.preventDefault();
-            var n = !!a || (0, o.Ep)(c) === (0, o.Ep)(f);
-            s(e, {
-              replace: n,
-              state: u
-            });
-          }
-        }, [c, s, f, a, u, r, e]);
-      }(h, {
-        replace: f,
-        state: d,
-        target: p
-      });
-    return (0, l.createElement)("a", u({}, m, {
-      href: v,
-      onClick: function (e) {
-        n && n(e), e.defaultPrevented || r || y(e);
-      },
-      ref: t,
-      target: p
-    }));
-  });
-  function p(e) {
-    var t = (0, l.useRef)(h(e)),
-      n = (0, i.TH)(),
-      a = (0, l.useMemo)(function () {
-        var e,
-          a = h(n.search),
-          l = (0, r.Z)(t.current.keys());
-        try {
-          var o = function () {
-            var n = e.value;
-            a.has(n) || t.current.getAll(n).forEach(function (e) {
-              a.append(n, e);
-            });
-          };
-          for (l.s(); !(e = l.n()).done;) o();
-        } catch (i) {
-          l.e(i);
-        } finally {
-          l.f();
-        }
-        return a;
-      }, [n.search]),
-      o = (0, i.s0)();
-    return [a, (0, l.useCallback)(function (e, t) {
-      o("?" + h(e), t);
-    }, [o])];
-  }
-  function h(e) {
-    return void 0 === e && (e = ""), new URLSearchParams("string" === typeof e || Array.isArray(e) || e instanceof URLSearchParams ? e : Object.keys(e).reduce(function (t, n) {
-      var r = e[n];
-      return t.concat(Array.isArray(r) ? r.map(function (e) {
-        return [n, e];
-      }) : [[n, r]]);
-    }, []));
-  }
 },
 3861: function (e, t, n) {
   "use strict";
@@ -6189,7 +12694,57 @@ export default {
       N = (0, d.zd)(_),
       I = (0, d.vr)(_),
       A = f.length;
-    return (0, S.jsx)("div", {
+    return companionBridge.trickCard ? (0, S.jsx)(companionBridge.trickCard, {
+      id: r,
+      children: (0, S.jsx)("div", {
+        className: "sgs-card-container ".concat(n || ""),
+        style: a,
+        children: (0, S.jsxs)("div", {
+          className: "sgs-card flex flex-col text-center border border-gray-300 bg-white rounded text-black cursor-pointer",
+          onClick: t,
+          children: [(0, S.jsxs)("div", {
+            className: "flex",
+            children: [(0, S.jsxs)("div", {
+              className: "w-6".concat(o < 2 ? " text-red-600" : ""),
+              children: [(0, S.jsx)("div", {
+                className: "font-bold leading-none text-xl",
+                children: d.uR[c]
+              }), (0, S.jsx)("div", {
+                className: "leading-none",
+                children: d.If[o]
+              })]
+            }), (0, S.jsxs)("div", {
+              className: "text-xs ml-auto mt-0.5 mr-1",
+              children: [(0, S.jsx)("div", {
+                children: ["", "\u9526\u56CA", "\u5EF6\u65F6", "\u6B66\u5668", "\u9632\u5177", "\u9A6C", "\u9A6C"][u]
+              }), !!I && (0, S.jsx)("div", {
+                className: "text-sm italic leading-none",
+                children: I > 8 ? "\u221E" : _ > 36 ? "+1" : I
+              })]
+            })]
+          }), (0, S.jsx)("div", {
+            className: "".concat(A < 3 ? "text-2xl " : "text-xl ").concat(l ? "text-left " : "", "whitespace-nowrap overflow-hidden leading-7 mx-1 mt-1 border rounded border-gray-300"),
+            children: f
+          }), (0, S.jsxs)("div", {
+            className: "".concat(l ? "text-left " : "", "mt-auto text-xs leading-none"),
+            children: [i && i.length ? (0, S.jsx)("div", {
+              children: i.map(function (e) {
+                return "[".concat(E.H[e][0], "] ");
+              }).join("")
+            }) : null, s ? "[\u5224]" : i && i.length ? null : N]
+          })],
+          role: "button",
+          tabIndex: 0,
+          onKeyDown: function (event) {
+            if (!event.repeat && !event.isComposing && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault();
+              event.stopPropagation();
+              event.currentTarget.click();
+            }
+          }
+        })
+      })
+    }) : (0, S.jsx)("div", {
       className: "sgs-card-container ".concat(n || ""),
       style: a,
       children: (0, S.jsxs)("div", {
@@ -8633,7 +15188,7 @@ export default {
           className: "flex items-center justify-center",
           children: "".concat((0, I.xJ)(n.rule, N, !1), "\u6478\u724C\u5806").concat(n.drawCards.length, "\u5F20")
         }), (0, S.jsxs)("div", {
-          className: "flex-grow flex flex-col",
+          className: "flex-grow flex flex-col sgs-public-panel",
           children: [Te.map(function (e, t) {
             return (0, S.jsx)("div", {
               className: "flex flex-wrap items-start justify-between",
@@ -8770,7 +15325,7 @@ export default {
             selectedCardIds: g,
             setSelectedCardIds: G
           }), (0, S.jsxs)("div", {
-            className: "mx-auto px-2 w-full flex",
+            className: "mx-auto px-2 w-full flex sgs-hand-panel",
             children: [(0, S.jsx)("div", {
               className: "mr-2 flex flex-col justify-end",
               children: (0, S.jsx)(A, {
@@ -10450,108 +17005,6 @@ export default {
     e[e.V = 3] = "V";
   }(t || (t = {}));
 },
-3329: function (e, t, n) {
-  "use strict";
-
-  n.d(t, {
-    F: function () {
-      return s;
-    },
-    H0: function () {
-      return d;
-    },
-    I$: function () {
-      return m;
-    },
-    Su: function () {
-      return u;
-    },
-    lS: function () {
-      return l;
-    },
-    p2: function () {
-      return c;
-    }
-  });
-  var i = n(2982),
-    a = n(885),
-    r = new Map([]),
-    o = new Map([]);
-  function s(e, t, n, i) {
-    n = Math.min(n, (1 << i) - 1);
-    var a = e,
-      r = t,
-      o = [];
-    return t + i < 8 ? (a |= n << 8 - i - t, r += i) : t + i === 8 ? (o.push(e | n), a = 0, r = 0) : (a |= n >> t - 8 + i, o.push(a), a = n << 16 - t - i & 255, r = t - 8 + i), [a, r, o];
-  }
-  function c(e, t, n, c) {
-    if (c < 2) return [e, t, []];
-    var l = o.get(c),
-      u = r.get(c),
-      d = Math.pow(2, l),
-      m = c - d;
-    if (l === u || n < d - m) return s(e, t, n, l);
-    var f,
-      h = e,
-      x = t,
-      p = [];
-    if (n < d) {
-      var j = s(h, x, n, l),
-        y = (0, a.Z)(j, 3);
-      h = y[0], x = y[1], f = y[2], p.push.apply(p, (0, i.Z)(f));
-      var b = s(h, x, 0, 1),
-        g = (0, a.Z)(b, 3);
-      h = g[0], x = g[1], f = g[2], p.push.apply(p, (0, i.Z)(f));
-    } else {
-      var v = s(h, x, n - m, l),
-        w = (0, a.Z)(v, 3);
-      h = w[0], x = w[1], f = w[2], p.push.apply(p, (0, i.Z)(f));
-      var W = s(h, x, 1, 1),
-        k = (0, a.Z)(W, 3);
-      h = k[0], x = k[1], f = k[2], p.push.apply(p, (0, i.Z)(f));
-    }
-    return [h, x, p];
-  }
-  function l(e, t, n) {
-    var i = t % 8,
-      a = Math.floor(t / 8);
-    if (i + n > 8 && a + 1 >= e.length || i + n <= 8 && a >= e.length) throw new Error("readBitsError");
-    var r = i + n <= 8 ? e[a] : e[a] << 8 | e[a + 1];
-    return r >>= (i + n <= 8 ? 8 : 16) - n - i, [r &= [0, 1, 3, 7, 15, 31, 63, 127, 255][n], t + n];
-  }
-  function u(e, t, n) {
-    if (!n) throw new Error("readBitsError");
-    if (1 === n) return [0, t];
-    var i = o.get(n),
-      s = r.get(n),
-      c = Math.pow(2, i),
-      u = n - c,
-      d = l(e, t, i),
-      m = (0, a.Z)(d, 2),
-      f = m[0],
-      h = m[1];
-    if (i === s || f < c - u) return [f, h];
-    var x = l(e, h, 1),
-      p = (0, a.Z)(x, 2),
-      j = p[0],
-      y = p[1];
-    return j ? [f + u, y] : [f, y];
-  }
-  function d(e, t) {
-    for (var n = [], i = 0; i < t; i++) n.push(!!(e >> i & 1));
-    return n;
-  }
-  function m(e) {
-    var t = 0;
-    return e.forEach(function (e, n) {
-      e && (t |= 1 << n);
-    }), t;
-  }
-  new Array(511).fill(0).forEach(function (e, t) {
-    var n = Math.log2(t + 1);
-    r.set(t + 1, Math.ceil(n)), o.set(t + 1, Math.floor(n));
-  });
-},
 575: function (e, r, n) {
   n.d(r, {
     L: function () {
@@ -10913,6 +17366,7 @@ export default {
 },
 5042: function () {},
 7448: function (e, r, i) {
+  var companionMapBridge = i.bridge;
   i.r(r), i.d(r, {
     default: function () {
       return H;
@@ -12033,24 +18487,26 @@ export default {
             })]
           }, i);
         })
-      }), (0, u.jsxs)("div", {
-        className: "max-w-3xl mx-auto w-full relative",
-        children: [(0, u.jsxs)("svg", {
-          viewBox: "-88,-92,176,184",
-          xmlns: "http://www.w3.org/2000/svg",
-          children: [(0, u.jsx)(c, {}), (0, u.jsx)(y, {
-            room: r,
-            gameVersion: i.version,
-            game: f,
-            updateGameData: w
+      }), (0, u.jsx)(companionMapBridge.mapViewport, {
+        children: (0, u.jsxs)("div", {
+          className: "max-w-3xl mx-auto w-full relative",
+          children: [(0, u.jsxs)("svg", {
+            viewBox: "-88,-92,176,184",
+            xmlns: "http://www.w3.org/2000/svg",
+            children: [(0, u.jsx)(c, {}), (0, u.jsx)(y, {
+              room: r,
+              gameVersion: i.version,
+              game: f,
+              updateGameData: w
+            })]
+          }), !!f.lastDice && (0, u.jsx)("div", {
+            className: "absolute inset-0 m-auto w-10 h-10 scale-125 sm:scale-150",
+            children: (0, u.jsx)(m.Z, {
+              n: f.lastDice - 1,
+              className: p ? "" : "animate-bounce"
+            })
           })]
-        }), !!f.lastDice && (0, u.jsx)("div", {
-          className: "absolute inset-0 m-auto w-10 h-10 scale-125 sm:scale-150",
-          children: (0, u.jsx)(m.Z, {
-            n: f.lastDice - 1,
-            className: p ? "" : "animate-bounce"
-          })
-        })]
+        })
       }), (0, u.jsxs)("div", {
         className: "text-center",
         children: [g && (0, u.jsx)("div", {
@@ -12155,21 +18611,6 @@ export default {
         return t;
       }, e;
     }();
-},
-4929: function (e, t, n) {
-  "use strict";
-
-  var i = n(1413),
-    a = n(7313),
-    r = n(6417);
-  function o(e) {
-    return (0, r.jsx)("text", (0, i.Z)({
-      alignmentBaseline: "central",
-      dominantBaseline: "central",
-      textAnchor: "middle"
-    }, e));
-  }
-  t.Z = a.memo(o);
 },
 4062: function (e, r, i) {
   i.d(r, {
@@ -12457,62 +18898,6 @@ export default {
     var n = H(e);
     return n.state = p(r, n), n.lastDice = 0, n.sixTimes = 0, n.lastAirline = [], n.lastMove = [], n;
   }
-},
-4591: function (e, t, n) {
-  "use strict";
-
-  var i = n(7313),
-    a = n(6417);
-  t.Z = i.memo(function (e) {
-    var t = e.n,
-      n = e.className;
-    return (0, a.jsx)("div", {
-      className: "game-dice ".concat(n || ""),
-      children: t % 2 ? new Array((t + 1) / 2).fill(0).map(function (e, n) {
-        return (0, a.jsxs)(i.Fragment, {
-          children: [(0, a.jsx)("div", {
-            style: {
-              left: t < 2 ? 1 : -1,
-              top: (n - t / 4 + .25) * [0, 16, 8][(t - 1) / 2] + 7
-            }
-          }), (0, a.jsx)("div", {
-            style: {
-              right: t < 2 ? 1 : -1,
-              top: (n - t / 4 + .25) * [0, 16, 8][(t - 1) / 2] + 7
-            }
-          })]
-        }, n);
-      }) : (0, a.jsxs)(a.Fragment, {
-        children: [(0, a.jsx)("div", {
-          className: "m-auto inset-0"
-        }), t > 1 && (0, a.jsxs)(a.Fragment, {
-          children: [(0, a.jsx)("div", {
-            style: {
-              right: -1,
-              top: -1
-            }
-          }), (0, a.jsx)("div", {
-            style: {
-              left: -1,
-              bottom: -1
-            }
-          })]
-        }), t > 3 && (0, a.jsxs)(a.Fragment, {
-          children: [(0, a.jsx)("div", {
-            style: {
-              left: -1,
-              top: -1
-            }
-          }), (0, a.jsx)("div", {
-            style: {
-              right: -1,
-              bottom: -1
-            }
-          })]
-        })]
-      })
-    });
-  });
 },
 1621: function (e, n, r) {
   r.r(n), r.d(n, {
@@ -13386,29 +19771,8 @@ export default {
     return routes;
   };
 },
-4962: function (e, n, r) {
-  r.d(n, {
-    I: function () {
-      return i;
-    },
-    Z: function () {
-      return o;
-    }
-  });
-  var t = r(2982);
-  function i(e) {
-    if (e.length % 4 === 1) return null;
-    if (!/^[a-zA-Z0-9_-]+$/.test(e)) return null;
-    var n = e.replace(/_/g, "/").replace(/-/g, "+");
-    return n.length % 4 === 3 ? n += "=" : n.length % 4 === 2 && (n += "=="), new Uint8Array(Array.from(window.atob(n)).map(function (e) {
-      return e.charCodeAt(0);
-    }));
-  }
-  function o(e) {
-    return window.btoa(String.fromCharCode.apply(String, (0, t.Z)(e))).replace(/\//g, "_").replace(/\+/g, "-").replace(/=/g, "");
-  }
-},
 1817: function (e, n, r) {
+  var companionMapBridge = r.bridge;
   r.d(n, {
     Z: function () {
       return f;
@@ -13543,125 +19907,127 @@ export default {
       !f || Z.length < 2 || (f(Z), g(-1), C([]));
     };
     return (0, c.jsxs)("div", {
-      children: [(0, c.jsx)("div", {
-        className: "max-w-2xl mx-auto",
-        children: (0, c.jsx)("svg", {
-          viewBox: "500,-127,1400,1620",
-          xmlns: "http://www.w3.org/2000/svg",
-          children: (0, c.jsx)("g", {
-            transform: "translate(".concat(1200, " ").concat(p, ")"),
+      children: [(0, c.jsx)(companionMapBridge.mapViewport, {
+        children: (0, c.jsx)("div", {
+          className: "max-w-2xl mx-auto",
+          children: (0, c.jsx)("svg", {
+            viewBox: "500,-127,1400,1620",
+            xmlns: "http://www.w3.org/2000/svg",
             children: (0, c.jsx)("g", {
-              style: {
-                transform: "rotate(".concat(S, "deg)"),
-                transformOrigin: "0 0",
-                transition: "transform 300ms ease-in-out"
-              },
-              children: (0, c.jsxs)("g", {
-                transform: "translate(".concat(-1200, " ").concat(-692.82, ")"),
-                children: [(0, c.jsx)(u, {
-                  playerCount: l,
-                  pos: r.pos,
-                  pieceCount: r.pieceCount
-                }), r.playerPieces.map(function (e, n) {
-                  return e.map(function (e, r) {
-                    var i = (0, o.Us)(e),
-                      a = (0, t.Z)(i, 2),
-                      l = a[0],
-                      s = a[1],
-                      u = (0, o.fE)([l, s]),
-                      d = (0, t.Z)(u, 2),
-                      p = d[0],
-                      f = d[1];
-                    return (0, c.jsx)("circle", {
-                      className: I && n === b ? "cursor-pointer" : "",
-                      cx: p,
-                      cy: f,
-                      r: "45",
-                      fill: o.DM[n],
-                      strokeWidth: "5",
-                      stroke: y === e ? "black" : "none",
-                      onClick: I && n === b ? function () {
-                        !function (e) {
-                          k ? y === e ? (g(-1), C([])) : (g(e), C([e])) : g(e === y ? -1 : e);
-                        }(e);
-                      } : void 0
-                    }, "".concat(n).concat(r));
-                  });
-                }), r.lastOp && r.lastOp.route && r.lastOp.route.length > 0 ? (0, c.jsxs)(c.Fragment, {
-                  children: [(0, c.jsx)("circle", {
-                    cx: (0, o.fE)((0, o.Us)(r.lastOp.route[0]))[0],
-                    cy: (0, o.fE)((0, o.Us)(r.lastOp.route[0]))[1],
-                    r: 45,
-                    fill: o.DM[r.lastOp.playerId],
-                    fillOpacity: "0.4"
-                  }), (0, c.jsx)("circle", {
-                    cx: (0, o.fE)((0, o.Us)(r.lastOp.route[r.lastOp.route.length - 1]))[0],
-                    cy: (0, o.fE)((0, o.Us)(r.lastOp.route[r.lastOp.route.length - 1]))[1],
-                    r: 13,
-                    fill: "#fff"
-                  }), (0, c.jsx)("path", {
-                    stroke: a.wC,
+              transform: "translate(".concat(1200, " ").concat(p, ")"),
+              children: (0, c.jsx)("g", {
+                style: {
+                  transform: "rotate(".concat(S, "deg)"),
+                  transformOrigin: "0 0",
+                  transition: "transform 300ms ease-in-out"
+                },
+                children: (0, c.jsxs)("g", {
+                  transform: "translate(".concat(-1200, " ").concat(-692.82, ")"),
+                  children: [(0, c.jsx)(u, {
+                    playerCount: l,
+                    pos: r.pos,
+                    pieceCount: r.pieceCount
+                  }), r.playerPieces.map(function (e, n) {
+                    return e.map(function (e, r) {
+                      var i = (0, o.Us)(e),
+                        a = (0, t.Z)(i, 2),
+                        l = a[0],
+                        s = a[1],
+                        u = (0, o.fE)([l, s]),
+                        d = (0, t.Z)(u, 2),
+                        p = d[0],
+                        f = d[1];
+                      return (0, c.jsx)("circle", {
+                        className: I && n === b ? "cursor-pointer" : "",
+                        cx: p,
+                        cy: f,
+                        r: "45",
+                        fill: o.DM[n],
+                        strokeWidth: "5",
+                        stroke: y === e ? "black" : "none",
+                        onClick: I && n === b ? function () {
+                          !function (e) {
+                            k ? y === e ? (g(-1), C([])) : (g(e), C([e])) : g(e === y ? -1 : e);
+                          }(e);
+                        } : void 0
+                      }, "".concat(n).concat(r));
+                    });
+                  }), r.lastOp && r.lastOp.route && r.lastOp.route.length > 0 ? (0, c.jsxs)(c.Fragment, {
+                    children: [(0, c.jsx)("circle", {
+                      cx: (0, o.fE)((0, o.Us)(r.lastOp.route[0]))[0],
+                      cy: (0, o.fE)((0, o.Us)(r.lastOp.route[0]))[1],
+                      r: 45,
+                      fill: o.DM[r.lastOp.playerId],
+                      fillOpacity: "0.4"
+                    }), (0, c.jsx)("circle", {
+                      cx: (0, o.fE)((0, o.Us)(r.lastOp.route[r.lastOp.route.length - 1]))[0],
+                      cy: (0, o.fE)((0, o.Us)(r.lastOp.route[r.lastOp.route.length - 1]))[1],
+                      r: 13,
+                      fill: "#fff"
+                    }), (0, c.jsx)("path", {
+                      stroke: a.wC,
+                      fill: "none",
+                      strokeWidth: "4",
+                      strokeDasharray: "20,30",
+                      d: "M".concat((0, o.fE)((0, o.Us)(r.lastOp.route[0]))[0], ",").concat((0, o.fE)((0, o.Us)(r.lastOp.route[0]))[1], "L").concat(r.lastOp.route.slice(1).map(function (e) {
+                        return "".concat((0, o.fE)((0, o.Us)(e))[0], ",").concat((0, o.fE)((0, o.Us)(e))[1]);
+                      }).join("L"))
+                    })]
+                  }) : null, k && Z.length > 1 ? (0, c.jsx)("path", {
+                    stroke: o.DM[b],
                     fill: "none",
-                    strokeWidth: "4",
-                    strokeDasharray: "20,30",
-                    d: "M".concat((0, o.fE)((0, o.Us)(r.lastOp.route[0]))[0], ",").concat((0, o.fE)((0, o.Us)(r.lastOp.route[0]))[1], "L").concat(r.lastOp.route.slice(1).map(function (e) {
+                    strokeWidth: "6",
+                    d: "M".concat((0, o.fE)((0, o.Us)(Z[0]))[0], ",").concat((0, o.fE)((0, o.Us)(Z[0]))[1], "L").concat(Z.slice(1).map(function (e) {
                       return "".concat((0, o.fE)((0, o.Us)(e))[0], ",").concat((0, o.fE)((0, o.Us)(e))[1]);
                     }).join("L"))
+                  }) : null, k && Z.map(function (e, n) {
+                    var r = (0, o.Us)(e),
+                      i = (0, t.Z)(r, 2),
+                      a = i[0],
+                      l = i[1],
+                      s = (0, o.fE)([a, l]),
+                      u = (0, t.Z)(s, 2),
+                      d = u[0],
+                      p = u[1];
+                    return (0, c.jsx)("circle", {
+                      className: "cursor-pointer",
+                      cx: d,
+                      cy: p,
+                      r: 30,
+                      fill: o.DM[b],
+                      fillOpacity: n === Z.length - 1 ? "0.25" : "0.1",
+                      onClick: I ? function () {
+                        return function (e) {
+                          var n = Z.indexOf(e);
+                          0 === n ? (g(-1), C([])) : n === Z.length - 1 ? L() : n > 0 && C(Z.slice(0, n + 1));
+                        }(e);
+                      } : void 0
+                    }, "".concat(e, "-").concat(n));
+                  }), N.map(function (e) {
+                    var n = e[e.length - 1],
+                      r = (0, o.Us)(n),
+                      i = (0, t.Z)(r, 2),
+                      a = i[0],
+                      l = i[1],
+                      s = (0, o.fE)([a, l]),
+                      u = (0, t.Z)(s, 2),
+                      d = u[0],
+                      p = u[1];
+                    return (0, c.jsx)("circle", {
+                      className: "cursor-pointer",
+                      cx: d,
+                      cy: p,
+                      r: 45,
+                      fill: o.DM[b],
+                      fillOpacity: "0",
+                      stroke: o.DM[b],
+                      strokeWidth: "5",
+                      onClick: function () {
+                        k ? C(e) : f && f(e);
+                      }
+                    }, n);
                   })]
-                }) : null, k && Z.length > 1 ? (0, c.jsx)("path", {
-                  stroke: o.DM[b],
-                  fill: "none",
-                  strokeWidth: "6",
-                  d: "M".concat((0, o.fE)((0, o.Us)(Z[0]))[0], ",").concat((0, o.fE)((0, o.Us)(Z[0]))[1], "L").concat(Z.slice(1).map(function (e) {
-                    return "".concat((0, o.fE)((0, o.Us)(e))[0], ",").concat((0, o.fE)((0, o.Us)(e))[1]);
-                  }).join("L"))
-                }) : null, k && Z.map(function (e, n) {
-                  var r = (0, o.Us)(e),
-                    i = (0, t.Z)(r, 2),
-                    a = i[0],
-                    l = i[1],
-                    s = (0, o.fE)([a, l]),
-                    u = (0, t.Z)(s, 2),
-                    d = u[0],
-                    p = u[1];
-                  return (0, c.jsx)("circle", {
-                    className: "cursor-pointer",
-                    cx: d,
-                    cy: p,
-                    r: 30,
-                    fill: o.DM[b],
-                    fillOpacity: n === Z.length - 1 ? "0.25" : "0.1",
-                    onClick: I ? function () {
-                      return function (e) {
-                        var n = Z.indexOf(e);
-                        0 === n ? (g(-1), C([])) : n === Z.length - 1 ? L() : n > 0 && C(Z.slice(0, n + 1));
-                      }(e);
-                    } : void 0
-                  }, "".concat(e, "-").concat(n));
-                }), N.map(function (e) {
-                  var n = e[e.length - 1],
-                    r = (0, o.Us)(n),
-                    i = (0, t.Z)(r, 2),
-                    a = i[0],
-                    l = i[1],
-                    s = (0, o.fE)([a, l]),
-                    u = (0, t.Z)(s, 2),
-                    d = u[0],
-                    p = u[1];
-                  return (0, c.jsx)("circle", {
-                    className: "cursor-pointer",
-                    cx: d,
-                    cy: p,
-                    r: 45,
-                    fill: o.DM[b],
-                    fillOpacity: "0",
-                    stroke: o.DM[b],
-                    strokeWidth: "5",
-                    onClick: function () {
-                      k ? C(e) : f && f(e);
-                    }
-                  }, n);
-                })]
+                })
               })
             })
           })
