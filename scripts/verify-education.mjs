@@ -103,6 +103,9 @@ try {
       await expect(page.getByRole("listbox")).toHaveCount(0);
       await expect(page.getByRole("dialog")).toBeVisible();
       expect(await rect()).toEqual(before);
+      await expect(
+        page.getByRole("combobox", { name: "外观主题", exact: true }),
+      ).toBeFocused();
       await page.keyboard.press("Escape");
       await expect(page.getByRole("dialog")).toHaveCount(0);
       expect(await rect()).toEqual(before);

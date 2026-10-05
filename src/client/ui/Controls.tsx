@@ -52,9 +52,12 @@ export function Select({
           className="ui-select-menu"
           position="popper"
           sideOffset={6}
-          onEscapeKeyDown={(event) => {
-            event.preventDefault();
-            setOpen(false);
+          onEscapeKeyDown={(event) => event.preventDefault()}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              setOpen(false);
+            }
           }}
         >
           <SelectPrimitive.ScrollUpButton className="ui-scroll">
@@ -160,12 +163,15 @@ export function Panel({
         <DialogPrimitive.Content
           className={`ui-panel ${className}`}
           data-command-scope={scope}
-          onEscapeKeyDown={(event) => {
+          onEscapeKeyDown={(event) => event.preventDefault()}
+          onKeyDown={(event) => {
             if (
-              event.target instanceof Element &&
-              event.target.closest('[role="listbox"]')
-            )
-              event.preventDefault();
+              event.key === "Escape" &&
+              event.currentTarget.contains(event.target as Node)
+            ) {
+              event.stopPropagation();
+              onOpenChange(false);
+            }
           }}
           onOpenAutoFocus={(event) => {
             if (initialFocus?.current) {
