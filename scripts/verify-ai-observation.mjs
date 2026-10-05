@@ -18,6 +18,7 @@ const browser = await chromium.launch({
   headless: true,
 });
 const errors = [];
+const requestedThreads = Number(process.env.AI_TEST_THREADS || 4);
 try {
   const endpoint = await service.start();
   await mkdir(".tmp/screenshots", { recursive: true });
@@ -25,13 +26,13 @@ try {
     viewport: { width: 1280, height: 720 },
   });
   page.on("pageerror", (error) => errors.push(String(error)));
-  await page.addInitScript(() => {
+  await page.addInitScript((threads) => {
     if (!localStorage.getItem("onlinebg.preferences"))
       localStorage.setItem(
         "onlinebg.preferences",
-        JSON.stringify({ performance: { mode: "multi", threads: 4 } }),
+        JSON.stringify({ performance: { mode: "multi", threads } }),
       );
-  });
+  }, requestedThreads);
   await page.goto(endpoint);
   await page.getByRole("button", { name: /连续跳跃与营地竞速/ }).click();
   await page
@@ -48,7 +49,12 @@ try {
     /已完成 [1-9]\d* 次决策/,
     { timeout: 60000 },
   );
-  await expect(page.getByLabel("AI计算统计")).toContainText("4 线程");
+  const available = await page.evaluate(
+    () => navigator.hardwareConcurrency || 2,
+  );
+  await expect(page.getByLabel("AI计算统计")).toContainText(
+    `${Math.min(requestedThreads, available)} 线程`,
+  );
   await page.getByRole("button", { name: "暂停 AI 测试", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "继续 AI 测试", exact: true }),

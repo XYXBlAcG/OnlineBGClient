@@ -990,11 +990,18 @@ function App() {
                 <>
                   {!snapshot.state ? (
                     <div className="lobby">
-                      <h2>{snapshot.actor < 0 ? "服务运行中" : "等待开局"}</h2>
+                      <h2>
+                        {snapshot.config.humans === 0
+                          ? "AI 性能测试"
+                          : snapshot.actor < 0
+                            ? "服务运行中"
+                            : "等待开局"}
+                      </h2>
                       {snapshot.actor < 0 && (
                         <p className="muted">
-                          {snapshot.playing ? "对局进行中" : "等待手机玩家加入"}{" "}
-                          · 电脑不占席位
+                          {snapshot.config.humans === 0
+                            ? "全 AI 对战 · 你可以观战并控制开局"
+                            : `${snapshot.playing ? "对局进行中" : "等待手机玩家加入"} · 电脑不占席位`}
                         </p>
                       )}
                       {snapshot.seats.map((seat, index) => (
