@@ -1,3 +1,5 @@
+import { isTauri } from "@tauri-apps/api/core";
+import { confirm } from "@tauri-apps/plugin-dialog";
 export interface ConfirmationRequest {
   message: string;
   label: string;
@@ -15,6 +17,13 @@ class ConfirmationController {
     };
   };
   request(message: string, label: string): Promise<boolean> {
+    if (isTauri())
+      return confirm(message, {
+        title: "OnlineBGClient",
+        kind: "warning",
+        okLabel: label,
+        cancelLabel: "取消",
+      });
     this.complete(false);
     return new Promise((resolve) => {
       this.current = { message, label, resolve };

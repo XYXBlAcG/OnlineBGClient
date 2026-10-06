@@ -44,6 +44,7 @@ it("renders replay without end controls and targets game avatars", () => {
       );
       expect(live).toContain('data-game-avatar="0"');
       expect(live).toContain(`data-game="${kind}"`);
+      if (kind === "ccbs") expect(live).toMatch(/<details[^>]*class="table-collection"[^>]*open/);
       if (kind === "dy") expect(live).toContain("poison-pots");
       if (kind === "ktd") {
         expect(live).toContain('class="map-viewport"');

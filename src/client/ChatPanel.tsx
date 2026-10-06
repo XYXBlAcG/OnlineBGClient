@@ -34,6 +34,14 @@ export function ChatPanel({
     [active, setActive] = useState(!document.hidden && document.hasFocus());
   const messages = useRef<HTMLDivElement>(null),
     lastSeen = useRef(snapshot.chatSequence);
+  const [, refreshRead] = useState(0);
+  useEffect(() => {
+    const update = (event: StorageEvent) => {
+      if (event.key === key) refreshRead((value) => value + 1);
+    };
+    window.addEventListener("storage", update);
+    return () => window.removeEventListener("storage", update);
+  }, [key]);
   const sequence = snapshot.chatSequence,
     own = snapshot.chatTotals[ownId] || 0;
   const unread = localStorage.getItem(key) ? read.unread(sequence, own) : 0;
@@ -96,6 +104,7 @@ export function ChatPanel({
     preferences.systemNotifications,
     atBottom,
     active,
+    unread,
   ]);
   useLayoutEffect(() => {
     if (preferences.chatVisible && atBottom && messages.current)

@@ -1,3 +1,9 @@
+import { WindowComputeHost } from "./compute-host";
+import {
+  computeDiagnostic,
+  ComputeFailure,
+} from "../domain/compute-diagnostics";
+import type { SearchHostRequest } from "./compute-ports";
 import { SnapshotReplica } from "../domain/sync";
 import { gameCatalogue } from "../domain/catalogue";
 import {
@@ -16,16 +22,38 @@ export class LocalConnection implements Connection {
     type: "module",
   });
 
+  private host = new WindowComputeHost((failure) =>
+    this.worker.postMessage(failure),
+  );
   constructor(receive: (response: Response) => void) {
-    this.worker.onmessage = (event) => receive(event.data);
-    this.worker.onerror = (event) =>
-      receive({ type: "error", message: event.message });
+    this.worker.onmessage = (
+      event: MessageEvent<Response | SearchHostRequest>,
+    ) => {
+      if (
+        event.data.type === "search-open" ||
+        event.data.type === "search-close"
+      )
+        this.host.handle(event.data);
+      else receive(event.data);
+    };
+    this.worker.onerror = (event) => {
+      event.preventDefault();
+      const diagnostic = computeDiagnostic("load", new Error(event.message), {
+        script: "local-worker",
+      });
+      receive({
+        type: "error",
+        message: new ComputeFailure(diagnostic).message,
+        diagnostic,
+      });
+    };
   }
 
   send(command: Command): void {
     this.worker.postMessage(command);
   }
   close(): void {
+    this.host.close();
     this.worker.terminate();
   }
 }

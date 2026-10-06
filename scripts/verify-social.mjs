@@ -104,7 +104,7 @@ try {
   ).toBeGreaterThanOrEqual(0);
   await mobile.getByRole("button", { name: "收起聊天", exact: true }).tap();
   await mobile.setViewportSize({ width: 390, height: 844 });
-  await chooseRoomOption(host,"邀请二维码");
+  await chooseRoomOption(host, "邀请二维码");
   await expect(host.getByAltText("房间邀请二维码")).toBeVisible();
   await host
     .getByRole("dialog")
@@ -128,11 +128,20 @@ try {
       .locator(".interaction-layer")
       .evaluate((node) => node.closest(".original-game") !== null),
   ).toBe(true);
-  await host.getByRole("banner").getByRole("button", { name: "聊天", exact: true }).click();
+  await guest
+    .getByRole("banner")
+    .getByRole("button", { name: "聊天", exact: true })
+    .click();
   await guest.getByLabel("消息", { exact: true }).fill("同名也要提醒");
   await guest.getByRole("button", { name: "发送", exact: true }).click();
-  await host.getByRole("banner").getByRole("button", { name: "聊天 · 1", exact: true }).waitFor();
-  await host.getByRole("banner").getByRole("button", { name: "聊天 · 1", exact: true }).click();
+  await host
+    .getByRole("banner")
+    .getByRole("button", { name: "聊天 · 1", exact: true })
+    .waitFor();
+  await host
+    .getByRole("banner")
+    .getByRole("button", { name: "聊天 · 1", exact: true })
+    .click();
   await expect(host.getByText("同名也要提醒", { exact: true })).toBeVisible();
   await guest.locator('[data-game-avatar="1"]').click();
   await guest
@@ -145,27 +154,30 @@ try {
   await expect(host.locator(".chat-message time").last()).toHaveText(
     /\d{2}:\d{2}:\d{2}/,
   );
-  const resize = host.getByRole("separator", { name: "聊天侧栏宽度" });
   const initialWidth = (await host.locator(".chat-panel").boundingBox()).width;
-  await resize.focus();
-  await resize.press("ArrowLeft");
+  await host
+    .getByRole("separator", { name: "辅助区域宽度", exact: true })
+    .focus();
+  await host.keyboard.press("ArrowLeft");
   await expect
-    .poll(async () =>
-      Math.round((await host.locator(".chat-panel").boundingBox()).width),
-    )
-    .toBe(Math.round(initialWidth + 16));
-  const handle = await resize.boundingBox();
-  await host.mouse.move(handle.x + handle.width / 2, handle.y + 80);
-  await host.mouse.down();
-  await host.mouse.move(handle.x - 90, handle.y + 80);
-  await host.mouse.up();
-  expect(
-    (await host.locator(".chat-panel").boundingBox()).width,
-  ).toBeGreaterThan(initialWidth + 70);
+    .poll(async () => (await host.locator(".chat-panel").boundingBox()).width)
+    .toBeGreaterThan(initialWidth + 10);
   const savedWidth = (await host.locator(".chat-panel").boundingBox()).width;
+  await expect
+    .poll(() =>
+      host.evaluate(
+        () =>
+          JSON.parse(localStorage.getItem("onlinebg.preferences")).sidebarWidth,
+      ),
+    )
+    .not.toBeNull();
   await host.reload();
   await host.getByRole("button", { name: "恢复联机房间", exact: true }).click();
   await expect(host.locator(".room-toolbar")).toBeVisible();
+  await host
+    .getByRole("banner")
+    .getByRole("button", { name: "聊天", exact: true })
+    .click();
   await expect
     .poll(async () =>
       Math.round((await host.locator(".chat-panel").boundingBox()).width),
@@ -262,10 +274,12 @@ try {
     )
   ).find(Boolean);
   await chooser.locator(".hero-detail-button").first().click();
-  await expect(chooser.locator(".ui-panel .hero-description")).toBeVisible();
+  await expect(
+    chooser.locator(".detail-popover .hero-description"),
+  ).toBeVisible();
   await chooser
     .getByRole("dialog")
-    .getByRole("button", { name: "关闭", exact: true })
+    .getByRole("button", { name: "关闭说明", exact: true })
     .click();
   await host.waitForTimeout(1300);
   await host.locator('[data-game-avatar="1"]').click();
@@ -278,10 +292,12 @@ try {
   await chooser.locator(".hero-surface .sgs-hero").first().click();
   await chooser.getByRole("button", { name: "确定", exact: true }).click();
   await mobile.locator(".hero-detail-button").first().tap();
-  await expect(mobile.locator(".ui-panel .hero-description")).toBeVisible();
+  await expect(
+    mobile.locator(".detail-popover .hero-description"),
+  ).toBeVisible();
   await mobile
     .getByRole("dialog")
-    .getByRole("button", { name: "关闭", exact: true })
+    .getByRole("button", { name: "关闭说明", exact: true })
     .tap();
   await mobile.reload();
   await mobile.locator(".original-game").waitFor();

@@ -1,3 +1,5 @@
+import { attachFeedback } from "./upstream-feedback.mjs";
+import { attachGuideTargets } from './upstream-guide-targets.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { parse } from '@babel/parser';
@@ -323,7 +325,7 @@ traverse(tableAst, { ObjectExpression(path) {
   children.elements = [
     parse(`(0,o.jsxs)("div",{className:"table-public",children:[${sections.slice(0,2).map(n=>generate(n).code).join(",")}]})`).program.body[0].expression,
     parse(`(0,o.jsxs)("div",{className:"table-actions",children:[${sections.slice(2,5).map(n=>generate(n).code).join(",")}]})`).program.body[0].expression,
-    parse(`(0,o.jsxs)("details",{className:"table-collection",children:[(0,o.jsx)("summary",{children:"玩家与收藏"}),${generate(sections[5]).code}]})`).program.body[0].expression,
+    parse(`(0,o.jsxs)("details",{className:"table-collection",open:true,children:[(0,o.jsx)("summary",{children:"玩家与收藏"}),${generate(sections[5]).code}]})`).program.body[0].expression,
   ];
   tables++;
 } });
@@ -380,6 +382,8 @@ for (const [id, code] of selected) {
   } });
   selected.set(id, generate(ast.program.body[0].expression, { comments: false }).code);
 }
+attachFeedback(selected);
+attachGuideTargets(selected);
 await writeFile('src/upstream/factories.js', `export default {\n${[...selected].map(([id,code])=>`${id}: ${code}`).join(',\n')}\n};\n`);
 for (const path of ['public/upstream/dy.css', 'public/upstream/ktd.css', 'public/upstream/ccbs.css', 'public/upstream/ccbs-cards.webp', 'public/upstream/ccbs-nobles.webp']) { const source=await readFile(path); manifest.push({path,sha256:createHash('sha256').update(source).digest('hex')}); }
 await writeFile('upstream/manifest.json', JSON.stringify({ origin: 'https://game.hullqin.cn/', captured: '2026-10-05', sources: manifest, modules: [...selected.keys()] }, null, 2)+'\n');

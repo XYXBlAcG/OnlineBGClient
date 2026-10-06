@@ -1,4 +1,4 @@
-import { SurfaceResize } from "../SurfaceResize";
+import { auxiliaryView } from "../native/contract";
 import React, {
   Children,
   isValidElement,
@@ -156,6 +156,7 @@ export function Panel({
   title: string;
   children: ReactNode;
 }) {
+  if (auxiliaryView) return open ? <section className={`native-content ${className}`} data-command-scope={scope} aria-label={title}>{children}</section> : null;
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -188,7 +189,6 @@ export function Panel({
             </DialogPrimitive.Close>
           </div>
           {children}
-          <SurfaceResize id={title} />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

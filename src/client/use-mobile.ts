@@ -17,6 +17,12 @@ export function useMobile(): boolean {
   return !isTauri() && coarse;
 }
 
-export function useCompactLayout(): boolean {
-  return useMediaQuery("(max-width: 880px)");
+export function useWindowWidth(): number {
+  const [width, setWidth] = useState(innerWidth);
+  useEffect(() => {
+    const resize = () => setWidth(innerWidth);
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+  return width;
 }

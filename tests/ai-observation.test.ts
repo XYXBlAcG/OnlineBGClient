@@ -2,6 +2,37 @@ import { expect, it } from "vitest";
 import { Gateway } from "../src/domain/gateway";
 import { configSchema } from "../src/domain/protocol";
 import { Room } from "../src/domain/room";
+it("keeps an ordinary game's AI paused across storage restoration and restricts control to its host", () => {
+  const gateway = new Gateway();
+  const created = gateway.handle({
+    type: "create",
+    name: "房主",
+    config: {
+      kind: "tq",
+      humans: 1,
+      ai: [{ difficulty: "hard" }],
+      aiDelayMs: 0,
+      team: false,
+      training: false,
+    },
+  });
+  const room = gateway.rooms.get(created.session.room)!;
+  gateway.handle(
+    { type: "start", token: created.session.token },
+    created.session,
+  );
+  expect(() => room.setAiRunning("unknown", false)).toThrow("房间身份无效");
+  gateway.handle(
+    { type: "ai-run", token: created.session.token, enabled: false },
+    created.session,
+  );
+  expect(room.paused).toBe(true);
+  const restored = Room.restore(room.export());
+  restored.claim("", created.session.token);
+  expect(restored.snapshot(created.session.token).aiPaused).toBe(true);
+  restored.setAiRunning(created.session.token, true);
+  expect(restored.paused).toBe(false);
+});
 it("hosts six hard checkers AIs without a human seat and exposes only the public board", () => {
   const gateway = new Gateway();
   const created = gateway.handle({

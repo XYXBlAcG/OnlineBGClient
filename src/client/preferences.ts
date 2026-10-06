@@ -7,23 +7,15 @@ import { gameKinds } from "../domain/catalogue";
 export const preferencesSchema = z.object({
   theme: z.string().default("system"),
   motion: z.boolean().default(true),
-  surfaceSizes: z
-    .record(
-      z.string(),
-      z.object({
-        width: z.number().min(80).max(10000).optional(),
-        height: z.number().min(80).max(10000).optional(),
-      }),
-    )
-    .default({}),
-  chatWidth: z.number().int().min(260).max(520).default(280),
   phraseGroups: phraseGroupsSchema.default(defaultPhraseGroups),
-  chatVisible: z.boolean().default(true),
+  chatVisible: z.boolean().default(false),
+  sidebarWidth: z.number().int().min(280).max(520).default(320),
   messageSound: z.boolean().default(false),
   systemNotifications: z.boolean().default(false),
   interactions: z.boolean().default(true),
   interactionSound: z.boolean().default(false),
   performance: performanceSchema.default({ mode: "auto", threads: 8 }),
+  benchmarkVisible: z.boolean().default(false),
   auditVisible: z.boolean().default(false),
   beginnerGuides: z.partialRecord(z.enum(gameKinds), z.boolean()).default({}),
   bindings: z.record(z.string(), z.string()).default({}),

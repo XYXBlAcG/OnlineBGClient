@@ -1,3 +1,4 @@
+import { ComputeFailure, type ComputeDiagnostic } from "./compute-diagnostics";
 import type { ComputeProgress } from "./performance";
 import { Strategies } from "./strategies";
 import {
@@ -15,6 +16,7 @@ export interface ComputeOutput {
   id: number;
   output?: SearchOutput;
   error?: string;
+  diagnostic?: ComputeDiagnostic;
 }
 export interface ComputePort {
   send: (input: ComputeInput) => void;
@@ -28,7 +30,7 @@ interface Job {
   resolve: (output: SearchOutput) => void;
   reject: (error: Error) => void;
   signal?: AbortSignal;
-  abort: () => void;
+  abort: (failure?: Error) => void;
 }
 interface Slot {
   port: ComputePort;
@@ -57,7 +59,7 @@ export class ComputePool {
         resolve,
         reject,
         signal,
-        abort: () => {
+        abort: (failure) => {
           const index = this.queue.indexOf(job);
           if (index >= 0) this.queue.splice(index, 1);
           const slot = this.slots.find((slot) => slot.job === job);
@@ -66,7 +68,7 @@ export class ComputePool {
             slot.port.close();
           }
           this.detach(job);
-          reject(new Error("计算已取消"));
+          reject(failure || new Error("计算已取消"));
           if (!signal?.aborted) this.drain();
         },
       };
@@ -91,6 +93,9 @@ export class ComputePool {
   }
   close(): void {
     this.stopped = true;
+    this.reset();
+  }
+  reset(): void {
     for (const job of [
       ...this.queue,
       ...this.slots.flatMap((slot) => (slot.job ? [slot.job] : [])),
@@ -133,7 +138,9 @@ export class ComputePool {
           if (!job || response.id !== job.id) return;
           current.job = undefined;
           this.detach(job);
-          if (response.error) job.reject(new Error(response.error));
+          if (response.diagnostic)
+            job.reject(new ComputeFailure(response.diagnostic));
+          else if (response.error) job.reject(new Error(response.error));
           else if (response.output) job.resolve(response.output);
           else job.reject(new Error("计算结果缺失"));
           this.drain();
@@ -155,7 +162,7 @@ export class ComputePool {
       try {
         slot.port.send({ id: job.id, task: job.task });
       } catch (error) {
-        job.abort();
+        job.abort(error instanceof Error ? error : new Error(String(error)));
       }
     }
   }

@@ -27,7 +27,7 @@ git diff --cached
 提交后通过已配置的 GitHub CLI 别名推送：
 
 ```sh
-git commit -m "Add economic game AI and automated desktop releases"
+git commit -m "Restore complete tables and native auxiliary windows"
 gh push origin main
 gh run list --workflow desktop.yml --limit 3
 ```

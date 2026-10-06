@@ -164,7 +164,7 @@ try {
   );
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "关闭", exact: true })
+    .getByRole("button", { name: "关闭说明", exact: true })
     .click();
   const phoneCard = phone.locator(".sgs-card-list [data-card-guide]").first();
   await expect(phoneCard).toBeVisible();
@@ -172,21 +172,24 @@ try {
   await expect(phone.getByRole("dialog")).toContainText("使用时机");
   await phone
     .getByRole("dialog")
-    .getByRole("button", { name: "关闭", exact: true })
+    .getByRole("button", { name: "关闭说明", exact: true })
     .click();
   await page.locator(".hero-detail-button").first().click();
   await expect(page.getByRole("dialog")).toContainText("例如");
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "关闭", exact: true })
+    .getByRole("button", { name: "关闭说明", exact: true })
     .click();
   await page.getByRole("button", { name: "新手引导", exact: true }).click();
   const guide = page.getByRole("region", { name: "三国杀新手引导" });
   await expect(guide.locator("ol li")).toHaveCount(3);
+  await guide
+    .getByRole("button", { name: "查看我的武将", exact: true })
+    .click();
   await expect(
-    page.locator(".original-game [data-guide-focus]").first(),
+    page.locator('[data-guide-target="sgs.hero"][data-guide-focus]'),
   ).toBeVisible();
-  await guide.getByRole("button", { name: "定位到牌桌", exact: true }).click();
+  await expect(page.getByLabel("教学目标标记")).toBeVisible();
   await expect(
     page.getByRole("complementary", { name: "牌桌引导定位" }),
   ).toBeVisible();

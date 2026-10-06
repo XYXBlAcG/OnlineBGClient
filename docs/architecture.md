@@ -50,6 +50,9 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 增量快照与游戏投影复用 | [同步契约](../src/domain/sync.ts)、[快照](../src/domain/room.ts)、[连接与确认](../src/client/connection.ts) |
 | 通信校验与快照 | [协议](../src/domain/protocol.ts) |
 | 离线后台执行 | [本地 Worker](../src/client/local-worker.ts) |
+| 浏览器平级计算线程与端口传输 | [窗口线程宿主](../src/client/compute-host.ts)、[远程端口](../src/client/compute-ports.ts)、[搜索线程](../src/client/search-worker.ts) |
+| 计算故障诊断与重试 | [诊断契约](../src/domain/compute-diagnostics.ts)、[诊断界面](../src/client/ComputeDiagnostics.tsx) |
+| 完整牌桌、回放与辅助窗口 | [牌桌](../src/client/OriginalGame.tsx)、[窗口入口](workspace-and-windows-ai-plan.md) |
 | 联机权威执行 | [房间服务](../src/server/main.ts)、[AI Worker](../src/server/ai-worker.ts) |
 | 重连与凭据恢复 | [连接](../src/client/connection.ts) |
 | 审核与后台重放 | [审核面板](../src/client/Audit.tsx)、[重放 Worker](../src/client/audit-worker.ts) |
@@ -58,7 +61,7 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 公共消息、表情、互动与武将说明 | [社交入口](social-experience-plan.md) |
 | 本地审核与作者提交 | [操作说明](review-and-submit.md) |
 | 全 AI 观战与运行统计 | [房间](../src/domain/room.ts)、[并行搜索](../src/domain/compute.ts)、[计算栏](../src/client/ComputeStatus.tsx) |
-| 面板尺寸与地图 | [尺寸组件](../src/client/SurfaceResize.tsx)、[偏好](../src/client/preferences.ts)、[地图视口](../src/client/MapViewport.tsx) |
+| 面板尺寸与地图 | [边缘分栏](../src/client/SidebarDivider.tsx)、[偏好](../src/client/preferences.ts)、[地图视口](../src/client/MapViewport.tsx) |
 | 桌面原生入口 | [Tauri](../src-tauri/) |
 
 ## 边界

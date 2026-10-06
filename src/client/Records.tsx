@@ -1,3 +1,5 @@
+import { auxiliaryView } from "./native/contract";
+import { useNativeWindow } from "./native/windows";
 import { useEffect, useState, useMemo } from "react";
 import { GameEngine } from "../domain/engine";
 import { gameCatalogue } from "../domain/catalogue";
@@ -20,6 +22,15 @@ export function Records({
   snapshot: Snapshot | null;
   onError: (message: string) => void;
 }) {
+  const detached = useNativeWindow(
+    "records",
+    open,
+    { view: "records" },
+    (intent) => {
+      if (intent.type === "close") onOpenChange(false);
+      if (intent.type === "error") onError(intent.message);
+    },
+  );
   const engine = useMemo(() => new GameEngine(), []);
   const [store] = useState(() => new ClientStore());
   const [records, setRecords] = useState<ReplayRecord[]>([]);
@@ -31,7 +42,7 @@ export function Records({
   const [speed, setSpeed] = useState(1);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    if (open)
+    if (open && !detached)
       void store
         .records()
         .then((records) =>
@@ -78,6 +89,7 @@ export function Records({
     );
     return () => window.clearTimeout(timer);
   }, [selected, loading, playing, frames.length, step, speed]);
+  if (detached) return null;
   const preview: Snapshot | null =
     selected && frames[step]
       ? {
@@ -116,7 +128,11 @@ export function Records({
       : null;
   return (
     <>
-      <Panel open={open} onOpenChange={onOpenChange} title="对局记录">
+      <Panel
+        open={open && (!auxiliaryView || !selected)}
+        onOpenChange={onOpenChange}
+        title="对局记录"
+      >
         <div className="section-toolbar">
           <button
             onClick={async () => {
@@ -149,7 +165,7 @@ export function Records({
                 setPlaying(false);
                 setLoading(true);
                 setSelected(record);
-                onOpenChange(false);
+                if (!auxiliaryView) onOpenChange(false);
               }}
             >
               {gameCatalogue[record.config.kind].name}
@@ -192,6 +208,16 @@ export function Records({
           }}
           title={`${gameCatalogue[selected.config.kind].name} · 回放`}
         >
+          {auxiliaryView && (
+            <button
+              onClick={() => {
+                setSelected(null);
+                setPlaying(false);
+              }}
+            >
+              返回记录
+            </button>
+          )}
           <div className="replay-controls">
             <button
               disabled={loading || frames.length < 2}

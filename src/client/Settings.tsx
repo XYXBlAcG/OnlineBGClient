@@ -1,3 +1,4 @@
+import { useNativeWindow } from "./native/windows";
 import type { PerformanceSettings } from "../domain/performance";
 import { PhraseSettings } from "./PhraseSettings";
 import { CacheSettings } from "./CacheSettings";
@@ -28,6 +29,29 @@ export function Settings({
   onError: (message: string) => void;
   onBind: (id: string, binding: string) => void;
 }) {
+  const detached = useNativeWindow(
+    "settings",
+    open,
+    {
+      view: "settings",
+      preferences,
+      commands: commands.map(({ id, title, binding, scope }) => ({
+        id,
+        title,
+        binding,
+        scope,
+      })),
+      canConfigureAI,
+      roomPerformance,
+    },
+    (intent) => {
+      if (intent.type === "close") onOpenChange(false);
+      if (intent.type === "preferences") onChange(intent.preferences);
+      if (intent.type === "binding") onBind(intent.id, intent.binding);
+      if (intent.type === "error") onError(intent.message);
+    },
+  );
+  if (detached) return null;
   const performance = canConfigureAI
     ? preferences.performance
     : roomPerformance || preferences.performance;
@@ -138,6 +162,13 @@ export function Settings({
             />
           </label>
         )}
+        <Switch
+          label="显示 AI 性能测试"
+          checked={preferences.benchmarkVisible}
+          onCheckedChange={(benchmarkVisible) =>
+            onChange({ ...preferences, benchmarkVisible })
+          }
+        />
         <p className="muted">联机由房主电脑计算。当前策略使用 CPU 搜索。</p>
         <Switch
           label={canConfigureAI ? "记录并显示策略审核" : "显示策略审核"}

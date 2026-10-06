@@ -215,7 +215,7 @@ export function Lobby({
             </button>
           </div>
         )}
-        {kind === "tq" && (
+        {kind === "tq" && preferences.benchmarkVisible && (
           <button
             onClick={() => {
               setHumans(0);

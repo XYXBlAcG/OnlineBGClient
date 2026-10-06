@@ -1,8 +1,7 @@
 import type { GameKind } from "../domain/catalogue";
 
-export type GuideFocus = { caption: string } & (
-  { selector: string; button?: never } | { button: string; selector?: never }
-);
+import type { GuideTargetKey } from "./guide-targets";
+export type GuideFocus = { caption: string; target: GuideTargetKey };
 export interface BeginnerGuide {
   goal: string;
   steps: readonly {
@@ -22,7 +21,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "中间三排是可以买的牌：右上角颜色代表永久折扣，左侧数字是宝石费用，大数字是声望。最上方是贵族。",
         tip: "先挑一张便宜的牌，看看自己还缺哪几种颜色。",
         focus: {
-          selector: ".ccbs-card-wrapper",
+          target: "ccbs.market",
           caption: "市场发展卡：看右上角颜色、左边费用和声望数字。",
         },
         details: [
@@ -36,7 +35,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "点“取宝石”，再点想拿的宝石，最后点“确认拿这些”。通常拿三种不同颜色；某颜色库存至少四个时，可以拿两个同色。",
         tip: "原站也允许少拿。选错可以取消重选；回合结束最多保留十个宝石，超出要丢弃。",
         focus: {
-          selector: ".ccbs-circle.scale-125",
+          target: "ccbs.bank",
           caption: "银行宝石区：点取宝石后在这里选择颜色。",
         },
         details: [
@@ -50,7 +49,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "点“购买发展卡”选择可买的牌。已购牌的颜色会永久减少对应费用，宝石付出去后回到银行，黄金可以补任意颜色。",
         tip: "例如蓝色费用为三，你已有一张蓝色牌，就只需付两个蓝宝石。",
         focus: {
-          button: "购买发展卡",
+          target: "ccbs.buy",
           caption: "购买按钮：先选择买牌模式，再选能负担的牌。",
         },
         details: [
@@ -64,7 +63,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "点“预定发展卡”可以保留一张市场牌或暗抽一张牌堆牌，有库存时还会拿到一个黄金。最多预留三张；以后购买仍要付费。",
         tip: "贵族看永久折扣数量，不看手上宝石。达标后可来访得分，有多个候选时要选一个。",
         focus: {
-          selector: ".ccbs-noble-wrapper",
+          target: "ccbs.noble",
           caption: "上方贵族区：要求的是已购牌的永久折扣数量。",
         },
         details: [
@@ -78,7 +77,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "有人达到十五分后，会把这一轮打完，让各玩家的回合数相同。分数最高者胜；同分时，已购发展卡更少者优先。",
         tip: "先建立折扣，再买高分牌。别只囤宝石，也留意对手马上能买的高分牌。",
         focus: {
-          selector: ".w-10",
+          target: "ccbs.score",
           caption: "玩家得分与已购牌展示区：终局按声望比较。",
         },
         details: [
@@ -97,7 +96,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "红、蓝、紫牌放进同色药锅，黑色毒药可放任意锅。牌上的数字用于计算这口锅的总值。",
         tip: "先看每口锅现在的总值，再决定打哪张牌。",
         focus: {
-          selector: ".dy-card",
+          target: "dy.card",
           caption: "药牌：上面的数字是锅值，颜色决定能放哪口锅。",
         },
         details: [
@@ -111,7 +110,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "轮到你时点选手牌，再点“出牌”。选择毒药时，要指定放入哪一口锅。每回合只打出一张。",
         tip: "普通颜色只有一个合法药锅；毒药的选择会影响下一个人的处境。",
         focus: {
-          selector: ".mt-auto .dy-card",
+          target: "dy.hand",
           caption: "你的手牌区：选牌后再确认出牌。",
         },
         details: [
@@ -125,7 +124,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "放牌后，锅的总值超过十三，你会收走锅里原有的牌，刚放进去的牌留在锅中，成为下一轮的开始。",
         tip: "锅里是十，放三不会收锅，放四就会收走原有的牌。",
         focus: {
-          selector: ".dy-card",
+          target: "dy.pot",
           caption: "锅中的牌：先做加法，判断是否超过十三。",
         },
         details: [
@@ -139,7 +138,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "收走的普通牌通常每张一分，毒药每张两分。某颜色收牌数量独占第一时，该颜色的普通牌免罚分；并列第一不能免。",
         tip: "免罚看的是牌的张数，不是牌面数字；毒药仍然计罚分。",
         focus: {
-          selector: ".dy-card",
+          target: "dy.score",
           caption: "收牌与得分：罚分看张数，免罚看颜色的独占数量。",
         },
         details: [
@@ -153,7 +152,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "低数值牌容易安全落锅，大数值牌可能逼别人收锅，也可能轮到自己时无路可走。结算时比较最终罚分。",
         tip: "留一张小牌应急；确实躲不过收锅时，优先比较毒药数量和颜色优势。",
         focus: {
-          selector: ".mt-auto .dy-card",
+          target: "dy.hand",
           caption: "剩余手牌：结合锅值安排接下来几次出牌。",
         },
         details: [
@@ -172,7 +171,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "按牌桌提示，点高亮交点放村庄，再在旁边放道路。第二轮开局放置会倒序进行；村庄间要留出距离。",
         tip: "邻近地块的数字越容易掷出，产资源越稳定；也尽量覆盖不同资源。",
         focus: {
-          selector: "svg",
+          target: "ktd.build",
           caption: "岛屿地图：先定位可放村庄的交点与相邻道路。",
         },
         details: [
@@ -186,7 +185,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "轮到你先掷骰。数字对应的地块给相邻村庄产一份资源，城市产两份；强盗占据的地块不生产。",
         tip: "掷出七时按提示丢弃过量资源、移动强盗并选择可偷取的玩家。",
         focus: {
-          button: "掷骰",
+          target: "ktd.roll",
           caption: "掷骰按钮与地图数字：每次骰子决定哪些地块生产。",
         },
         details: [
@@ -200,7 +199,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "道路需要木材和砖，村庄还需羊和麦，城市需要矿和麦。村庄通常一分，升级城市通常两分；建设位置必须合法。",
         tip: "点建设选项，再点高亮位置。缺少资源时，可以先查看建设费用再决定交易。",
         focus: {
-          selector: ".catan-hand-panel",
+          target: "ktd.build",
           caption: "地图下方操作区：先看资源，再选建设类别。",
         },
         details: [
@@ -214,7 +213,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "可以向银行兑换，港口能降低对应兑换比例；向玩家报价后，要等对方响应。发展卡包括骑士、资源收益和分数等。",
         tip: "买到的发展卡通常不能当回合使用；按牌桌提示选择卡和目标。本局未启用玩家贸易时使用银行。",
         focus: {
-          selector: ".catan-hand-panel",
+          target: "ktd.trade",
           caption: "交易与发展卡操作：报价需要对方接受才会成交。",
         },
         details: [
@@ -228,7 +227,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "最长道路与骑士相关奖励也能增加分数。多人大地图可能有不同胜利门槛，查看本局显示的目标。",
         tip: "先保证稳定收入，再争扩张位置。某些多人地图有特殊建造阶段，按当前操作提示行动。",
         focus: {
-          selector: ".catan-hand-panel",
+          target: "ktd.end",
           caption: "本局分数与回合操作：完成行动后主动结束回合。",
         },
         details: [
@@ -247,7 +246,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "身份局中主公、忠臣要消灭反贼和内奸；反贼要击败主公；内奸要最后与主公单独存活并击败主公。队伍局按队伍目标对抗。",
         tip: "不要仅凭别人攻击你就认定其身份。鼠标移到武将牌上或点详情，可以查看技能解释。",
         focus: {
-          selector: ".sgs-hero",
+          target: "sgs.hero",
           caption: "武将和身份区：先读自己的身份，再读武将技能。",
         },
         details: [
@@ -261,7 +260,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "通常按准备、判定、摸牌、出牌、弃牌、结束推进。出牌阶段可选手牌和目标，确认后执行；没有想出的牌可以结束阶段。",
         tip: "手牌超过当前体力时，通常要在弃牌阶段弃掉多余的牌。技能可能改变这些流程。",
         focus: {
-          selector: ".sgs-card-container",
+          target: "sgs.card",
           caption: "手牌与阶段提示：按当前阶段选择牌和目标。",
         },
         details: [
@@ -275,7 +274,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "杀用于攻击距离内的目标，普通情况下出牌阶段只能用一次；被杀时可用闪响应；桃可回复体力，也可按提示救濒死角色。",
         tip: "选了牌还要检查目标。装备、距离和武将技能都会改变哪些目标合法。",
         focus: {
-          selector: ".sgs-card-container",
+          target: "sgs.card",
           caption: "自己的手牌：杀用于攻击，闪用于响应，桃用于回复或救人。",
         },
         details: [
@@ -289,7 +288,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "锦囊有不同效果，无懈可击能响应部分锦囊。其他玩家行动时也可能需要你出闪、杀、桃或选择是否发动技能。",
         tip: "先读当前响应提示再点牌。保留一张防御牌，往往比一次把手牌打完更稳妥。",
         focus: {
-          selector: ".sgs-card-container",
+          target: "sgs.trick",
           caption: "锦囊牌：悬停牌面或点详情，先看目标和对方如何响应。",
         },
         details: [
@@ -303,7 +302,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "技能可能在受伤、判定或摸牌等时机触发；需要目标或牌时按界面提示选择。体力归零会进入濒死求救，未获救才死亡。",
         tip: "先熟悉自己武将的一两个技能。拿不准可打开“游戏操作”，查看此刻允许的动作。",
         focus: {
-          selector: ".sgs-hero",
+          target: "sgs.hero",
           caption: "玩家体力和技能区：确认谁濒死、谁还能行动。",
         },
         details: [
@@ -322,7 +321,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "自己的棋子从一个角出发，目标是棋盘正对面的营地。每回合选择自己的一枚棋子移动。",
         tip: "先观察对面的目标位置，别把棋子一路走向相邻玩家的起点。",
         focus: {
-          selector: "svg",
+          target: "tq.camp",
           caption: "六角棋盘：找自己的起点和正对面的目标营地。",
         },
         details: [
@@ -336,7 +335,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "点选自己的棋子，再点允许到达的空位，可以完成一步移动。合法位置由牌桌高亮提示。",
         tip: "优先让后排棋子离开起点；只推进最前面的棋子，容易把后面的棋子堵住。",
         focus: {
-          selector: "svg",
+          target: "tq.piece",
           caption: "地图上的棋子和高亮空位：先选棋子，再选落点。",
         },
         details: [
@@ -350,7 +349,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "可以借自己的或别人的棋子跳向另一侧空位，合法落点以高亮为准。被跳过的棋子仍留在原位。",
         tip: "对方棋子也可以当跳板，留意能跨过棋盘中部的路线。",
         focus: {
-          selector: "svg",
+          target: "tq.landing",
           caption: "跳板与空落点：跳过棋子后它仍留在原位。",
         },
         details: [
@@ -364,7 +363,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "一次跳跃后，如果还有合法跳点，可以继续连接路线。按牌桌提示完成选择与确认；一次回合只移动同一枚棋子。",
         tip: "先看完整路线。一次连续跳通常比多次单步移动更快。",
         focus: {
-          selector: "svg",
+          target: "tq.route",
           caption: "连续跳路线：按顺序选择同一枚棋子的多个落点。",
         },
         details: [
@@ -378,7 +377,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
         text: "接近终点时，要给后面的棋子留下进入营地的空间。把所有棋子送进目标营地才算完成。",
         tip: "前面的棋子尽量靠里，别停在营地入口挡路；“游戏操作”可以查看合法路线。",
         focus: {
-          selector: "svg",
+          target: "tq.camp",
           caption: "目标营地入口：给后续棋子留出落脚空间。",
         },
         details: [

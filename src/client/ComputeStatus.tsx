@@ -3,8 +3,10 @@ import type { Snapshot } from "../domain/protocol";
 export function ComputeStatus({
   snapshot,
   control,
+  benchmarkVisible = false,
 }: {
   snapshot: Snapshot;
+  benchmarkVisible?: boolean;
   control: (enabled: boolean) => void;
 }) {
   const metric = snapshot.computation;
@@ -21,7 +23,8 @@ export function ComputeStatus({
     return () => clearInterval(timer);
   }, [metric, snapshot.paused, snapshot.finished]);
   const work = metric?.simulations || metric?.scoredCandidates || 0;
-  const benchmark = snapshot.kind === "tq" && snapshot.config.humans === 0;
+  const benchmark =
+    benchmarkVisible && snapshot.kind === "tq" && snapshot.config.humans === 0;
   if (!metric && !benchmark) return null;
   return (
     <div className="compute-status" aria-label="AI计算统计">

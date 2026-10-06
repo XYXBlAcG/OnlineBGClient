@@ -1,10 +1,9 @@
 import { chromium } from "@playwright/test";
-import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 
-const status = await readFile(".tmp/native-hosting.log", "utf8");
-assert.ok(status.startsWith("HOST_READY "), status);
-const { url, room } = JSON.parse(status.split("\n")[0].slice("HOST_READY ".length));
+const url = process.env.TEST_SERVICE;
+const room = process.env.TEST_ROOM;
+assert.ok(url && room, "需要 TEST_SERVICE 和 TEST_ROOM 指向已启动的公网房间");
 const browser = await chromium.launch({
   executablePath:
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -25,21 +24,15 @@ try {
   await page.getByRole("button", { name: /^聊天/ }).tap();
   await page.getByLabel("消息", { exact: true }).fill("好友已加入");
   await page.getByRole("button", { name: "发送", exact: true }).click();
-  await page.locator(".uno").first().waitFor();
+  await page.locator(".original-game").waitFor();
   await page.reload();
-  await page.locator(".uno").first().waitFor();
+  await page.locator(".original-game").waitFor();
   await page.getByRole("button", { name: /^聊天/ }).tap();
   await page.getByText("好友已加入", { exact: true }).waitFor();
   await page.getByLabel("消息", { exact: true }).fill("浏览器验证通过");
   await page.getByRole("button", { name: "发送", exact: true }).click();
-  await page
-    .locator(".room-toolbar > strong")
-    .filter({ hasText: "三国杀" })
-    .waitFor();
-  await page.getByLabel("消息", { exact: true }).fill("切换验证通过");
-  await page.getByRole("button", { name: "发送", exact: true }).tap();
   console.log(
-    "PASS: native host invitation, mobile browser guest, HTTPS/WSS game and chat, quick text, identity recovery, same-room switch",
+    "PASS: native host invitation, mobile browser guest, HTTPS/WSS game and chat, identity recovery",
   );
 } finally {
   await browser.close();

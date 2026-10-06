@@ -1,3 +1,4 @@
+import { useNativeWindow } from "./native/windows";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { Panel } from "./ui/Controls";
 import profile from "./about.json";
@@ -13,6 +14,16 @@ export function About({
   onOpenChange: (open: boolean) => void;
   onError: (message: string) => void;
 }) {
+  const detached = useNativeWindow(
+    "about",
+    open,
+    { view: "about" },
+    (intent) => {
+      if (intent.type === "close") onOpenChange(false);
+      if (intent.type === "error") onError(intent.message);
+    },
+  );
+  if (detached) return null;
   return (
     <Panel
       title={`关于 ${productName}`}

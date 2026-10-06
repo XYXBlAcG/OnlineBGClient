@@ -1,3 +1,4 @@
+import { useNativeWindow } from "./native/windows";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Panel } from "./ui/Controls";
@@ -12,9 +13,18 @@ export function Invite({
   onOpenChange: (open: boolean) => void;
   onError: (message: string) => void;
 }) {
+  const detached = useNativeWindow(
+    "invite",
+    open,
+    { view: "invite", url },
+    (intent) => {
+      if (intent.type === "close") onOpenChange(false);
+      if (intent.type === "error") onError(intent.message);
+    },
+  );
   const [qr, setQr] = useState("");
   useEffect(() => {
-    if (open)
+    if (open && !detached)
       void QRCode.toDataURL(url, {
         width: 256,
         margin: 2,
@@ -23,6 +33,7 @@ export function Invite({
         .then(setQr)
         .catch((error) => onError(String(error)));
   }, [url, open]);
+  if (detached) return null;
   return (
     <Panel title="邀请朋友" open={open} onOpenChange={onOpenChange}>
       {qr && <img className="invite-qr" src={qr} alt="房间邀请二维码" />}

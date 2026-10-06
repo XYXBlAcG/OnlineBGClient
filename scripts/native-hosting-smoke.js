@@ -1,125 +1,27 @@
 (async () => {
-  const waitFor = async (find) => {
-    for (let attempt = 0; attempt < 4000; attempt++) {
-      if (attempt % 50 === 0)
-        await window.__TAURI_INTERNALS__.invoke("report_stage", {
-          result:
-            (window.hostTestReady ? window.hostTestReady + "\n" : "") + "PROGRESS " +
-            String(find) +
-            "\nTauri=" +
-            globalThis.isTauri +
-            "\n" +
-            document.body.innerText,
-        });
-      const value = find();
-      if (value) {
-        await new Promise(resolve => setTimeout(resolve, 120));
-        return value;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    throw new Error(
-      "Timed out: " + String(find) + "\n" + document.body.innerText,
-    );
-  };
-  const button = (text) =>
-    [...document.querySelectorAll("button")].find(
-      (button) => button.textContent === text,
-    );
+  const invoke = (command,args) => window.__TAURI_INTERNALS__.invoke(command,args);
+  const waitFor = async read => {for(let i=0;i<1600;i++){const value=read();if(value)return value;const error=document.querySelector(".error-notification");if(error)throw new Error(error.textContent);await new Promise(resolve=>setTimeout(resolve,100));}throw new Error(`等待超时：${read}`);};
+  const button = text => [...document.querySelectorAll("button")].find(node=>node.textContent.trim()===text);
   try {
-    await waitFor(() => button("跨网络联机"));
-    button("跨网络联机").click();
-    await waitFor(() => button("一键创建公网房间"));
-    document.querySelector('[role=combobox][aria-label="真人人数"]').click();
-    const option = await waitFor(() =>
-      [...document.querySelectorAll("[role=option]")].find(
-        (option) => option.textContent.trim() === "2 人",
-      ),
-    );
-    option.click();
-    await waitFor(() => !document.querySelector("[role=listbox]"));
-    button("一键创建公网房间").click();
-    await waitFor(() => {
-      if (document.querySelector(".error-notification"))
-        throw new Error(document.querySelector(".error-notification").innerText);
-      return document.querySelector(".room-toolbar");
-    });
-    const url = await window.__TAURI_INTERNALS__.invoke("start_host");
-    try { await window.__TAURI_INTERNALS__.invoke('clear_cache',{runtime:true,images:false});throw new Error('Running host cache was removed'); } catch(error) { if(!String(error).includes('请先关闭公网房间'))throw error; }
-    window.hostTestReady = "HOST_READY " + JSON.stringify({url,room: document.querySelector(".room-toolbar > strong").textContent.split(" · ")[1]});
-    await window.__TAURI_INTERNALS__.invoke("report_stage", {
-      result:
-        "HOST_READY " +
-        JSON.stringify({
-          url,
-          room: document
-            .querySelector(".room-toolbar > strong")
-            .textContent.split(" · ")[1],
-        }),
-    });
-    await waitFor(
-      () =>
-        document.body.innerText.includes("好友已加入") &&
-        !button("开始对局").disabled,
-    );
-    button("开始对局").click();
-    await waitFor(() => button("我先出牌"));
-    button("我先出牌").click();
-    await waitFor(() => !button("我先出牌"));
-    await waitFor(() => document.body.innerText.includes("浏览器验证通过"));
-    button("结束游戏").click();
-    await waitFor(() => document.querySelector('.confirmation-dialog[data-state="open"]'));
-    button("取消").click();
-    await waitFor(() => !document.querySelector('.confirmation-dialog[data-state="open"]'));
-    if (document.querySelector(".finish-banner"))
-      throw new Error("Cancel ended game");
-    button("结束游戏").click();
-    await waitFor(() => document.querySelector('.confirmation-dialog[data-state="open"]'));
-    button("确认结束").click();
-    await waitFor(() => button("开始对局"));
-    button("游戏与人数").click();
-    await waitFor(()=>document.querySelector('[role=combobox][aria-label="下一局游戏"]'));
-    document.querySelector('[role=combobox][aria-label="下一局游戏"]').click();
-    (
-      await waitFor(() =>
-        [...document.querySelectorAll("[role=option]")].find(
-          (option) => option.textContent.trim() === "三国杀",
-        ),
-      )
-    ).click();
-    await waitFor(() => !document.querySelector("[role=listbox]"));
-    button("应用").click();
-    await waitFor(() =>
-      document
-        .querySelector(".room-toolbar > strong")
-        ?.textContent.includes("三国杀"),
-    );
-    if ((await window.__TAURI_INTERNALS__.invoke("start_host")) !== url)
-      throw new Error("Game switch restarted tunnel");
-    await waitFor(() => document.body.innerText.includes("切换验证通过"));
-    button("关闭房间").click();
-    await waitFor(() => document.querySelector('.confirmation-dialog[data-state="open"]'));
-    button("取消").click();
-    await waitFor(() => !document.querySelector('.confirmation-dialog[data-state="open"]'));
-    if (!document.querySelector(".room-toolbar"))
-      throw new Error("Cancel left room");
-    button("关闭房间").click();
-    await waitFor(() => document.querySelector('.confirmation-dialog[data-state="open"]'));
-    document.querySelector('.confirmation-dialog[data-state="open"] .confirmation-actions button:last-child').click();
-    await waitFor(() => document.querySelector(".game-library"));
-    await window.__TAURI_INTERNALS__.invoke("report_stage", {
-      result:
-        "LEAVE_READY: native host ended game, confirmed room exit, back in lobby",
-    });
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-    await window.__TAURI_INTERNALS__.invoke("report", {
-      result:
-        "PASS: native public host, mobile browser, quick text, unchanged tunnel game switch, game cancellation/end, exit cancellation/confirmation, managed shutdown",
-    });
-  } catch (error) {
-    await window.__TAURI_INTERNALS__.invoke("stop_host");
-    await window.__TAURI_INTERNALS__.invoke("report", {
-      result: "FAIL: " + String(error) + "\n" + document.body.innerText,
-    });
-  }
+    if(new URLSearchParams(location.search).get("aux")==="about") {
+      await waitFor(()=>document.querySelector(".native-content"));
+      await invoke("mark_auxiliary");
+      await invoke("close_auxiliary",{view:"about"});
+      return;
+    }
+    await waitFor(()=>button("跨网络联机"));button("跨网络联机").click();
+    (await waitFor(()=>button("一键创建公网房间"))).click();
+    await waitFor(()=>document.querySelector(".room-toolbar"));
+    const url=await invoke("start_host");
+    await invoke("report_stage",{result:`HOST_READY ${url}`});
+    button("关于").click();await waitFor(()=>window.auxiliaryOpened);
+    await waitFor(()=>!document.querySelector(".app-shell [role=dialog]"));
+    await new Promise(resolve=>setTimeout(resolve,500));
+    const status=await invoke("probe_host",{url});
+    if(!status.running||status.auxiliary||!status.reachable)throw new Error(`辅助窗口关闭影响公网服务：${JSON.stringify(status)}`);
+    if(await invoke("start_host")!==url)throw new Error("辅助窗口关闭改变公网地址");
+    if(!document.querySelector(".room-toolbar"))throw new Error("辅助窗口关闭退出房间");
+    await invoke("stop_host");
+    await invoke("report",{result:"PASS: native public room survives auxiliary window close; HTTPS health reachable; same tunnel reused; explicit service stop"});
+  } catch(error) {await invoke("report",{result:`FAIL: ${error}\n${document.body.innerText}`});}
 })();

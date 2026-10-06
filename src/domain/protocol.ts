@@ -1,3 +1,4 @@
+import type { ComputeDiagnostic } from "./compute-diagnostics";
 import type { AiComputation } from "./performance";
 import { performanceSchema } from "./performance";
 import { interactionSchema, type InteractionEvent } from "./social";
@@ -186,7 +187,12 @@ export type Response =
       changes: Partial<Snapshot>;
     }
   | { type: "activity"; pending: boolean; latencyMs?: number }
-  | { type: "error"; message: string; id?: string }
+  | {
+      type: "error";
+      message: string;
+      id?: string;
+      diagnostic?: ComputeDiagnostic;
+    }
   | { type: "interaction"; event: InteractionEvent }
   | { type: "ack"; id: string }
   | { type: "left" }

@@ -1,3 +1,8 @@
+import { RemoteComputePorts, type SearchHostFailure } from "./compute-ports";
+import {
+  ComputeFailure,
+  computeDiagnostic,
+} from "../domain/compute-diagnostics";
 import { ClientStore } from "./storage";
 import { Room } from "../domain/room";
 import { Gateway } from "../domain/gateway";
@@ -9,24 +14,10 @@ const gateway = new Gateway();
 const store = new ClientStore();
 let serial = Promise.resolve();
 const cores = navigator.hardwareConcurrency || 2;
-const pool = new ComputePool(
-  () => {
-    const worker = new Worker(new URL("./search-worker.ts", import.meta.url), {
-      type: "module",
-    });
-    return {
-      send: (input) => worker.postMessage(input),
-      receive: (callback) => {
-        worker.onmessage = (event) => callback(event.data);
-      },
-      error: (callback) => {
-        worker.onerror = (event) => callback(new Error(event.message));
-      },
-      close: () => worker.terminate(),
-    };
-  },
-  Math.min(32, cores),
+const remote = new RemoteComputePorts((message, transfer) =>
+  postMessage(message, transfer || []),
 );
+const pool = new ComputePool(() => remote.create(), Math.min(32, cores));
 const compute = new SearchCoordinator(pool);
 let pending:
   { room: string; version: number; controller: AbortController } | undefined;
@@ -47,7 +38,12 @@ const publish = async () => {
   }
 };
 
-onmessage = (event) => {
+onmessage = (event: MessageEvent<unknown>) => {
+  if ((event.data as SearchHostFailure).type === "search-error") {
+    const failure = event.data as SearchHostFailure;
+    remote.fail(failure.id, failure.diagnostic);
+    return;
+  }
   serial = serial.then(async () => {
     try {
       const command = commandSchema.parse(event.data);
@@ -77,7 +73,13 @@ onmessage = (event) => {
         session
       )
         session.token = command.token;
+      if (command.type === "ai-run" && command.enabled) failedVersion = -1;
       const result = gateway.handle(command, session);
+      if (["end", "game", "close", "leave"].includes(command.type)) {
+        pending?.controller.abort();
+        pending = undefined;
+        pool.reset();
+      }
       session = result.session;
       if (command.type === "interaction") {
         if (result.response) send(result.response);
@@ -200,7 +202,18 @@ setInterval(() => {
           if (active.controller.signal.aborted) return;
           active.controller.abort();
           failedVersion = request.version;
-          send({ type: "error", message: String(error) });
+          const diagnostic = computeDiagnostic("execute", error);
+          serial = serial.then(async () => {
+            if (session?.room !== room.id || room.version !== request.version)
+              return;
+            room.setAiRunning(session.token, false);
+            await publish();
+            send({
+              type: "error",
+              message: new ComputeFailure(diagnostic).message,
+              diagnostic,
+            });
+          });
         })
         .finally(() => {
           if (pending === active) pending = undefined;

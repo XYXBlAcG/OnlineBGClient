@@ -5,7 +5,7 @@ import {
   type ReactNode,
 } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { Panel } from "./ui/Controls";
+import * as Popover from "@radix-ui/react-popover";
 
 export function DetailSurface({
   label,
@@ -40,26 +40,38 @@ export function DetailSurface({
   );
   return (
     <Tooltip.Provider delayDuration={300}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>
-          {cloneElement(trigger as ReactElement<Record<string, unknown>>, {
-            tabIndex: 0,
-            "aria-label": label,
-          })}
-        </Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Content
-            className="ui-tooltip"
+      <Popover.Root open={open} onOpenChange={setOpen}>
+        <Tooltip.Root>
+          <Popover.Anchor asChild>
+            <Tooltip.Trigger asChild>
+              {cloneElement(trigger as ReactElement<Record<string, unknown>>, {
+                tabIndex: 0,
+                "aria-label": label,
+              })}
+            </Tooltip.Trigger>
+          </Popover.Anchor>
+          <Tooltip.Portal>
+            <Tooltip.Content
+              className="ui-tooltip"
+              sideOffset={8}
+              collisionPadding={12}
+            >
+              {description}
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Popover.Portal>
+          <Popover.Content
+            className="ui-tooltip detail-popover"
+            aria-label={title}
             sideOffset={8}
             collisionPadding={12}
           >
+            <Popover.Close aria-label="关闭说明">×</Popover.Close>
             {description}
-          </Tooltip.Content>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-      <Panel title={title} open={open} onOpenChange={setOpen}>
-        {description}
-      </Panel>
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
     </Tooltip.Provider>
   );
 }

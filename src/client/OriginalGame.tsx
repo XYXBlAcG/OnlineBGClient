@@ -1,5 +1,5 @@
+import { GameFeedback } from "./GameFeedback";
 import { catanIntent } from "../domain/catan-intent";
-import { GameSurfaceSizes } from "./SurfaceResize";
 import { MapViewport } from "./MapViewport";
 import { AvatarSurface } from "./AvatarSurface";
 import { Interactions } from "./Interactions";
@@ -60,6 +60,7 @@ export const OriginalGame = memo(function OriginalGame({
   if (snapshot.kind === "ktd")
     runtime.bridge.catanIntent = (previous, next, actor) =>
       catanIntent(previous, next, actor, runtime.load(6634).K8);
+  runtime.bridge.feedback = GameFeedback;
   runtime.bridge.mapViewport = MapViewport;
   runtime.bridge.heroCard = HeroSurface;
   runtime.bridge.trickCard = CardSurface;
@@ -142,7 +143,6 @@ export const OriginalGame = memo(function OriginalGame({
           if (!replay && event === events.OwnerExitGame) end();
         }}
       />
-      <GameSurfaceSizes kind={snapshot.kind} />
       {!replay && onInteractionEnd && (
         <Interactions
           events={interactions}

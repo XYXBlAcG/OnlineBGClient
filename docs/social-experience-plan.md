@@ -13,7 +13,7 @@
 | 提示音与系统通知 | [通知](../src/client/notifications.ts)、[设置](../src/client/Settings.tsx) |
 | 自己头像的常用语与他人头像的特效 | [牌桌菜单](../src/client/AvatarSurface.tsx)、[分组菜单](../src/client/PhraseMenu.tsx) |
 | 常用语预设、编辑与保存 | [预设](../src/domain/phrase-presets.json)、[校验与游戏语句](../src/domain/phrases.ts)、[编辑](../src/client/PhraseSettings.tsx)、[偏好](../src/client/preferences.ts) |
-| 聊天侧栏宽度 | [拖动与键盘调整](../src/client/ChatResizeHandle.tsx)、[消息组件](../src/client/ChatPanel.tsx) |
+| 聊天侧栏宽度 | [边缘分栏](../src/client/SidebarDivider.tsx)、[消息组件](../src/client/ChatPanel.tsx) |
 | 缓存与本地存档 | [清理界面](../src/client/CacheSettings.tsx)、[IndexedDB](../src/client/storage.ts)、[原生缓存](../src-tauri/src/cache.rs) |
 | 深浅色、控件、浮层与减少动态效果 | [主题](../src/client/themes.ts)、[样式](../src/styles.css)、[动态偏好](../src/client/use-motion.ts) |
 | 桌面右键菜单与公网进程 | [菜单策略](../src/client/desktop-context-menu.ts)、[进程管理](../src-tauri/src/hosting.rs) |

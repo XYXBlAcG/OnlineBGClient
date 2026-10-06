@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { UpstreamRuntime } from '../src/upstream/runtime';
 
 describe('Hullqin local modules', () => {
+  it('adapts Splendor feedback without cached page coordinates', () => {
+    const runtime = new UpstreamRuntime();
+    expect(runtime.load(2262).Z).toBeTypeOf('function');
+  });
   it('loads both original renderers and rules without the original site', () => {
     const runtime = new UpstreamRuntime();
     expect(runtime.load(7707).default).toBeTypeOf('function');

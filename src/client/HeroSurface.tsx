@@ -40,7 +40,7 @@ export function HeroSurface({
       description={<HeroDescription hero={hero} />}
     >
       {(button) => (
-        <div className="hero-surface">
+        <div className="hero-surface" data-guide-target="sgs.hero" data-guide-id={id}>
           {children}
           {button}
         </div>

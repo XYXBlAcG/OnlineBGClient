@@ -2495,7 +2495,10 @@ export default {
       className: t,
       onClick: v,
       children: m,
-      disabled: h
+      disabled: h,
+      "data-guide-target": e["data-guide-target"],
+      "data-guide-id": e["data-guide-id"],
+      "data-guide-player": e["data-guide-player"]
     });
   };
 },
@@ -3702,6 +3705,7 @@ export default {
   }
 },
 2262: function (n, e, t) {
+  var companionFeedbackBridge = t.bridge;
   t.d(e, {
     Z: function () {
       return E;
@@ -3723,7 +3727,10 @@ export default {
         className: "ccbs-noble-wrapper".concat(r ? " ccbs-small" : ""),
         children: (0, o.jsx)("div", {
           className: "ccbs-noble ccbs-empty"
-        })
+        }),
+        "data-guide-target": "ccbs.noble",
+        "data-guide-id": e,
+        "data-guide-small": !!r
       });
       var l = e - 1,
         s = c.Hf[l];
@@ -3746,64 +3753,18 @@ export default {
               }, e);
             })
           }), i]
-        })
+        }),
+        "data-guide-target": "ccbs.noble",
+        "data-guide-id": e,
+        "data-guide-small": !!r
       });
     },
     s = t(4595),
     u = a.memo(function (n) {
-      var e,
-        t,
-        i = n.lastOp,
-        c = n.gameVersion,
-        s = (0, a.useState)([]),
-        u = (0, r.Z)(s, 2),
-        d = u[0],
-        f = u[1],
-        h = (0, a.useState)(!1),
-        p = (0, r.Z)(h, 2),
-        m = p[0],
-        v = p[1],
-        b = (0, a.useState)(!1),
-        y = (0, r.Z)(b, 2),
-        w = y[0],
-        g = y[1],
-        x = (0, a.useRef)(0);
-      return (0, a.useEffect)(function () {
-        var n = [],
-          e = document.getElementById("ccbs-noble-0").getClientRects()[0];
-        n.push(e.top, e.left);
-        for (var t = 1; t < 5; t++) {
-          var r = document.getElementById("ccbs-noble-".concat(t));
-          if (!r) break;
-          n.push(r.getClientRects()[0].left);
-        }
-        f(n);
-      }, [document.body.clientWidth]), (0, a.useEffect)(function () {
-        x.current && clearTimeout(x.current), g(!1), v(!1);
-        var n = window.setTimeout(function () {
-          return v(!0);
-        }, 0);
-        return x.current = window.setTimeout(function () {
-          g(!0), x.current = 0;
-        }, 820), function () {
-          clearTimeout(n), clearTimeout(x.current);
-        };
-      }, [c]), i && null !== (e = i.noble) && void 0 !== e && e.length && null !== (t = i.noblePos) && void 0 !== t && t.length ? (0, o.jsx)("div", {
-        className: "absolute top-0",
-        children: !w && i.noble.map(function (n, e) {
-          return (0, o.jsx)("div", {
-            className: "absolute transition-all ease-linear duration-300 delay-500 z-20",
-            style: {
-              left: d[i.noblePos[e] + 1],
-              top: d[0],
-              marginTop: m ? 130 : 0,
-              opacity: m ? .7 : 1
-            },
-            children: (0, o.jsx)(l, {
-              id: n
-            })
-          }, e);
-        })
+      return companionFeedbackBridge.feedback ? (0, o.jsx)(companionFeedbackBridge.feedback, {
+        event: n.lastOp,
+        version: n.gameVersion,
+        target: "ccbs.noble"
       }) : null;
     }, function (n, e) {
       return n.gameVersion === e.gameVersion;
@@ -3864,14 +3825,20 @@ export default {
         children: (0, o.jsx)("div", {
           className: "ccbs-card ccbs-type-5 ccbs-img-".concat(-e - 1, " ").concat(r || ""),
           children: i
-        })
+        }),
+        "data-guide-target": "ccbs.market",
+        "data-guide-id": e,
+        "data-guide-small": !!a
       });
       if (!e) return (0, o.jsx)("div", {
         id: t,
         className: "ccbs-card-wrapper".concat(a ? " ccbs-small" : ""),
         children: (0, o.jsx)("div", {
           className: "ccbs-card ccbs-empty ".concat(r || "")
-        })
+        }),
+        "data-guide-target": "ccbs.market",
+        "data-guide-id": e,
+        "data-guide-small": !!a
       });
       var l = e - 1,
         s = c.KI[l],
@@ -3898,68 +3865,19 @@ export default {
               }, e);
             })
           }), i]
-        })
+        }),
+        "data-guide-target": "ccbs.market",
+        "data-guide-id": e,
+        "data-guide-small": !!a
       });
     },
     v = t(3366),
     b = a.memo(function (n) {
-      var e,
-        t = n.lastOp,
-        l = n.gameVersion,
-        s = n.revealBooked,
-        u = (0, a.useState)([[], [], []]),
-        d = (0, r.Z)(u, 2),
-        f = d[0],
-        v = d[1],
-        b = (0, a.useState)(!1),
-        y = (0, r.Z)(b, 2),
-        w = y[0],
-        g = y[1],
-        x = (0, a.useState)(!1),
-        k = (0, r.Z)(x, 2),
-        j = k[0],
-        N = k[1],
-        C = (0, a.useRef)(0);
-      if ((0, a.useEffect)(function () {
-        for (var n = [[], [], []], e = 0; e < 3; e++) {
-          var t = document.getElementById("ccbs-card-".concat(e)).getClientRects()[0];
-          n[e].push(t.top, t.left);
-          for (var r = 0; r < 4; r++) n[e].push(document.getElementById("ccbs-card-".concat(e, "-").concat(r)).getClientRects()[0].left);
-        }
-        v(n);
-      }, [document.body.clientWidth]), (0, a.useEffect)(function () {
-        C.current && clearTimeout(C.current), N(!1), g(!1);
-        var n = window.setTimeout(function () {
-          return g(!0);
-        }, 0);
-        return C.current = window.setTimeout(function () {
-          N(!0), C.current = 0;
-        }, 1520), function () {
-          clearTimeout(n), clearTimeout(C.current);
-        };
-      }, [l]), !t || ![p.W.BUY, p.W.BUY_BOOKED, p.W.BOOK].includes(t.type) || !t.card) return null;
-      var O = t.card,
-        Z = c.XO[O - 1],
-        E = t.type === p.W.BUY_BOOKED ? -1 : t.cardPos !== i.Y7 ? t.cardPos : -1;
-      return (0, o.jsx)("div", {
-        className: "absolute top-0",
-        children: !j && (0, o.jsx)("div", {
-          className: "absolute transition-all ease-linear duration-500 delay-300 z-10",
-          style: {
-            left: f[Z][E + 2],
-            top: f[Z][0],
-            marginTop: w ? 190 : 0,
-            opacity: w ? .7 : 1
-          },
-          children: (0, o.jsx)(m, {
-            id: s || t.type !== p.W.BOOK || t.cardPos !== i.Y7 ? t.card : -1 - Z,
-            children: (0, o.jsx)("div", {
-              className: "mt-10 text-2xl bg-gray-600 text-white",
-              children: (e = {}, (0, h.Z)(e, p.W.BOOK, "\u9884\u5b9a"), (0, h.Z)(e, p.W.BUY, "\u8d2d\u4e70"), (0, h.Z)(e, p.W.BUY_BOOKED, "\u4e70\u9884\u5b9a\u5361"), e)[t.type]
-            })
-          })
-        })
-      });
+      return companionFeedbackBridge.feedback ? (0, o.jsx)(companionFeedbackBridge.feedback, {
+        event: n.lastOp,
+        version: n.gameVersion,
+        target: "ccbs.market"
+      }) : null;
     }, function (n, e) {
       return n.gameVersion === e.gameVersion;
     });
@@ -4113,59 +4031,10 @@ export default {
     },
     g = [],
     x = a.memo(function (n) {
-      var e,
-        t = n.lastOp,
-        i = n.gameVersion,
-        c = (0, a.useState)([]),
-        l = (0, r.Z)(c, 2),
-        s = l[0],
-        u = l[1],
-        d = (0, a.useState)(!1),
-        f = (0, r.Z)(d, 2),
-        h = f[0],
-        m = f[1],
-        v = (0, a.useState)(!1),
-        b = (0, r.Z)(v, 2),
-        y = b[0],
-        w = b[1],
-        g = (0, a.useRef)(0);
-      return (0, a.useEffect)(function () {
-        for (var n = [], e = 0; e < 6; e++) n.push(document.getElementsByClassName("ccbs-circle ccbs-color-".concat(e, " scale-125"))[0].getClientRects()[0].left);
-        u(n);
-      }, [document.body.clientWidth]), (0, a.useEffect)(function () {
-        var n;
-        g.current && clearTimeout(g.current), w(!1), m(!1);
-        var e = window.setTimeout(function () {
-            return m(!0);
-          }, 0),
-          r = 0;
-        null === (n = t.gemDelta) || void 0 === n || n.forEach(function (n) {
-          n > r && (r = n);
-        });
-        var a = 200 * (r - 1) + 520;
-        return g.current = window.setTimeout(function () {
-          w(!0), g.current = 0;
-        }, a), function () {
-          clearTimeout(e), clearTimeout(g.current);
-        };
-      }, [i]), t && t.type ? (0, o.jsx)("div", {
-        className: "absolute",
-        children: !y && (null === (e = t.gemDelta) || void 0 === e ? void 0 : e.map(function (n, e) {
-          return new Array(n).fill(0).map(function (n, r) {
-            return (0, o.jsx)("div", {
-              className: "ccbs-circle ccbs-color-".concat(e, " top-0 absolute ease-linear transition-all duration-500"),
-              style: {
-                left: s[e],
-                top: -30,
-                transform: "scale(1.25)",
-                transformOrigin: "left",
-                marginTop: [p.W.GEM, p.W.BOOK].includes(t.type) ? h ? 70 : 0 : h ? 0 : 70,
-                transitionDelay: "".concat(200 * r, "ms"),
-                opacity: h ? .7 : 1
-              }
-            }, "".concat(e, "-").concat(r));
-          });
-        }))
+      return companionFeedbackBridge.feedback ? (0, o.jsx)(companionFeedbackBridge.feedback, {
+        event: n.lastOp,
+        version: n.gameVersion,
+        target: "ccbs.bank"
       }) : null;
     }, function (n, e) {
       return n.gameVersion === e.gameVersion;
@@ -4190,7 +4059,9 @@ export default {
         children: e.bankGem.map(function (n, r) {
           if (!u || 1 !== t) return (0, o.jsx)("div", {
             className: "ccbs-circle ccbs-color-".concat(r, " scale-125").concat(n ? "" : " opacity-50"),
-            children: n
+            children: n,
+            "data-guide-target": "ccbs.bank",
+            "data-guide-id": r
           }, r);
           var a = n - b.filter(function (n) {
             return n === r;
@@ -4206,7 +4077,9 @@ export default {
                   return n ? (0, v.Z)(n) : y([].concat((0, f.Z)(b), [r]));
                 }
               },
-              children: a
+              children: a,
+              "data-guide-target": "ccbs.bank",
+              "data-guide-id": r
             })
           }, r);
         })
@@ -4240,7 +4113,8 @@ export default {
                 selected: b
               });
             },
-            children: "\u786e\u8ba4\u62ff\u8fd9\u4e9b"
+            children: "\u786e\u8ba4\u62ff\u8fd9\u4e9b",
+            "data-guide-target": "ccbs.confirm"
           }), (0, o.jsx)(s.Z, {
             className: "ml-4",
             small: !0,
@@ -4274,7 +4148,9 @@ export default {
               })
             }), (0, o.jsx)("div", {
               className: "w-10",
-              children: "".concat(e.playerScore[i], "\u5206")
+              children: "".concat(e.playerScore[i], "\u5206"),
+              "data-guide-target": "ccbs.score",
+              "data-guide-player": i
             }), new Array(5).fill(0).map(function (t, r) {
               var a = e.playerCardCount[i][r],
                 c = n[r];
@@ -4453,14 +4329,16 @@ export default {
               onClick: function () {
                 return u(1);
               },
-              children: "\ud83d\udc8e\u53d6\u5b9d\u77f3"
+              children: "\ud83d\udc8e\u53d6\u5b9d\u77f3",
+              "data-guide-target": "ccbs.take"
             }), (0, o.jsx)(s.Z, {
               small: !0,
               disabled: !k || 2 === l,
               onClick: function () {
                 return u(2);
               },
-              children: "\ud83d\udcb0\u8d2d\u4e70\u53d1\u5c55\u5361"
+              children: "\ud83d\udcb0\u8d2d\u4e70\u53d1\u5c55\u5361",
+              "data-guide-target": "ccbs.buy"
             }), (0, o.jsx)(s.Z, {
               small: !0,
               disabled: !j || 3 === l,
@@ -4666,6 +4544,7 @@ export default {
         })]
       }), (0, o.jsxs)("details", {
         className: "table-collection",
+        open: true,
         children: [(0, o.jsx)("summary", {
           children: "玩家与收藏"
         }), (0, o.jsx)(j, {
@@ -5220,7 +5099,8 @@ export default {
             onClick: function () {
               p((0, j.HU)(l, m, v));
             },
-            children: "\ud83c\udfb2\u63b7\u9ab0\u5b50"
+            children: "\ud83c\udfb2\u63b7\u9ab0\u5b50",
+            "data-guide-target": "ktd.roll"
           }), (0, x.jsx)(i.Z, {
             className: "m-1",
             small: !0,
@@ -5296,7 +5176,8 @@ export default {
             onClick: function () {
               return b([f.Hx.Exchange, null]);
             },
-            children: "\ud83d\udcb0\u4ea4\u6613"
+            children: "\ud83d\udcb0\u4ea4\u6613",
+            "data-guide-target": "ktd.trade"
           }), (0, x.jsx)(i.Z, {
             className: "m-1",
             small: !0,
@@ -5304,7 +5185,8 @@ export default {
             onClick: function () {
               b([f.Hx.End, null]);
             },
-            children: "\u23e9\u7ed3\u675f"
+            children: "\u23e9\u7ed3\u675f",
+            "data-guide-target": "ktd.end"
           }), M > 4 && (0, x.jsx)(i.Z, {
             className: "m-1",
             small: !0,
@@ -6223,7 +6105,8 @@ export default {
             gameVersion: p,
             send: C
           })
-        })]
+        })],
+        "data-guide-target": "ktd.hand"
       })]
     });
   };
@@ -6361,7 +6244,9 @@ export default {
             onClick: function () {
               var e = r || l || n;
               e && e(m.xyToId.get("".concat(u, ",").concat(d)) << 2 | c << 1 | (l ? 1 : 0));
-            }
+            },
+            "data-guide-target": "ktd.build",
+            "data-guide-id": "road-" + a
           }, a);
         }), D.map(function (e, a) {
           var t = (0, s.Z)(e, 2),
@@ -6383,7 +6268,9 @@ export default {
             onClick: function () {
               var e = i || u;
               e && e(m.xyToId.get("".concat(c, ",").concat(l)) << 2 | n);
-            }
+            },
+            "data-guide-target": "ktd.build",
+            "data-guide-id": "vertex-" + a
           }, a);
         }), h[0] < 0 ? j.map(function (e, a) {
           var r = (0, s.Z)(e, 2),
@@ -8107,7 +7994,9 @@ export default {
           event.stopPropagation();
           event.currentTarget.click();
         }
-      }
+      },
+      "data-guide-target": "dy.card",
+      "data-guide-id": e
     });
   };
   var f = function (t) {
@@ -8267,7 +8156,9 @@ export default {
         selected: x,
         setSelected: y,
         className: "mt-4"
-      })]
+      })],
+      "data-guide-target": "dy.hand",
+      "data-room-region": "dy.hand"
     });
   };
   var y = function (t) {
@@ -8313,26 +8204,34 @@ export default {
             children: (0, d.jsx)(h, {
               ids: n.pots[0],
               op: n.lastOp
-            })
+            }),
+            "data-guide-target": "dy.pot",
+            "data-guide-id": 0
           }), (0, d.jsx)("div", {
             className: "bg-blue-100 bg-opacity-75 mt-4",
             children: (0, d.jsx)(h, {
               ids: n.pots[1],
               op: n.lastOp
-            })
+            }),
+            "data-guide-target": "dy.pot",
+            "data-guide-id": 1
           }), (0, d.jsx)("div", {
             className: "bg-purple-100 bg-opacity-75 mt-4 mb-4",
             children: (0, d.jsx)(h, {
               ids: n.pots[2],
               op: n.lastOp
-            })
+            }),
+            "data-guide-target": "dy.pot",
+            "data-guide-id": 2
           })]
         }), !!n.finish && n.eats.map(function (t, e) {
           return (0, d.jsxs)("div", {
             className: "mb-2",
             children: [(0, d.jsx)("div", {
               className: "text-center my-2",
-              children: "".concat(a.position === e + 1 ? "\u4f60" : "\u73a9\u5bb6".concat(e + 1), "\u7684\u5206\u6570\uff1a").concat(-n.scores[e])
+              children: "".concat(a.position === e + 1 ? "\u4f60" : "\u73a9\u5bb6".concat(e + 1), "\u7684\u5206\u6570\uff1a").concat(-n.scores[e]),
+              "data-guide-target": "dy.score",
+              "data-guide-player": e
             }), (0, d.jsx)(h, {
               ids: t
             })]
@@ -15464,7 +15363,9 @@ export default {
                   }, e);
                 })
               })]
-            })]
+            })],
+            "data-guide-target": "sgs.hand",
+            "data-room-region": "sgs.hand"
           })]
         })]
       });
@@ -19854,7 +19755,9 @@ export default {
           r: 35,
           strokeWidth: "2",
           fill: "none",
-          stroke: l(r, n, i)
+          stroke: l(r, n, i),
+          "data-guide-target": "tq.cell",
+          "data-guide-id": i
         }, i);
       })]
     });
@@ -19949,7 +19852,10 @@ export default {
                           !function (e) {
                             k ? y === e ? (g(-1), C([])) : (g(e), C([e])) : g(e === y ? -1 : e);
                           }(e);
-                        } : void 0
+                        } : void 0,
+                        "data-guide-target": "tq.piece",
+                        "data-guide-id": e,
+                        "data-guide-player": n
                       }, "".concat(n).concat(r));
                     });
                   }), r.lastOp && r.lastOp.route && r.lastOp.route.length > 0 ? (0, c.jsxs)(c.Fragment, {
@@ -19979,7 +19885,8 @@ export default {
                     strokeWidth: "6",
                     d: "M".concat((0, o.fE)((0, o.Us)(Z[0]))[0], ",").concat((0, o.fE)((0, o.Us)(Z[0]))[1], "L").concat(Z.slice(1).map(function (e) {
                       return "".concat((0, o.fE)((0, o.Us)(e))[0], ",").concat((0, o.fE)((0, o.Us)(e))[1]);
-                    }).join("L"))
+                    }).join("L")),
+                    "data-guide-target": "tq.route"
                   }) : null, k && Z.map(function (e, n) {
                     var r = (0, o.Us)(e),
                       i = (0, t.Z)(r, 2),
@@ -20024,7 +19931,9 @@ export default {
                       strokeWidth: "5",
                       onClick: function () {
                         k ? C(e) : f && f(e);
-                      }
+                      },
+                      "data-guide-target": "tq.landing",
+                      "data-guide-id": n
                     }, n);
                   })]
                 })

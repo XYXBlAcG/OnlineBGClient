@@ -45,7 +45,7 @@ jobs:
       - run: npm run upstream:build
       - run: npm run server:build
       - if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        run: npm test -- --run tests/release-assets.test.ts tests/beginner-guide.test.ts tests/trick-guide.test.ts tests/game-expansion.test.ts tests/economic-ai.test.ts tests/commands.test.ts tests/themes.test.ts tests/strategies.test.ts tests/ddz.test.ts tests/ddz-renderer.test.tsx tests/engine.test.ts tests/room-lifecycle.test.ts tests/storage.test.ts tests/replay.test.ts tests/connection.test.ts tests/room-game-switch.test.ts tests/social.test.ts tests/poison.test.ts tests/service-host.test.ts tests/snapshot-sync.test.ts tests/catan.test.ts tests/catan-transactions.test.ts tests/social-preferences.test.ts tests/ai-observation.test.ts tests/compute.test.ts tests/audit-recording.test.ts tests/game-surface.test.tsx tests/hero-guide.test.ts tests/chat-read.test.ts tests/archive-upgrade.test.ts tests/sgs-renderer.test.tsx tests/desktop-context-menu.test.ts
+        run: npm test -- --run tests/release-assets.test.ts tests/beginner-guide.test.ts tests/trick-guide.test.ts tests/game-expansion.test.ts tests/economic-ai.test.ts tests/commands.test.ts tests/themes.test.ts tests/strategies.test.ts tests/ddz.test.ts tests/ddz-renderer.test.tsx tests/engine.test.ts tests/room-lifecycle.test.ts tests/storage.test.ts tests/replay.test.ts tests/connection.test.ts tests/room-game-switch.test.ts tests/social.test.ts tests/poison.test.ts tests/service-host.test.ts tests/snapshot-sync.test.ts tests/catan.test.ts tests/catan-transactions.test.ts tests/social-preferences.test.ts tests/ai-observation.test.ts tests/browser-compute.test.ts tests/benchmark-preferences.test.ts tests/compute.test.ts tests/audit-recording.test.ts tests/game-surface.test.tsx tests/hero-guide.test.ts tests/chat-read.test.ts tests/archive-upgrade.test.ts tests/sgs-renderer.test.tsx tests/desktop-context-menu.test.ts tests/table-layout.test.ts tests/native-windows.test.ts tests/guide-targets.test.ts tests/upstream.test.ts
       - if: startsWith(github.ref, 'refs/tags/')
         run: npm test
       - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
@@ -56,6 +56,19 @@ jobs:
           args: ${{ matrix.args }}
       - if: runner.os == 'Windows'
         run: cargo test --release --manifest-path src-tauri/Cargo.toml --features tauri/custom-protocol --lib hosting::tests::background_process_has_no_console
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:COMPANION_SMOKE_PROFILE = "ai"
+          $env:COMPANION_SMOKE_OUTPUT = Join-Path $env:RUNNER_TEMP "native-ai-result.txt"
+          cargo build --release --manifest-path src-tauri/Cargo.toml --example smoke --features tauri/custom-protocol
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $process = Start-Process -FilePath "src-tauri/target/release/examples/smoke.exe" -PassThru
+          if (-not $process.WaitForExit(600000)) { $process.Kill(); throw "Native AI verification timed out" }
+          if (-not (Test-Path $env:COMPANION_SMOKE_OUTPUT)) { throw "Native AI verification did not report" }
+          $result = Get-Content $env:COMPANION_SMOKE_OUTPUT -Raw
+          Write-Output $result
+          if (-not $result.StartsWith("PASS")) { throw "Native AI verification failed" }
       - run: npx playwright install chromium
       - run: node scripts/verify-restart.mjs
       - run: node scripts/verify-client.mjs
@@ -66,6 +79,8 @@ jobs:
       - run: node scripts/verify-education.mjs
       - run: node scripts/verify-viewport.mjs
       - run: node scripts/verify-ai-observation.mjs
+      - run: node scripts/verify-workspace.mjs
+      - run: node scripts/verify-guide-targets.mjs
       - run: node scripts/verify-mobile-host.mjs
       - run: node scripts/verify-cache.mjs
       - if: runner.os == 'macOS'

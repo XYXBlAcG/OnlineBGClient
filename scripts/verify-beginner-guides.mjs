@@ -51,19 +51,17 @@ try {
     await expect(guide).toContainText("1 / 5");
     await expect(guide.locator("ol li")).toHaveCount(3);
     await expect(
-      guide.getByRole("button", { name: "定位到牌桌", exact: true }),
+      guide.locator(".beginner-guide-context > button"),
     ).toBeDisabled();
     await page.getByRole("button", { name: "开始对局", exact: true }).click();
     await expect(page.locator(".original-game")).toBeVisible();
     await expect(
-      guide.getByRole("button", { name: "定位到牌桌", exact: true }),
+      guide.locator(".beginner-guide-context > button"),
     ).toBeEnabled();
-    await guide
-      .getByRole("button", { name: "定位到牌桌", exact: true })
-      .click();
-    await expect(
-      page.locator(".original-game [data-guide-focus]").first(),
-    ).toBeVisible();
+    await guide.locator(".beginner-guide-context > button").click();
+    if (kind === "sgs")
+      await expect(guide.getByRole("status")).toContainText("先完成武将选择");
+    else await expect(page.locator("[data-guide-focus]").first()).toBeVisible();
     await page.getByRole("button", { name: "返回引导", exact: true }).click();
     const first = await guide.locator("h3").innerText();
     await guide.getByRole("button", { name: "下一步" }).click();
@@ -84,14 +82,18 @@ try {
     await page
       .getByRole("button", { name: "恢复本地对局", exact: true })
       .click();
+    await expect(guide).toHaveCount(0);
+    await toggle.click();
     await expect(guide).toBeVisible();
-    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setViewportSize({ width: 1024, height: 600 });
     await expect(guide).toBeVisible();
-    expect(
-      await guide.evaluate(
-        (node) => node.getBoundingClientRect().right <= window.innerWidth,
-      ),
-    ).toBe(true);
+    await expect
+      .poll(() =>
+        guide.evaluate(
+          (node) => node.getBoundingClientRect().right <= window.innerWidth,
+        ),
+      )
+      .toBe(true);
     for (let step = 0; step < 4; step++)
       await guide.getByRole("button", { name: "下一步" }).click();
     await expect(guide).toContainText("5 / 5");
@@ -123,31 +125,31 @@ try {
     const room = (await host.locator(".room-toolbar > strong").innerText())
       .split("·")[1]
       .trim();
-    const phoneContext = await browser.newContext({
+    const mobileContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       isMobile: true,
       hasTouch: true,
     });
-    const phone = await phoneContext.newPage();
-    phone.on("pageerror", (error) => errors.push(String(error)));
-    await phone.goto(`${endpoint}/?room=${room}`);
-    await phone.getByLabel("昵称", { exact: true }).fill("新手");
-    await phone
+    const mobile = await mobileContext.newPage();
+    mobile.on("pageerror", (error) => errors.push(String(error)));
+    await mobile.goto(`${endpoint}/?room=${room}`);
+    await mobile.getByLabel("昵称", { exact: true }).fill("新手");
+    await mobile
       .getByRole("button", { name: "加入 / 恢复房间", exact: true })
       .click();
-    await expect(phone.locator(".mobile-shell")).toBeVisible();
-    await phone.getByRole("button", { name: "新手引导", exact: true }).click();
-    const phoneGuide = phone.getByRole("region", { name: `${name}新手引导` });
-    await expect(phoneGuide).toBeVisible();
-    await phoneGuide.getByRole("button", { name: "下一步" }).focus();
-    await phoneGuide.getByRole("button", { name: "下一步" }).press("Enter");
-    await expect(phoneGuide).toContainText("2 / 5");
+    await expect(mobile.locator(".mobile-shell")).toBeVisible();
+    await mobile.getByRole("button", { name: "新手引导", exact: true }).click();
+    const mobileGuide = mobile.getByRole("region", { name: `${name}新手引导` });
+    await expect(mobileGuide).toBeVisible();
+    await mobileGuide.getByRole("button", { name: "下一步" }).focus();
+    await mobileGuide.getByRole("button", { name: "下一步" }).press("Enter");
+    await expect(mobileGuide).toContainText("2 / 5");
     expect(
-      await phoneGuide.evaluate(
+      await mobileGuide.evaluate(
         (node) => node.getBoundingClientRect().right <= window.innerWidth,
       ),
     ).toBe(true);
-    await phone.screenshot({
+    await mobile.screenshot({
       path: `.tmp/screenshots/guide-${kind}-mobile.png`,
     });
     await expect(
@@ -157,12 +159,14 @@ try {
       await openRoomSetup(host);
       await choose(host, "下一局游戏", target);
       await host.getByRole("button", { name: "应用", exact: true }).click();
-      await expect(phone.locator(".room-toolbar > strong")).toContainText(
+      await expect(mobile.locator(".room-toolbar > strong")).toContainText(
         target,
       );
     }
-    await expect(phoneGuide).toContainText("1 / 5");
-    await phoneContext.close();
+    await expect(mobileGuide).toHaveCount(0);
+    await mobile.getByRole("button",{name:"新手引导",exact:true}).click();
+    await expect(mobileGuide).toContainText("1 / 5");
+    await mobileContext.close();
     await context.close();
   }
   expect(errors).toEqual([]);

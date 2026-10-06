@@ -480,8 +480,7 @@ export class Room {
   }
 
   setAiRunning(token: string, enabled: boolean): void {
-    if (!this.canManage(token) || this.config.humans)
-      throw new Error("仅全 AI 房主可以控制测试");
+    if (!this.canManage(token)) throw new Error("仅房主可以控制 AI");
     this.aiPaused = !enabled;
     this.queued = null;
     this.version++;
@@ -624,6 +623,7 @@ export class Room {
       version: this.version,
       roundVersion: this.roundVersion,
       ended: this.ended,
+      aiPaused: this.aiPaused,
       replay: this.replay,
       records: this.records,
       messageSequence: this.messageSequence,
@@ -663,6 +663,7 @@ export class Room {
     room.version = archive.version;
     room.roundVersion = archive.roundVersion;
     room.ended = archive.ended;
+    room.aiPaused = archive.aiPaused ?? false;
     room.replay = archive.replay;
     room.records = archive.records;
     room.messages = archive.messages;
@@ -696,6 +697,7 @@ export interface RoomArchive {
   version: number;
   roundVersion: number;
   ended: boolean;
+  aiPaused?: boolean;
   replay: ReplayRecord | null;
   records: ReplayRecord[];
   messageSequence: number;

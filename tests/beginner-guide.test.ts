@@ -48,7 +48,7 @@ it("registers concise guides for the five requested games", () => {
       expect(step.tip.length).toBeGreaterThan(10);
       expect(step.details.length).toBeGreaterThanOrEqual(3);
       expect(step.focus.caption.length).toBeGreaterThan(5);
-      expect(step.focus.selector || step.focus.button).toBeTruthy();
+      expect(step.focus.target).toBeTruthy();
     }
   }
 });

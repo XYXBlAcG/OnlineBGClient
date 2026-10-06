@@ -1,3 +1,8 @@
+import { AuxiliaryRoot } from "./client/native/AuxiliaryRoot";
+import { auxiliaryView } from "./client/native/contract";
+import { nativeMain, useNativeWindow } from "./client/native/windows";
+import { ComputeDiagnostics } from "./client/ComputeDiagnostics";
+import type { ComputeDiagnostic } from "./domain/compute-diagnostics";
 import { RoomSetup } from "./client/RoomSetup";
 import { beginnerGuides } from "./client/beginner-guides";
 import { BeginnerGuide } from "./client/BeginnerGuide";
@@ -5,14 +10,13 @@ import { Notices } from "./client/Notices";
 import { useMotion } from "./client/use-motion";
 import { HeroDescription } from "./client/HeroSurface";
 import { HeroGuides } from "./domain/hero-guide";
-import { useCompactLayout, useMobile } from "./client/use-mobile";
+import { useWindowWidth, useMobile } from "./client/use-mobile";
 import { MobileJoin } from "./client/MobileJoin";
 import { Invite } from "./client/Invite";
 import { ComputeStatus } from "./client/ComputeStatus";
-import { SurfaceResize, SurfaceSizeProvider } from "./client/SurfaceResize";
-import { ChatResizeHandle } from "./client/ChatResizeHandle";
+import { SidebarDivider } from "./client/SidebarDivider";
+import { sidebarBounds, sidebarBreakpoint } from "./client/sidebar-layout";
 import { ChatPanel } from "./client/ChatPanel";
-import { Avatars } from "./client/Avatars";
 import type { InteractionEvent, InteractionKind } from "./domain/social";
 import { installContextMenuPolicy } from "./client/desktop-context-menu";
 import { applyTheme } from "./client/themes";
@@ -65,12 +69,14 @@ const initialService =
 
 function App() {
   const mobile = useMobile();
-  const compactLayout = useCompactLayout();
-  const [drawerOpen, setDrawerOpen] = useState<boolean | undefined>();
+  const windowWidth = useWindowWidth();
+  const narrowLayout = windowWidth < sidebarBreakpoint;
   const [inviteOpen, setInviteOpen] = useState(false);
   const connection = useRef<Connection | null>(null);
   const session = useRef<{ token: string; room: string } | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [computeFailure, setComputeFailure] =
+    useState<ComputeDiagnostic | null>(null);
   const [notice, setNotice] = useState("");
   const [actionPending, setActionPending] = useState(false);
   const [latencyMs, setLatencyMs] = useState<number>();
@@ -89,9 +95,11 @@ function App() {
     [],
   );
   const [unread, setUnread] = useState(0);
-  const [sidebarTab, setSidebarTab] = useState<"chat" | "guide">("guide");
+  const [sidebarTab, setSidebarTab] = useState<"chat" | "guide" | null>(null);
   const [guideDock, setGuideDock] = useState<HTMLDivElement | null>(null);
   const [guideLocated, setGuideLocated] = useState(false);
+  const [guideStep, setGuideStep] = useState(0);
+  const [guideLocation, setGuideLocation] = useState(0);
   const [focused, setFocused] = useState(false);
 
   const quitting = useRef(false);
@@ -102,7 +110,7 @@ function App() {
   const [heroGuides] = useState(() => new HeroGuides().all());
   const [dictionary] = useState(() => new UpstreamRuntime());
   const [preferences, setPreferences] = useState(() => {
-    const value = loadPreferences();
+    const value = { ...loadPreferences(), chatVisible: false };
     return mobile
       ? { ...value, chatVisible: false, auditVisible: false }
       : value;
@@ -112,9 +120,24 @@ function App() {
     !!beginnerGuides[snapshot.kind] &&
     !!preferences.beginnerGuides[snapshot.kind];
   const guideShown = guideEnabled && sidebarTab === "guide";
-  const sidebarOpen = guideShown || preferences.chatVisible;
-  const sidebarVisible =
-    sidebarOpen && !focused && (!compactLayout || (drawerOpen ?? guideShown));
+  const sidebarOpen =
+    guideShown || (sidebarTab === "chat" && preferences.chatVisible);
+  const detachedSidebar = nativeMain() && narrowLayout;
+  const sidebarVisible = sidebarOpen && !focused && !detachedSidebar;
+  const sidebarWidth = Math.min(
+    preferences.sidebarWidth,
+    sidebarBounds(windowWidth).max,
+  );
+  useEffect(() => {
+    setSidebarTab(null);
+    setGuideStep(0);
+    setGuideLocated(false);
+    setPreferences((value) => ({ ...value, chatVisible: false }));
+  }, [snapshot?.kind, snapshot?.room]);
+  useEffect(() => {
+    if (preferences.chatVisible) setSidebarTab("chat");
+    else setSidebarTab((value) => (value === "chat" ? null : value));
+  }, [preferences.chatVisible]);
   const motion = useMotion(preferences.motion);
   const preferencesRef = useRef(preferences);
   preferencesRef.current = preferences;
@@ -227,6 +250,7 @@ function App() {
       connection.current = null;
       session.current = null;
       setSnapshot(null);
+      setComputeFailure(null);
       setActionPending(false);
       setStatus("本地");
       localStorage.removeItem("onlinebg.last-room");
@@ -244,7 +268,10 @@ function App() {
     }
     if (response.type === "interaction" && preferencesRef.current.interactions)
       setInteractions((events) => [...events, response.event].slice(-8));
-    if (response.type === "error") setNotice(response.message);
+    if (response.type === "error") {
+      setNotice(response.message);
+      if (response.diagnostic) setComputeFailure(response.diagnostic);
+    }
     if (response.type === "session") {
       if (hosting.current) setNotice("公网房间已就绪，可以邀请朋友加入");
       session.current = { token: response.token, room: response.room };
@@ -296,18 +323,11 @@ function App() {
     setStatus("连接已取消");
   };
   const toggleChat = () => {
-    if (guideShown || focused || (compactLayout && !drawerOpen)) {
-      setDrawerOpen(true);
-      setSidebarTab("chat");
-      setFocused(false);
-      setPreferences((value) => ({ ...value, chatVisible: true }));
-    } else {
-      setDrawerOpen(false);
-      setPreferences((value) => ({
-        ...value,
-        chatVisible: !value.chatVisible,
-      }));
-    }
+    const open = sidebarTab !== "chat" || !preferences.chatVisible || focused;
+    setSidebarTab(open ? "chat" : null);
+    setFocused(false);
+    setGuideLocated(false);
+    setPreferences((value) => ({ ...value, chatVisible: open }));
   };
   const connect = async (
     config: RoomConfig,
@@ -610,57 +630,91 @@ function App() {
     }
   };
 
-  return (
-    <SurfaceSizeProvider
-      sizes={preferences.surfaceSizes}
-      change={(key, size) =>
-        setPreferences((value) => ({
-          ...value,
-          surfaceSizes: { ...value.surfaceSizes, [key]: size },
-        }))
+  const hideClient = async () => {
+    setCloseIntent(null);
+    await getCurrentWindow().hide();
+  };
+  const quitClient = async () => {
+    setCloseIntent(null);
+    quitting.current = true;
+    if (session.current && snapshot?.canManage)
+      connection.current?.send({ type: "close", token: session.current.token });
+    else {
+      await invoke("stop_host");
+      await invoke("quit_app");
+    }
+  };
+  useNativeWindow(
+    "exit",
+    !!closeIntent,
+    { view: "exit", hosting: !!hosting.current },
+    (intent) => {
+      if (intent.type === "close") setCloseIntent(null);
+      if (intent.type === "exit")
+        void (intent.operation === "hide" ? hideClient() : quitClient()).catch(
+          (error) => setNotice(String(error)),
+        );
+      if (intent.type === "error") setNotice(intent.message);
+    },
+  );
+  useNativeWindow(
+    "chat",
+    !!snapshot && sidebarTab === "chat" && preferences.chatVisible && !focused,
+    {
+      view: "chat",
+      snapshot: snapshot!,
+      preferences,
+      endpoint: mode === "network" ? service : undefined,
+    },
+    (intent) => {
+      if (intent.type === "chat-text") sendChat(intent.text);
+      if (intent.type === "close") {
+        setSidebarTab((value) => (value === "chat" ? null : value));
+        setPreferences((value) => ({ ...value, chatVisible: false }));
       }
-    >
+      if (intent.type === "error") setNotice(intent.message);
+    },
+    detachedSidebar,
+  );
+  useNativeWindow(
+    "guide",
+    guideShown && !focused,
+    { view: "guide", snapshot: snapshot!, index: guideStep },
+    (intent) => {
+      if (intent.type === "guide-step") setGuideStep(intent.index);
+      if (intent.type === "guide-locate") {
+        setGuideStep(intent.index);
+        setGuideLocation((value) => value + 1);
+      }
+      if (intent.type === "close")
+        setSidebarTab((value) => (value === "guide" ? null : value));
+      if (intent.type === "error") setNotice(intent.message);
+    },
+    detachedSidebar,
+  );
+  return (
+    <>
       <div className={`app-shell ${mobile ? "mobile-shell" : ""}`}>
         <Confirmation />
-        <Panel
-          open={!!closeIntent}
-          onOpenChange={(value) => {
-            if (!value) setCloseIntent(null);
-          }}
-          title="关闭客户端"
-        >
-          <p>{hosting.current ? "房间正在运行。" : "当前对局已自动保存。"}</p>
-          <div className="close-options">
-            {hosting.current && (
-              <button
-                onClick={async () => {
-                  setCloseIntent(null);
-                  await getCurrentWindow().hide();
-                }}
-              >
-                保留房间，隐藏窗口
+        {!nativeMain() && (
+          <Panel
+            open={!!closeIntent}
+            onOpenChange={(value) => {
+              if (!value) setCloseIntent(null);
+            }}
+            title="关闭客户端"
+          >
+            <p>{hosting.current ? "房间正在运行。" : "当前对局已自动保存。"}</p>
+            <div className="close-options">
+              {hosting.current && (
+                <button onClick={hideClient}>保留房间，隐藏窗口</button>
+              )}
+              <button className="primary-button" onClick={quitClient}>
+                {hosting.current ? "结束房间并退出" : "退出客户端"}
               </button>
-            )}
-            <button
-              className="primary-button"
-              onClick={async () => {
-                setCloseIntent(null);
-                quitting.current = true;
-                if (session.current && snapshot?.canManage)
-                  connection.current?.send({
-                    type: "close",
-                    token: session.current.token,
-                  });
-                else {
-                  await invoke("stop_host");
-                  await invoke("quit_app");
-                }
-              }}
-            >
-              {hosting.current ? "结束房间并退出" : "退出客户端"}
-            </button>
-          </div>
-        </Panel>
+            </div>
+          </Panel>
+        )}
         <Invite
           url={invitationUrl()}
           open={inviteOpen}
@@ -795,7 +849,7 @@ function App() {
             className={`room-layout ${sidebarVisible ? "sidebar-open" : "chat-hidden"} ${snapshot.state && tab === "game" ? "playing-room" : ""} ${focused ? "focused-room" : ""} ${guideLocated ? "guide-located" : ""}`}
             style={
               {
-                "--chat-width": `${preferences.chatWidth}px`,
+                "--chat-width": `${sidebarWidth}px`,
               } as React.CSSProperties
             }
           >
@@ -812,12 +866,30 @@ function App() {
                     {latencyMs} ms
                   </small>
                 )}
-                <button
-                  aria-pressed={focused}
-                  onClick={() => setFocused(!focused)}
-                >
-                  {focused ? "恢复界面" : "专注模式"}
-                </button>
+                {(mobile || !snapshot.state || tab !== "game") && (
+                  <button
+                    aria-pressed={focused}
+                    onClick={() => setFocused(!focused)}
+                  >
+                    {focused ? "恢复界面" : "专注模式"}
+                  </button>
+                )}
+                {snapshot.canManage &&
+                  snapshot.state &&
+                  snapshot.config.ai.length > 0 && (
+                    <button
+                      onClick={() => {
+                        if (snapshot.aiPaused) setComputeFailure(null);
+                        connection.current!.send({
+                          type: "ai-run",
+                          token: session.current!.token,
+                          enabled: snapshot.aiPaused,
+                        });
+                      }}
+                    >
+                      {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
+                    </button>
+                  )}
                 <details
                   className="room-options"
                   onClick={(event) => {
@@ -900,7 +972,24 @@ function App() {
                   </div>
                 </details>
               </div>
+              <ComputeDiagnostics
+                diagnostic={computeFailure}
+                onError={setNotice}
+                onRetry={
+                  snapshot.canManage && snapshot.aiPaused
+                    ? () => {
+                        setComputeFailure(null);
+                        connection.current!.send({
+                          type: "ai-run",
+                          token: session.current!.token,
+                          enabled: true,
+                        });
+                      }
+                    : undefined
+                }
+              />
               <ComputeStatus
+                benchmarkVisible={preferences.benchmarkVisible}
                 snapshot={snapshot}
                 control={(enabled) =>
                   connection.current!.send({
@@ -911,7 +1000,6 @@ function App() {
                 }
               />
               <div className="room-navigation">
-                <Avatars snapshot={snapshot} />
                 {tokens.length > 1 && (
                   <Select
                     aria-label="当前本地玩家"
@@ -935,17 +1023,21 @@ function App() {
                   key={snapshot.kind}
                   snapshot={snapshot}
                   dock={guideDock}
-                  visible={guideShown && sidebarVisible}
+                  visible={guideShown && !focused}
+                  stepIndex={guideStep}
+                  onStepChange={setGuideStep}
+                  targetsOnly={detachedSidebar}
+                  locateRequest={guideLocation}
                   onLocate={setGuideLocated}
                   kind={snapshot.kind}
-                  enabled={preferences.beginnerGuides[snapshot.kind] ?? false}
+                  enabled={guideShown}
                   onChange={(enabled) => {
-                    setSidebarTab("guide");
                     setFocused(false);
                     setGuideLocated(false);
-                    setDrawerOpen(enabled);
+                    setSidebarTab(enabled ? "guide" : null);
                     setPreferences({
                       ...preferences,
+                      chatVisible: false,
                       beginnerGuides: {
                         ...preferences.beginnerGuides,
                         [snapshot.kind]: enabled,
@@ -1221,16 +1313,11 @@ function App() {
               )}
             </section>
             <aside className="room-sidebar" hidden={!sidebarVisible}>
-              <SurfaceResize
-                id="房间侧栏"
-                axis={compactLayout || mobile ? "both" : "height"}
-                reverseHeight
-              />
-              {!compactLayout && !mobile && (
-                <ChatResizeHandle
-                  width={preferences.chatWidth}
-                  onChange={(chatWidth) =>
-                    setPreferences((value) => ({ ...value, chatWidth }))
+              {!mobile && (
+                <SidebarDivider
+                  width={sidebarWidth}
+                  onChange={(sidebarWidth) =>
+                    setPreferences((value) => ({ ...value, sidebarWidth }))
                   }
                 />
               )}
@@ -1247,11 +1334,27 @@ function App() {
                 >
                   聊天{unread > 0 ? ` · ${unread}` : ""}
                 </button>
+                <button
+                  aria-label="关闭辅助区域"
+                  onClick={() => {
+                    setSidebarTab(null);
+                    setPreferences((value) => ({
+                      ...value,
+                      chatVisible: false,
+                    }));
+                  }}
+                >
+                  ×
+                </button>
                 {guideEnabled && (
                   <button
                     aria-pressed={guideShown}
                     onClick={() => {
                       setSidebarTab("guide");
+                      setPreferences((value) => ({
+                        ...value,
+                        chatVisible: false,
+                      }));
                       setGuideLocated(false);
                     }}
                   >
@@ -1264,19 +1367,22 @@ function App() {
                 className="room-guide-slot"
                 hidden={!guideShown}
               />
+
               <ChatPanel
                 snapshot={snapshot}
                 compact={mobile}
                 endpoint={mode === "network" ? service : undefined}
                 preferences={{
                   ...preferences,
-                  chatVisible:
-                    preferences.chatVisible && !guideShown && sidebarVisible,
+                  chatVisible: sidebarTab === "chat" && sidebarVisible,
                 }}
                 onUnread={setUnread}
                 onClose={() => {
-                  setDrawerOpen(false);
-                  setPreferences((value) => ({ ...value, chatVisible: false }));
+                  setSidebarTab(null);
+                  setPreferences((value) => ({
+                    ...value,
+                    chatVisible: false,
+                  }));
                 }}
                 onText={sendChat}
               />
@@ -1284,13 +1390,13 @@ function App() {
           </main>
         )}
       </div>
-    </SurfaceSizeProvider>
+    </>
   );
 }
 
 applyTheme(loadPreferences().theme);
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    {auxiliaryView ? <AuxiliaryRoot /> : <App />}
   </React.StrictMode>,
 );

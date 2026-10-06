@@ -15,11 +15,11 @@ it("keeps grouped presets and custom ordering in the shared preference contract"
     ),
   );
   expect(phraseGroups("uno", restored.phraseGroups)[0]).toEqual(groups[0]);
-  expect(restored.chatWidth).toBe(420);
+  expect(restored).not.toHaveProperty("chatWidth");
   expect(
     phraseGroupsSchema.safeParse([{ name: "空", items: [" "] }]).success,
   ).toBe(false);
-  expect(preferencesSchema.safeParse({ chatWidth: 9999 }).success).toBe(false);
+
 });
 it("validates every effect from one catalogue with a distinct visual style", () => {
   expect(Object.keys(interactionCatalogue).length).toBeGreaterThanOrEqual(19);

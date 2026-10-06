@@ -26,14 +26,14 @@
 | 隔离服务与三个真实浏览器客户端 | [verify-client.mjs](../scripts/verify-client.mjs)、[smoke-client.mjs](../scripts/smoke-client.mjs) |
 | 四游戏 WebSocket 联机 | [smoke-network.mjs](../scripts/smoke-network.mjs) |
 | 原生 WebView、控件和离线 Worker | [原生入口](../src-tauri/examples/smoke.rs)、[交互脚本](../scripts/native-smoke.js) |
-| 原生临时公网房主与浏览器好友 | [房主入口](../src-tauri/examples/hosting_smoke.rs)、[房主脚本](../scripts/native-hosting-smoke.js)、[好友脚本](../scripts/smoke-host-guest.mjs) |
+| 原生公网生命周期与浏览器好友入口 | [房主入口](../src-tauri/examples/hosting_smoke.rs)、[房主脚本](../scripts/native-hosting-smoke.js)、[好友脚本](../scripts/smoke-host-guest.mjs) |
 | 平台自动构建 | [工作流](../.github/workflows/desktop.yml) |
 
 `npm run verify:client` 自动启动独立服务与存档目录。浏览器支持 CHROME_PATH，未指定时选本机 Chrome 或 Playwright Chromium。网络脚本通过 TEST_SERVICE 指定入口、TEST_GAME 指定游戏。原生脚本通过 COMPANION_SMOKE_OUTPUT 指定结果文件，运行 `cargo run --release --example smoke --features tauri/custom-protocol`。
 
 ## 当前验证
 
-2026-10-04 至 2026-10-05：按本轮改动范围执行测试，验证入口均使用实际规则、工作线程、存储和隔离服务。
+2026-10-04 至 2026-10-06：按本轮改动范围执行测试，验证入口均使用实际规则、工作线程、存储和隔离服务。
 
 - 规则与领域：毒药完整真人／AI 对局、隐藏信息、药锅收牌；卡坦岛 2／3／5／8 人地图与初始建造、银行和真人交易、发展卡、强盗、特殊建造与确定性回放；原游戏回放只读；切换与席位调整的原子性；房间生命周期、消息与真实 SQLite 回放恢复。
 - 计算：真实 Node 工作线程与单线程动作及审核一致；过期任务取消后可继续计算；审核默认关闭、显式启用与停用后的存储行为。
@@ -75,6 +75,28 @@ Windows 11 上两个服务进程的窗口行为、系统通知、高 DPI（125%�
 | 卡坦岛真实联机、缩放后 SVG 点击、热座与回放 | [verify-catan.mjs](../scripts/verify-catan.mjs) |
 | 六个困难跳棋 AI、真实计算统计、暂停恢复、缩小地图与尺寸保存 | [契约测试](../tests/ai-observation.test.ts)、[浏览器检查](../scripts/verify-ai-observation.mjs) |
 | 原生牌桌与 AI | [原生脚本](../scripts/native-smoke.js) |
+| 默认隐藏测试与设置保存 | [偏好测试](../tests/benchmark-preferences.test.ts) |
+| 平级线程、故障诊断、重试与释放 | [真实端口和线程](../tests/browser-compute.test.ts)、[浏览器故障注入](../scripts/verify-flat-workers.mjs) |
+| 完整牌桌、头像、辅助分栏与主动打开 | [浏览器交互](../scripts/verify-workspace.mjs) |
+| 原生六困难 AI、暂停恢复 | [AI 原生脚本](../scripts/native-ai-smoke.js)、[原生入口](../src-tauri/examples/smoke.rs)；设置 `COMPANION_SMOKE_PROFILE=ai` |
 | 经济游戏 CPU 实测 | [记录](benchmarks/economic-ai.json)、[入口](../scripts/benchmark-ai.mjs) |
 
 本机已验证的完整自我对局人数与结果由经济游戏测试输出，真人牌桌使用真实 Chromium 与 macOS WebView 验证；手机浏览器为触屏尺寸模拟。困难搜索按时间预算比较实际完成样本量，未评测胜率提升，不代表 AMD Ryzen 9 9955HX／RTX5080 的实机性能。Windows 11 安装需实机验收；自动构建与 Release 产物由 GitHub 工作流提供。
+
+本轮平级线程已在 Chromium 和 macOS 打包 WebView 完成六困难 AI 的 30 次决策及暂停恢复；macOS 原生普通跳棋已验证真人出牌、AI 计算与暂停恢复。浏览器已验证加载失败诊断、显式重试和结束后的线程释放。Windows 原生 AI 检查已登记到工作流，尚未运行，不能视为 Windows 实机验证完成。完整牌桌与回放入口见 [桌面牌桌](workspace-and-windows-ai-plan.md)。
+
+## 桌面牌桌审核入口
+
+| 覆盖 | 入口 |
+| --- | --- |
+| 原生窗口身份、设置请求与游戏配置校验 | [native-windows.test.ts](../tests/native-windows.test.ts)、[Rust 窗口测试](../src-tauri/src/windows.rs) |
+| 辅助区域尺寸与原生请求契约 | [table-layout.test.ts](../tests/table-layout.test.ts) |
+| 完整牌桌、辅助区域、默认关闭、地图与低高度 | [verify-workspace.mjs](../scripts/verify-workspace.mjs) |
+| 五游戏真实双人局面的具体目标与缺失条件 | [verify-guide-targets.mjs](../scripts/verify-guide-targets.mjs)、[guide-targets.test.ts](../tests/guide-targets.test.ts) |
+| macOS 系统辅助窗口、窗口缩放、回放及主牌桌连续 | [原生入口](../src-tauri/examples/smoke.rs)、[主窗口脚本](../scripts/native-smoke.js)、[辅助窗口脚本](../scripts/native-auxiliary-smoke.js) |
+
+macOS 原生窗口已验证设置控件尺寸、游戏操作、关于、回放、窗口边缘缩放，以及聊天在边缘区域与原生窗口间切换并保留消息、引导窗口定位主牌桌具体棋格；关闭辅助窗口后主牌桌继续。临时公网回归已验证辅助窗口关闭后 HTTPS 健康检查可达，复用同一公网地址，并显式停止服务。
+
+Chromium 已验证共享分栏拖动、Escape 取消、双击恢复、头像宽高、停靠、草稿和牌桌节点保留、面板关闭与刷新保存；五游戏全部引导步骤、具体元素与缺失目标条件；八游戏低高度桌面及触屏横竖屏；三端社交同步及璀璨宝石真实操作、联机、AI 与回放。独立公网浏览器入口使用 `TEST_SERVICE` 和 `TEST_ROOM` 指定已启动的房间。
+
+Windows 11 原生窗口、DPI、输入法与跳棋 AI 仍需对应平台验收。系统确认弹窗已接入原生插件并通过编译，取消和确认操作仍需人工检查。
