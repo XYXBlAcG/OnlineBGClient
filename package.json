@@ -15,7 +15,8 @@
     "hosting:build": "node scripts/build-hosting.mjs",
     "verify:client": "node scripts/verify-client.mjs",
     "tauri": "tauri",
-    "desktop:prepare": "npm run upstream:build && npm run build && npm run hosting:build"
+    "desktop:prepare": "npm run upstream:build && npm run build && npm run hosting:build",
+    "verify:smoke": "node scripts/verify-smoke.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

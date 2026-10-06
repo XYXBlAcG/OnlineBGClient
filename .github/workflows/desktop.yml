@@ -54,6 +54,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           args: ${{ matrix.args }}
+      - run: node scripts/verify-smoke-report.mjs
       - if: runner.os == 'Windows'
         run: cargo test --release --manifest-path src-tauri/Cargo.toml --features tauri/custom-protocol --lib hosting::tests::background_process_has_no_console
       - if: runner.os == 'Windows'
@@ -64,25 +65,33 @@ jobs:
           cargo build --release --manifest-path src-tauri/Cargo.toml --example smoke --features tauri/custom-protocol
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $process = Start-Process -FilePath "src-tauri/target/release/examples/smoke.exe" -PassThru
-          if (-not $process.WaitForExit(600000)) { $process.Kill(); throw "Native AI verification timed out" }
+          if (-not $process.WaitForExit(600000)) {
+            $process.Kill()
+            $progress = [System.IO.Path]::ChangeExtension($env:COMPANION_SMOKE_OUTPUT, "progress.log")
+            if (Test-Path $progress) { Get-Content $progress }
+            if (Test-Path $env:COMPANION_SMOKE_OUTPUT) { Get-Content $env:COMPANION_SMOKE_OUTPUT }
+            throw "Native AI verification timed out"
+          }
           if (-not (Test-Path $env:COMPANION_SMOKE_OUTPUT)) { throw "Native AI verification did not report" }
           $result = Get-Content $env:COMPANION_SMOKE_OUTPUT -Raw
           Write-Output $result
-          if (-not $result.StartsWith("PASS")) { throw "Native AI verification failed" }
+          if (-not $result.StartsWith("PASS")) {
+            $progress = [System.IO.Path]::ChangeExtension($env:COMPANION_SMOKE_OUTPUT, "progress.log")
+            if (Test-Path $progress) { Get-Content $progress }
+            throw "Native AI verification failed"
+          }
       - run: npx playwright install chromium
-      - run: node scripts/verify-restart.mjs
-      - run: node scripts/verify-client.mjs
-      - run: node scripts/verify-social.mjs
-      - run: node scripts/verify-catan.mjs
-      - run: node scripts/verify-splendor.mjs
-      - run: node scripts/verify-beginner-guides.mjs
-      - run: node scripts/verify-education.mjs
-      - run: node scripts/verify-viewport.mjs
-      - run: node scripts/verify-ai-observation.mjs
-      - run: node scripts/verify-workspace.mjs
-      - run: node scripts/verify-guide-targets.mjs
-      - run: node scripts/verify-mobile-host.mjs
-      - run: node scripts/verify-cache.mjs
+      - run: npm run verify:smoke
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Smoke-diagnostics-${{ matrix.name }}
+          path: |
+            ${{ runner.temp }}/native-ai-result.txt
+            ${{ runner.temp }}/native-ai-result.progress.log
+            .tmp/smoke/results.json
+          if-no-files-found: ignore
+          retention-days: 7
       - if: runner.os == 'macOS'
         run: ditto -c -k --sequesterRsrc --keepParent src-tauri/target/release/bundle/macos/OnlineBGClient.app OnlineBGClient-macOS-arm64.zip
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

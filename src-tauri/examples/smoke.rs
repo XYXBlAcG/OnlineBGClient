@@ -1,9 +1,17 @@
+use std::sync::Arc;
 use tauri::Manager;
+#[path = "support/smoke_report.rs"]
+mod smoke_report;
+use smoke_report::SmokeReport;
 #[tauri::command]
-fn report(result: String, app: tauri::AppHandle) {
-    let path = std::env::var("COMPANION_SMOKE_OUTPUT").expect("missing output path");
-    std::fs::write(path, &result).expect("cannot write smoke result");
-    app.exit(if result.starts_with("PASS") { 0 } else { 1 });
+fn report(result: String, app: tauri::AppHandle, state: tauri::State<Arc<SmokeReport>>) {
+    if let Some(code) = state.finish(&result).expect("cannot write smoke result") {
+        app.exit(code)
+    }
+}
+#[tauri::command]
+fn smoke_progress(phase: String, state: tauri::State<Arc<SmokeReport>>) -> Result<(), String> {
+    state.progress(&phase).map_err(|error| error.to_string())
 }
 #[tauri::command]
 fn check_native(
@@ -44,7 +52,23 @@ fn resize_main(app: tauri::AppHandle, width: f64, height: f64) -> Result<(), Str
         .map_err(|e| e.to_string())
 }
 fn main() {
+    let output = std::env::var_os("COMPANION_SMOKE_OUTPUT").expect("missing output path");
+    let reporter =
+        Arc::new(SmokeReport::new(output.into()).expect("cannot initialize smoke report"));
     tauri::Builder::default()
+        .manage(reporter)
+        .setup(|app| {
+            let reporter = app.state::<Arc<SmokeReport>>().inner().clone();
+            reporter.progress("application-ready")?;
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_secs(540));
+                if let Some(code) = reporter.timeout().expect("cannot write smoke timeout") {
+                    handle.exit(code)
+                }
+            });
+            Ok(())
+        })
         .manage(std::sync::Arc::new(
             hullqin_companion_lib::hosting::Hosting::default(),
         ))
@@ -63,6 +87,7 @@ fn main() {
         .on_window_event(hullqin_companion_lib::windows::window_event)
         .invoke_handler(tauri::generate_handler![
             report,
+            smoke_progress,
             resize_main,
             check_native,
             complete_auxiliary,
@@ -75,6 +100,10 @@ fn main() {
         ])
         .on_page_load(|window, event| {
             if matches!(event.event(), tauri::webview::PageLoadEvent::Finished) {
+                window
+                    .state::<Arc<SmokeReport>>()
+                    .progress(&format!("page-loaded:{}", window.label()))
+                    .expect("cannot record page load");
                 let script = if window.label() != "main" {
                     include_str!("../../scripts/native-auxiliary-smoke.js")
                 } else {

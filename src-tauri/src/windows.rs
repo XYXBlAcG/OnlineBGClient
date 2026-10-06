@@ -68,10 +68,10 @@ impl Windows {
     }
 }
 #[tauri::command]
-pub fn present_auxiliary(
+pub async fn present_auxiliary(
     app: tauri::AppHandle,
     window: tauri::WebviewWindow,
-    state: tauri::State<Windows>,
+    state: tauri::State<'_, Windows>,
     view: AuxiliaryView,
     payload: Value,
     focus: bool,

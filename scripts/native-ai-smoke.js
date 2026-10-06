@@ -27,10 +27,20 @@
   };
   try {
     await waitFor(() => button("设置"));
+    await window.__TAURI_INTERNALS__.invoke("smoke_progress", {
+      phase: "opening-settings",
+    });
     button("设置").click();
+    await waitFor(() => window.nativeCompleted?.settings);
     await waitFor(() => {
-      const prefs = JSON.parse(localStorage.getItem("onlinebg.preferences") || "{}");
-      return prefs.benchmarkVisible && prefs.performance?.mode === "multi" && prefs.theme === "dark";
+      const prefs = JSON.parse(
+        localStorage.getItem("onlinebg.preferences") || "{}",
+      );
+      return (
+        prefs.benchmarkVisible &&
+        prefs.performance?.mode === "multi" &&
+        prefs.theme === "dark"
+      );
     });
     await waitFor(() => !document.querySelector(".app-shell [role=dialog]"));
     [...document.querySelectorAll(".game-card button")]
@@ -47,6 +57,9 @@
         .querySelector('[aria-label="真人人数"]')
         ?.textContent.includes("0 人"),
     );
+    await window.__TAURI_INTERNALS__.invoke("smoke_progress", {
+      phase: "creating-six-hard-ai-room",
+    });
     button("创建房间").click();
     (await waitFor(() => button("开始对局"))).click();
     const count = () =>
@@ -55,7 +68,20 @@
           .querySelector(".compute-status")
           ?.textContent.match(/已完成 (\d+) 次决策/)?.[1] || 0,
       );
-    await waitFor(() => count() >= 30, 500000);
+    let lastCount = -1;
+    await waitFor(() => {
+      const completed = count();
+      if (completed !== lastCount) {
+        lastCount = completed;
+        void window.__TAURI_INTERNALS__.invoke("smoke_progress", {
+          phase: `hard-ai-decisions:${completed}/30`,
+        });
+      }
+      return completed >= 30;
+    }, 500000);
+    await window.__TAURI_INTERNALS__.invoke("smoke_progress", {
+      phase: "checking-pause-resume",
+    });
     button("暂停 AI 测试").click();
     await waitFor(() => button("继续 AI 测试"));
     const paused = count();
