@@ -23,7 +23,7 @@
 | 桌面菜单与审核偏好 | [菜单测试](../tests/desktop-context-menu.test.ts)、[偏好测试](../tests/themes.test.ts)、[跳棋渲染](../tests/checkers-renderer.test.tsx) |
 | 命令作用域与主题契约 | [commands.test.ts](../tests/commands.test.ts)、[themes.test.ts](../tests/themes.test.ts) |
 | 服务进程重启、身份与聊天恢复 | [verify-restart.mjs](../scripts/verify-restart.mjs) |
-| 隔离服务与三个真实浏览器客户端 | [verify-client.mjs](../scripts/verify-client.mjs)、[smoke-client.mjs](../scripts/smoke-client.mjs) |
+| 隔离服务、聊天主动开启与三个真实浏览器客户端 | [verify-client.mjs](../scripts/verify-client.mjs)、[smoke-client.mjs](../scripts/smoke-client.mjs) |
 | 四游戏 WebSocket 联机 | [smoke-network.mjs](../scripts/smoke-network.mjs) |
 | 原生 WebView、控件和离线 Worker | [原生入口](../src-tauri/examples/smoke.rs)、[交互脚本](../scripts/native-smoke.js) |
 | 原生公网生命周期与浏览器好友入口 | [房主入口](../src-tauri/examples/hosting_smoke.rs)、[房主脚本](../scripts/native-hosting-smoke.js)、[好友脚本](../scripts/smoke-host-guest.mjs) |

@@ -109,7 +109,10 @@ try {
   await expect(host.locator('.ddz-poker[draggable=true]')).toHaveCount(20);
   const card = host.locator('.ddz-poker[draggable=true]').first(); await card.focus(); await card.press('Space');
   await host.getByRole('button', { name: /😎 出牌/ }).click();
-  await host.getByRole('banner').getByRole('button', { name: '聊天', exact: true }).click();
+  await expect(host.locator('.chat-panel')).toBeHidden();
+  await expect(guests[0].locator('.chat-panel')).toBeHidden();
+  await guests[0].getByRole('banner').getByRole('button', { name: '聊天', exact: true }).click();
+  await expect(guests[0].getByLabel('消息', { exact: true })).toBeVisible();
   await guests[0].getByLabel('消息', { exact: true }).fill('输入法与聊天不会触发游戏快捷键'); await guests[0].getByRole('button', { name: '发送', exact: true }).click();
   await host.getByRole('banner').getByRole('button', { name: '聊天 · 1', exact: true }).waitFor();
   await host.getByRole('banner').getByRole('button', { name: '聊天 · 1', exact: true }).click();
