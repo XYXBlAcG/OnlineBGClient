@@ -27,7 +27,8 @@
 | 四游戏 WebSocket 联机 | [smoke-network.mjs](../scripts/smoke-network.mjs) |
 | 原生 WebView、控件和离线 Worker | [原生入口](../src-tauri/examples/smoke.rs)、[交互脚本](../scripts/native-smoke.js) |
 | 原生公网生命周期与浏览器好友入口 | [房主入口](../src-tauri/examples/hosting_smoke.rs)、[房主脚本](../scripts/native-hosting-smoke.js)、[好友脚本](../scripts/smoke-host-guest.mjs) |
-| 平台自动构建 | [工作流](../.github/workflows/desktop.yml) |
+| 平台自动构建与单平台选择 | [工作流](../.github/workflows/desktop.yml)、[平台选择](../scripts/ci-platforms.mjs)、[选择测试](../tests/ci-platforms.test.ts) |
+| 原生测试启动与进程输出 | [启动入口](../scripts/native-smoke-runner.mjs)、[真实子进程测试](../tests/native-smoke-runner.test.ts) |
 
 `npm run verify:smoke` 与 GitHub Actions 共用 [完整浏览器检查清单](../scripts/verify-smoke.mjs)，执行所有检查并输出 `.tmp/smoke/results.json`；任一失败均返回非零状态。`npm run verify:client` 自动启动独立服务与存档目录。浏览器支持 CHROME_PATH，未指定时选本机 Chrome 或 Playwright Chromium。网络脚本通过 TEST_SERVICE 指定入口、TEST_GAME 指定游戏。原生脚本通过 COMPANION_SMOKE_OUTPUT 指定结果文件，运行 `cargo run --release --example smoke --features tauri/custom-protocol`。
 
@@ -100,3 +101,5 @@ macOS 原生窗口已验证设置控件尺寸、游戏操作、关于、回放�
 Chromium 已验证边缘分栏拖动、Escape 取消、默认收起、完整头像和牌桌、原生窗口切换与消息保留；五游戏全部引导步骤、具体元素与缺失目标条件；八游戏低高度桌面及触屏横竖屏；三端社交同步及璀璨宝石真实操作、联机、AI 与回放。独立公网浏览器入口使用 `TEST_SERVICE` 和 `TEST_ROOM` 指定已启动的房间。
 
 Windows 11 原生窗口、DPI、输入法与跳棋 AI 仍需对应平台验收。系统确认弹窗已接入原生插件并通过编译，取消和确认操作仍需人工检查。
+
+手动运行工作流可选择 `all`、`windows` 或 `macos`；提交的独立末尾行 `CI-Platforms: windows` 可仅验证 Windows。版本标签始终验证双平台；单平台检查不会发布缺少另一平台的 Release。

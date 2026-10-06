@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      platform:
+        description: Platforms to verify
+        type: choice
+        options: [all, windows, macos]
+        default: all
       publish_preview:
         description: Publish a preview release after verification
         type: boolean
@@ -16,17 +21,20 @@ concurrency:
   group: desktop-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
+  platforms:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      all-platforms: ${{ steps.select.outputs.all-platforms }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - id: select
+        run: node scripts/ci-platforms.mjs
   package:
+    needs: platforms
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - runner: windows-2022
-            name: Windows-x64
-            args: --bundles nsis
-          - runner: macos-14
-            name: macOS-arm64
-            args: --bundles app
+      matrix: ${{ fromJSON(needs.platforms.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 40
     steps:
@@ -45,7 +53,7 @@ jobs:
       - run: npm run upstream:build
       - run: npm run server:build
       - if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        run: npm test -- --run tests/release-assets.test.ts tests/beginner-guide.test.ts tests/trick-guide.test.ts tests/game-expansion.test.ts tests/economic-ai.test.ts tests/commands.test.ts tests/themes.test.ts tests/strategies.test.ts tests/ddz.test.ts tests/ddz-renderer.test.tsx tests/engine.test.ts tests/room-lifecycle.test.ts tests/storage.test.ts tests/replay.test.ts tests/connection.test.ts tests/room-game-switch.test.ts tests/social.test.ts tests/poison.test.ts tests/service-host.test.ts tests/snapshot-sync.test.ts tests/catan.test.ts tests/catan-transactions.test.ts tests/social-preferences.test.ts tests/ai-observation.test.ts tests/browser-compute.test.ts tests/benchmark-preferences.test.ts tests/compute.test.ts tests/audit-recording.test.ts tests/game-surface.test.tsx tests/hero-guide.test.ts tests/chat-read.test.ts tests/archive-upgrade.test.ts tests/sgs-renderer.test.tsx tests/desktop-context-menu.test.ts tests/table-layout.test.ts tests/native-windows.test.ts tests/guide-targets.test.ts tests/upstream.test.ts
+        run: npm test -- --run tests/ci-platforms.test.ts tests/native-smoke-runner.test.ts tests/release-assets.test.ts tests/beginner-guide.test.ts tests/trick-guide.test.ts tests/game-expansion.test.ts tests/economic-ai.test.ts tests/commands.test.ts tests/themes.test.ts tests/strategies.test.ts tests/ddz.test.ts tests/ddz-renderer.test.tsx tests/engine.test.ts tests/room-lifecycle.test.ts tests/storage.test.ts tests/replay.test.ts tests/connection.test.ts tests/room-game-switch.test.ts tests/social.test.ts tests/poison.test.ts tests/service-host.test.ts tests/snapshot-sync.test.ts tests/catan.test.ts tests/catan-transactions.test.ts tests/social-preferences.test.ts tests/ai-observation.test.ts tests/browser-compute.test.ts tests/benchmark-preferences.test.ts tests/compute.test.ts tests/audit-recording.test.ts tests/game-surface.test.tsx tests/hero-guide.test.ts tests/chat-read.test.ts tests/archive-upgrade.test.ts tests/sgs-renderer.test.tsx tests/desktop-context-menu.test.ts tests/table-layout.test.ts tests/native-windows.test.ts tests/guide-targets.test.ts tests/upstream.test.ts
       - if: startsWith(github.ref, 'refs/tags/')
         run: npm test
       - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
@@ -58,28 +66,10 @@ jobs:
       - if: runner.os == 'Windows'
         run: cargo test --release --manifest-path src-tauri/Cargo.toml --features tauri/custom-protocol --lib hosting::tests::background_process_has_no_console
       - if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $env:COMPANION_SMOKE_PROFILE = "ai"
-          $env:COMPANION_SMOKE_OUTPUT = Join-Path $env:RUNNER_TEMP "native-ai-result.txt"
-          cargo build --release --manifest-path src-tauri/Cargo.toml --example smoke --features tauri/custom-protocol
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $process = Start-Process -FilePath "src-tauri/target/release/examples/smoke.exe" -PassThru
-          if (-not $process.WaitForExit(600000)) {
-            $process.Kill()
-            $progress = [System.IO.Path]::ChangeExtension($env:COMPANION_SMOKE_OUTPUT, "progress.log")
-            if (Test-Path $progress) { Get-Content $progress }
-            if (Test-Path $env:COMPANION_SMOKE_OUTPUT) { Get-Content $env:COMPANION_SMOKE_OUTPUT }
-            throw "Native AI verification timed out"
-          }
-          if (-not (Test-Path $env:COMPANION_SMOKE_OUTPUT)) { throw "Native AI verification did not report" }
-          $result = Get-Content $env:COMPANION_SMOKE_OUTPUT -Raw
-          Write-Output $result
-          if (-not $result.StartsWith("PASS")) {
-            $progress = [System.IO.Path]::ChangeExtension($env:COMPANION_SMOKE_OUTPUT, "progress.log")
-            if (Test-Path $progress) { Get-Content $progress }
-            throw "Native AI verification failed"
-          }
+        run: node scripts/native-smoke-runner.mjs
+        env:
+          COMPANION_SMOKE_PROFILE: ai
+          COMPANION_SMOKE_OUTPUT: ${{ runner.temp }}/native-ai-result.txt
       - run: npx playwright install chromium
       - run: npm run verify:smoke
       - if: ${{ always() }}
@@ -89,6 +79,7 @@ jobs:
           path: |
             ${{ runner.temp }}/native-ai-result.txt
             ${{ runner.temp }}/native-ai-result.progress.log
+            ${{ runner.temp }}/native-ai-result.txt.process.log
             .tmp/smoke/results.json
           if-no-files-found: ignore
           retention-days: 7
@@ -103,8 +94,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   release:
-    needs: package
-    if: ${{ github.event_name == 'push' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch' && inputs.publish_preview && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    needs: [platforms, package]
+    if: ${{ needs.platforms.outputs.all-platforms == 'true' && (github.event_name == 'push' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch' && inputs.publish_preview && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
