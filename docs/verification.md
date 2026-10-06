@@ -28,6 +28,7 @@
 | 原生 WebView、控件和离线 Worker | [原生入口](../src-tauri/examples/smoke.rs)、[交互脚本](../scripts/native-smoke.js) |
 | 原生公网生命周期与浏览器好友入口 | [房主入口](../src-tauri/examples/hosting_smoke.rs)、[房主脚本](../scripts/native-hosting-smoke.js)、[好友脚本](../scripts/smoke-host-guest.mjs) |
 | 平台自动构建与单平台选择 | [工作流](../.github/workflows/desktop.yml)、[平台选择](../scripts/ci-platforms.mjs)、[选择测试](../tests/ci-platforms.test.ts) |
+| Windows 正式应用与测试程序的系统控件清单 | [构建入口](../src-tauri/build.rs)、[共用清单](../src-tauri/windows-app-manifest.xml) |
 | 原生测试启动与进程输出 | [启动入口](../scripts/native-smoke-runner.mjs)、[真实子进程测试](../tests/native-smoke-runner.test.ts) |
 
 `npm run verify:smoke` 与 GitHub Actions 共用 [完整浏览器检查清单](../scripts/verify-smoke.mjs)，执行所有检查并输出 `.tmp/smoke/results.json`；任一失败均返回非零状态。`npm run verify:client` 自动启动独立服务与存档目录。浏览器支持 CHROME_PATH，未指定时选本机 Chrome 或 Playwright Chromium。网络脚本通过 TEST_SERVICE 指定入口、TEST_GAME 指定游戏。原生脚本通过 COMPANION_SMOKE_OUTPUT 指定结果文件，运行 `cargo run --release --example smoke --features tauri/custom-protocol`。
