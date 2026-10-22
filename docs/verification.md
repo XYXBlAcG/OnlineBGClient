@@ -120,3 +120,5 @@ Windows 11 原生窗口、DPI、输入法与跳棋 AI 仍需对应平台验收�
 发布检查顺序与缓存配置以 [桌面工作流](../.github/workflows/desktop.yml) 为准；原生编译参数以 [Cargo profile](../src-tauri/Cargo.toml) 为准。Windows 不运行原生 AI smoke；规则单元测试与后台进程检查继续执行。
 
 非游戏更新的牌桌副本复用与真实动作隔离由 [内存渲染测试](../tests/game-render-cache.test.tsx) 验证；该测试不创建浏览器或桌面窗口。
+
+检查脚本的静态源码依赖与目录加载由 [Node 导入检查](../tests/smoke-imports.test.ts) 在独立进程验证，不启动浏览器。

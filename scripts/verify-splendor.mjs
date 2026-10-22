@@ -4,7 +4,11 @@ import { mkdtemp, rm, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { TestService } from "./service-harness.mjs";
-import { gameKinds } from "../src/domain/catalogue.ts";
+import { tsImport } from "tsx/esm/api";
+const { gameKinds } = await tsImport(
+  "../src/domain/catalogue.ts",
+  import.meta.url,
+);
 const directory = await mkdtemp(join(tmpdir(), "onlinebg-splendor-")),
   service = new TestService(directory, {
     entry: "src-tauri/resources/hosting/main.mjs",
@@ -42,10 +46,12 @@ try {
     page.on("pageerror", (error) => errors.push(String(error)));
   await desktop.goto(endpoint);
   expect(await desktop.locator(".game-card").count()).toBe(gameKinds.length);
-  const icon = await desktop.locator(".game-symbol.dy").evaluate((node) => ({
-    background: getComputedStyle(node).backgroundColor,
-    svg: !!node.querySelector("svg"),
-  }));
+  const icon = await desktop
+    .locator('[data-game-icon="dy"]')
+    .evaluate((node) => ({
+      background: getComputedStyle(node).backgroundColor,
+      svg: !!node.querySelector("svg"),
+    }));
   expect(icon.svg).toBe(true);
   expect(icon.background).not.toBe("rgba(0, 0, 0, 0)");
   await desktop.getByRole("button", { name: /宝石、发展与贵族/ }).click();
@@ -175,7 +181,7 @@ try {
   await expect(island.getByRole("button", { name: /掷骰子/ })).toBeEnabled();
   if (errors.length) throw new Error(errors.join("\n"));
   console.log(
-    "PASS: packaged service, desktop/mobile Splendor real card/token clicks, synchronized turns, reservation, replay, local Splendor/Catan AI turns, eight-game lobby and visible Poison icon",
+    "PASS: packaged service, desktop/mobile Splendor real card/token clicks, synchronized turns, reservation, replay, local Splendor/Catan AI turns, catalogue lobby and visible Poison icon",
   );
 } catch (error) {
   for (const page of pages)

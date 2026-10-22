@@ -180,10 +180,16 @@ try {
   await expect(
     page.getByRole("button", { name: "对局记录", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "聊天", exact: true }).click();
+  await page
+    .locator(".app-toolbar")
+    .getByRole("button", { name: /^聊天(?: · \d+)?$/ })
+    .click();
   await page.getByLabel("消息", { exact: true }).fill("四川麻将联机测试");
   await page.getByRole("button", { name: "发送", exact: true }).click();
-  await pages[1].getByRole("button", { name: "聊天", exact: true }).click();
+  await pages[1]
+    .locator(".app-toolbar")
+    .getByRole("button", { name: /^聊天(?: · \d+)?$/ })
+    .click();
   await expect(pages[1].locator(".chat-messages")).toContainText(
     "四川麻将联机测试",
   );
