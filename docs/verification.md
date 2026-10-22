@@ -122,3 +122,5 @@ Windows 11 原生窗口、DPI、输入法与跳棋 AI 仍需对应平台验收�
 非游戏更新的牌桌副本复用与真实动作隔离由 [内存渲染测试](../tests/game-render-cache.test.tsx) 验证；该测试不创建浏览器或桌面窗口。
 
 检查脚本的静态源码依赖与目录加载由 [Node 导入检查](../tests/smoke-imports.test.ts) 在独立进程验证，不启动浏览器。
+
+布局变化后的动画副本与尺寸同步、源元素透明度保留由 [动画采样测试](../tests/table-animation-sampling.test.ts) 覆盖；浏览器落点精度入口为 [体验检查](../scripts/verify-experience.mjs)。

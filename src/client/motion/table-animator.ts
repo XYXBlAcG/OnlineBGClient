@@ -1,6 +1,6 @@
 import type { GameMotionEvent } from "../game-motion-events";
 import type { GameHighlight } from "../game-motion";
-import { findSample, type TableSample } from "./table-sample";
+import { findSample, sampleTable, type TableSample } from "./table-sample";
 export const tableTiming = {
   travel: 480,
   flip: 340,
@@ -137,8 +137,16 @@ export class TableAnimator {
     }
     this.frame = requestAnimationFrame(() => {
       if (this.closed) return;
-      for (const sample of this.current)
-        sample.bounds = sample.node.getBoundingClientRect();
+      for (const [node, opacity] of this.masks) node.style.opacity = opacity;
+      try {
+        this.current.splice(
+          0,
+          this.current.length,
+          ...sampleTable(this.surface),
+        );
+      } finally {
+        for (const node of this.masks.keys()) node.style.opacity = "0";
+      }
 
       const consumed = new Set<string>(),
         usedMasks = new Set<Element>();
