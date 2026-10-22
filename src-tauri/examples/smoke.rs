@@ -108,6 +108,8 @@ fn main() {
                     include_str!("../../scripts/native-auxiliary-smoke.js")
                 } else {
                     match std::env::var("COMPANION_SMOKE_PROFILE").as_deref() {
+                        Ok("mahjong") => include_str!("../../scripts/native-mahjong-smoke.js"),
+                        Ok("motion") => include_str!("../../scripts/native-motion-smoke.js"),
                         Ok("ai") => include_str!("../../scripts/native-ai-smoke.js"),
                         _ => include_str!("../../scripts/native-smoke.js"),
                     }

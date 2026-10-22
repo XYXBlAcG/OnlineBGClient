@@ -59,12 +59,14 @@ try {
   await expect(page.getByText("提示不阻碍操作", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "关闭提示", exact: true }).click();
   await page.getByRole("button", { name: "打开设置", exact: true }).click();
+  await page.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"AI 计算",exact:true}).click();
   await page.evaluate(() =>
     window.dispatchEvent(
       new CustomEvent("companion-notice", { detail: "弹窗内的操作提示" }),
     ),
   );
   await expect(page.getByRole("alert")).toContainText("弹窗内的操作提示");
+  await page.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"数据",exact:true}).click();
   await expect(
     page.getByText("旧表情缓存 · 22 B", { exact: true }),
   ).toBeVisible();
@@ -79,6 +81,7 @@ try {
   await page.getByRole("button", { name: "恢复本地对局", exact: true }).click();
   await expect(page.locator(".original-game")).toBeVisible();
   await page.getByRole("button", { name: "打开设置", exact: true }).click();
+  await page.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"AI 计算",exact:true}).click();
   await page
     .getByRole("switch", { name: "记录并显示策略审核", exact: true })
     .click();
@@ -87,6 +90,7 @@ try {
     page.getByRole("button", { name: "策略审核", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "打开设置", exact: true }).click();
+  await page.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"AI 计算",exact:true}).click();
   await page
     .getByRole("switch", { name: "记录并显示策略审核", exact: true })
     .click();
@@ -94,7 +98,7 @@ try {
   const saved = await page.evaluate(
     () =>
       new Promise((resolve, reject) => {
-        const request = indexedDB.open("onlinebg-client", 2);
+        const request = indexedDB.open("onlinebg-client");
         request.onsuccess = () => {
           const db = request.result,
             read = db.transaction("local").objectStore("local").get("active");

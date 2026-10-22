@@ -32,6 +32,7 @@ try {
         "onlinebg.preferences",
         JSON.stringify({
           benchmarkVisible: true,
+          enhancedGameMotion: true,
           performance: { mode: "multi", threads },
         }),
       );
@@ -88,6 +89,7 @@ try {
     page.getByRole("button", { name: "开始对局", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "打开设置", exact: true }).click();
+  await page.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"AI 计算",exact:true}).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.locator(".surface-resize-handle")).toHaveCount(0);
   await dialog.getByRole("button", { name: "关闭", exact: true }).click();

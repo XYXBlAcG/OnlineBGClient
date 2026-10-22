@@ -147,6 +147,7 @@ try {
     host.getByText("对局进行中 · 电脑不占席位", { exact: true }),
   ).toBeVisible();
   await host.getByRole("button", { name: "打开设置", exact: true }).click();
+  await host.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"AI 计算",exact:true}).click();
   await choose(host, "CPU加速模式", "多线程");
   await host
     .getByRole("dialog")

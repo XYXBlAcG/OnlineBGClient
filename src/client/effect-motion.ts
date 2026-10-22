@@ -1,5 +1,10 @@
 import type { InteractionStyle } from "../domain/social";
-export function effectMotion(style: InteractionStyle, dx: number, dy: number) {
+export function effectMotion(
+  style: InteractionStyle,
+  dx: number,
+  dy: number,
+  particleLimit = Infinity,
+) {
   const at = (x: number, y: number, scale = 1, angle = 0) =>
     `translate(calc(-50% + ${x}px),calc(-50% + ${y}px)) rotate(${angle}deg) scale(${scale})`;
   const spin = ["impact", "confetti", "orbit", "bounce"].includes(style);
@@ -40,7 +45,10 @@ export function effectMotion(style: InteractionStyle, dx: number, dy: number) {
       ),
     },
   ];
-  const count = style === "orbit" ? 12 : style === "confetti" ? 18 : 14;
+  const count = Math.min(
+    particleLimit,
+    style === "orbit" ? 12 : style === "confetti" ? 18 : 14,
+  );
   const fragments = Array.from({ length: count }, (_, index): Keyframe[] => {
     const angle = (index * Math.PI * 2) / count,
       x = Math.cos(angle) * 125,

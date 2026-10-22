@@ -49,6 +49,7 @@ export function Select({
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
+          data-motion-scope="ui"
           className="ui-select-menu"
           position="popper"
           sideOffset={6}
@@ -63,7 +64,7 @@ export function Select({
           <SelectPrimitive.ScrollUpButton className="ui-scroll">
             ⌃
           </SelectPrimitive.ScrollUpButton>
-          <SelectPrimitive.Viewport>
+          <SelectPrimitive.Viewport className="ui-select-viewport">
             {options.map((option) => (
               <SelectPrimitive.Item
                 key={String(option.props.value)}
@@ -73,7 +74,9 @@ export function Select({
                 <SelectPrimitive.ItemText>
                   {option.props.children}
                 </SelectPrimitive.ItemText>
-                <SelectPrimitive.ItemIndicator>✓</SelectPrimitive.ItemIndicator>
+                <SelectPrimitive.ItemIndicator className="ui-select-indicator">
+                  ✓
+                </SelectPrimitive.ItemIndicator>
               </SelectPrimitive.Item>
             ))}
           </SelectPrimitive.Viewport>
@@ -156,12 +159,25 @@ export function Panel({
   title: string;
   children: ReactNode;
 }) {
-  if (auxiliaryView) return open ? <section className={`native-content ${className}`} data-command-scope={scope} aria-label={title}>{children}</section> : null;
+  if (auxiliaryView)
+    return open ? (
+      <section
+        className={`native-content ${className}`}
+        data-command-scope={scope}
+        aria-label={title}
+      >
+        {children}
+      </section>
+    ) : null;
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="ui-overlay" />
+        <DialogPrimitive.Overlay
+          data-motion-scope="ui"
+          className="ui-overlay"
+        />
         <DialogPrimitive.Content
+          data-motion-scope="ui"
           className={`ui-panel ${className}`}
           data-command-scope={scope}
           onEscapeKeyDown={(event) => event.preventDefault()}

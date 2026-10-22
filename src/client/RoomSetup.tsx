@@ -1,3 +1,4 @@
+import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
 import { useState } from "react";
@@ -83,7 +84,7 @@ export function RoomSetup({
                   ),
                   humans = g.ai
                     ? Math.max(
-                        kind === "tq" ? 0 : 1,
+                        ["tq", "scmj"].includes(kind) ? 0 : 1,
                         Math.min(config.humans, total),
                       )
                     : total;
@@ -119,7 +120,21 @@ export function RoomSetup({
                 setConfig({
                   ...config,
                   humans,
-                  ai: config.ai.slice(0, game.maxPlayers - humans),
+                  ai: game.ai
+                    ? Array.from(
+                        {
+                          length: Math.max(
+                            game.minPlayers - humans,
+                            Math.min(
+                              config.ai.length,
+                              game.maxPlayers - humans,
+                            ),
+                          ),
+                        },
+                        (_, i) =>
+                          config.ai[i] || { difficulty: "normal", name: "" },
+                      )
+                    : [],
                 });
               }}
             >
@@ -127,7 +142,11 @@ export function RoomSetup({
                 {
                   length:
                     game.maxPlayers -
-                    (config.kind === "tq" ? 0 : game.ai ? 1 : game.minPlayers) +
+                    (["tq", "scmj"].includes(config.kind)
+                      ? 0
+                      : game.ai
+                        ? 1
+                        : game.minPlayers) +
                     1,
                 },
                 (_, i) => (
@@ -135,11 +154,15 @@ export function RoomSetup({
                     key={i}
                     value={
                       i +
-                      (config.kind === "tq" ? 0 : game.ai ? 1 : game.minPlayers)
+                      (["tq", "scmj"].includes(config.kind)
+                        ? 0
+                        : game.ai
+                          ? 1
+                          : game.minPlayers)
                     }
                   >
                     {i +
-                      (config.kind === "tq"
+                      (["tq", "scmj"].includes(config.kind)
                         ? 0
                         : game.ai
                           ? 1
@@ -167,15 +190,29 @@ export function RoomSetup({
                 }
               >
                 {Array.from(
-                  { length: game.maxPlayers - config.humans + 1 },
+                  {
+                    length:
+                      game.maxPlayers -
+                      Math.max(config.humans, game.minPlayers) +
+                      1,
+                  },
                   (_, i) => (
-                    <option key={i} value={i}>
-                      {i}
+                    <option
+                      key={i}
+                      value={i + Math.max(0, game.minPlayers - config.humans)}
+                    >
+                      {i + Math.max(0, game.minPlayers - config.humans)}
                     </option>
                   ),
                 )}
               </Select>
             </label>
+          )}
+          {config.kind === "scmj" && (
+            <MahjongOptionsControl
+              value={config.mahjong}
+              onChange={(mahjong) => setConfig({ ...config, mahjong })}
+            />
           )}
           {config.ai.map((ai, i) => (
             <div className="setting-row" key={i}>

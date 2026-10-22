@@ -8,11 +8,12 @@ import { BeginnerGuide } from "../src/client/BeginnerGuide";
 import { guidePosition } from "../src/client/guide-position";
 import { Room } from "../src/domain/room";
 
-it("registers concise guides for the five requested games", () => {
+it("registers actionable guides for the supported games", () => {
   expect(Object.keys(beginnerGuides).sort()).toEqual([
     "ccbs",
     "dy",
     "ktd",
+    "scmj",
     "sgs",
     "tq",
   ]);

@@ -15,6 +15,7 @@ export function ChatPanel({
   onText,
   onUnread,
   onClose,
+  showClose = true,
 }: {
   snapshot: Snapshot;
   compact: boolean;
@@ -23,6 +24,7 @@ export function ChatPanel({
   onText: (text: string) => void;
   onUnread: (count: number) => void;
   onClose: () => void;
+  showClose?: boolean;
 }) {
   const panel = useRef<HTMLElement>(null);
   const ownId =
@@ -121,9 +123,11 @@ export function ChatPanel({
     <aside ref={panel} className="chat-panel" hidden={!preferences.chatVisible}>
       <div className="chat-heading">
         <h2>房间消息</h2>
-        <button type="button" aria-label="收起聊天" onClick={onClose}>
-          ×
-        </button>
+        {showClose && (
+          <button type="button" aria-label="收起聊天" onClick={onClose}>
+            ×
+          </button>
+        )}
       </div>
       <div
         ref={messages}
@@ -178,6 +182,7 @@ export function ChatPanel({
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content
+              data-motion-scope="ui"
               className="ui-popover quick-phrase-menu"
               sideOffset={8}
             >

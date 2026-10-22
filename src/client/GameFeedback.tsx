@@ -1,3 +1,4 @@
+import { usePresentation } from "./motion";
 import { useEffect, useRef } from "react";
 export interface GameFeedbackProps {
   event?: { card?: number; noble?: number[]; gemDelta?: number[] };
@@ -5,9 +6,10 @@ export interface GameFeedbackProps {
   target: "ccbs.market" | "ccbs.noble" | "ccbs.bank";
 }
 export function GameFeedback({ event, version, target }: GameFeedbackProps) {
+  const {game}=usePresentation();
   const anchor = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    if (!event || document.documentElement.dataset.motion === "false") return;
+    if (!event || game !== "baseline" || anchor.current?.closest("[data-game-motion=reduced]")) return;
     if (
       (target === "ccbs.market" && !event.card) ||
       (target === "ccbs.noble" && !event.noble?.length) ||
@@ -38,6 +40,6 @@ export function GameFeedback({ event, version, target }: GameFeedbackProps) {
       ),
     );
     return () => animations.forEach((animation) => animation.cancel());
-  }, [version, target]);
+  }, [version, target, game]);
   return <span hidden ref={anchor} />;
 }

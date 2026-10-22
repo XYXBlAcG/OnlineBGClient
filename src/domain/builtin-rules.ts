@@ -1,3 +1,4 @@
+import { SichuanRules } from "./mahjong/rules";
 import { SplendorRules } from "./splendor";
 import { CatanRules } from "./catan";
 import { PoisonRules } from "./poison";
@@ -72,4 +73,8 @@ export function catanPlugin(runtime: UpstreamRuntime) {
 
 export function splendorPlugin(runtime: UpstreamRuntime) {
   return new GameAdapter("ccbs", new SplendorRules(runtime));
+}
+
+export function sichuanPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter("scmj", new SichuanRules(() => runtime.random()));
 }

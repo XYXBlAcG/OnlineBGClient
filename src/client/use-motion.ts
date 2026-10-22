@@ -1,13 +1,20 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+function subscribe(update: () => void) {
+  const media = matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", update);
+  document.addEventListener("visibilitychange", update);
+  return () => {
+    media.removeEventListener("change", update);
+    document.removeEventListener("visibilitychange", update);
+  };
+}
 export function useMotion(enabled: boolean): boolean {
-  const [reduced, setReduced] = useState(
-    () => matchMedia("(prefers-reduced-motion: reduce)").matches,
+  return useSyncExternalStore(
+    subscribe,
+    () =>
+      enabled &&
+      !matchMedia("(prefers-reduced-motion: reduce)").matches &&
+      document.visibilityState !== "hidden",
+    () => enabled,
   );
-  useEffect(() => {
-    const media = matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(media.matches);
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-  return enabled && !reduced;
 }

@@ -13,6 +13,11 @@ export function guidePosition({
 }: GuideSnapshot): string[] {
   if (!state || actor < 0) return [];
   switch (state.kind) {
+    case "scmj":
+      return [
+        `当前阶段：${state.view.phase === "exchange" ? "换三张" : state.view.phase === "lack" ? "定缺" : state.view.phase === "response" ? "响应" : "摸打"}；牌墙余 ${state.view.wall.length} 张。`,
+        `你有 ${state.view.hands[actor].length} 张手牌，得分 ${state.view.scores[actor]}，可选 ${candidates.length} 个合法动作。`,
+      ];
     case "ccbs": {
       const v = state.view;
       return [

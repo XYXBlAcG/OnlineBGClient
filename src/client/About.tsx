@@ -26,6 +26,7 @@ export function About({
   if (detached) return null;
   return (
     <Panel
+      className="about-links"
       title={`关于 ${productName}`}
       open={open}
       onOpenChange={onOpenChange}

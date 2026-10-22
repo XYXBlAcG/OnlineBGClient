@@ -51,7 +51,7 @@ export function DetailSurface({
             </Tooltip.Trigger>
           </Popover.Anchor>
           <Tooltip.Portal>
-            <Tooltip.Content
+            <Tooltip.Content data-motion-scope="ui"
               className="ui-tooltip"
               sideOffset={8}
               collisionPadding={12}
@@ -61,7 +61,7 @@ export function DetailSurface({
           </Tooltip.Portal>
         </Tooltip.Root>
         <Popover.Portal>
-          <Popover.Content
+          <Popover.Content data-motion-scope="ui"
             className="ui-tooltip detail-popover"
             aria-label={title}
             sideOffset={8}

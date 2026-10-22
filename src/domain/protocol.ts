@@ -1,3 +1,5 @@
+import { mahjongOptionsSchema } from "./mahjong/types";
+import { avatarSchema } from "./avatar";
 import type { ComputeDiagnostic } from "./compute-diagnostics";
 import type { AiComputation } from "./performance";
 import { performanceSchema } from "./performance";
@@ -33,6 +35,7 @@ export const configSchema = z
     team: z.boolean(),
     training: z.boolean(),
     auditEnabled: z.boolean().default(false),
+    mahjong: mahjongOptionsSchema.default({ cap: 3, selfDraw: "base" }),
     catanTrades: z.boolean().default(true),
     performance: performanceSchema.default({ mode: "auto", threads: 8 }),
   })
@@ -43,8 +46,8 @@ export const configSchema = z
     "总席位超出该游戏人数范围",
   )
   .refine(
-    (value) => value.humans > 0 || value.kind === "tq",
-    "仅跳棋支持全 AI 对战",
+    (value) => value.humans > 0 || ["tq", "scmj"].includes(value.kind),
+    "该游戏不支持全 AI 对战",
   )
   .refine(
     (value) => gameCatalogue[value.kind].ai || !value.ai.length,
@@ -74,11 +77,13 @@ export const commandSchema = z.discriminatedUnion("type", [
     hostOnly: z.boolean().optional(),
     config: configSchema,
     name: z.string().trim().min(1).max(24),
+    avatar: avatarSchema.optional(),
   }),
   z.object({
     type: z.literal("join"),
     room: z.string().min(1).max(12),
     name: z.string().trim().min(1).max(24),
+    avatar: avatarSchema.optional(),
     token: z.string().max(100).optional(),
   }),
   z.object({
@@ -86,6 +91,16 @@ export const commandSchema = z.discriminatedUnion("type", [
     token: z.string(),
     index: z.number().int().min(1).max(7),
     config: seatConfigSchema,
+  }),
+  z.object({
+    type: z.literal("autoplay"),
+    token: z.string(),
+    enabled: z.boolean(),
+  }),
+  z.object({
+    type: z.literal("avatar"),
+    token: z.string(),
+    avatar: avatarSchema,
   }),
   z.object({ type: z.literal("ready"), token: z.string(), ready: z.boolean() }),
   z.object({ type: z.literal("leave"), token: z.string() }),
@@ -143,7 +158,7 @@ export interface DecisionSummary {
   simulations: number;
   version: number;
 }
-export const protocolVersion = 7;
+export const protocolVersion = 9;
 export interface Snapshot {
   apiVersion: number;
   rulesVersion: string;
@@ -158,6 +173,8 @@ export interface Snapshot {
   seats: {
     id: string;
     name: string;
+    avatar?: string;
+    autoplay?: boolean;
     difficulty: Difficulty | null;
     online: boolean;
     ready: boolean;

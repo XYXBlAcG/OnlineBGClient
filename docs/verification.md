@@ -4,6 +4,10 @@
 
 | 范围 | 入口 |
 | --- | --- |
+| 游戏语义与 UNO 3D 翻牌 | [语义测试](../tests/game-motion-events.test.ts)、[八游戏浏览器检查](../scripts/verify-experience.mjs)、[UNO 双视角检查](../scripts/verify-uno-motion.mjs)、[原生翻牌检查](../scripts/native-motion-smoke.js)（`COMPANION_SMOKE_PROFILE=motion`） |
+| 四川麻将规则、隐藏牌、并行 AI 与确定性回放 | [规则测试](../tests/sichuan-mahjong.test.ts)、[AI 测试](../tests/sichuan-ai.test.ts) |
+| 四川麻将真实服务三端＋AI、手机布局、结算和回放 | [浏览器验证](../scripts/verify-sichuan.mjs)、[结果](../artifacts/review/sichuan-verification.json) |
+| 四川麻将原生本地线程与真人操作 | [原生验证](../scripts/native-mahjong-smoke.js)（`COMPANION_SMOKE_PROFILE=mahjong`） |
 | 社交模型、消息序号与资源 | [互动与消息](../tests/social.test.ts)、[阅读状态](../tests/chat-read.test.ts)、[旧存档升级](../tests/archive-upgrade.test.ts) |
 | 服务身份与手机延迟链路 | [权限和投影复用](../tests/service-host.test.ts)、[增量基线](../tests/snapshot-sync.test.ts)、[真实延迟代理与手机浏览器](../scripts/verify-mobile-host.mjs) |
 | 卡坦岛地图、交易、发展卡、强盗与回放 | [规则测试](../tests/catan.test.ts)、[事务与回放](../tests/catan-transactions.test.ts)、[三个真实浏览器牌桌](../scripts/verify-catan.mjs) |
@@ -104,3 +108,11 @@ Chromium 已验证边缘分栏拖动、Escape 取消、默认收起、完整头�
 Windows 11 原生窗口、DPI、输入法与跳棋 AI 仍需对应平台验收。系统确认弹窗已接入原生插件并通过编译，取消和确认操作仍需人工检查。
 
 手动运行工作流可选择 `all`、`windows` 或 `macos`；提交的独立末尾行 `CI-Platforms: windows` 可仅验证 Windows。版本标签始终验证双平台；单平台检查不会发布缺少另一平台的 Release。
+
+界面／游戏动画四组合、真实动作与头像同步见 [verify-experience](../scripts/verify-experience.mjs)；头像和动效测试入口见 [体验文档](ui-motion-plan.md)。
+
+四川麻将已在真实 Chromium 三席＋服务端 AI 跑完牌局，验证同时换三张和定缺、私牌投影、出牌动画、聊天、托管及取消、零和结算、回放播放暂停与只读；检查 1366×768、390×844、844×390。困难 AI 通过真实 CPU Worker 决策与已完成抽样的审核复现。手机尺寸使用触屏模拟，不能代替真实设备与 Windows WebView2 验收。
+
+四川麻将 macOS WebView 已验证本地 AI 线程、自动换牌与定缺、本人出牌、对手牌背、托管／取消和手牌边界；[原生结果](../artifacts/review/sichuan-native-verification.txt)。审核包为 `artifacts/review/OnlineBGClient-Sichuan-macOS-arm64-review.zip`，使用本地临时签名并校验资源完整性。
+
+多人房间的记录事务、关闭保存、清理后不回填、恢复数据隔离与准备状态由 [记录测试](../tests/record-history.test.ts)、[房间测试](../tests/room-polish.test.ts) 覆盖。界面操作由用户依照 [手动验收](multiplayer-room-experience.md#手动验收) 执行；不启动浏览器或桌面界面自动化检查。

@@ -1,3 +1,4 @@
+import { roomReadiness } from "./client/room-readiness";
 import { AuxiliaryRoot } from "./client/native/AuxiliaryRoot";
 import { auxiliaryView } from "./client/native/contract";
 import { nativeMain, useNativeWindow } from "./client/native/windows";
@@ -7,7 +8,7 @@ import { RoomSetup } from "./client/RoomSetup";
 import { beginnerGuides } from "./client/beginner-guides";
 import { BeginnerGuide } from "./client/BeginnerGuide";
 import { Notices } from "./client/Notices";
-import { useMotion } from "./client/use-motion";
+import { MotionProvider } from "./client/motion";
 import { HeroDescription } from "./client/HeroSurface";
 import { HeroGuides } from "./domain/hero-guide";
 import { useWindowWidth, useMobile } from "./client/use-mobile";
@@ -28,7 +29,7 @@ import { ClientStore } from "./client/storage";
 import { Settings } from "./client/Settings";
 import { GameCommands } from "./client/GameCommands";
 import { CommandRegistry } from "./client/commands";
-import { loadPreferences } from "./client/preferences";
+import { loadPreferences, type Preferences } from "./client/preferences";
 import { Select } from "./client/ui/Controls";
 import { Confirmation } from "./client/Confirmation";
 import { confirmation } from "./client/confirmation-controller";
@@ -56,6 +57,7 @@ import { Lobby, difficultyNames } from "./client/Lobby";
 import { gameCatalogue } from "./domain/catalogue";
 import { cardNames, skillNames } from "./domain/terms";
 import "./styles.css";
+import "./client/ui/experience.css";
 
 const emptyInteractions: InteractionEvent[] = [];
 const invited = new URLSearchParams(location.search);
@@ -138,7 +140,7 @@ function App() {
     if (preferences.chatVisible) setSidebarTab("chat");
     else setSidebarTab((value) => (value === "chat" ? null : value));
   }, [preferences.chatVisible]);
-  const motion = useMotion(preferences.motion);
+
   const preferencesRef = useRef(preferences);
   preferencesRef.current = preferences;
   const [store] = useState(() => new ClientStore());
@@ -244,7 +246,7 @@ function App() {
     if (response.type === "left" || response.type === "closed") {
       if (response.type === "closed" && response.replay)
         await store
-          .saveRecord(response.replay)
+          .archiveRecords([response.replay])
           .catch((error) => setNotice(String(error)));
       connection.current?.close();
       connection.current = null;
@@ -283,6 +285,12 @@ function App() {
       setTokens(response.localTokens || []);
     }
     if (response.type === "snapshot") {
+      void store
+        .archiveRecords([
+          ...response.snapshot.records,
+          ...(response.snapshot.replay ? [response.snapshot.replay] : []),
+        ])
+        .catch((error) => setNotice(String(error)));
       setSnapshot(response.snapshot);
       if (connection.current instanceof NetworkConnection) {
         const url = new URL(connection.current.endpoint);
@@ -355,7 +363,12 @@ function App() {
       if (nextMode === "local") {
         setStatus("本地离线");
         connection.current = new LocalConnection(receive);
-        connection.current.send({ type: "create", config, name });
+        connection.current.send({
+          type: "create",
+          config,
+          name,
+          avatar: preferences.avatar,
+        });
       } else {
         if (temporary) {
           setStatus("正在准备公网房间");
@@ -366,7 +379,13 @@ function App() {
         setService(endpoint);
         connection.current = new NetworkConnection(
           endpoint,
-          { type: "create", config, name, hostOnly },
+          {
+            type: "create",
+            config,
+            name,
+            hostOnly,
+            avatar: preferences.avatar,
+          },
           receive,
           setStatus,
         );
@@ -399,7 +418,7 @@ function App() {
       setService(endpoint);
       connection.current = new NetworkConnection(
         endpoint,
-        { type: "join", room, name },
+        { type: "join", room, name, avatar: preferences.avatar },
         receive,
         setStatus,
       );
@@ -516,6 +535,12 @@ function App() {
       snapshot?.finished,
     ],
   );
+  const [inviteCopied, setInviteCopied] = useState(false);
+  useEffect(() => {
+    if (!inviteCopied) return;
+    const timer = setTimeout(() => setInviteCopied(false), 2500);
+    return () => clearTimeout(timer);
+  }, [inviteCopied]);
   const invitationUrl = () => {
     const url = new URL(service);
     if (snapshot) url.searchParams.set("room", snapshot.room);
@@ -525,7 +550,7 @@ function App() {
     const url = new URL(invitationUrl());
     try {
       await navigator.clipboard.writeText(url.href);
-      setNotice("邀请链接已复制");
+      setInviteCopied(true);
     } catch {
       setNotice(`邀请链接：${url.href}`);
     }
@@ -539,7 +564,7 @@ function App() {
       if (preferences.theme === "system") applyTheme("system");
     };
     media.addEventListener("change", changed);
-    document.documentElement.dataset.motion = String(preferences.motion);
+
     return () => media.removeEventListener("change", changed);
   }, [preferences]);
   useEffect(() => {
@@ -692,8 +717,20 @@ function App() {
     },
     detachedSidebar,
   );
+  const sendAvatar = (avatar: string) => {
+    if (session.current && snapshot && snapshot.actor >= 0)
+      connection.current?.send({
+        type: "avatar",
+        token: session.current.token,
+        avatar,
+      });
+  };
+  const changePreferences = (next: Preferences) => {
+    if (next.avatar !== preferences.avatar) sendAvatar(next.avatar);
+    setPreferences(next);
+  };
   return (
-    <>
+    <MotionProvider preferences={preferences}>
       <div className={`app-shell ${mobile ? "mobile-shell" : ""}`}>
         <Confirmation />
         {!nativeMain() && (
@@ -730,7 +767,6 @@ function App() {
           <Records
             open={recordsOpen}
             onOpenChange={setRecordsOpen}
-            snapshot={snapshot}
             onError={setNotice}
           />
         )}
@@ -744,7 +780,7 @@ function App() {
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
           preferences={preferences}
-          onChange={setPreferences}
+          onChange={changePreferences}
           commands={registry.list()}
           onBind={bind}
         />
@@ -804,6 +840,8 @@ function App() {
         />
         {!snapshot && mobile ? (
           <MobileJoin
+            preferences={preferences}
+            onPreferencesChange={changePreferences}
             room={invited.get("room") || ""}
             service={service}
             busy={busy}
@@ -841,7 +879,7 @@ function App() {
               onCreate={connect}
               onJoin={join}
               preferences={preferences}
-              onPreferencesChange={setPreferences}
+              onPreferencesChange={changePreferences}
             />
           </>
         ) : (
@@ -890,6 +928,31 @@ function App() {
                       {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
                     </button>
                   )}
+                {snapshot.canManage && (
+                  <RoomSetup
+                    snapshot={snapshot}
+                    onError={setNotice}
+                    onApply={(setup) =>
+                      connection.current!.send({
+                        type: "game",
+                        token: session.current!.token,
+                        setup,
+                      })
+                    }
+                  />
+                )}
+                {mode === "network" && (
+                  <div className="room-invite">
+                    {!mobile && (
+                      <button onClick={invite} aria-live="polite">
+                        {inviteCopied ? "已复制邀请" : "复制邀请"}
+                      </button>
+                    )}
+                    <button onClick={() => setInviteOpen(true)}>
+                      {mobile ? "邀请" : "邀请二维码"}
+                    </button>
+                  </div>
+                )}
                 <details
                   className="room-options"
                   onClick={(event) => {
@@ -909,27 +972,6 @@ function App() {
                         registry={registry}
                         bindings={preferences.bindings}
                         pending={actionPending}
-                      />
-                    )}
-                    {mode === "network" && (
-                      <>
-                        <button onClick={invite}>复制邀请</button>
-                        <button onClick={() => setInviteOpen(true)}>
-                          邀请二维码
-                        </button>
-                      </>
-                    )}
-                    {snapshot.canManage && (
-                      <RoomSetup
-                        snapshot={snapshot}
-                        onError={setNotice}
-                        onApply={(setup) =>
-                          connection.current!.send({
-                            type: "game",
-                            token: session.current!.token,
-                            setup,
-                          })
-                        }
                       />
                     )}
                     {snapshot.canManage && gameCatalogue[snapshot.kind].ai && (
@@ -1100,15 +1142,21 @@ function App() {
                         <div className="seat-row" key={index}>
                           <strong>席位 {index + 1}</strong>
                           <span>{seat.name || "等待加入"}</span>
-                          <small>
-                            {seat.difficulty
-                              ? difficultyNames[seat.difficulty]
-                              : seat.online
-                                ? seat.ready
-                                  ? "已准备"
-                                  : "未准备"
-                                : "等待加入"}
-                          </small>
+                          {!(
+                            snapshot.canManage &&
+                            index > 0 &&
+                            seat.difficulty
+                          ) && (
+                            <small>
+                              {seat.difficulty
+                                ? difficultyNames[seat.difficulty]
+                                : seat.online
+                                  ? seat.ready
+                                    ? "已准备"
+                                    : "未准备"
+                                  : "等待加入"}
+                            </small>
+                          )}
                           {snapshot.canManage &&
                             index > 0 &&
                             (!seat.name || seat.difficulty) && (
@@ -1145,37 +1193,41 @@ function App() {
                             )}
                         </div>
                       ))}
-                      {snapshot.actor >= 0 && (
-                        <button
-                          onClick={() =>
-                            connection.current!.send({
-                              type: "ready",
-                              token: session.current!.token,
-                              ready: !snapshot.seats[snapshot.actor].ready,
-                            })
-                          }
-                        >
-                          {snapshot.seats[snapshot.actor].ready
-                            ? "取消准备"
-                            : "准备"}
-                        </button>
-                      )}
-                      {snapshot.canManage && !snapshot.playing && (
-                        <button
-                          disabled={snapshot.seats.some(
-                            (seat) =>
-                              !seat.difficulty && (!seat.online || !seat.ready),
-                          )}
-                          className="primary-button"
-                          onClick={() =>
-                            connection.current!.send({
-                              type: "start",
-                              token: session.current!.token,
-                            })
-                          }
-                        >
-                          开始对局
-                        </button>
+                      <div className="room-ready-actions">
+                        {snapshot.actor >= 0 && (
+                          <button
+                            onClick={() =>
+                              connection.current!.send({
+                                type: "ready",
+                                token: session.current!.token,
+                                ready: !snapshot.seats[snapshot.actor].ready,
+                              })
+                            }
+                          >
+                            {snapshot.seats[snapshot.actor].ready
+                              ? "取消准备"
+                              : "准备"}
+                          </button>
+                        )}
+                        {snapshot.canManage && !snapshot.playing && (
+                          <button
+                            disabled={!roomReadiness(snapshot.seats).canStart}
+                            className="primary-button"
+                            onClick={() =>
+                              connection.current!.send({
+                                type: "start",
+                                token: session.current!.token,
+                              })
+                            }
+                          >
+                            开始对局
+                          </button>
+                        )}
+                      </div>
+                      {!snapshot.playing && (
+                        <p className="room-readiness" role="status">
+                          {roomReadiness(snapshot.seats).message}
+                        </p>
                       )}
                       {snapshot.actor < 0 && snapshot.playing && (
                         <button
@@ -1247,6 +1299,13 @@ function App() {
                         }}
                       >
                         <OriginalGame
+                          onAutoplay={(enabled) =>
+                            connection.current!.send({
+                              type: "autoplay",
+                              token: session.current!.token,
+                              enabled,
+                            })
+                          }
                           onPhrase={sendChat}
                           customPhrases={preferences.phraseGroups}
                           interactions={
@@ -1254,11 +1313,18 @@ function App() {
                               ? interactions
                               : emptyInteractions
                           }
-                          motion={motion}
                           sound={preferences.interactionSound}
                           onInteractionEnd={finishInteraction}
                           restart={restart}
                           snapshot={gameSnapshot!}
+                          motionPreferences={preferences}
+                          onMotion={(motion) =>
+                            changePreferences({ ...preferences, ...motion })
+                          }
+                          onAvatar={(avatar) => {
+                            sendAvatar(avatar);
+                            setPreferences({ ...preferences, avatar });
+                          }}
                           act={act}
                           end={end}
                           onInteract={interact}
@@ -1334,18 +1400,6 @@ function App() {
                 >
                   聊天{unread > 0 ? ` · ${unread}` : ""}
                 </button>
-                <button
-                  aria-label="关闭辅助区域"
-                  onClick={() => {
-                    setSidebarTab(null);
-                    setPreferences((value) => ({
-                      ...value,
-                      chatVisible: false,
-                    }));
-                  }}
-                >
-                  ×
-                </button>
                 {guideEnabled && (
                   <button
                     aria-pressed={guideShown}
@@ -1361,6 +1415,19 @@ function App() {
                     引导
                   </button>
                 )}
+                <button
+                  className="sidebar-close"
+                  aria-label="关闭辅助区域"
+                  onClick={() => {
+                    setSidebarTab(null);
+                    setPreferences((value) => ({
+                      ...value,
+                      chatVisible: false,
+                    }));
+                  }}
+                >
+                  ×
+                </button>
               </nav>
               <div
                 ref={setGuideDock}
@@ -1369,6 +1436,7 @@ function App() {
               />
 
               <ChatPanel
+                showClose={false}
                 snapshot={snapshot}
                 compact={mobile}
                 endpoint={mode === "network" ? service : undefined}
@@ -1390,7 +1458,7 @@ function App() {
           </main>
         )}
       </div>
-    </>
+    </MotionProvider>
   );
 }
 

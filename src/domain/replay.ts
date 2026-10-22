@@ -1,3 +1,4 @@
+import { avatarSchema } from "./avatar";
 import { z } from "zod";
 import { actionSchema, configSchema } from "./protocol";
 import { gameCatalogue } from "./catalogue";
@@ -9,6 +10,7 @@ export const replaySchema = z.object({
   config: configSchema,
   rulesVersion: z.string(),
   names: z.array(z.string().max(24)).max(8),
+  avatars: z.array(avatarSchema).max(8).optional(),
   seed: z.string().max(150),
   startedAt: z.number().int(),
   events: z
@@ -53,6 +55,7 @@ export class Replay {
       this.record.names.length,
       this.record.seed,
       this.record.config.team,
+      this.record.config.mahjong,
     );
     const frames = [structuredClone(state)];
     for (const event of this.record.events) {

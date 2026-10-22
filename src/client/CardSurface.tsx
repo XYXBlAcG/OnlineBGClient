@@ -35,7 +35,11 @@ export function CardSurface({
   children: ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
 }) {
   const card = guides.get(id);
-  const marked = cloneElement(children, {"data-guide-target": "sgs.card", "data-guide-id": id} as Record<string, unknown>);
+  const marked = cloneElement(children, {
+    "data-guide-target": "sgs.card",
+    "data-guide-id": id,
+    "data-motion-key": `sgs-card-${id}`,
+  } as Record<string, unknown>);
   if (!card) return marked;
   return (
     <DetailSurface

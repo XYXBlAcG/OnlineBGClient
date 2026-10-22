@@ -6,7 +6,7 @@ import { gameCatalogue } from "../domain/catalogue";
 import { Replay, type ReplayRecord } from "../domain/replay";
 import type { GameState } from "../domain/types";
 import { protocolVersion, type Snapshot } from "../domain/protocol";
-import { ClientStore } from "./storage";
+import { ClientStore, subscribeRecords } from "./storage";
 import { exportJson, importJson } from "./files";
 import { OriginalGame } from "./OriginalGame";
 import { Panel, Select, Slider } from "./ui/Controls";
@@ -14,12 +14,10 @@ import { Panel, Select, Slider } from "./ui/Controls";
 export function Records({
   open,
   onOpenChange,
-  snapshot,
   onError,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  snapshot: Snapshot | null;
   onError: (message: string) => void;
 }) {
   const detached = useNativeWindow(
@@ -42,24 +40,24 @@ export function Records({
   const [speed, setSpeed] = useState(1);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    if (open && !detached)
+    if (!open || detached) return;
+    let active = true;
+    const refresh = () => {
       void store
         .records()
-        .then((records) =>
-          setRecords(records.sort((a, b) => b.startedAt - a.startedAt)),
-        )
+        .then((records) => {
+          if (active)
+            setRecords(records.sort((a, b) => b.startedAt - a.startedAt));
+        })
         .catch((error) => onError(String(error)));
-  }, [open, store]);
-  useEffect(() => {
-    if (!snapshot) return;
-    const records = [
-      ...snapshot.records,
-      ...(snapshot.replay ? [snapshot.replay] : []),
-    ];
-    void Promise.all(records.map((record) => store.saveRecord(record))).catch(
-      (error) => onError(String(error)),
-    );
-  }, [snapshot?.replay, snapshot?.records, store]);
+    };
+    refresh();
+    const unsubscribe = subscribeRecords(refresh);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [open, detached, store]);
   useEffect(() => {
     if (!selected) return;
     const worker = new Worker(new URL("./replay-worker.ts", import.meta.url), {
@@ -106,6 +104,7 @@ export function Records({
           seats: selected.names.map((name, index) => ({
             id: `replay:${index}`,
             name,
+            avatar: selected.avatars?.[index],
             difficulty: null,
             online: true,
             ready: true,
@@ -275,6 +274,8 @@ export function Records({
             preview && (
               <OriginalGame
                 replay
+                animationActive={playing}
+                animationRate={speed}
                 snapshot={preview}
                 act={() => {}}
                 end={() => {}}

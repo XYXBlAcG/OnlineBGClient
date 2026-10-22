@@ -122,8 +122,6 @@ onmessage = (event: MessageEvent<unknown>) => {
         result.response?.type === "closed" ||
         result.response?.type === "left"
       ) {
-        if (result.response.type === "closed" && result.response.replay)
-          await store.saveRecord(result.response.replay);
         session = undefined;
         await store.clearLocal();
         send(result.response);

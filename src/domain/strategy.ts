@@ -281,6 +281,7 @@ export class Strategy {
     if (
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
+      observation.kind === "scmj" ||
       observation.kind === "ccbs"
     )
       throw new Error("该游戏 AI 尚未接入");
@@ -400,6 +401,7 @@ export class Strategy {
     if (
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
+      observation.kind === "scmj" ||
       observation.kind === "ccbs"
     )
       throw new Error("该游戏 AI 尚未接入");
@@ -431,6 +433,7 @@ export class Strategy {
     if (
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
+      observation.kind === "scmj" ||
       observation.kind === "ccbs"
     )
       throw new Error("该游戏 AI 尚未接入");
@@ -705,7 +708,12 @@ export class Strategy {
     };
   }
   protected position(state: GameState, actor: number): number {
-    if (state.kind === "ddz" || state.kind === "ktd" || state.kind === "ccbs")
+    if (
+      state.kind === "ddz" ||
+      state.kind === "ktd" ||
+      state.kind === "scmj" ||
+      state.kind === "ccbs"
+    )
       throw new Error("该游戏 AI 尚未接入");
     if (state.kind === "dy") {
       const own = state.view.scores[actor];

@@ -1,3 +1,6 @@
+import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
+import { mahjongOptionsSchema } from "../domain/mahjong/types";
+import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
 import { Select, Slider } from "./ui/Controls";
 import { useState } from "react";
@@ -46,6 +49,7 @@ export function Lobby({
     { difficulty: "normal", name: "" },
   ]);
   const [aiDelayMs, setDelay] = useState(1500);
+  const [mahjong, setMahjong] = useState(mahjongOptionsSchema.parse({}));
   const [catanTrades, setCatanTrades] = useState(true);
   const [team, setTeam] = useState(false);
   const [training, setTraining] = useState(false);
@@ -62,17 +66,23 @@ export function Lobby({
     setKind(next);
     setHumans(
       gameCatalogue[next].ai
-        ? Math.min(Math.max(next === "tq" ? 0 : 1, humans), max)
+        ? Math.min(Math.max(["tq", "scmj"].includes(next) ? 0 : 1, humans), max)
         : gameCatalogue[next].minPlayers,
+    );
+    const count = Math.min(
+      Math.max(["tq", "scmj"].includes(next) ? 0 : 1, humans),
+      max,
     );
     setAi(
       gameCatalogue[next].ai
-        ? ai.slice(
-            0,
-            Math.max(
-              0,
-              max - Math.min(Math.max(next === "tq" ? 0 : 1, humans), max),
-            ),
+        ? Array.from(
+            {
+              length: Math.max(
+                gameCatalogue[next].minPlayers - count,
+                Math.min(ai.length, max - count),
+              ),
+            },
+            (_, i) => ai[i] || { difficulty: "normal", name: "" },
           )
         : [],
     );
@@ -133,8 +143,47 @@ export function Lobby({
                   onClick={() => changeGame(key)}
                   aria-pressed={kind === key}
                 >
-                  <span className={`game-symbol ${key}`}>
-                    {key === "dy" ? (
+                  <span className="game-symbol" data-game-icon={key}>
+                    {key === "uno" ? (
+                      <svg viewBox="0 0 48 48" aria-hidden="true">
+                        <rect
+                          x="6"
+                          y="8"
+                          width="25"
+                          height="33"
+                          rx="5"
+                          fill="#e5444e"
+                          transform="rotate(-12 18 24)"
+                        />
+                        <rect
+                          x="16"
+                          y="6"
+                          width="25"
+                          height="34"
+                          rx="5"
+                          fill="#246bd2"
+                          transform="rotate(10 28 24)"
+                        />
+                        <ellipse
+                          cx="29"
+                          cy="23"
+                          rx="8"
+                          ry="13"
+                          fill="#fff"
+                          transform="rotate(24 29 23)"
+                        />
+                        <text
+                          x="29"
+                          y="27"
+                          textAnchor="middle"
+                          fontSize="10"
+                          fontWeight="bold"
+                          fill="#c32636"
+                        >
+                          UNO
+                        </text>
+                      </svg>
+                    ) : key === "dy" ? (
                       <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
                         <path
                           d="M12 3h8M14 3v10L5 26a2 2 0 0 0 2 3h18a2 2 0 0 0 2-3l-9-13V3M10 20h12"
@@ -199,6 +248,10 @@ export function Lobby({
             onChange={(event) => setName(event.target.value)}
           />
         </label>
+        <AvatarPicker
+          value={preferences.avatar}
+          onChange={(avatar) => onPreferencesChange({ ...preferences, avatar })}
+        />
         {mode === "network" && (
           <div className="invite-entry">
             <input
@@ -270,23 +323,40 @@ export function Lobby({
               {
                 length:
                   game.maxPlayers -
-                  (kind === "tq" ? 0 : game.ai ? 1 : game.minPlayers) +
+                  (["tq", "scmj"].includes(kind)
+                    ? 0
+                    : game.ai
+                      ? 1
+                      : game.minPlayers) +
                   1,
               },
               (_, index) => (
                 <option
                   key={index}
                   value={
-                    index + (kind === "tq" ? 0 : game.ai ? 1 : game.minPlayers)
+                    index +
+                    (["tq", "scmj"].includes(kind)
+                      ? 0
+                      : game.ai
+                        ? 1
+                        : game.minPlayers)
                   }
                 >
-                  {index + (kind === "tq" ? 0 : game.ai ? 1 : game.minPlayers)}{" "}
+                  {index +
+                    (["tq", "scmj"].includes(kind)
+                      ? 0
+                      : game.ai
+                        ? 1
+                        : game.minPlayers)}{" "}
                   人
                 </option>
               ),
             )}
           </Select>
         </div>
+        {kind === "scmj" && (
+          <MahjongOptionsControl value={mahjong} onChange={setMahjong} />
+        )}
         <div className="setting-row">
           <span>总席位</span>
           <Select
@@ -440,6 +510,7 @@ export function Lobby({
                 aiDelayMs,
                 auditEnabled: preferences.auditVisible,
                 catanTrades,
+                mahjong,
                 performance: preferences.performance,
               }),
               name,

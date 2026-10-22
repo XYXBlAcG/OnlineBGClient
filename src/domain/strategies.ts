@@ -1,3 +1,4 @@
+import { MahjongStrategy } from "./mahjong/strategy";
 import { CatanStrategy } from "./catan-strategy";
 import { SplendorStrategy } from "./splendor-strategy";
 import type { SearchRequest } from "./strategy";
@@ -24,6 +25,7 @@ export class Strategies {
     for (const [Factory, kinds] of [
       [Strategy, ["uno", "sgs", "fxq", "tq", "dy"]],
       [CatanStrategy, ["ktd"]],
+      [MahjongStrategy, ["scmj"]],
       [SplendorStrategy, ["ccbs"]],
     ] as [typeof Strategy, GameKind[]][]) {
       let instance: Strategy | undefined;

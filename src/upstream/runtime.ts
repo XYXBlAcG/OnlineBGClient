@@ -13,6 +13,9 @@ type Factory = (
 
 export class UpstreamRuntime {
   bridge: {
+    skipLegacyMotion?: boolean;
+    svgAnimations?: (tag: "animate" | "animateTransform") => Iterable<SVGAnimationElement>;
+    animateSvg?: (element: SVGAnimationElement) => void;
     feedback?: React.ComponentType<any>;
     mapViewport?: React.ComponentType<any>;
     catanIntent?: (previous: any, next: any, actor: number) => unknown;

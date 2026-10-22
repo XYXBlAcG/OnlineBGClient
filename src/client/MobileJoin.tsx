@@ -1,11 +1,18 @@
+import { MotionControls } from "./MotionControls";
+import { AvatarPicker } from "./AvatarPicker";
+import type { Preferences } from "./preferences";
 import { useEffect, useState } from "react";
 import { gameCatalogue, type GameKind } from "../domain/catalogue";
 export function MobileJoin({
+  preferences,
+  onPreferencesChange,
   room,
   service,
   busy,
   onJoin,
 }: {
+  preferences: Preferences;
+  onPreferencesChange: (preferences: Preferences) => void;
   room: string;
   service: string;
   busy: boolean;
@@ -73,6 +80,19 @@ export function MobileJoin({
           maxLength={24}
           onChange={(event) => setName(event.target.value)}
         />
+        <AvatarPicker
+          value={preferences.avatar}
+          onChange={(avatar) => onPreferencesChange({ ...preferences, avatar })}
+        />
+        <details>
+          <summary>动效偏好</summary>
+          <MotionControls
+            preferences={preferences}
+            onChange={(motion) =>
+              onPreferencesChange({ ...preferences, ...motion })
+            }
+          />
+        </details>
         <button
           className="primary-button"
           disabled={busy || !name.trim() || !invitation}

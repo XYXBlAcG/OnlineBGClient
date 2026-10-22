@@ -1,3 +1,6 @@
+import { MotionControls, type MotionPreferences } from "./MotionControls";
+import { AvatarPicker } from "./AvatarPicker";
+import { seatAvatar } from "../domain/avatar";
 import * as Popover from "@radix-ui/react-popover";
 import type { Snapshot } from "../domain/protocol";
 import { interactionCatalogue, type InteractionKind } from "../domain/social";
@@ -15,6 +18,9 @@ export interface AvatarSurfaceProps {
   snapshot: Pick<Snapshot, "seats" | "actor" | "kind">;
   replay?: boolean;
   customPhrases?: PhraseGroup[];
+  motionPreferences?: MotionPreferences;
+  onMotion?: (preferences: MotionPreferences) => void;
+  onAvatar?: (avatar: string) => void;
   onPhrase?: (text: string) => void;
   onInteract?: (target: number, kind: InteractionKind) => void;
 }
@@ -26,6 +32,9 @@ export function AvatarSurface({
   snapshot,
   replay,
   onPhrase,
+  onAvatar,
+  motionPreferences,
+  onMotion,
   onInteract,
   customPhrases = defaultPhraseGroups,
 }: AvatarSurfaceProps) {
@@ -43,9 +52,7 @@ export function AvatarSurface({
             replay || (index === snapshot.actor ? !onPhrase : !onInteract)
           }
         >
-          <span className="game-avatar-face">
-            {seat.difficulty ? "🤖" : "😊"}
-          </span>
+          <span className="game-avatar-face">{seatAvatar(seat)}</span>
           <span className="game-avatar-name">{seat.name}</span>
           {children}
         </button>
@@ -53,6 +60,7 @@ export function AvatarSurface({
       {!replay && (
         <Popover.Portal>
           <Popover.Content
+            data-motion-scope="ui"
             className="ui-popover avatar-menu"
             sideOffset={8}
             collisionPadding={12}
@@ -63,6 +71,21 @@ export function AvatarSurface({
                 groups={phraseGroups(snapshot.kind, customPhrases)}
                 onSend={onPhrase}
               />
+            )}
+            {index === snapshot.actor && onAvatar && (
+              <details className="avatar-edit">
+                <summary>更换头像</summary>
+                <AvatarPicker value={seatAvatar(seat)} onChange={onAvatar} />
+              </details>
+            )}
+            {index === snapshot.actor && motionPreferences && onMotion && (
+              <details className="avatar-edit">
+                <summary>动效偏好</summary>
+                <MotionControls
+                  preferences={motionPreferences}
+                  onChange={onMotion}
+                />
+              </details>
             )}
             {index !== snapshot.actor && onInteract && (
               <div className="avatar-interactions">

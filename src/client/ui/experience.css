@@ -1,0 +1,267 @@
+.ui-panel.settings-panel {
+  width: min(760px, calc(100vw - 32px));
+}
+.settings-layout {
+  display: grid;
+  grid-template-columns: 136px minmax(0, 1fr);
+  gap: 24px;
+  min-height: 380px;
+}
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: start;
+  position: sticky;
+  top: 0;
+}
+.settings-nav button {
+  text-align: left;
+}
+.settings-nav button[aria-pressed="true"] {
+  background: var(--hover);
+  color: var(--accent);
+  font-weight: 600;
+}
+.settings-body {
+  min-width: 0;
+}
+.settings-body [hidden] {
+  display: none !important;
+}
+.settings-body .settings-section {
+  margin: 0;
+}
+.settings-body h3 {
+  margin-bottom: 16px;
+}
+.avatar-picker {
+  margin: 16px 0;
+}
+.avatar-picker-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar-picker-input label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  flex: 1;
+}
+.avatar-picker input {
+  width: 100%;
+}
+.avatar-preview {
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  background: var(--hover);
+  color: var(--text);
+  border-radius: 50%;
+}
+.avatar-presets {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 10px;
+}
+.avatar-presets button {
+  padding: 4px !important;
+  font-size: 20px;
+  min-width: 0;
+}
+.avatar-presets button[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.game-motion-copy {
+  position: fixed;
+  pointer-events: none !important;
+  z-index: 12;
+  overflow: visible;
+  color: #222;
+  font-family: inherit;
+}
+.game-motion-copy * {
+  pointer-events: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+.game-motion-copy > svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.game-motion-label {
+  position: fixed;
+  z-index: 12;
+  pointer-events: none;
+  background: #fff;
+  color: #165b9b;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-weight: 650;
+  box-shadow: 0 2px 6px #0002;
+  font-size: 13px;
+}
+.original-game .game-avatar {
+  background: #f3f6fa;
+  color: #253249;
+}
+.original-game .game-avatar-name {
+  font-weight: 600;
+  line-height: 16px;
+}
+.original-game .game-avatar.is-turn {
+  outline-color: #2379d2;
+  box-shadow: 0 0 0 6px #2379d214;
+}
+.original-game button:focus-visible,
+.original-game [role="button"]:focus-visible {
+  outline: 2px solid #2379d2;
+  outline-offset: 3px;
+}
+.original-game :is(.uno, .ddz-poker, .sgs-card, .dy-card) {
+  box-shadow: 0 1px 3px #15263c24;
+}
+.original-game :is(.sgs-select, .ccbs-candidate) {
+  outline: 2px solid #2478c9;
+  outline-offset: 2px;
+}
+.original-game .ccbs-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.original-game .ccbs-market,
+.original-game .table-collection {
+  border-radius: 10px;
+}
+.original-game .ccbs-circle {
+  font-variant-numeric: tabular-nums;
+}
+.original-game .poison-pots {
+  gap: 16px;
+}
+.original-game [data-guide-target="dy.pot"] {
+  border-radius: 12px;
+}
+.original-game .sgs-hand-panel {
+  gap: 8px;
+}
+.original-game .catan-actions {
+  border-radius: 10px;
+  background: #f5f8fc;
+  color: #243343;
+  padding: 8px;
+}
+.original-game .ddz-poker-list {
+  isolation: isolate;
+}
+.original-game[data-game-motion="enhanced"]
+  :is(.uno, .ddz-poker, .sgs-card, .dy-card) {
+  transition:
+    transform 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+.original-game[data-game-motion="enhanced"]
+  :is(.animate-bounce, .animate-pulse) {
+  animation: none;
+}
+.chat-panel {
+  animation: appear 180ms ease-out;
+}
+.ui-popover,
+.ui-tooltip {
+  animation: appear 140ms ease-out;
+}
+.checkbox input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+@media (max-width: 620px) {
+  .settings-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .settings-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
+  }
+  .settings-nav button {
+    flex: 1;
+    white-space: nowrap;
+  }
+  .avatar-picker-input {
+    flex-wrap: wrap;
+  }
+  .mobile-join .avatar-presets button {
+    min-height: 40px;
+  }
+  .mobile-shell .chat-panel {
+    animation: chat-enter 200ms ease-out;
+  }
+}
+@keyframes chat-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.avatar-edit {
+  width: 280px;
+  max-width: 100%;
+  margin-top: 12px;
+}
+.game-motion-copy {
+  perspective: 850px;
+}
+.game-motion-flipper {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.game-motion-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.game-motion-front {
+  transform: rotateY(180deg);
+}
+.game-motion-back {
+  transform: rotateY(0deg);
+}
+.game-motion-landing {
+  border: 2px solid #329bde;
+  border-radius: 14px;
+  box-shadow: 0 0 12px #329bde33;
+}
+.game-motion-beam {
+  background: linear-gradient(90deg, #f2b95a22, #e8a341);
+  box-shadow: 0 0 7px #f2b95a66;
+  border-radius: 4px;
+}
+.game-motion-cardback {
+  background: linear-gradient(135deg, #405276, #223250);
+  color: #fff;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 12px #0003;
+}

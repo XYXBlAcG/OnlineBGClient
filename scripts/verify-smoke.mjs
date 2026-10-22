@@ -5,6 +5,7 @@ const smokeChecks = [
   "verify-client",
   "verify-social",
   "verify-catan",
+  "verify-sichuan",
   "verify-splendor",
   "verify-beginner-guides",
   "verify-education",
@@ -14,6 +15,8 @@ const smokeChecks = [
   "verify-guide-targets",
   "verify-mobile-host",
   "verify-cache",
+  "verify-experience",
+  "verify-uno-motion",
 ];
 const results = [];
 await mkdir(".tmp/smoke", { recursive: true });

@@ -37,8 +37,8 @@ export function attachGuideTargets(modules) {
         if (p.cx?.name === "f" && p.cy?.name === "h") add(properties, "ktd.build", {"data-guide-id": '"vertex-"+a'});
       }
       if (id === 2262) {
-        if (cls.startsWith('"ccbs-card-wrapper"')) add(properties, "ccbs.market", {"data-guide-id": "e", "data-guide-small": "!!a"});
-        if (cls.startsWith('"ccbs-noble-wrapper"')) add(properties, "ccbs.noble", {"data-guide-id": "e", "data-guide-small": "!!r"});
+        if (cls.startsWith('"ccbs-card-wrapper"')) add(properties, "ccbs.market", {"data-guide-id": "e", "data-guide-small": "!!a", "data-motion-key": 'e?"ccbs-card-"+e:undefined'});
+        if (cls.startsWith('"ccbs-noble-wrapper"')) add(properties, "ccbs.noble", {"data-guide-id": "e", "data-guide-small": "!!r", "data-motion-key": 'e?"ccbs-noble-"+e:undefined'});
         if (cls.includes('" scale-125"') && cls.includes('"ccbs-circle ccbs-color-"')) add(properties, "ccbs.bank", {"data-guide-id": "r"});
         if (p.className?.value === "w-10") add(properties, "ccbs.score", {"data-guide-player": "i"});
       }

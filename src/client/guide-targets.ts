@@ -3,6 +3,12 @@ import { UpstreamRuntime } from "../upstream/runtime";
 import type { GuideSnapshot } from "./guide-position";
 import { CardGuides } from "../domain/card-guide";
 export const guideTargetKeys = [
+  "scmj.hand",
+  "scmj.lack",
+  "scmj.actions",
+  "scmj.river",
+  "scmj.melds",
+  "scmj.score",
   "ccbs.market",
   "ccbs.bank",
   "ccbs.buy",
@@ -37,6 +43,12 @@ export interface TargetQuery {
   wait: string;
 }
 const labels: Record<GuideTargetKey, [string, string]> = {
+  "scmj.hand": ["查看自己的麻将手牌", "等待发牌"],
+  "scmj.lack": ["查看定缺花色", "等待手牌出现"],
+  "scmj.actions": ["查看当前合法操作", "等待换牌、定缺或轮到自己行动"],
+  "scmj.river": ["查看弃牌河", "等待玩家出牌"],
+  "scmj.melds": ["查看碰杠组合", "等待自己碰牌或杠牌"],
+  "scmj.score": ["查看玩家得分", "等待牌桌出现"],
   "ccbs.market": ["查看发展卡", "等待市场发展卡出现"],
   "ccbs.bank": ["查看银行宝石", "等待银行宝石出现；选择颜色前先点击取宝石"],
   "ccbs.buy": ["查看购买按钮", "等待轮到你，再选择购买发展卡"],
@@ -105,6 +117,7 @@ export function guideTarget(
       .filter((id) => key !== "sgs.trick" || !!cards.get(id))
       .map(String);
   }
+  if (key === "scmj.river") query.player = actor;
   if (key === "dy.card") query.within = "dy.hand";
   if (["ccbs.score", "dy.score"].includes(key)) query.player = actor;
   return query;

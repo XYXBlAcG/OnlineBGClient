@@ -12,6 +12,7 @@ export const phraseGroupsSchema = z
 export type PhraseGroup = z.infer<typeof phraseGroupsSchema>[number];
 export const defaultPhraseGroups = phraseGroupsSchema.parse(presets);
 const gamePhrases: Record<GameKind, string[]> = {
+ scmj:["这把先打缺。","碰一个！","自摸！","别急，等我想一想。"],
   ccbs: [
     "这张卡我先预留了。",
     "差一颗宝石！",

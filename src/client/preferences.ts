@@ -1,5 +1,6 @@
 import { defaultPhraseGroups, phraseGroupsSchema } from "../domain/phrases";
 import { performanceSchema } from "../domain/performance";
+import { avatarSchema } from "../domain/avatar";
 import { z } from "zod";
 import { themes } from "./themes";
 import { gameKinds } from "../domain/catalogue";
@@ -7,6 +8,8 @@ import { gameKinds } from "../domain/catalogue";
 export const preferencesSchema = z.object({
   theme: z.string().default("system"),
   motion: z.boolean().default(true),
+  enhancedGameMotion: z.boolean().default(false),
+  avatar: avatarSchema.default("😊"),
   phraseGroups: phraseGroupsSchema.default(defaultPhraseGroups),
   chatVisible: z.boolean().default(false),
   sidebarWidth: z.number().int().min(280).max(520).default(320),

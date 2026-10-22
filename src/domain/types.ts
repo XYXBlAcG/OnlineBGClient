@@ -144,6 +144,7 @@ export interface PoisonView {
   finish: number;
 }
 export type GameState =
+  | import("./mahjong/types").MahjongState
   | { kind: "ccbs"; view: import("./splendor-actions").SplendorView }
   | { kind: "ktd"; view: import("./catan-actions").CatanView }
   | { kind: "dy"; view: PoisonView }
@@ -157,6 +158,8 @@ export interface Candidate {
   label: string;
 }
 export interface Seat {
+  autoplay?: boolean;
+  avatar?: string;
   id?: string;
   name: string;
   difficulty: Difficulty | null;

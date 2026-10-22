@@ -77,3 +77,9 @@ AI 只接收对应席位可见信息。审核展示实际候选、特征贡献�
 桌面构建目标与检查入口由 [工作流](../.github/workflows/desktop.yml) 定义。实际构建、原生验证与未覆盖的平台见 [验证](verification.md)。游戏、策略和主题目前随应用打包；独立安装与其他平台安排见 [规划](roadmap.md)。
 
 语音不在当前范围。公网接入与服务部署方案见 [联机运行](network.md)。验证入口与实际覆盖见 [验证](verification.md)。
+
+界面与游戏动效、头像身份入口见 [体验文档](ui-motion-plan.md)。
+
+四川麻将领域、牌桌、向听依赖与验证入口见 [四川麻将](sichuan-mahjong-plan.md)。自研和原站牌桌使用目录中的显式 `presentation` 类型。
+
+本机历史归档策略、共享控件和多人房间入口见 [多人房间](multiplayer-room-experience.md)。

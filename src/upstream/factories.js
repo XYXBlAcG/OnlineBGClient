@@ -3730,7 +3730,8 @@ export default {
         }),
         "data-guide-target": "ccbs.noble",
         "data-guide-id": e,
-        "data-guide-small": !!r
+        "data-guide-small": !!r,
+        "data-motion-key": e ? "ccbs-noble-" + e : undefined
       });
       var l = e - 1,
         s = c.Hf[l];
@@ -3756,7 +3757,8 @@ export default {
         }),
         "data-guide-target": "ccbs.noble",
         "data-guide-id": e,
-        "data-guide-small": !!r
+        "data-guide-small": !!r,
+        "data-motion-key": e ? "ccbs-noble-" + e : undefined
       });
     },
     s = t(4595),
@@ -3828,7 +3830,8 @@ export default {
         }),
         "data-guide-target": "ccbs.market",
         "data-guide-id": e,
-        "data-guide-small": !!a
+        "data-guide-small": !!a,
+        "data-motion-key": e ? "ccbs-card-" + e : undefined
       });
       if (!e) return (0, o.jsx)("div", {
         id: t,
@@ -3838,7 +3841,8 @@ export default {
         }),
         "data-guide-target": "ccbs.market",
         "data-guide-id": e,
-        "data-guide-small": !!a
+        "data-guide-small": !!a,
+        "data-motion-key": e ? "ccbs-card-" + e : undefined
       });
       var l = e - 1,
         s = c.KI[l],
@@ -3868,7 +3872,8 @@ export default {
         }),
         "data-guide-target": "ccbs.market",
         "data-guide-id": e,
-        "data-guide-small": !!a
+        "data-guide-small": !!a,
+        "data-motion-key": e ? "ccbs-card-" + e : undefined
       });
     },
     v = t(3366),
@@ -4557,6 +4562,7 @@ export default {
   };
 },
 2078: function (e, a, t) {
+  var companionMotionBridge = t.bridge;
   var companionMapBridge = t.bridge;
   var companionBridge = t.bridge;
   t.r(a), t.d(a, {
@@ -6133,7 +6139,8 @@ export default {
               dur: "0.3s",
               additive: "sum",
               begin: "indefinite",
-              fill: "freeze"
+              fill: "freeze",
+              "data-game-duration": "0.3s"
             }), (0, x.jsx)("animateTransform", {
               attributeName: "transform",
               type: "rotate",
@@ -6143,7 +6150,8 @@ export default {
               dur: "0.3s",
               additive: "sum",
               begin: "indefinite",
-              fill: "freeze"
+              fill: "freeze",
+              "data-game-duration": "0.3s"
             }), (0, x.jsx)("animateTransform", {
               attributeName: "transform",
               type: "scale",
@@ -6153,12 +6161,14 @@ export default {
               dur: "0.3s",
               additive: "sum",
               begin: "indefinite",
-              fill: "freeze"
+              fill: "freeze",
+              "data-game-duration": "0.3s"
             })]
           })), (0, x.jsx)("use", {
             xlinkHref: "#road".concat(r),
             transform: c ? void 0 : "translate(".concat(u, ",").concat(d, "),rotate(").concat(p, ")"),
-            children: c
+            children: c,
+            "data-motion-key": "ktd-road-" + r + "-" + e
           }, "r".concat(n));
         });
       }), a.playerData.map(function (e, r) {
@@ -6177,7 +6187,8 @@ export default {
               to: 0,
               dur: "0.3s",
               begin: "indefinite",
-              fill: "freeze"
+              fill: "freeze",
+              "data-game-duration": "0.3s"
             }), (0, x.jsx)("animateTransform", {
               attributeName: "transform",
               type: "scale",
@@ -6187,12 +6198,14 @@ export default {
               dur: "0.3s",
               additive: "sum",
               begin: "indefinite",
-              fill: "freeze"
+              fill: "freeze",
+              "data-game-duration": "0.3s"
             })]
           })), (0, x.jsx)("use", {
             xlinkHref: "#".concat(1 & e ? "city" : "vill").concat(r),
             transform: "translate(".concat(u, ",").concat(d, ")"),
-            children: c
+            children: c,
+            "data-motion-key": "ktd-house-" + r + "-" + (e >> 1)
           }, "h".concat(n));
         });
       })]
@@ -6384,11 +6397,11 @@ export default {
       n = e.game,
       c = e.gameVersion,
       i = e.gameMapProp;
-    (0, o.useEffect)(function () {
-      Array.from(document.getElementsByTagName("animate")).forEach(function (e) {
-        e.beginElement();
-      }), Array.from(document.getElementsByTagName("animateTransform")).forEach(function (e) {
-        e.beginElement();
+    (0, o.useLayoutEffect)(function () {
+      Array.from(companionMotionBridge.svgAnimations("animate")).forEach(function (e) {
+        companionMotionBridge.animateSvg(e);
+      }), Array.from(companionMotionBridge.svgAnimations("animateTransform")).forEach(function (e) {
+        companionMotionBridge.animateSvg(e);
       });
     }, [c]);
     var l = g.ZP[n.mapId],
@@ -6413,7 +6426,8 @@ export default {
           to: p,
           dur: D,
           begin: "indefinite",
-          fill: "freeze"
+          fill: "freeze",
+          "data-game-duration": D
         }), (0, x.jsx)("animate", {
           attributeName: "y",
           calcMode: "linear",
@@ -6421,7 +6435,8 @@ export default {
           to: h,
           dur: D,
           begin: "indefinite",
-          fill: "freeze"
+          fill: "freeze",
+          "data-game-duration": D
         })]
       });
     }
@@ -7996,7 +8011,8 @@ export default {
         }
       },
       "data-guide-target": "dy.card",
-      "data-guide-id": e
+      "data-guide-id": e,
+      "data-motion-key": "dy-card-" + e
     });
   };
   var f = function (t) {
@@ -8546,7 +8562,8 @@ export default {
           event.stopPropagation();
           event.currentTarget.click();
         }
-      }
+      },
+      "data-motion-key": t ? "ddz-card-" + t : undefined
     });
   };
   function d(e) {
@@ -8574,7 +8591,8 @@ export default {
             transform: "scale(".concat(s / 159, ")")
           }
         }, t);
-      })
+      }),
+      "data-motion-zone": e["data-motion-zone"]
     });
   }
   d.defaultProps = {
@@ -8725,7 +8743,8 @@ export default {
       style: {
         width: Math.ceil((48 * t.length + 68) * i / 159),
         maxWidth: "100%"
-      }
+      },
+      "data-motion-zone": "ddz.public"
     }) : null;
   }
   var L = function (e) {
@@ -11539,7 +11558,8 @@ export default {
           event.stopPropagation();
           event.currentTarget.click();
         }
-      }
+      },
+      "data-motion-key": t === undefined ? undefined : "uno-card-" + t
     });
   };
   function x(r) {
@@ -11557,7 +11577,8 @@ export default {
         style: {
           transform: e ? "scale(0.4)" : "scale(0.3)"
         }
-      })
+      }),
+      "data-motion-zone": r["data-motion-zone"]
     });
   }
   var y = n.memo(x),
@@ -11902,10 +11923,12 @@ export default {
             n: d.drawCards.length
           }), "\u5f20"]
         }), (0, c.jsx)(y, {
-          className: "ml-2 mr-4"
+          className: "ml-2 mr-4",
+          "data-motion-zone": "uno.deck"
         }), d.isStart ? (0, c.jsx)(y, {
           id: p,
-          className: "mr-2"
+          className: "mr-2",
+          "data-motion-zone": "uno.discard"
         }) : (0, c.jsx)(y, {
           className: "mr-2 invisible"
         }), (0, c.jsxs)("div", {
@@ -11925,7 +11948,8 @@ export default {
           children: ["\u5f53\u524d", !d.isStart || x === o.O1.ANY && v >= o.LI.WILD ? ":\u4efb\u610f" : x === o.O1.ANY ? l.uj[v] : v >= o.LI.WILD ? l.SV[x] : "".concat(l.SV[x], " ").concat(l.uj[v])]
         }), (0, c.jsxs)("div", {
           children: ["\u65b9\u5411", h ? "\u21aa\ufe0f" : "\u21a9\ufe0f"]
-        })]
+        })],
+        "data-guide-target": "uno.status"
       }), (0, c.jsxs)("div", {
         className: "flex-grow flex justify-around mt-2 relative",
         children: [(0, c.jsx)("div", {
@@ -12333,6 +12357,7 @@ export default {
   };
 },
 6749: function (e, r, n) {
+  var companionMotionBridge = n.bridge;
   n.r(r), n.d(r, {
     default: function () {
       return be;
@@ -12805,6 +12830,7 @@ export default {
       u = r.isJudge,
       d = r.skills;
     return (0, t.useLayoutEffect)(function () {
+      if (companionMotionBridge.skipLegacyMotion) return;
       var e = i.current;
       if (e) {
         var r = function (e) {
@@ -12863,7 +12889,8 @@ export default {
         },
         isJudge: u,
         skills: d
-      })
+      }),
+      "data-motion-zone": "sgs.public-card"
     });
   }
   function T(e) {
@@ -12873,6 +12900,7 @@ export default {
       l = (0, t.useRef)(null),
       s = P(l, r.showCards.length);
     return (0, t.useLayoutEffect)(function () {
+      if (companionMotionBridge.skipLegacyMotion) return;
       var e = r.showLine.fromPlayerPos;
       if (r.showLine.fromPlayerPos) {
         var n = e - 1,
@@ -17267,6 +17295,7 @@ export default {
 },
 5042: function () {},
 7448: function (e, r, i) {
+  var companionMotionBridge = i.bridge;
   var companionMapBridge = i.bridge;
   i.r(r), i.d(r, {
     default: function () {
@@ -18091,16 +18120,16 @@ export default {
         i = e.game,
         t = e.updateGameData,
         s = e.gameVersion;
-      (0, l.useEffect)(function () {
+      (0, l.useLayoutEffect)(function () {
         var e = !1,
           r = 0;
-        return Array.from(document.getElementsByTagName("animateTransform")).forEach(function (e) {
-          e.beginElement();
+        return Array.from(companionMotionBridge.svgAnimations("animateTransform")).forEach(function (e) {
+          companionMotionBridge.animateSvg(e);
           var i = parseFloat(e.getAttribute("dur") || "0");
           i > r && (r = i);
         }), r && setTimeout(function () {
-          e || Array.from(document.getElementsByTagName("animate")).forEach(function (e) {
-            e.beginElement();
+          e || Array.from(companionMotionBridge.svgAnimations("animate")).forEach(function (e) {
+            companionMotionBridge.animateSvg(e);
           });
         }, 1e3 * r), function () {
           e = !0;
@@ -18132,27 +18161,32 @@ export default {
               to: W,
               dur: z,
               begin: "indefinite",
-              fill: "freeze"
+              fill: "freeze",
+              "data-game-duration": z
             }), (0, u.jsx)("animate", {
               attributeName: "y",
               from: V,
               to: S,
               dur: z,
               begin: "indefinite",
-              fill: "freeze"
+              fill: "freeze",
+              "data-game-duration": z
             }), (0, u.jsx)("animate", {
               attributeName: "xlink:href",
               from: "#p-".concat(g, "-").concat((0, d.Mg)(D)),
               to: "#p-".concat(g, "-").concat((0, d.Mg)(C)),
               dur: z,
               begin: "indefinite",
-              fill: "freeze"
-            })]
+              fill: "freeze",
+              "data-game-duration": z
+            })],
+            "data-motion-key": "fxq-plane-" + m
           }, m));
         } else y.push((0, u.jsx)("use", {
           xlinkHref: "#p-".concat(g, "-").concat((0, d.Mg)(v)),
           x: P,
-          y: b
+          y: b,
+          "data-motion-key": "fxq-plane-" + m
         }, m)), v > 56 && y.push((0, u.jsx)("use", {
           xlinkHref: "#win",
           x: P,
@@ -18193,7 +18227,8 @@ export default {
             values: $.join(";"),
             dur: R,
             begin: "indefinite",
-            fill: "freeze"
+            fill: "freeze",
+            "data-game-duration": R
           }), (0, u.jsx)("animateTransform", {
             attributeName: "transform",
             type: "rotate",
@@ -18202,8 +18237,11 @@ export default {
             values: _.join(";"),
             dur: R,
             begin: "indefinite",
-            fill: "freeze"
-          })]
+            fill: "freeze",
+            "data-game-duration": R
+          })],
+          "data-motion-key": "fxq-plane-" + F,
+          "data-motion-route": $.join(";")
         }, F)), B > 56 && y.push((0, u.jsx)("use", {
           xlinkHref: "#win",
           x: J,
@@ -18217,7 +18255,8 @@ export default {
             to: "1",
             dur: "0.3s",
             begin: "indefinite",
-            fill: "freeze"
+            fill: "freeze",
+            "data-game-duration": "0.3s"
           })
         }, "win".concat(F)));
       }
@@ -19855,7 +19894,8 @@ export default {
                         } : void 0,
                         "data-guide-target": "tq.piece",
                         "data-guide-id": e,
-                        "data-guide-player": n
+                        "data-guide-player": n,
+                        "data-motion-key": "tq-piece-" + n + "-" + r
                       }, "".concat(n).concat(r));
                     });
                   }), r.lastOp && r.lastOp.route && r.lastOp.route.length > 0 ? (0, c.jsxs)(c.Fragment, {

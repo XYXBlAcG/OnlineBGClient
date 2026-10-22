@@ -1,3 +1,4 @@
+import { attachMotion } from "./upstream-motion.mjs";
 import { attachFeedback } from "./upstream-feedback.mjs";
 import { attachGuideTargets } from './upstream-guide-targets.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -384,6 +385,7 @@ for (const [id, code] of selected) {
 }
 attachFeedback(selected);
 attachGuideTargets(selected);
+attachMotion(selected);
 await writeFile('src/upstream/factories.js', `export default {\n${[...selected].map(([id,code])=>`${id}: ${code}`).join(',\n')}\n};\n`);
 for (const path of ['public/upstream/dy.css', 'public/upstream/ktd.css', 'public/upstream/ccbs.css', 'public/upstream/ccbs-cards.webp', 'public/upstream/ccbs-nobles.webp']) { const source=await readFile(path); manifest.push({path,sha256:createHash('sha256').update(source).digest('hex')}); }
 await writeFile('upstream/manifest.json', JSON.stringify({ origin: 'https://game.hullqin.cn/', captured: '2026-10-05', sources: manifest, modules: [...selected.keys()] }, null, 2)+'\n');

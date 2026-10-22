@@ -6,11 +6,13 @@ import { playCue } from "./notifications";
 function Particle({
   event,
   motion,
+  enhanced,
   sound,
   onEnd,
 }: {
   event: InteractionEvent;
   motion: boolean;
+  enhanced: boolean;
   sound: boolean;
   onEnd: (id: string) => void;
 }) {
@@ -44,11 +46,20 @@ function Particle({
     element.style.left = `${start.x}px`;
     element.style.top = `${start.y}px`;
     const effect = interactionCatalogue[event.kind];
-    const frames = effectMotion(effect.style, end.x - start.x, end.y - start.y);
+    const frames = effectMotion(
+      effect.style,
+      end.x - start.x,
+      end.y - start.y,
+      enhanced ? 8 : Infinity,
+    );
     element.style.setProperty("--effect-color", effect.color);
+    if (!motion) {
+      const timer = window.setTimeout(() => onEnd(event.id), 900);
+      return () => window.clearTimeout(timer);
+    }
     const animation = element.animate(
       motion ? frames.body : [{ opacity: 1 }, { opacity: 0 }],
-      { duration: motion ? 1900 : 900, easing: "ease-out" },
+      { duration: enhanced ? 1200 : 1900, easing: "ease-out" },
     );
     const fragments = motion
       ? frames.fragments.map((keyframes, index) => {
@@ -59,8 +70,8 @@ function Particle({
           fragment.style.top = `${end.y}px`;
           element.parentElement?.appendChild(fragment);
           fragment.animate(keyframes, {
-            duration: 750,
-            delay: 950 + (index % 4) * 45,
+            duration: enhanced ? 480 : 750,
+            delay: (enhanced ? 580 : 950) + (index % 4) * 45,
             easing: "ease-out",
           }).onfinish = () => fragment.remove();
           return fragment;
@@ -69,9 +80,12 @@ function Particle({
     animation.onfinish = () => onEnd(event.id);
     return () => {
       animation.cancel();
-      fragments.forEach((fragment) => fragment.remove());
+      fragments.forEach((fragment) => {
+        fragment.getAnimations().forEach((animation) => animation.cancel());
+        fragment.remove();
+      });
     };
-  }, [event, motion, sound, onEnd]);
+  }, [event, motion, enhanced, sound, onEnd]);
   return (
     <div
       ref={ref}
@@ -88,11 +102,13 @@ function Particle({
 export function Interactions({
   events,
   motion,
+  enhanced,
   sound,
   onEnd,
 }: {
   events: InteractionEvent[];
   motion: boolean;
+  enhanced: boolean;
   sound: boolean;
   onEnd: (id: string) => void;
 }) {
@@ -103,6 +119,7 @@ export function Interactions({
           key={event.id}
           event={event}
           motion={motion}
+          enhanced={enhanced}
           sound={sound}
           onEnd={onEnd}
         />

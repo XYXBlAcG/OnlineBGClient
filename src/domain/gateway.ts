@@ -16,7 +16,7 @@ export class Gateway {
       const token =
         command.hostOnly || !room.config.humans
           ? room.createHost(command.name)
-          : room.claim(command.name);
+          : room.claim(command.name, undefined, command.avatar);
       this.rooms.set(room.id, room);
       return {
         session: { room: room.id, token },
@@ -26,7 +26,7 @@ export class Gateway {
     if (command.type === "join") {
       const room = this.rooms.get(command.room);
       if (!room) throw new Error("房间不存在");
-      const token = room.claim(command.name, command.token);
+      const token = room.claim(command.name, command.token, command.avatar);
       return {
         session: { room: room.id, token },
         response: { type: "session", room: room.id, token },
@@ -74,6 +74,10 @@ export class Gateway {
   ): void {
     if (command.type === "seat")
       room.configureSeat(command.token, command.index, command.config);
+    if (command.type === "autoplay")
+      room.setAutoplay(command.token, command.enabled);
+    if (command.type === "avatar")
+      room.setAvatar(command.token, command.avatar);
     if (command.type === "ready") room.setReady(command.token, command.ready);
     if (command.type === "leave") room.leave(command.token);
     if (command.type === "start") room.start(command.token);

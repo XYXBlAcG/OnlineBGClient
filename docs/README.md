@@ -9,8 +9,16 @@
 - [卡坦岛 AI 入口](catan-ai-plan.md)
 - [游戏、AI 与 Release 入口](game-ai-release-plan.md)
 - [后续体验功能待审核方案](product-next-plan.md)
+- [手机远程开房待审核方案](remote-host-plan.md)
 - [后续规划](roadmap.md)
 - [社交体验与实现入口](social-experience-plan.md)
 - [手机浏览器与实现入口](mobile-browser-plan.md)
 - [桌面牌桌与原生窗口](workspace-and-windows-ai-plan.md)
 - [牌桌布局审核入口](table-layout-review-plan.md)
+
+- [界面、游戏动效与自选头像](ui-motion-plan.md)
+
+- [游戏动画方案演示](game-motion-demo.md)
+- [四川麻将：血战到底、AI 与验证入口](sichuan-mahjong-plan.md)
+
+- [多人房间、记录管理与手动验收](multiplayer-room-experience.md)

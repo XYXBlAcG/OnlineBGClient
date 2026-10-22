@@ -1,3 +1,4 @@
+import { avatarSchema, seatAvatar } from "./avatar";
 import type {
   AiComputation,
   ComputeProgress,
@@ -21,6 +22,11 @@ import {
 } from "./protocol";
 import type { Action, AiResult, Decision, GameState, Seat } from "./types";
 
+function simultaneousWindow(state: GameState | null): string {
+  if (state?.kind !== "scmj") return "";
+  const v = state.view;
+  return `${v.phase}:${v.turn}:${v.pending?.actor}:${v.pending?.tile}:${v.pending?.rob}`;
+}
 export class Room {
   readonly engine = new GameEngine();
   readonly config: RoomConfig;
@@ -57,6 +63,7 @@ export class Room {
   private resolutionAt = 0;
   private ended = false;
   private roundVersion = 0;
+  private simultaneousSince = 0;
   private lastMoveAt = 0;
   private replay: ReplayRecord | null = null;
   private records: ReplayRecord[] = [];
@@ -104,7 +111,7 @@ export class Room {
   canManage(token: string): boolean {
     return this.identity(token) <= 0;
   }
-  claim(name: string, token?: string): string {
+  claim(name: string, token?: string, avatar = "😊"): string {
     if (token) {
       const actor = this.identity(token);
       const seat = actor < 0 ? this.host! : this.seats[actor];
@@ -117,12 +124,19 @@ export class Room {
       (seat) => seat.difficulty === null && !seat.token,
     );
     if (!seat) throw new Error("真人席位已满");
+    seat.avatar = avatarSchema.parse(avatar);
     seat.name = name;
     seat.id = crypto.randomUUID();
     seat.token = crypto.randomUUID();
     seat.online = true;
     seat.ready = this.seats[0] === seat;
     return seat.token;
+  }
+
+  setAvatar(token: string, avatar: string): void {
+    const actor = this.identity(token);
+    if (actor < 0) throw new Error("服务身份没有玩家头像");
+    this.seats[actor].avatar = avatarSchema.parse(avatar);
   }
 
   disconnect(token: string): void {
@@ -146,11 +160,13 @@ export class Room {
       this.records.push(this.replay);
       this.records = this.records.slice(-20);
     }
+    this.seats.forEach((seat) => (seat.autoplay = false));
     this.state = this.engine.create(
       this.config.kind,
       this.seats.length,
       `${this.seed}:round:${this.version}`,
       this.config.team,
+      this.config.mahjong,
     );
     this.replay = {
       format: 1,
@@ -158,12 +174,14 @@ export class Room {
       config: structuredClone(this.config),
       rulesVersion: gameCatalogue[this.config.kind].version,
       names: this.seats.map((seat) => seat.name),
+      avatars: this.seats.map(seatAvatar),
       seed: `${this.seed}:round:${this.version}`,
       startedAt: Date.now(),
       events: [],
     };
     this.version++;
     this.roundVersion = this.version;
+    this.simultaneousSince = this.version;
     this.decisions = [];
     this.summaries = [];
     this.computation = null;
@@ -230,6 +248,7 @@ export class Room {
     this.ended = false;
     this.version++;
     this.roundVersion = this.version;
+    this.simultaneousSince = this.version;
   }
 
   act(token: string, id: string, version: number, action: Action): void {
@@ -237,10 +256,15 @@ export class Room {
     if (actor < 0) throw new Error("服务身份不参与游戏");
     const key = `${token}:${id}`;
     if (this.accepted.has(key)) return;
+    if (this.seats[actor].autoplay) throw new Error("请先取消托管，再手动操作");
+    const simultaneous =
+      action.type === "scmj-action" &&
+      ["exchange", "lack", "respond"].includes(action.move.type) &&
+      version >= this.simultaneousSince;
     if (
       version < this.roundVersion ||
       version > this.version ||
-      (this.version !== version && action.type !== "sgs-hero")
+      (this.version !== version && action.type !== "sgs-hero" && !simultaneous)
     )
       throw new Error("对局已更新，请根据最新局面操作");
     if (!this.state || this.ended) throw new Error("对局未开始或已结束");
@@ -251,6 +275,8 @@ export class Room {
       action,
       `${this.seed}:move:${this.version}`,
     );
+    if (simultaneousWindow(this.state) !== simultaneousWindow(next))
+      this.simultaneousSince = this.version + 1;
     this.state = next;
     this.queued = null;
     this.lastMoveAt = Date.now();
@@ -338,14 +364,18 @@ export class Room {
       return null;
     const actor = this.engine
       .actors(this.state)
-      .find((actor) => this.seats[actor].difficulty !== null);
+      .find(
+        (actor) =>
+          this.seats[actor].difficulty !== null ||
+          (this.config.kind === "scmj" && this.seats[actor].autoplay),
+      );
     if (actor === undefined) return null;
     return {
       tradeEnabled: this.config.catanTrades,
       audit: this.config.auditEnabled,
       observation: this.engine.project(this.state, actor),
       actor,
-      difficulty: this.seats[actor].difficulty!,
+      difficulty: this.seats[actor].difficulty || "normal",
       seed: `decision:${this.id}:${this.version}:${actor}`,
       version: this.version,
     };
@@ -354,6 +384,7 @@ export class Room {
   acceptDecision(decision: AiResult, version: number): boolean {
     if (!this.state || this.ended || this.paused || version !== this.version)
       return false;
+    const oldWindow = simultaneousWindow(this.state);
     this.state = this.engine.apply(
       this.state,
       decision.actor,
@@ -361,6 +392,8 @@ export class Room {
       `${this.seed}:move:${this.version}`,
     );
     this.version++;
+    if (oldWindow !== simultaneousWindow(this.state))
+      this.simultaneousSince = this.version;
     this.lastMoveAt = Date.now();
     this.replay!.events.push({
       type: "action",
@@ -426,7 +459,8 @@ export class Room {
       projected.paused !== paused
     ) {
       const state =
-        (actor >= 0 || (this.config.kind === "tq" && !this.config.humans)) &&
+        (actor >= 0 ||
+          (["tq", "scmj"].includes(this.config.kind) && !this.config.humans)) &&
         this.state &&
         !this.ended
           ? this.engine.project(this.state, actor)
@@ -436,7 +470,11 @@ export class Room {
         paused,
         state,
         candidates:
-          actor >= 0 && state && !finished && !paused
+          actor >= 0 &&
+          state &&
+          !finished &&
+          !paused &&
+          !this.seats[actor].autoplay
             ? this.engine.candidates(state, actor)
             : [],
       };
@@ -458,7 +496,9 @@ export class Room {
       seats: this.seats.map((seat, index) => ({
         id: seat.id || `ai:${index}`,
         name: seatDisplayName(seat, index, this.state),
+        avatar: seatAvatar(seat),
         difficulty: seat.difficulty,
+        autoplay: seat.autoplay,
         online: seat.online,
         ready: seat.ready,
       })),
@@ -479,6 +519,20 @@ export class Room {
     };
   }
 
+  setAutoplay(token: string, enabled: boolean): void {
+    const actor = this.identity(token);
+    if (
+      actor < 0 ||
+      this.config.kind !== "scmj" ||
+      !this.state ||
+      this.ended ||
+      this.engine.finished(this.state)
+    )
+      throw new Error("当前不能托管此席位");
+    this.seats[actor].autoplay = enabled;
+    this.queued = null;
+    this.version++;
+  }
   setAiRunning(token: string, enabled: boolean): void {
     if (!this.canManage(token)) throw new Error("仅房主可以控制 AI");
     this.aiPaused = !enabled;
@@ -561,7 +615,9 @@ export class Room {
       !this.ended &&
       !this.engine.finished(this.state) &&
       (this.aiPaused ||
-        this.seats.some((seat) => !seat.difficulty && !seat.online))
+        this.seats.some(
+          (seat) => !seat.difficulty && !seat.autoplay && !seat.online,
+        ))
     );
   }
   setReady(token: string, ready: boolean): void {
@@ -622,6 +678,7 @@ export class Room {
       host: this.host,
       version: this.version,
       roundVersion: this.roundVersion,
+      simultaneousSince: this.simultaneousSince,
       ended: this.ended,
       aiPaused: this.aiPaused,
       replay: this.replay,
@@ -664,6 +721,7 @@ export class Room {
     room.roundVersion = archive.roundVersion;
     room.ended = archive.ended;
     room.aiPaused = archive.aiPaused ?? false;
+    room.simultaneousSince = archive.simultaneousSince ?? room.version;
     room.replay = archive.replay;
     room.records = archive.records;
     room.messages = archive.messages;
@@ -696,6 +754,7 @@ export interface RoomArchive {
   host?: Room["host"];
   version: number;
   roundVersion: number;
+  simultaneousSince?: number;
   ended: boolean;
   aiPaused?: boolean;
   replay: ReplayRecord | null;

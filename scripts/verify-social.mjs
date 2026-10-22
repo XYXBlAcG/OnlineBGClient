@@ -184,6 +184,8 @@ try {
     )
     .toBe(Math.round(savedWidth));
   await host.getByRole("button", { name: "打开设置", exact: true }).click();
+
+  await host.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"常用语",exact:true}).click();
   await host.locator(".phrase-settings summary").first().click();
   await host
     .getByLabel("常用语内容 1", { exact: true })
