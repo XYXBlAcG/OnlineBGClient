@@ -6,7 +6,7 @@ export async function chooseRoomOption(page, name, method = "click") {
   await options.getByRole("button", { name, exact: true })[method]();
 }
 export async function openRoomSetup(page) {
-  await chooseRoomOption(page, "游戏与人数");
+  await page.getByRole("button", { name: "游戏与人数", exact: true }).click();
   await expect(
     page.getByRole("dialog", { name: "下一局", exact: true }),
   ).toBeVisible();

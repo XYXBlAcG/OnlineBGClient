@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import { selectPlatforms } from "../scripts/ci-platforms.mjs";
+import { readFileSync } from "node:fs";
 
 it("selects Windows alone for an explicit push trailer", () => {
   expect(
@@ -26,4 +27,14 @@ it("cannot omit a platform from a tagged release", () => {
       head_commit: { message: "CI-Platforms: windows" },
     }),
   ).toHaveLength(2);
+});
+it("gates native packaging on browser checks and omits Windows AI smoke", () => {
+  const workflow = readFileSync(".github/workflows/desktop.yml", "utf8");
+  const smoke = workflow.indexOf("run: npm run verify:smoke");
+  expect(smoke).toBeGreaterThan(workflow.indexOf("run: npm run hosting:build"));
+  expect(workflow.indexOf("- uses: tauri-apps/tauri-action@")).toBeGreaterThan(
+    smoke,
+  );
+  expect(workflow).not.toContain("run: node scripts/native-smoke-runner.mjs");
+  expect(workflow).toContain("cache-workspace-crates: true");
 });

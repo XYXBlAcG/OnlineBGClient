@@ -40,10 +40,12 @@ try {
   await page.getByRole('button', { name: '我先出牌', exact: true }).waitFor();
   await expect(page.getByRole('button', { name: '策略审核', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '打开设置', exact: true }).click();
+  await page.getByRole('navigation', { name: '设置分组' }).getByRole('button', { name: 'AI 计算', exact: true }).click();
   await page.getByRole('switch', { name: '记录并显示策略审核', exact: true }).click();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '策略审核', exact: true }).click();
   await page.getByRole('button', { name: '打开设置', exact: true }).click();
+  await page.getByRole('navigation', { name: '设置分组' }).getByRole('button', { name: 'AI 计算', exact: true }).click();
   await page.getByRole('switch', { name: '记录并显示策略审核', exact: true }).click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: '策略审核', exact: true })).toHaveCount(0);

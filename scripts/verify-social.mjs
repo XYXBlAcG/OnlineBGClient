@@ -102,9 +102,9 @@ try {
   expect(
     (await mobile.locator(".chat-panel").boundingBox()).y,
   ).toBeGreaterThanOrEqual(0);
-  await mobile.getByRole("button", { name: "收起聊天", exact: true }).tap();
+  await mobile.getByRole("button", { name: "关闭辅助区域", exact: true }).tap();
   await mobile.setViewportSize({ width: 390, height: 844 });
-  await chooseRoomOption(host, "邀请二维码");
+  await host.getByRole("button", { name: "邀请二维码", exact: true }).click();
   await expect(host.getByAltText("房间邀请二维码")).toBeVisible();
   await host
     .getByRole("dialog")

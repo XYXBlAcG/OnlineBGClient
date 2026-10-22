@@ -4,6 +4,7 @@ import { mkdtemp, rm, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { TestService } from "./service-harness.mjs";
+import { gameKinds } from "../src/domain/catalogue.ts";
 const directory = await mkdtemp(join(tmpdir(), "onlinebg-splendor-")),
   service = new TestService(directory, {
     entry: "src-tauri/resources/hosting/main.mjs",
@@ -40,7 +41,7 @@ try {
   for (const page of pages)
     page.on("pageerror", (error) => errors.push(String(error)));
   await desktop.goto(endpoint);
-  expect(await desktop.locator(".game-card").count()).toBe(8);
+  expect(await desktop.locator(".game-card").count()).toBe(gameKinds.length);
   const icon = await desktop.locator(".game-symbol.dy").evaluate((node) => ({
     background: getComputedStyle(node).backgroundColor,
     svg: !!node.querySelector("svg"),

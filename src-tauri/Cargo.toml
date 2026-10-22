@@ -27,6 +27,6 @@ tauri-plugin-window-state = "2"
 
 [profile.release]
 strip = true
-lto = true
-codegen-units = 1
+lto = "thin"
+codegen-units = 16
 panic = "abort"

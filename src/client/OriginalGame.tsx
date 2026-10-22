@@ -73,6 +73,13 @@ export const OriginalGame = memo(function OriginalGame({
   const { game: gameMotion } = usePresentation();
   const surface = useRef<HTMLDivElement>(null);
   const runtime = useMemo(() => new UpstreamRuntime(), []);
+  const view = useMemo(
+    () =>
+      snapshot.state && snapshot.state.kind !== "scmj"
+        ? structuredClone(snapshot.state.view)
+        : null,
+    [snapshot.state],
+  );
   runtime.bridge.readOnly = replay;
   runtime.bridge.skipLegacyMotion =
     gameMotion !== "baseline" || !animationActive;
@@ -213,7 +220,7 @@ export const OriginalGame = memo(function OriginalGame({
         <Game
           key={`${snapshot.kind}:${snapshot.actor}`}
           onReplay={onReplay}
-          view={structuredClone(snapshot.state!.view)}
+          view={view}
           room={room}
           game={{ version: snapshot.version, data: new Uint8Array() }}
           send={(event: number) => {

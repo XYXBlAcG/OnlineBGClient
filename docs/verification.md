@@ -89,7 +89,7 @@ Windows 11 上两个服务进程的窗口行为、系统通知、高 DPI（125%�
 
 本机已验证的完整自我对局人数与结果由经济游戏测试输出，真人牌桌使用真实 Chromium 与 macOS WebView 验证；手机浏览器为触屏尺寸模拟。困难搜索按时间预算比较实际完成样本量，未评测胜率提升，不代表 AMD Ryzen 9 9955HX／RTX5080 的实机性能。Windows 11 安装需实机验收；自动构建与 Release 产物由 GitHub 工作流提供。
 
-本轮平级线程已在 Chromium 和 macOS 打包 WebView 完成六困难 AI 的 30 次决策及暂停恢复；macOS 原生普通跳棋已验证真人出牌、AI 计算与暂停恢复。浏览器已验证加载失败诊断、显式重试和结束后的线程释放。Windows 原生 AI 由工作流执行；原生辅助窗口采用异步创建以避免 WebView2 同步创建死锁，平台验收以工作流及实机结果为准。完整牌桌与回放入口见 [桌面牌桌](workspace-and-windows-ai-plan.md)。
+本轮平级线程已在 Chromium 和 macOS 打包 WebView 完成六困难 AI 的 30 次决策及暂停恢复；macOS 原生普通跳棋已验证真人出牌、AI 计算与暂停恢复。浏览器已验证加载失败诊断、显式重试和结束后的线程释放。Windows 原生 AI 由用户手动验收；原生辅助窗口采用异步创建以避免 WebView2 同步创建死锁，平台验收以工作流及实机结果为准。完整牌桌与回放入口见 [桌面牌桌](workspace-and-windows-ai-plan.md)。
 
 ## 桌面牌桌审核入口
 
@@ -116,3 +116,7 @@ Windows 11 原生窗口、DPI、输入法与跳棋 AI 仍需对应平台验收�
 四川麻将 macOS WebView 已验证本地 AI 线程、自动换牌与定缺、本人出牌、对手牌背、托管／取消和手牌边界；[原生结果](../artifacts/review/sichuan-native-verification.txt)。审核包为 `artifacts/review/OnlineBGClient-Sichuan-macOS-arm64-review.zip`，使用本地临时签名并校验资源完整性。
 
 多人房间的记录事务、关闭保存、清理后不回填、恢复数据隔离与准备状态由 [记录测试](../tests/record-history.test.ts)、[房间测试](../tests/room-polish.test.ts) 覆盖。界面操作由用户依照 [手动验收](multiplayer-room-experience.md#手动验收) 执行；不启动浏览器或桌面界面自动化检查。
+
+发布检查顺序与缓存配置以 [桌面工作流](../.github/workflows/desktop.yml) 为准；原生编译参数以 [Cargo profile](../src-tauri/Cargo.toml) 为准。Windows 不运行原生 AI smoke；规则单元测试与后台进程检查继续执行。
+
+非游戏更新的牌桌副本复用与真实动作隔离由 [内存渲染测试](../tests/game-render-cache.test.tsx) 验证；该测试不创建浏览器或桌面窗口。

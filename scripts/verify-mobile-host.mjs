@@ -205,7 +205,7 @@ try {
   ).toBeVisible();
   const gameClonesOnChat = await first.evaluate(() => window.gameClones);
   expect(gameClonesOnChat).toBe(0);
-  await second.getByRole("button", { name: "收起聊天", exact: true }).click();
+  await second.getByRole("button", { name: "关闭辅助区域", exact: true }).click();
   await first.evaluate(() => {
     window.structuredClone = window.originalClone;
   });

@@ -81,6 +81,7 @@ try {
                 };
               if (data.type === "error")
                 (window.testErrors ||= []).push(data.message);
+              if (data.type === "ack") (window.testAcks ||= []).push(data.id);
             });
           }
         };
@@ -199,6 +200,16 @@ try {
     page.getByRole("button", { name: "取消托管", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "取消托管", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "托管", exact: true }),
+  ).toBeVisible();
+  const reclaimedVersion = await page.evaluate(
+    () => window.testSnapshot.version,
+  );
+  for (const client of pages)
+    await expect
+      .poll(() => client.evaluate(() => window.testSnapshot.version))
+      .toBeGreaterThanOrEqual(reclaimedVersion);
   for (let step = 0; step < 550; step++) {
     const states = await Promise.all(
       pages.map((p) => p.evaluate(() => window.testSnapshot)),
@@ -223,21 +234,41 @@ try {
           ) ||
           candidates.find((c) => c.action.move.type === "discard") ||
           candidates[0];
-      await pages[actor].evaluate(
-        ({ token, version, action, id }) =>
+      const id = `browser-${step}-${actor}`;
+      const sent = await pages[actor].evaluate(
+        ({ token, version, action, id }) => {
+          if (window.testSnapshot.version !== version) return false;
           window.testSocket.send(
             JSON.stringify({ type: "action", token, version, action, id }),
-          ),
+          );
+          return true;
+        },
         {
           token: tokens[actor],
           version: snapshot.version,
           action: choice.action,
-          id: `browser-${step}-${actor}`,
+          id,
         },
       );
+      if (!sent) continue;
+      await expect
+        .poll(() =>
+          pages[actor].evaluate(
+            (id) => (window.testAcks || []).includes(id),
+            id,
+          ),
+        )
+        .toBe(true);
       await expect
         .poll(() => pages[actor].evaluate(() => window.testSnapshot.version))
         .toBeGreaterThan(snapshot.version);
+      const committedVersion = await pages[actor].evaluate(
+        () => window.testSnapshot.version,
+      );
+      for (const client of pages)
+        await expect
+          .poll(() => client.evaluate(() => window.testSnapshot.version))
+          .toBeGreaterThanOrEqual(committedVersion);
       acted = true;
       moves++;
       break;
