@@ -115,9 +115,18 @@ export function AuxiliaryRoot() {
         {!payload && !error && <p role="status">正在打开…</p>}
         {payload?.view === "chat" && (
           <ChatPanel
+            token={payload.token}
+            onImageQuality={(quality) =>
+              send({ type: "chat-image-quality", view: "chat", quality })
+            }
+            onImage={(attachment) =>
+              send({ type: "chat-image", view: "chat", attachment })
+            }
+            onBannerDisplay={(enabled) =>
+              send({ type: "chat-banners", view: "chat", enabled })
+            }
             showClose={false}
             snapshot={payload.snapshot}
-            compact={false}
             endpoint={payload.endpoint}
             preferences={{
               ...payload.preferences,
@@ -164,6 +173,7 @@ export function AuxiliaryRoot() {
             }))}
             canConfigureAI={payload.canConfigureAI}
             roomPerformance={payload.roomPerformance}
+            mediaSession={payload.mediaSession}
             onChange={(preferences) =>
               send({ view: "settings", type: "preferences", preferences })
             }

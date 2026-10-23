@@ -1,10 +1,23 @@
+import {
+  parseChatCommand,
+  bannerCommands,
+  rollDice,
+  bannerPolicySchema,
+  type BannerPolicy,
+} from "./banner";
+import { attachmentSchema, type Attachment } from "./attachments";
 import { avatarSchema, seatAvatar } from "./avatar";
 import type {
   AiComputation,
   ComputeProgress,
   PerformanceSettings,
 } from "./performance";
-import type { ChatContent, InteractionEvent, InteractionKind } from "./social";
+import type {
+  ChatContent,
+  InteractionEvent,
+  InteractionKind,
+  InteractionUnits,
+} from "./social";
 import { gameCatalogue } from "./catalogue";
 import { Replay, type ReplayRecord } from "./replay";
 import { automaticNames, seatDisplayName } from "./names";
@@ -56,6 +69,9 @@ export class Room {
   private messageTotals: Record<string, number> = {};
   private interactionTimes = new Map<string, number>();
   private interactionIds = new Set<string>();
+  private bannerPolicy: BannerPolicy = { mode: "host", members: [] };
+  private bannerTimes = new Map<string, number>();
+  private chatEventTimes = new Map<string, number>();
   private messages: ChatMessage[] = [];
   private decisions: Decision[] = [];
   private summaries: DecisionSummary[] = [];
@@ -113,9 +129,11 @@ export class Room {
   }
   claim(name: string, token?: string, avatar = "😊"): string {
     if (token) {
+      const wasPaused = this.paused;
       const actor = this.identity(token);
       const seat = actor < 0 ? this.host! : this.seats[actor];
       seat.online = true;
+      if (wasPaused && !this.paused) this.updateResolution();
       return token;
     }
     if (this.state && !this.ended && !this.engine.finished(this.state))
@@ -166,7 +184,7 @@ export class Room {
       this.seats.length,
       `${this.seed}:round:${this.version}`,
       this.config.team,
-      this.config.mahjong,
+      { mahjong: this.config.mahjong, graphwar: this.config.graphwar },
     );
     this.replay = {
       format: 1,
@@ -177,6 +195,15 @@ export class Room {
       avatars: this.seats.map(seatAvatar),
       seed: `${this.seed}:round:${this.version}`,
       startedAt: Date.now(),
+      ...(this.state.kind === "graphwar"
+        ? {
+            graphwarInitial: structuredClone({
+              teams: this.state.view.teams,
+              terrain: this.state.view.terrain,
+              soldiers: this.state.view.soldiers,
+            }),
+          }
+        : {}),
       events: [],
     };
     this.version++;
@@ -195,6 +222,7 @@ export class Room {
     this.ended = false;
     this.lastMoveAt = Date.now();
     this.queued = null;
+    this.updateResolution();
   }
 
   end(token: string): void {
@@ -237,6 +265,12 @@ export class Room {
     if (this.replay) this.records = [...this.records, this.replay].slice(-20);
     Object.assign(this.config, next);
     this.seats.splice(0, this.seats.length, ...seats);
+    this.bannerPolicy = {
+      ...this.bannerPolicy,
+      members: this.bannerPolicy.members.filter((id) =>
+        seats.some((seat) => seat.id === id),
+      ),
+    };
     this.state = null;
     this.computation = null;
     this.aiPaused = false;
@@ -285,6 +319,10 @@ export class Room {
       type: "action",
       actor,
       action: structuredClone(action),
+      graphwarShot:
+        this.state.kind === "graphwar" && action.type === "graphwar-fire"
+          ? structuredClone(this.state.view.lastShot!)
+          : undefined,
       seed: `${this.seed}:move:${this.version - 1}`,
       version: this.version,
     });
@@ -295,7 +333,76 @@ export class Room {
   }
 
   chat(token: string, id: string, text: string): void {
-    this.addMessage(token, id, { type: "text", text });
+    this.identity(token);
+    if (this.accepted.has(`${token}:chat:${id}`)) return;
+    const banner = parseChatCommand(text);
+    if (!banner) {
+      this.addMessage(token, id, { type: "text", text });
+      return;
+    }
+    const actor = this.identity(token);
+    const member = actor < 0 ? this.host! : this.seats[actor];
+    const permission = bannerCommands.find(
+      (command) => command.kind === banner.kind,
+    )!.permission;
+    if (banner.kind === "help") throw new Error("请在聊天编辑器中打开指令帮助");
+    if (
+      banner.kind === "clear" ||
+      banner.kind === "roll" ||
+      banner.kind === "emote"
+    ) {
+      if (permission === "host" && !this.canManage(token))
+        throw new Error("只有房主可以清除横幅");
+      const now = Date.now();
+      if (now - (this.chatEventTimes.get(member.id!) ?? -Infinity) < 2000)
+        throw new Error("指令太快，请稍后再试");
+      this.chatEventTimes.set(member.id!, now);
+      if (banner.kind === "clear")
+        this.addMessage(token, id, { type: "clear", text: "清除了横幅" });
+      else if (banner.kind === "emote")
+        this.addMessage(token, id, { type: "emote", text: banner.text });
+      else {
+        const results = rollDice(banner.count, banner.sides);
+        this.addMessage(token, id, {
+          type: "roll",
+          sides: banner.sides,
+          results,
+          text: `🎲 ${banner.count}d${banner.sides}：${results.join("、")}，合计 ${results.reduce((sum, value) => sum + value, 0)}（娱乐）`,
+        });
+      }
+      return;
+    }
+    const policy = this.bannerPolicy;
+    if (
+      policy.mode === "off" ||
+      (!this.canManage(token) &&
+        policy.mode !== "all" &&
+        !(policy.mode === "selected" && policy.members.includes(member.id!)))
+    )
+      throw new Error("你尚未获得房主的横幅使用授权");
+    const now = Date.now();
+    if (now - (this.bannerTimes.get(member.id!) ?? -Infinity) < 10000)
+      throw new Error("横幅发送太快，请稍后再试");
+    this.bannerTimes.set(member.id!, now);
+    this.addMessage(token, id, { type: "banner", text: banner.text, banner });
+  }
+  setBannerPolicy(token: string, input: BannerPolicy): void {
+    if (!this.canManage(token)) throw new Error("只有房主可以设置横幅权限");
+    const policy = bannerPolicySchema.parse(input);
+    if (
+      policy.members.some(
+        (id) => !this.seats.some((seat) => seat.token && seat.id === id),
+      )
+    )
+      throw new Error("授权玩家已不在房间");
+    this.bannerPolicy = policy;
+  }
+  chatImage(token: string, id: string, attachment: Attachment): void {
+    this.addMessage(token, id, {
+      type: "image",
+      text: "[图片]",
+      attachment: attachmentSchema.parse(attachment),
+    });
   }
   private addMessage(token: string, id: string, content: ChatContent): void {
     const actor = this.identity(token);
@@ -304,7 +411,7 @@ export class Room {
     const member = actor < 0 ? this.host! : this.seats[actor];
     const sender = member.id!;
     this.messageTotals[sender] = (this.messageTotals[sender] || 0) + 1;
-    this.messages.push({
+    const message: ChatMessage = {
       ...content,
       id,
       sequence: ++this.messageSequence,
@@ -314,7 +421,28 @@ export class Room {
           ? member.name
           : seatDisplayName(this.seats[actor], actor, this.state),
       time: Date.now(),
-    });
+    };
+    this.messages.push(message);
+    if (
+      (content.type === "banner" ||
+        content.type === "roll" ||
+        content.type === "emote" ||
+        content.type === "clear") &&
+      this.replay &&
+      this.state &&
+      !this.ended &&
+      !this.engine.finished(this.state)
+    ) {
+      this.replay.social ??= [];
+      if (this.replay.social.length < 1000)
+        this.replay.social.push({
+          frame: this.replay.events.length,
+          ...(content.type === "banner"
+            ? { banner: content.banner }
+            : { message: content }),
+          name: message.name,
+        });
+    }
     if (this.messages.length > 200) this.messages.shift();
     this.accepted.add(key);
     if (this.accepted.size > 2048)
@@ -325,6 +453,7 @@ export class Room {
     id: string,
     target: number,
     kind: InteractionKind,
+    units?: InteractionUnits,
   ): InteractionEvent | undefined {
     const from = this.identity(token);
     if (from < 0) throw new Error("服务身份不参与牌桌互动");
@@ -333,6 +462,19 @@ export class Room {
       (!this.seats[target].token && !this.seats[target].difficulty)
     )
       throw new Error("互动目标不存在");
+    if (units) {
+      if (this.state?.kind !== "graphwar")
+        throw new Error("士兵互动不属于当前游戏");
+      const soldiers = this.state.view.soldiers,
+        source = soldiers.find(
+          (s) => s.id === units.from && s.player === from && s.hp > 0,
+        ),
+        destination = soldiers.find(
+          (s) => s.id === units.target && s.player === target && s.hp > 0,
+        );
+      if (!source || !destination)
+        throw new Error("互动士兵不存在或不属于该玩家");
+    }
     const key = `${token}:${id}`;
     if (this.interactionIds.has(key)) return;
     const now = Date.now();
@@ -342,7 +484,7 @@ export class Room {
     if (this.interactionIds.size > 2048)
       this.interactionIds.delete(this.interactionIds.values().next().value!);
     this.interactionTimes.set(token, now);
-    return { id, from, target, kind, time: now };
+    return { id, from, target, kind, time: now, ...(units ? { units } : {}) };
   }
 
   aiRequest(): {
@@ -399,6 +541,11 @@ export class Room {
       type: "action",
       actor: decision.actor,
       action: structuredClone(decision.chosen),
+      graphwarShot:
+        this.state.kind === "graphwar" &&
+        decision.chosen.type === "graphwar-fire"
+          ? structuredClone(this.state.view.lastShot!)
+          : undefined,
       seed: `${this.seed}:move:${this.version - 1}`,
       version: this.version,
     });
@@ -481,6 +628,7 @@ export class Room {
       this.projection.set(actor, projected);
     }
     return {
+      serverTime: Date.now(),
       apiVersion: protocolVersion,
       rulesVersion: gameCatalogue[this.config.kind].version,
       room: this.id,
@@ -506,6 +654,7 @@ export class Room {
       candidates: projected.candidates,
       computation: this.computation,
       aiPaused: this.aiPaused,
+      bannerPolicy: this.bannerPolicy,
       chat: this.messages,
       chatSequence: this.messageSequence,
       chatTotals: this.messageTotals,
@@ -515,7 +664,14 @@ export class Room {
       records: this.records,
       summaries: this.summaries.slice(-30),
       finished,
-      resolving: !!this.state && this.engine.needsResolution(this.state),
+      resolving:
+        !!this.state &&
+        this.engine.needsResolution(this.state) &&
+        this.engine.resolutionDelay(this.state) === undefined,
+      turnDeadline:
+        this.state?.kind === "graphwar" && !finished && this.resolutionAt
+          ? this.resolutionAt
+          : undefined,
     };
   }
 
@@ -535,7 +691,9 @@ export class Room {
   }
   setAiRunning(token: string, enabled: boolean): void {
     if (!this.canManage(token)) throw new Error("仅房主可以控制 AI");
+    const wasPaused = this.paused;
     this.aiPaused = !enabled;
+    if (wasPaused && !this.paused) this.updateResolution();
     this.queued = null;
     this.version++;
   }
@@ -633,6 +791,12 @@ export class Room {
     if (actor <= 0) throw new Error("房主需要关闭房间");
     if (this.state && !this.ended && !this.engine.finished(this.state))
       throw new Error("请先结束对局再离开");
+    this.bannerPolicy = {
+      ...this.bannerPolicy,
+      members: this.bannerPolicy.members.filter(
+        (id) => id !== this.seats[actor].id,
+      ),
+    };
     if (this.seats[actor].id) delete this.messageTotals[this.seats[actor].id!];
     this.seats[actor] = {
       name: "",
@@ -650,6 +814,12 @@ export class Room {
     if (seat.token) throw new Error("真人已占用该席位");
     if (config.type === "ai" && !gameCatalogue[this.config.kind].ai)
       throw new Error("该游戏 AI 尚未接入");
+    const balanceBySeat = new Map(
+      this.seats
+        .filter((s) => s.difficulty)
+        .map((s, i) => [s, this.config.ai[i]?.balance]),
+    );
+    const wasBalance = balanceBySeat.get(this.seats[index]);
     this.seats[index] =
       config.type === "human"
         ? { name: "", difficulty: null, online: false, ready: false }
@@ -660,12 +830,15 @@ export class Room {
             online: true,
             ready: true,
           };
+    if (wasBalance && config.type === "ai")
+      balanceBySeat.set(this.seats[index], true);
     this.config.humans = this.seats.filter((seat) => !seat.difficulty).length;
     this.config.ai = this.seats
       .filter((seat) => !!seat.difficulty)
       .map((seat) => ({
         difficulty: seat.difficulty!,
         name: seat.automaticName ? "" : seat.name,
+        ...(balanceBySeat.get(seat) ? { balance: true } : {}),
       }));
   }
   export(): RoomArchive {
@@ -685,6 +858,9 @@ export class Room {
       records: this.records,
       messageSequence: this.messageSequence,
       messageTotals: this.messageTotals,
+      bannerPolicy: this.bannerPolicy,
+      bannerTimes: Object.fromEntries(this.bannerTimes),
+      chatEventTimes: Object.fromEntries(this.chatEventTimes),
       messages: this.messages,
       decisions: this.decisions,
       summaries: this.summaries,
@@ -724,6 +900,11 @@ export class Room {
     room.simultaneousSince = archive.simultaneousSince ?? room.version;
     room.replay = archive.replay;
     room.records = archive.records;
+    room.bannerPolicy = bannerPolicySchema.parse(
+      archive.bannerPolicy ?? { mode: "host", members: [] },
+    );
+    room.bannerTimes = new Map(Object.entries(archive.bannerTimes ?? {}));
+    room.chatEventTimes = new Map(Object.entries(archive.chatEventTimes ?? {}));
     room.messages = archive.messages;
     room.messageSequence = archive.messageSequence;
     room.messageTotals = archive.messageTotals;
@@ -740,7 +921,9 @@ export class Room {
   private updateResolution(): void {
     this.resolutionAt =
       this.state && this.engine.needsResolution(this.state)
-        ? Date.now() + Math.max(4500, this.config.aiDelayMs + 500)
+        ? Date.now() +
+          (this.engine.resolutionDelay(this.state) ??
+            Math.max(4500, this.config.aiDelayMs + 500))
         : 0;
   }
 }
@@ -761,6 +944,9 @@ export interface RoomArchive {
   records: ReplayRecord[];
   messageSequence: number;
   messageTotals: Record<string, number>;
+  bannerPolicy?: BannerPolicy;
+  bannerTimes?: Record<string, number>;
+  chatEventTimes?: Record<string, number>;
   messages: ChatMessage[];
   decisions: Decision[];
   summaries: DecisionSummary[];

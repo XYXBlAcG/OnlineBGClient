@@ -13,6 +13,15 @@ export function guidePosition({
 }: GuideSnapshot): string[] {
   if (!state || actor < 0) return [];
   switch (state.kind) {
+    case "graphwar": {
+      const v = state.view,
+        me = v.soldiers.filter((s) => s.player === actor && s.hp > 0);
+      const current = v.soldiers.find((s) => s.id === v.currentSoldier)!;
+      return [
+        `你属于${v.teams[actor] === 0 ? "蓝" : "橙"}队，剩余 ${me.length} 名士兵。`,
+        `本回合发射点：(${current.x.toFixed(1)}, ${current.y.toFixed(1)})；${v.options.preview ? "允许弹道预览" : "本房关闭预览"}。`,
+      ];
+    }
     case "scmj":
       return [
         `当前阶段：${state.view.phase === "exchange" ? "换三张" : state.view.phase === "lack" ? "定缺" : state.view.phase === "response" ? "响应" : "摸打"}；牌墙余 ${state.view.wall.length} 张。`,

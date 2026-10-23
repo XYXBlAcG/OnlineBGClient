@@ -2,6 +2,12 @@
 
 在项目目录打开终端。审核与提交流程如下。
 
+## 本地 macOS 审核应用
+
+[OnlineBGClient.app](../artifacts/review/OnlineBGClient.app)。退出旧客户端后直接打开，无需解压。本地审核仅保留当前 `.app`，不生成 ZIP；应用采用本地临时签名，未公证。公网服务重新启动，手机刷新邀请页面。
+
+GitHub Release 的附件需要单个文件，不能直接上传 `.app` 目录；线上产物仍以工作流为准，非 ZIP 的分发形式另行确认。
+
 ## 审核
 
 ```sh

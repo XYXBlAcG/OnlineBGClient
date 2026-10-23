@@ -12,6 +12,7 @@ export const phraseGroupsSchema = z
 export type PhraseGroup = z.infer<typeof phraseGroupsSchema>[number];
 export const defaultPhraseGroups = phraseGroupsSchema.parse(presets);
 const gamePhrases: Record<GameKind, string[]> = {
+  graphwar: ["这条曲线绕得漂亮！", "队友小心，我要开炮了！", "先打通这堵墙。", "给我一点时间算一算。"],
  scmj:["这把先打缺。","碰一个！","自摸！","别急，等我想一想。"],
   ccbs: [
     "这张卡我先预留了。",

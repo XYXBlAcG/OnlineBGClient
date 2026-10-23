@@ -11,6 +11,8 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 原模块隔离与依赖注入 | [运行时](../src/upstream/runtime.ts) |
 | 状态与动作类型 | [领域类型](../src/domain/types.ts)、[动作校验](../src/domain/actions.ts) |
 | 游戏注册、版本、能力与人数约束 | [目录](../src/domain/catalogue.ts) |
+| Graphwar 函数对战、弹道与 AI | [实现索引](graphwar-plan.md)、[战术与空间索引](graphwar-balance-plan.md) |
+| 游戏配置与延时结算契约 | [配置](../src/domain/game-options.ts)、[插件](../src/domain/plugin.ts) |
 | 游戏规则插件契约 | [适配器](../src/domain/plugin.ts)、[内置规则](../src/domain/builtin-rules.ts) |
 | 策略注册与审核版本检查 | [策略契约](../src/domain/strategies.ts) |
 | 主题插件与外观变量 | [主题注册](../src/client/themes.ts)、[样式](../src/styles.css) |

@@ -56,11 +56,17 @@ impl Hosting {
         if let Some(session) = self.session.lock().unwrap().as_ref() { return Ok(session.url.clone()); }
         if self.starting.swap(true, Ordering::SeqCst) { return Err("房间正在准备".into()); }
         let generation = self.generation.load(Ordering::SeqCst);
-        let result = self.prepare(app, generation);
+        let result = crate::hosting_retry::StartupRetry::run(
+            || self.active(generation),
+            |attempt| {
+                let _ = app.emit("hosting-status", format!("正在准备公网房间（第 {attempt}/{} 次）", crate::hosting_retry::StartupRetry::ATTEMPTS));
+                self.prepare(app, generation, attempt)
+            },
+        );
         self.starting.store(false, Ordering::SeqCst);
         result
     }
-    fn prepare(&self, app: &tauri::AppHandle, generation: u64) -> Result<String, String> {
+    fn prepare(&self, app: &tauri::AppHandle, generation: u64, attempt: usize) -> Result<String, String> {
         let resources = match std::env::var_os("COMPANION_HOST_RESOURCES") {
             Some(path) => PathBuf::from(path),
             None => if cfg!(debug_assertions) { PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/hosting") } else { app.path().resource_dir().map_err(|e| e.to_string())?.join("hosting") },
@@ -133,7 +139,7 @@ impl Hosting {
                 }
             }
         };
-        let _ = app.emit("hosting-status", "正在建立临时公网入口");
+        let _ = app.emit("hosting-status", format!("正在建立临时公网入口（第 {attempt}/{} 次）", crate::hosting_retry::StartupRetry::ATTEMPTS));
         let mut command = Command::new(tunnel);
         command.args(["tunnel", "--url", &format!("http://127.0.0.1:{port}"), "--protocol", "http2", "--no-autoupdate"]);
         let (mut tunnel, lines) = spawn(command)?;
@@ -152,6 +158,7 @@ impl Hosting {
         let mut ready = false;
         for _ in 0..12 {
             self.active(generation)?;
+            if let Some(code) = tunnel.0.try_wait().map_err(|e| e.to_string())? { return Err(format!("公网入口启动失败：{code}")); }
             if probe.get(format!("{url}/health")).send().is_ok_and(|r| r.status().is_success()) { ready = true; break; }
             std::thread::sleep(Duration::from_millis(500));
         }

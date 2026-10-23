@@ -13,8 +13,10 @@ export function GameCommands({
   bindings,
   pending = false,
   onError,
+  showTrigger = true,
 }: {
   pending?: boolean;
+  showTrigger?: boolean;
   onError?: (message: string) => void;
   snapshot: Snapshot;
   act: (action: Action) => void;
@@ -128,7 +130,7 @@ export function GameCommands({
   }, [snapshot.kind, registry, bindings]);
   return (
     <>
-      {!auxiliaryView && (
+      {!auxiliaryView && showTrigger && (
         <button
           onClick={() => setOpen(true)}
           disabled={!snapshot.state || snapshot.finished}

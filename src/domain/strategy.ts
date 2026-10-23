@@ -282,7 +282,8 @@ export class Strategy {
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
-      observation.kind === "ccbs"
+      observation.kind === "ccbs" ||
+      observation.kind === "graphwar"
     )
       throw new Error("该游戏 AI 尚未接入");
     const state = structuredClone(observation);
@@ -402,7 +403,8 @@ export class Strategy {
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
-      observation.kind === "ccbs"
+      observation.kind === "ccbs" ||
+      observation.kind === "graphwar"
     )
       throw new Error("该游戏 AI 尚未接入");
     if (actor === target) return -1;
@@ -434,7 +436,8 @@ export class Strategy {
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
-      observation.kind === "ccbs"
+      observation.kind === "ccbs" ||
+      observation.kind === "graphwar"
     )
       throw new Error("该游戏 AI 尚未接入");
     const features: Feature[] = [];
@@ -712,7 +715,8 @@ export class Strategy {
       state.kind === "ddz" ||
       state.kind === "ktd" ||
       state.kind === "scmj" ||
-      state.kind === "ccbs"
+      state.kind === "ccbs" ||
+      state.kind === "graphwar"
     )
       throw new Error("该游戏 AI 尚未接入");
     if (state.kind === "dy") {

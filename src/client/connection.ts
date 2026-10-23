@@ -101,11 +101,19 @@ export class NetworkConnection implements Connection {
       };
       this.receive({ type: "activity", pending: true });
     }
-    if (command.type === "action" || command.type === "chat")
+    if (
+      command.type === "action" ||
+      command.type === "chat" ||
+      command.type === "chat-image"
+    )
       this.pending.set(command.id, command);
     if (this.socket?.readyState === WebSocket.OPEN)
       this.socket.send(JSON.stringify(command));
-    else if (command.type !== "action" && command.type !== "chat")
+    else if (
+      command.type !== "action" &&
+      command.type !== "chat" &&
+      command.type !== "chat-image"
+    )
       this.receive({ type: "error", message: "连接尚未恢复，请稍后操作" });
   }
 

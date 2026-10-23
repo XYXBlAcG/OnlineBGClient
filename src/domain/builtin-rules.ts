@@ -1,3 +1,4 @@
+import { GraphwarRules } from "./graphwar/rules";
 import { SichuanRules } from "./mahjong/rules";
 import { SplendorRules } from "./splendor";
 import { CatanRules } from "./catan";
@@ -77,4 +78,8 @@ export function splendorPlugin(runtime: UpstreamRuntime) {
 
 export function sichuanPlugin(runtime: UpstreamRuntime) {
   return new GameAdapter("scmj", new SichuanRules(() => runtime.random()));
+}
+
+export function graphwarPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter("graphwar", new GraphwarRules(() => runtime.random()));
 }

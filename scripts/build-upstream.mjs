@@ -1,3 +1,4 @@
+import { attachTableRegions } from "./upstream-table-regions.mjs";
 import { attachMotion } from "./upstream-motion.mjs";
 import { attachFeedback } from "./upstream-feedback.mjs";
 import { attachGuideTargets } from './upstream-guide-targets.mjs';
@@ -384,6 +385,7 @@ for (const [id, code] of selected) {
   selected.set(id, generate(ast.program.body[0].expression, { comments: false }).code);
 }
 attachFeedback(selected);
+attachTableRegions(selected);
 attachGuideTargets(selected);
 attachMotion(selected);
 await writeFile('src/upstream/factories.js', `export default {\n${[...selected].map(([id,code])=>`${id}: ${code}`).join(',\n')}\n};\n`);

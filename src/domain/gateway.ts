@@ -50,6 +50,7 @@ export class Gateway {
         command.id,
         command.target,
         command.kind,
+        command.units,
       );
       return {
         session,
@@ -62,7 +63,9 @@ export class Gateway {
     return {
       session,
       response:
-        command.type === "action" || command.type === "chat"
+        command.type === "action" ||
+        command.type === "chat" ||
+        command.type === "chat-image"
           ? { type: "ack", id: command.id }
           : undefined,
     };
@@ -90,6 +93,10 @@ export class Gateway {
     if (command.type === "end") room.end(command.token);
     if (command.type === "action")
       room.act(command.token, command.id, command.version, command.action);
+    if (command.type === "banner-policy")
+      room.setBannerPolicy(command.token, command.policy);
+    if (command.type === "chat-image")
+      room.chatImage(command.token, command.id, command.attachment);
     if (command.type === "chat")
       room.chat(command.token, command.id, command.text);
   }

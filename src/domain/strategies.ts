@@ -1,3 +1,4 @@
+import { GraphwarStrategy } from "./graphwar/strategy";
 import { MahjongStrategy } from "./mahjong/strategy";
 import { CatanStrategy } from "./catan-strategy";
 import { SplendorStrategy } from "./splendor-strategy";
@@ -26,6 +27,7 @@ export class Strategies {
       [Strategy, ["uno", "sgs", "fxq", "tq", "dy"]],
       [CatanStrategy, ["ktd"]],
       [MahjongStrategy, ["scmj"]],
+      [GraphwarStrategy, ["graphwar"]],
       [SplendorStrategy, ["ccbs"]],
     ] as [typeof Strategy, GameKind[]][]) {
       let instance: Strategy | undefined;

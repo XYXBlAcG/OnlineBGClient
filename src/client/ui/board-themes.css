@@ -1,0 +1,16 @@
+[data-color-scheme="dark"] .original-game :is(.bg-white,.bg-gray-50,.bg-gray-100,.bg-gray-200) { background-color:var(--raised); }
+[data-color-scheme="dark"] .original-game :is(.text-gray-400,.text-gray-500,.text-gray-600,.text-gray-700,.text-gray-800) { color:var(--muted); }
+[data-color-scheme="dark"] .original-game :is(.border-gray-200,.border-gray-300) { border-color:var(--line); }
+[data-color-scheme="dark"] .original-game :is(input,select,textarea) { background:var(--field); color:var(--text); color-scheme:dark; }
+[data-color-scheme="dark"] .original-game .button-container button { background:var(--field); color:var(--text); }
+[data-color-scheme="dark"] .original-game .button-container button:disabled { background:var(--disabled); color:var(--disabled-text); }
+[data-color-scheme="dark"] :is(.original-game[data-game="sgs"],.game-motion-copy) :is(.sgs-card,.sgs-hero) { background:linear-gradient(180deg,var(--raised),var(--field)); color:var(--text); }
+[data-color-scheme="dark"] :is(.original-game[data-game="sgs"],.game-motion-copy) :is(.sgs-card,.sgs-hero) .text-black { color:var(--text); }
+.original-game[data-game="dy"] .dy-card { color:#242830; color-scheme:light; }
+[data-color-scheme="dark"] .original-game[data-game="ktd"] :is(.catan-hand-panel,.catan-actions) { background:var(--surface); color:var(--text); }
+[data-color-scheme="dark"] .original-game[data-game="ccbs"] .table-collection { color:var(--text); }
+[data-color-scheme="dark"] .original-game[data-game="tq"] [data-guide-target="tq.cell"][stroke="#22252b"] { stroke:var(--muted); }
+[data-color-scheme="dark"] .original-game[data-game="fxq"] .map-viewport { background:var(--canvas); border-radius:12px; }
+[data-color-scheme="dark"] .original-game[data-game="uno"] [data-guide-target="uno.status"] { color:var(--text); }
+[data-color-scheme="dark"] .original-game[data-game="ddz"] > .text-center { color:var(--text); }
+[data-color-scheme="dark"] .original-game[data-game="scmj"] .scmj-score { color:var(--text); }

@@ -1,3 +1,4 @@
+import { GraphwarTable } from "./graphwar/GraphwarTable";
 import { SichuanTable } from "./mahjong/SichuanTable";
 import type { MotionPreferences } from "./MotionControls";
 import { GameMotionLayer } from "./GameMotionLayer";
@@ -27,9 +28,11 @@ export type GameSnapshot = Pick<
   | "seats"
   | "state"
   | "finished"
->;
+> &
+  Partial<Pick<Snapshot, "turnDeadline" | "serverTime" | "paused">>;
 export const OriginalGame = memo(function OriginalGame({
   snapshot,
+  pending = false,
   act,
   end,
   onAutoplay,
@@ -60,6 +63,7 @@ export const OriginalGame = memo(function OriginalGame({
   sound?: boolean;
   onInteractionEnd?: (id: string) => void;
   snapshot: GameSnapshot;
+  pending?: boolean;
   act: (action: Action) => void;
   end: () => void;
   onAutoplay?: (enabled: boolean) => void;
@@ -68,6 +72,7 @@ export const OriginalGame = memo(function OriginalGame({
   onInteract?: (
     target: number,
     kind: import("../domain/social").InteractionKind,
+    units?: import("../domain/social").InteractionUnits,
   ) => void;
 }) {
   const { game: gameMotion } = usePresentation();
@@ -75,7 +80,9 @@ export const OriginalGame = memo(function OriginalGame({
   const runtime = useMemo(() => new UpstreamRuntime(), []);
   const view = useMemo(
     () =>
-      snapshot.state && snapshot.state.kind !== "scmj"
+      snapshot.state &&
+      snapshot.state.kind !== "scmj" &&
+      snapshot.state.kind !== "graphwar"
         ? structuredClone(snapshot.state.view)
         : null,
     [snapshot.state],
@@ -207,7 +214,20 @@ export const OriginalGame = memo(function OriginalGame({
         }
       }}
     >
-      {presentation.kind === "sichuan" ? (
+      {presentation.kind === "graphwar" &&
+      snapshot.state?.kind === "graphwar" ? (
+        <GraphwarTable
+          view={snapshot.state.view}
+          end={end}
+          snapshot={snapshot}
+          act={act}
+          replay={replay}
+          avatar={avatarContext}
+          pending={pending}
+          animationActive={animationActive}
+          animationRate={animationRate}
+        />
+      ) : presentation.kind === "sichuan" ? (
         <SichuanTable
           snapshot={snapshot}
           act={act}
@@ -216,7 +236,7 @@ export const OriginalGame = memo(function OriginalGame({
           onAutoplay={onAutoplay}
           avatar={avatarContext}
         />
-      ) : (
+      ) : Game ? (
         <Game
           key={`${snapshot.kind}:${snapshot.actor}`}
           onReplay={onReplay}
@@ -227,7 +247,7 @@ export const OriginalGame = memo(function OriginalGame({
             if (!replay && event === events.OwnerExitGame) end();
           }}
         />
-      )}
+      ) : null}
       <GameMotionLayer
         snapshot={snapshot}
         active={animationActive}
@@ -235,6 +255,7 @@ export const OriginalGame = memo(function OriginalGame({
       />
       {!replay && onInteractionEnd && (
         <Interactions
+          key={`${snapshot.room}:${snapshot.kind}`}
           events={interactions}
           motion={gameMotion !== "reduced"}
           enhanced={gameMotion === "enhanced"}

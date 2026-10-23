@@ -1,3 +1,5 @@
+import type { MediaSession } from "../social/media";
+import { attachmentSchema } from "../../domain/attachments";
 import { z } from "zod";
 import { actionSchema } from "../../domain/actions";
 import { preferencesSchema, type Preferences } from "../preferences";
@@ -21,6 +23,21 @@ export const auxiliaryView = new URLSearchParams(
   typeof location === "undefined" ? "" : location.search,
 ).get("aux") as AuxiliaryView | null;
 export const auxiliaryIntentSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("chat-image-quality"),
+    view: z.literal("chat"),
+    quality: z.enum(["clear", "data"]),
+  }),
+  z.object({
+    type: z.literal("chat-image"),
+    view: z.literal("chat"),
+    attachment: attachmentSchema,
+  }),
+  z.object({
+    type: z.literal("chat-banners"),
+    view: z.literal("chat"),
+    enabled: z.boolean(),
+  }),
   z.object({
     type: z.literal("chat-text"),
     view: z.literal("chat"),
@@ -78,12 +95,14 @@ export type AuxiliaryPayload =
       commands: Pick<AppCommand, "id" | "title" | "binding" | "scope">[];
       canConfigureAI: boolean;
       roomPerformance?: Snapshot["config"]["performance"];
+      mediaSession?: MediaSession;
     }
   | {
       view: "chat";
       snapshot: Snapshot;
       preferences: Preferences;
       endpoint?: string;
+      token?: string;
     }
   | { view: "guide"; snapshot: Snapshot; index: number }
   | { view: "about" }

@@ -1,9 +1,18 @@
+import { balanceSeats } from "./room-balance";
+import { maxRoomSeats } from "./catalogue";
+import { graphwarOptionsSchema } from "./graphwar/types";
+import { bannerPolicySchema, type BannerPolicy } from "./banner";
+import { attachmentSchema } from "./attachments";
 import { mahjongOptionsSchema } from "./mahjong/types";
 import { avatarSchema } from "./avatar";
 import type { ComputeDiagnostic } from "./compute-diagnostics";
 import type { AiComputation } from "./performance";
 import { performanceSchema } from "./performance";
-import { interactionSchema, type InteractionEvent } from "./social";
+import {
+  interactionSchema,
+  interactionUnitsSchema,
+  type InteractionEvent,
+} from "./social";
 export type { ChatMessage } from "./social";
 import type { ChatMessage } from "./social";
 import { actionSchema } from "./actions";
@@ -19,26 +28,30 @@ import type {
   GameState,
 } from "./types";
 
+export const roomIdSchema = z.string().min(1).max(12);
 export const configSchema = z
   .object({
     kind: z.enum(gameKinds),
-    humans: z.number().int().min(0).max(8),
+    humans: z.number().int().min(0).max(maxRoomSeats),
     ai: z
       .array(
         z.object({
           difficulty: z.enum(["easy", "normal", "hard"]),
           name: z.string().trim().max(24).default(""),
+          balance: z.boolean().optional(),
         }),
       )
-      .max(8),
+      .max(maxRoomSeats),
     aiDelayMs: z.number().int().min(0).max(5000).default(1500),
     team: z.boolean(),
     training: z.boolean(),
     auditEnabled: z.boolean().default(false),
+    graphwar: graphwarOptionsSchema.default(graphwarOptionsSchema.parse({})),
     mahjong: mahjongOptionsSchema.default({ cap: 3, selfDraw: "base" }),
     catanTrades: z.boolean().default(true),
     performance: performanceSchema.default({ mode: "auto", threads: 8 }),
   })
+  .transform(balanceSeats)
   .refine(
     (value) =>
       value.humans + value.ai.length >= gameCatalogue[value.kind].minPlayers &&
@@ -56,8 +69,8 @@ export const configSchema = z
 export type RoomConfig = z.infer<typeof configSchema>;
 export const roomSetupSchema = z.object({
   config: configSchema,
-  retain: z.array(z.string()).max(8),
-  members: z.array(z.string()).max(8),
+  retain: z.array(z.string()).max(maxRoomSeats),
+  members: z.array(z.string()).max(maxRoomSeats),
   endCurrent: z.boolean(),
 });
 export type RoomSetup = z.infer<typeof roomSetupSchema>;
@@ -81,7 +94,7 @@ export const commandSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("join"),
-    room: z.string().min(1).max(12),
+    room: roomIdSchema,
     name: z.string().trim().min(1).max(24),
     avatar: avatarSchema.optional(),
     token: z.string().max(100).optional(),
@@ -89,7 +102,11 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("seat"),
     token: z.string(),
-    index: z.number().int().min(1).max(7),
+    index: z
+      .number()
+      .int()
+      .min(1)
+      .max(maxRoomSeats - 1),
     config: seatConfigSchema,
   }),
   z.object({
@@ -145,8 +162,24 @@ export const commandSchema = z.discriminatedUnion("type", [
     type: z.literal("interaction"),
     token: z.string(),
     id: z.string().min(1).max(100),
-    target: z.number().int().min(0).max(7),
+    target: z
+      .number()
+      .int()
+      .min(0)
+      .max(maxRoomSeats - 1),
     kind: interactionSchema,
+    units: interactionUnitsSchema.optional(),
+  }),
+  z.object({
+    type: z.literal("banner-policy"),
+    token: z.string(),
+    policy: bannerPolicySchema,
+  }),
+  z.object({
+    type: z.literal("chat-image"),
+    token: z.string(),
+    id: z.string().min(1).max(100),
+    attachment: attachmentSchema,
   }),
   z.object({ type: z.literal("snapshot"), token: z.string() }),
 ]);
@@ -158,8 +191,9 @@ export interface DecisionSummary {
   simulations: number;
   version: number;
 }
-export const protocolVersion = 9;
+export const protocolVersion = 14;
 export interface Snapshot {
+  serverTime: number;
   apiVersion: number;
   rulesVersion: string;
   room: string;
@@ -183,6 +217,7 @@ export interface Snapshot {
   candidates: Candidate[];
   computation: AiComputation | null;
   aiPaused: boolean;
+  bannerPolicy: BannerPolicy;
   chat: ChatMessage[];
   chatSequence: number;
   chatTotals: Record<string, number>;
@@ -190,6 +225,7 @@ export interface Snapshot {
   summaries: DecisionSummary[];
   finished: boolean;
   resolving: boolean;
+  turnDeadline?: number;
   paused: boolean;
   replay: ReplayRecord | null;
   records: ReplayRecord[];

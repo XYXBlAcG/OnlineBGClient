@@ -1,4 +1,4 @@
-import type { MahjongOptions } from "./mahjong/types";
+import type { GameOptions } from "./game-options";
 import { UpstreamRuntime } from "../upstream/runtime";
 import { gameCatalogue, gameKinds, type GameKind } from "./catalogue";
 import { CheckersRules } from "./checkers";
@@ -32,7 +32,7 @@ export class GameEngine {
     players: number,
     seed: string,
     team = false,
-    options?: MahjongOptions,
+    options?: GameOptions,
   ): GameState {
     const game = gameCatalogue[kind];
     if (
@@ -43,9 +43,9 @@ export class GameEngine {
     )
       throw new Error("玩家数量超出该游戏人数范围");
     this.seed(seed);
-    const state = this.plugins.get(kind)!.create(players, team);
-    if (state.kind === "scmj" && options)
-      state.view.options = structuredClone(options);
+    const state = this.plugins.get(kind)!.create(players, team, options);
+    if (state.kind === "scmj" && options?.mahjong)
+      state.view.options = structuredClone(options.mahjong);
     return state;
   }
   finished(state: GameState): boolean {
@@ -59,6 +59,9 @@ export class GameEngine {
   }
   needsResolution(state: GameState): boolean {
     return this.plugins.get(state.kind)!.needsResolution(state);
+  }
+  resolutionDelay(state: GameState): number | undefined {
+    return this.plugins.get(state.kind)!.resolutionDelay(state);
   }
   resolve(state: GameState, seed: string): GameState {
     this.seed(seed);

@@ -7,6 +7,8 @@
 | 当前规则下的武将资料、技能解释与例子 | [武将目录](../src/domain/hero-guide.ts)、[术语](../src/domain/terms.ts) |
 | 悬停、键盘聚焦与触屏详情 | [武将组件](../src/client/HeroSurface.tsx)、[原界面适配](../scripts/build-upstream.mjs) |
 | 头像菜单与同步动效 | [牌桌头像](../src/client/AvatarSurface.tsx)、[动效](../src/client/Interactions.tsx)、[运动路径](../src/client/effect-motion.ts)、[原界面适配](../scripts/build-upstream.mjs) |
+| 士兵间投掷、归属校验与位置跟踪 | [Graphwar 接入](graphwar-interaction-plan.md)、[社交模型](../src/domain/social.ts) |
+| 互动视口、裁剪与菜单布局 | [宿主](../src/client/Interactions.tsx)、[几何](../src/client/effect-viewport.ts)、[样式](../src/styles.css) |
 | 消息类型、互动种类与资源约束 | [社交模型](../src/domain/social.ts)、[协议](../src/domain/protocol.ts) |
 | 消息序号、身份、去重与互动校验 | [房间](../src/domain/room.ts)、[网关](../src/domain/gateway.ts) |
 | 未读、阅读位置与带时间的消息 | [阅读状态](../src/client/chat-read.ts)、[消息组件](../src/client/ChatPanel.tsx) |
@@ -18,5 +20,7 @@
 | 深浅色、控件、浮层与减少动态效果 | [主题](../src/client/themes.ts)、[样式](../src/styles.css)、[动态偏好](../src/client/use-motion.ts) |
 | 桌面右键菜单与公网进程 | [菜单策略](../src/client/desktop-context-menu.ts)、[进程管理](../src-tauri/src/hosting.rs) |
 | 关于与回放 | [关于资料](../src/client/about.json)、[记录界面](../src/client/Records.tsx) |
+
+手机等待室、横幅权限、全屏表情和压缩图片聊天见 [使用与验收](mobile-social-experience.md)。
 
 验证入口、实际覆盖与实机待验项统一维护在 [验证](verification.md)。桌面构建会同步生成前端和内置服务，入口见 [构建配置](../src-tauri/tauri.conf.json)。

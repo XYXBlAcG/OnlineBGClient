@@ -74,6 +74,16 @@ onmessage = (event: MessageEvent<unknown>) => {
       )
         session.token = command.token;
       if (command.type === "ai-run" && command.enabled) failedVersion = -1;
+      if (command.type === "chat-image") {
+        if (!session || !tokens.includes(command.token))
+          throw new Error("房间身份无效");
+        const image = await store.image(session.room, command.attachment.id);
+        if (
+          !image ||
+          JSON.stringify(image.image) !== JSON.stringify(command.attachment)
+        )
+          throw new Error("图片尚未上传或已清理");
+      }
       const result = gateway.handle(command, session);
       if (["end", "game", "close", "leave"].includes(command.type)) {
         pending?.controller.abort();
@@ -122,6 +132,7 @@ onmessage = (event: MessageEvent<unknown>) => {
         result.response?.type === "closed" ||
         result.response?.type === "left"
       ) {
+        if (session) await store.expireImages(session.room);
         session = undefined;
         await store.clearLocal();
         send(result.response);

@@ -4518,7 +4518,8 @@ export default {
           knownDecks: f,
           revealBooked: u,
           animate: P
-        })]
+        })],
+        "data-table-region": "public"
       }), (0, o.jsxs)("div", {
         className: "table-actions",
         children: [(0, o.jsx)(Z, {
@@ -4546,7 +4547,8 @@ export default {
           onAction: G,
           skipAfk: b !== e.waitFor || l || null === t || t === e.waitFor ? void 0 : h,
           gameVersion: p
-        })]
+        })],
+        "data-table-region": "actions"
       }), (0, o.jsxs)("details", {
         className: "table-collection",
         open: true,
@@ -4556,7 +4558,8 @@ export default {
           view: e,
           revealBooked: u,
           renderSeat: m
-        })]
+        })],
+        "data-table-region": "collection"
       })]
     });
   };
@@ -6112,6 +6115,7 @@ export default {
             send: C
           })
         })],
+        "data-table-region": "hand",
         "data-guide-target": "ktd.hand"
       })]
     });
@@ -6730,7 +6734,8 @@ export default {
         }) : (0, x.jsx)("div", {
           className: "text-2xl mt-2",
           children: "\u89c2\u6218\u4e2d"
-        })]
+        })],
+        "data-table-region": "actions"
       }), (0, x.jsx)(A, {
         room: t,
         game: C,
@@ -8173,6 +8178,7 @@ export default {
         setSelected: y,
         className: "mt-4"
       })],
+      "data-table-region": "hand",
       "data-guide-target": "dy.hand",
       "data-room-region": "dy.hand"
     });
@@ -8239,7 +8245,8 @@ export default {
             }),
             "data-guide-target": "dy.pot",
             "data-guide-id": 2
-          })]
+          })],
+          "data-table-region": "public"
         }), !!n.finish && n.eats.map(function (t, e) {
           return (0, d.jsxs)("div", {
             className: "mb-2",
@@ -9796,12 +9803,12 @@ export default {
         view: u,
         room: t,
         updateGameData: f,
-        className: "mt-4"
+        className: "mt-4 table-hand-region"
       }), u.isRoundFinish && (0, o.jsx)(E, {
         room: t,
         view: u,
         updateGameData: f,
-        className: "mt-4"
+        className: "mt-4 table-hand-region"
       })]
     });
   };
@@ -9873,13 +9880,13 @@ export default {
         view: d,
         room: t,
         updateGameData: p,
-        className: "mt-4"
+        className: "mt-4 table-hand-region"
       }), d.isFinish && (0, o.jsx)(P, {
         room: t,
         view: d,
         updateGameData: p,
         send: n,
-        className: "mt-4"
+        className: "mt-4 table-hand-region"
       })]
     });
   };
@@ -11715,7 +11722,7 @@ export default {
         }) : (0, c.jsx)("div", {
           className: "flex flex-wrap justify-center items-center",
           style: {
-            minHeight: 48
+            minHeight: "var(--uno-action-height,48px)"
           },
           children: e.isStart ? O ? (0, c.jsxs)(c.Fragment, {
             children: [(0, c.jsx)(i.Z, {
@@ -11810,7 +11817,8 @@ export default {
             maxWidth: "100%",
             width: Math.ceil(70 * (58 * E.length + 40) / 132)
           }
-        })]
+        })],
+        "data-table-region": "hand"
       });
     },
     g = e(7992),
@@ -11936,7 +11944,8 @@ export default {
           children: ["\u5df2\u51fa", (0, c.jsx)(w.Z, {
             n: d.playedCards.length
           }), "\u5f20"]
-        })]
+        })],
+        "data-table-region": "piles"
       }), (0, c.jsxs)("div", {
         className: "flex justify-evenly items-center pt-2",
         children: [!!I && (0, c.jsxs)("div", {
@@ -11949,6 +11958,7 @@ export default {
         }), (0, c.jsxs)("div", {
           children: ["\u65b9\u5411", h ? "\u21aa\ufe0f" : "\u21a9\ufe0f"]
         })],
+        "data-table-region": "status",
         "data-guide-target": "uno.status"
       }), (0, c.jsxs)("div", {
         className: "flex-grow flex justify-around mt-2 relative",
@@ -11983,7 +11993,8 @@ export default {
               filter: "drop-shadow(0px 0px 2px gray)"
             }
           })
-        })]
+        })],
+        "data-table-region": "players"
       }), f && (0, c.jsx)(N, {
         send: n,
         room: t,
@@ -15392,9 +15403,11 @@ export default {
                 })
               })]
             })],
+            "data-table-region": "hand",
             "data-guide-target": "sgs.hand",
             "data-room-region": "sgs.hand"
-          })]
+          })],
+          "data-table-region": "public"
         })]
       });
     },

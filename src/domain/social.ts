@@ -1,4 +1,8 @@
+import { balance } from "./graphwar/balance";
+import { maxRoomSeats } from "./catalogue";
 import { z } from "zod";
+import type { Banner, ChatEvent } from "./banner";
+import type { Attachment } from "./attachments";
 export const interactionCatalogue = {
   egg: {
     emoji: "🥚",
@@ -147,14 +151,33 @@ export type InteractionStyle =
 export const interactionSchema = z.enum(
   Object.keys(interactionCatalogue) as [InteractionKind, ...InteractionKind[]],
 );
+export const interactionUnitsSchema = z.object({
+  game: z.literal("graphwar"),
+  from: z
+    .number()
+    .int()
+    .min(0)
+    .max(balance.maxPlayers * balance.maxSoldiers - 1),
+  target: z
+    .number()
+    .int()
+    .min(0)
+    .max(balance.maxPlayers * balance.maxSoldiers - 1),
+});
+export type InteractionUnits = z.infer<typeof interactionUnitsSchema>;
 export interface InteractionEvent {
+  units?: InteractionUnits;
   id: string;
   from: number;
   target: number;
   kind: InteractionKind;
   time: number;
 }
-export type ChatContent = { type: "text"; text: string };
+export type ChatContent =
+  | ChatEvent
+  | { type: "text"; text: string }
+  | { type: "banner"; text: string; banner: Banner }
+  | { type: "image"; text: string; attachment: Attachment };
 export type ChatMessage = ChatContent & {
   id: string;
   sequence: number;

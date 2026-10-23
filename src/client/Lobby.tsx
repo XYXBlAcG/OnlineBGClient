@@ -1,3 +1,7 @@
+import { balanceSeats } from "../domain/room-balance";
+import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
+import { graphwarOptionsSchema } from "../domain/graphwar/types";
+import { invitationLink } from "./invitation";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import { mahjongOptionsSchema } from "../domain/mahjong/types";
 import { AvatarPicker } from "./AvatarPicker";
@@ -36,7 +40,7 @@ export function Lobby({
     temporary: boolean,
     hostOnly: boolean,
   ) => void;
-  onJoin: (name: string, invitation: string, service: string) => void;
+  onJoin: (name: string, invitation: string) => void;
 }) {
   const [kind, setKind] = useState<GameKind>("uno");
   const [mode, setMode] = useState<"local" | "network">(
@@ -49,6 +53,7 @@ export function Lobby({
     { difficulty: "normal", name: "" },
   ]);
   const [aiDelayMs, setDelay] = useState(1500);
+  const [graphwar, setGraphwar] = useState(graphwarOptionsSchema.parse({}));
   const [mahjong, setMahjong] = useState(mahjongOptionsSchema.parse({}));
   const [catanTrades, setCatanTrades] = useState(true);
   const [team, setTeam] = useState(false);
@@ -56,11 +61,14 @@ export function Lobby({
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("全部");
   const [endpoint, setEndpoint] = useState(service);
-  const [invitation, setInvitation] = useState(initialRoom);
+  const [invitation, setInvitation] = useState(
+    initialRoom ? invitationLink(initialRoom, service) : "",
+  );
   const [hostOnly, setHostOnly] = useState(false);
   const [temporary, setTemporary] = useState(isTauri());
   const game = gameCatalogue[kind];
-  const total = humans + ai.length;
+  const displayAi = balanceSeats({ kind, humans, ai }).ai;
+  const total = humans + displayAi.length;
   const changeGame = (next: GameKind) => {
     const max = gameCatalogue[next].maxPlayers;
     setKind(next);
@@ -255,14 +263,14 @@ export function Lobby({
         {mode === "network" && (
           <div className="invite-entry">
             <input
-              aria-label="邀请链接或房间号"
-              placeholder="粘贴邀请链接或房间号"
+              aria-label="邀请链接"
+              placeholder="粘贴邀请链接"
               value={invitation}
               onChange={(event) => setInvitation(event.target.value)}
             />
             <button
               disabled={busy || !name.trim() || !invitation.trim()}
-              onClick={() => onJoin(name, invitation, endpoint)}
+              onClick={() => onJoin(name, invitation)}
             >
               加入 / 恢复房间
             </button>
@@ -302,7 +310,8 @@ export function Lobby({
             aria-label="真人人数"
             value={humans}
             onValueChange={(value) => {
-              const count = Number(value);
+              const count = Number(value),
+                manual = ai.filter((entry) => !entry.balance);
               setHumans(count);
               setAi(
                 Array.from(
@@ -310,11 +319,14 @@ export function Lobby({
                     length: game.ai
                       ? Math.max(
                           game.minPlayers - count,
-                          Math.min(ai.length, game.maxPlayers - count),
+                          Math.min(manual.length, game.maxPlayers - count),
                         )
                       : 0,
                   },
-                  (_, index) => ai[index] || { difficulty: "normal", name: "" },
+                  (_, index) =>
+                    manual[index]
+                      ? { ...manual[index], balance: undefined }
+                      : { difficulty: "normal", name: "" },
                 ),
               );
             }}
@@ -354,6 +366,18 @@ export function Lobby({
             )}
           </Select>
         </div>
+        {kind === "graphwar" && (
+          <>
+            <GraphwarOptionsControl value={graphwar} onChange={setGraphwar} />
+            {total * graphwar.soldiers > 36 && graphwar.size === "standard" && (
+              <button
+                onClick={() => setGraphwar({ ...graphwar, size: "large" })}
+              >
+                兵力较多，切换大型地图
+              </button>
+            )}
+          </>
+        )}
         {kind === "scmj" && (
           <MahjongOptionsControl value={mahjong} onChange={setMahjong} />
         )}
@@ -365,9 +389,10 @@ export function Lobby({
             value={total}
             onValueChange={(value) =>
               setAi(
-                Array.from(
-                  { length: Number(value) - humans },
-                  (_, index) => ai[index] || { difficulty: "normal", name: "" },
+                Array.from({ length: Number(value) - humans }, (_, index) =>
+                  ai[index]
+                    ? { ...ai[index], balance: undefined }
+                    : { difficulty: "normal", name: "" },
                 ),
               )
             }
@@ -389,9 +414,11 @@ export function Lobby({
         </div>
         {!game.ai && <p className="muted">{humans} 名真人 · AI 尚未接入</p>}
         <div className="ai-settings">
-          {ai.map((entry, index) => (
+          {displayAi.map((entry, index) => (
             <div className="ai-setting" key={index}>
-              <span className="ai-badge">AI {index + 1}</span>
+              <span className="ai-badge">
+                {entry.balance ? "平衡补位" : `AI ${index + 1}`}
+              </span>
               <input
                 aria-label={`AI ${index + 1} 名称`}
                 placeholder={kind === "sgs" ? "自动使用武将名" : "自动生成名称"}
@@ -399,7 +426,7 @@ export function Lobby({
                 maxLength={24}
                 onChange={(event) =>
                   setAi(
-                    ai.map((value, id) =>
+                    displayAi.map((value, id) =>
                       id === index
                         ? { ...value, name: event.target.value }
                         : value,
@@ -412,7 +439,7 @@ export function Lobby({
                 value={entry.difficulty}
                 onValueChange={(difficulty) =>
                   setAi(
-                    ai.map((value, id) =>
+                    displayAi.map((value, id) =>
                       id === index
                         ? { ...value, difficulty: difficulty as Difficulty }
                         : value,
@@ -429,7 +456,7 @@ export function Lobby({
             </div>
           ))}
         </div>
-        {!!ai.length && (
+        {!!displayAi.length && (
           <label className="tempo-control">
             AI 动作间隔 <output>{(aiDelayMs / 1000).toFixed(1)} 秒</output>
             <Slider
@@ -504,13 +531,14 @@ export function Lobby({
               configSchema.parse({
                 kind,
                 humans,
-                ai,
+                ai: displayAi,
                 team,
                 training,
                 aiDelayMs,
                 auditEnabled: preferences.auditVisible,
                 catanTrades,
                 mahjong,
+                graphwar,
                 performance: preferences.performance,
               }),
               name,

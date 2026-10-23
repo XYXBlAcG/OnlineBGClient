@@ -1,0 +1,500 @@
+.game-symbol[data-game-icon="graphwar"] {
+  background: linear-gradient(145deg, #327adb, #6b56c5);
+  font-family: Georgia, serif;
+  font-size: 32px;
+  color: #fff;
+}
+.original-game[data-game="graphwar"] {
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--text);
+}
+.gw-table {
+  --gw-field: var(--surface);
+  --gw-ink: var(--muted);
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gw-heading {
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px 2px;
+  font-size: 13px;
+}
+.gw-heading small {
+  margin-left: auto;
+  color: var(--muted);
+}
+.gw-team-blue {
+  color: #2473ce;
+}
+.gw-team-orange {
+  color: #c34c28;
+}
+:root[data-color-scheme="dark"] .gw-team-blue {
+  color: #7cb7ff;
+}
+:root[data-color-scheme="dark"] .gw-team-orange {
+  color: #ffab8c;
+}
+.gw-clock {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.gw-clock.is-urgent {
+  color: #d74b30;
+}
+.gw-board-space {
+  flex: 1;
+  min-height: 180px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.gw-board {
+  flex: none;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+.gw-board canvas {
+  display: block;
+}
+.gw-soldier {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  color: var(--gw-team);
+  z-index: 1;
+}
+.original-game .gw-soldier .game-avatar {
+  position: relative;
+  min-width: 28px;
+  min-height: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 2px solid var(--gw-team);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px #0002;
+}
+.gw-soldier .game-avatar-face {
+  font-size: 17px;
+  line-height: 1;
+}
+.gw-soldier .game-avatar-name,
+.gw-unit {
+  display: none;
+}
+.gw-soldier .game-avatar:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.gw-soldier.is-out {
+  opacity: 0.25;
+  pointer-events: none;
+}
+.gw-soldier.is-out .game-avatar-face {
+  filter: grayscale(1);
+}
+.gw-soldier.is-current:not(.is-out)::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 2px solid var(--gw-team);
+  border-radius: 50%;
+}
+.gw-terrain-anchor {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.gw-controls {
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: 6px;
+  background: var(--surface);
+}
+.gw-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.gw-input-row label {
+  font-family: Georgia, serif;
+  font-size: 22px;
+  white-space: nowrap;
+}
+.original-game .gw-input-row input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+  font:
+    16px ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  background: var(--field);
+  color: var(--text);
+  border: 0;
+  border-radius: 10px;
+  outline-offset: 2px;
+}
+.original-game .gw-table button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  background: var(--field);
+  color: var(--text);
+  border: 0;
+  cursor: pointer;
+}
+.original-game .gw-table .primary-button {
+  background: var(--accent);
+  color: var(--accent-text);
+  min-width: 70px;
+  font-weight: 650;
+}
+.original-game .gw-table button:disabled {
+  background: var(--disabled);
+  color: var(--disabled-text);
+  cursor: default;
+}
+.original-game .gw-table .gw-soldier button {
+  padding: 0;
+  background: var(--surface);
+  color: var(--text);
+}
+.gw-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 12px;
+}
+.gw-toolbar .ui-select {
+  min-height: 34px;
+  max-width: 260px;
+}
+.gw-toolbar label {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  white-space: nowrap;
+}
+.gw-help {
+  color: var(--muted);
+}
+.gw-keyboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.original-game .gw-keyboard button {
+  min-width: 38px;
+  font:
+    14px ui-monospace,
+    monospace;
+}
+.gw-validation {
+  margin: 0;
+  font-size: 12px;
+  min-height: 16px;
+  color: var(--muted);
+}
+.gw-validation.is-invalid {
+  color: #c84727;
+}
+.gw-last-shot {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 12px 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.gw-last-shot > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media (max-width: 760px) {
+  .gw-heading {
+    padding: 5px 8px;
+    gap: 5px 10px;
+  }
+  .gw-heading small {
+    display: none;
+  }
+  .gw-controls {
+    padding: 4px 7px;
+    gap: 4px;
+  }
+  .gw-toolbar {
+    gap: 4px 8px;
+  }
+  .gw-help {
+    display: none;
+  }
+  .gw-last-shot {
+    padding: 0 7px 4px;
+  }
+  .gw-input-row {
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .original-game .gw-input-row input {
+    flex-basis: calc(100% - 40px);
+  }
+  .original-game .gw-table button {
+    min-height: 40px;
+    padding: 5px 9px;
+  }
+  .original-game .gw-input-row input {
+    padding: 9px 7px;
+  }
+  .gw-keyboard {
+    max-height: 90px;
+    overflow-y: auto;
+  }
+}
+
+.playing-room .original-game[data-game="graphwar"] {
+  overflow: hidden;
+}
+.gw-heading .gw-end {
+  margin-left: auto;
+  order: 2;
+  font-size: 11px;
+}
+
+.gw-table > .map-viewport {
+  flex: 1;
+  min-height: 0;
+}
+.gw-table .map-tools {
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px;
+}
+.gw-table .map-tools button {
+  min-height: 30px;
+  font-size: 11px;
+}
+.gw-board-space.fitted-map {
+  flex: none;
+}
+.gw-moving .gw-board {
+  cursor: crosshair;
+}
+.gw-moving .gw-soldier {
+  pointer-events: none;
+}
+.gw-health {
+  position: absolute;
+  top: 30px;
+  left: -3px;
+  width: 34px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+  pointer-events: none;
+}
+.gw-health > span {
+  display: block;
+  height: 100%;
+  background: #2cad77;
+}
+.gw-hp-label {
+  position: absolute;
+  left: 50%;
+  top: 36px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  padding: 0 2px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+.gw-tactical-status {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 8px;
+  flex: none;
+}
+.gw-impact-details {
+  font-size: 11px;
+  max-height: 120px;
+  overflow-y: auto;
+  color: var(--muted);
+}
+.gw-impact-details p {
+  margin: 4px 0;
+}
+.mobile-immersive .gw-table .map-tools {
+  display: flex;
+}
+
+.gw-player-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  flex-wrap: wrap;
+  padding: 0 10px;
+}
+.gw-player-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--field);
+  flex: 0 0 auto;
+  max-width: 240px;
+}
+.gw-player-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+  font-size: 12px;
+  max-width: 150px;
+}
+.gw-player-item.is-turn {
+  box-shadow: inset 3px 0 var(--accent);
+}
+.original-game .gw-own-menu {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  margin: 0;
+  padding: 2px;
+}
+.gw-own-menu .game-avatar-face,
+.gw-own-menu .game-avatar-name {
+  display: none;
+}
+.gw-movement-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+.gw-move-confirm {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.gw-tools summary,
+.gw-room-menu summary,
+.map-view-menu summary {
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px 9px;
+}
+.gw-tools[open] {
+  max-height: 30dvh;
+  overflow: auto;
+}
+.gw-room-menu {
+  position: relative;
+  margin-left: auto;
+}
+.gw-room-menu[open] .gw-end {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 5;
+  white-space: nowrap;
+}
+.gw-table .map-viewport {
+  position: relative;
+}
+.gw-table .map-view-menu {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 3;
+  background: var(--raised);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px #0002;
+  max-width: calc(100% - 16px);
+}
+.gw-table .map-view-menu[open] {
+  max-width: 280px;
+}
+.gw-table .map-scroll {
+  height: 100%;
+}
+.gw-table .gw-last-shot {
+  display: block;
+  padding: 0 10px;
+  font-size: 11px;
+}
+.gw-last-shot:not([open]) {
+  max-height: 24px;
+}
+.gw-last-shot span {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.gw-soldier[data-graphwar-selected="true"] {
+  z-index: 2;
+}
+.gw-soldier[data-graphwar-selected="true"] .game-avatar {
+  box-shadow: 0 0 0 5px #3489ef33;
+}
+@media (max-width: 760px) {
+  .gw-player-status {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0 7px;
+  }
+  .gw-player-item {
+    max-width: 190px;
+  }
+  .gw-player-name {
+    max-width: 110px;
+  }
+  .gw-table .gw-board-space {
+    min-height: 0;
+  }
+  .gw-heading {
+    font-size: 12px;
+  }
+  .gw-table .map-view-menu {
+    top: 3px;
+    right: 3px;
+  }
+}

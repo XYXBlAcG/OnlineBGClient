@@ -112,7 +112,7 @@ export function CacheSettings({
             {
               {
                 records: `本机对局记录（${usage.recordCount} 局）`,
-                images: "旧表情缓存",
+                images: "聊天图片缓存",
                 audit: "本地策略记录",
                 runtime: "联机组件",
               }[key]

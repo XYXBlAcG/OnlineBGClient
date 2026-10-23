@@ -1,8 +1,9 @@
+import type { GameOptions } from "./game-options";
 import type { Action, Candidate, GameState } from "./types";
 
 type State<K extends GameState["kind"]> = Extract<GameState, { kind: K }>;
 export interface GameRules {
-  create(players: number, team: boolean): GameState;
+  create(players: number, team: boolean, options?: GameOptions): GameState;
   finished(state: GameState): boolean;
   actors(state: GameState): number[];
   candidates(state: GameState, actor: number): Candidate[];
@@ -10,9 +11,10 @@ export interface GameRules {
   project(state: GameState, actor: number): GameState;
   needsResolution(state: GameState): boolean;
   resolve(state: GameState, seed: string): GameState;
+  resolutionDelay(state: GameState): number | undefined;
 }
 export interface Rules<K extends GameState["kind"]> {
-  create(players: number, team: boolean): State<K>;
+  create(players: number, team: boolean, options?: GameOptions): State<K>;
   finished(state: State<K>): boolean;
   actors(state: State<K>): number[];
   candidates(state: State<K>, actor: number): Candidate[];
@@ -20,14 +22,15 @@ export interface Rules<K extends GameState["kind"]> {
   project(state: State<K>, actor: number): State<K>;
   needsResolution?: (state: State<K>) => boolean;
   resolve?: (state: State<K>, seed: string) => State<K>;
+  resolutionDelay?: (state: State<K>) => number;
 }
 export class GameAdapter<K extends GameState["kind"]> implements GameRules {
   constructor(
     readonly kind: K,
     private rules: Rules<K>,
   ) {}
-  create(players: number, team: boolean): GameState {
-    return this.rules.create(players, team);
+  create(players: number, team: boolean, options?: GameOptions): GameState {
+    return this.rules.create(players, team, options);
   }
   finished(state: GameState): boolean {
     return this.rules.finished(this.state(state));
@@ -50,6 +53,9 @@ export class GameAdapter<K extends GameState["kind"]> implements GameRules {
   resolve(state: GameState, seed: string): GameState {
     if (!this.rules.resolve) throw new Error("没有待结算阶段");
     return this.rules.resolve(this.state(state), seed);
+  }
+  resolutionDelay(state: GameState): number | undefined {
+    return this.rules.resolutionDelay?.(this.state(state));
   }
   private state(state: GameState): State<K> {
     if (state.kind !== this.kind) throw new Error("游戏类型不匹配");

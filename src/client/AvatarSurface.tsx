@@ -12,6 +12,9 @@ import {
 import { PhraseMenu } from "./PhraseMenu";
 export interface AvatarSurfaceProps {
   index: number;
+  effectAnchor?: boolean;
+  unit?: number;
+  onChoose?: () => void;
   className?: string;
   children?: React.ReactNode;
   isTurn?: boolean;
@@ -22,10 +25,17 @@ export interface AvatarSurfaceProps {
   onMotion?: (preferences: MotionPreferences) => void;
   onAvatar?: (avatar: string) => void;
   onPhrase?: (text: string) => void;
-  onInteract?: (target: number, kind: InteractionKind) => void;
+  onInteract?: (
+    target: number,
+    kind: InteractionKind,
+    units?: import("../domain/social").InteractionUnits,
+  ) => void;
 }
 export function AvatarSurface({
   index,
+  effectAnchor = true,
+  unit,
+  onChoose,
   className = "",
   children,
   isTurn,
@@ -40,23 +50,28 @@ export function AvatarSurface({
 }: AvatarSurfaceProps) {
   const seat = snapshot.seats[index];
   if (!seat) return null;
+  const trigger = (
+    <button
+      type="button"
+      className={`game-avatar ${className} ${isTurn ? "is-turn" : ""}`}
+      data-game-avatar={effectAnchor ? index : undefined}
+      data-game-unit={unit}
+      aria-label={`${seat.name}的头像${onChoose ? "：选择此士兵" : ""}`}
+      onClick={onChoose}
+      disabled={
+        replay ||
+        (!onChoose && (index === snapshot.actor ? !onPhrase : !onInteract))
+      }
+    >
+      <span className="game-avatar-face">{seatAvatar(seat)}</span>
+      <span className="game-avatar-name">{seat.name}</span>
+      {children}
+    </button>
+  );
+  if (onChoose) return trigger;
   return (
     <Popover.Root>
-      <Popover.Trigger asChild>
-        <button
-          type="button"
-          className={`game-avatar ${className} ${isTurn ? "is-turn" : ""}`}
-          data-game-avatar={index}
-          aria-label={`${seat.name}的头像`}
-          disabled={
-            replay || (index === snapshot.actor ? !onPhrase : !onInteract)
-          }
-        >
-          <span className="game-avatar-face">{seatAvatar(seat)}</span>
-          <span className="game-avatar-name">{seat.name}</span>
-          {children}
-        </button>
-      </Popover.Trigger>
+      <Popover.Trigger asChild>{trigger}</Popover.Trigger>
       {!replay && (
         <Popover.Portal>
           <Popover.Content

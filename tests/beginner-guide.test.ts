@@ -12,6 +12,7 @@ it("registers actionable guides for the supported games", () => {
   expect(Object.keys(beginnerGuides).sort()).toEqual([
     "ccbs",
     "dy",
+    "graphwar",
     "ktd",
     "scmj",
     "sgs",

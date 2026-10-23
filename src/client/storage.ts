@@ -1,3 +1,4 @@
+import { attachmentLimits, type Attachment } from "../domain/attachments";
 import { openDB, type DBSchema } from "idb";
 import type { RoomArchive } from "../domain/room";
 import type { ReplayRecord } from "../domain/replay";
@@ -36,13 +37,24 @@ interface ClientDatabase extends DBSchema {
   recordSettings: { key: string; value: boolean };
   recordSeen: { key: string; value: boolean };
   stickers: { key: string; value: CachedImage };
+  attachments: {
+    key: string;
+    value: {
+      room: string;
+      image: Attachment;
+      bytes: Blob;
+      expires: number | null;
+    };
+  };
   local: { key: string; value: LocalSave };
   records: { key: string; value: ReplayRecord };
 }
 export class ClientStore {
   private observed = new Set<string>();
-  private database = openDB<ClientDatabase>("onlinebg-client", 3, {
+  private database = openDB<ClientDatabase>("onlinebg-client", 4, {
     upgrade(database) {
+      if (!database.objectStoreNames.contains("attachments"))
+        database.createObjectStore("attachments");
       if (!database.objectStoreNames.contains("recordSettings"))
         database.createObjectStore("recordSettings");
       if (!database.objectStoreNames.contains("recordSeen"))
@@ -53,6 +65,48 @@ export class ClientStore {
         database.createObjectStore("records");
     },
   });
+  async saveImage(room: string, image: Attachment, bytes: Blob): Promise<void> {
+    const database = await this.database;
+    const transaction = database.transaction("attachments", "readwrite");
+    const images = await transaction.store.getAll();
+    if (
+      images
+        .filter((value) => value.room === room && value.image.id !== image.id)
+        .reduce((size, value) => size + value.bytes.size, 0) +
+        bytes.size >
+      attachmentLimits.roomBytes
+    )
+      throw new Error("房间图片缓存已满，请清理");
+    await transaction.store.put(
+      { room, image, bytes, expires: null },
+      `${room}:${image.id}`,
+    );
+    await transaction.done;
+  }
+  async image(room: string, id: string) {
+    const value = await (
+      await this.database
+    ).get("attachments", `${room}:${id}`);
+    return value && (value.expires === null || value.expires > Date.now())
+      ? value
+      : undefined;
+  }
+  async expireImages(room: string): Promise<void> {
+    const transaction = (await this.database).transaction(
+      "attachments",
+      "readwrite",
+    );
+    let cursor = await transaction.store.openCursor();
+    while (cursor) {
+      if (cursor.value.room === room)
+        await cursor.update({
+          ...cursor.value,
+          expires: Date.now() + attachmentLimits.ttl,
+        });
+      cursor = await cursor.continue();
+    }
+    await transaction.done;
+  }
   async cacheUsage(): Promise<{
     images: number;
     audit: number;
@@ -60,14 +114,21 @@ export class ClientStore {
     recordCount: number;
   }> {
     const database = await this.database;
-    const images = (
-      database.objectStoreNames.contains("stickers")
+    const media = await database.getAll("attachments");
+    for (const value of media)
+      if (value.expires !== null && value.expires <= Date.now())
+        await database.delete("attachments", `${value.room}:${value.image.id}`);
+    const images =
+      media
+        .filter((value) => value.expires === null || value.expires > Date.now())
+        .reduce((total, value) => total + value.bytes.size, 0) +
+      (database.objectStoreNames.contains("stickers")
         ? await database.getAll("stickers")
         : []
-    ).reduce(
-      (total, value) => total + value.bytes.size + value.preview.size,
-      0,
-    );
+      ).reduce(
+        (total, value) => total + value.bytes.size + value.preview.size,
+        0,
+      );
     const save = await database.get("local", "active");
     const audit =
       save && (save.room.decisions.length || save.room.summaries.length)
@@ -94,11 +155,9 @@ export class ClientStore {
     records?: boolean;
   }): Promise<void> {
     const database = await this.database;
-    const stores: Array<"stickers" | "local" | "records" | "recordSeen"> = [
-      "local",
-      "records",
-      "recordSeen",
-    ];
+    const stores: Array<
+      "stickers" | "attachments" | "local" | "records" | "recordSeen"
+    > = ["local", "attachments", "records", "recordSeen"];
     if (database.objectStoreNames.contains("stickers")) stores.push("stickers");
     const transaction = database.transaction(stores, "readwrite");
     if (selection.records) {
@@ -111,6 +170,7 @@ export class ClientStore {
         await transaction.objectStore("local").put(save, "active");
       }
     }
+    if (selection.images) await transaction.objectStore("attachments").clear();
     if (selection.images && database.objectStoreNames.contains("stickers"))
       await transaction.objectStore("stickers").clear();
     if (selection.audit) {

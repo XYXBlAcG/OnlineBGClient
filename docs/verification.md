@@ -113,7 +113,7 @@ Windows 11 原生窗口、DPI、输入法与跳棋 AI 仍需对应平台验收�
 
 四川麻将已在真实 Chromium 三席＋服务端 AI 跑完牌局，验证同时换三张和定缺、私牌投影、出牌动画、聊天、托管及取消、零和结算、回放播放暂停与只读；检查 1366×768、390×844、844×390。困难 AI 通过真实 CPU Worker 决策与已完成抽样的审核复现。手机尺寸使用触屏模拟，不能代替真实设备与 Windows WebView2 验收。
 
-四川麻将 macOS WebView 已验证本地 AI 线程、自动换牌与定缺、本人出牌、对手牌背、托管／取消和手牌边界；[原生结果](../artifacts/review/sichuan-native-verification.txt)。审核包为 `artifacts/review/OnlineBGClient-Sichuan-macOS-arm64-review.zip`，使用本地临时签名并校验资源完整性。
+四川麻将 macOS WebView 已验证本地 AI 线程、自动换牌与定缺、本人出牌、对手牌背、托管／取消和手牌边界；[原生结果](../artifacts/review/sichuan-native-verification.txt)。当前审核应用与打开方式见 [本地审核入口](review-and-submit.md#本地-macos-审核应用)。
 
 多人房间的记录事务、关闭保存、清理后不回填、恢复数据隔离与准备状态由 [记录测试](../tests/record-history.test.ts)、[房间测试](../tests/room-polish.test.ts) 覆盖。界面操作由用户依照 [手动验收](multiplayer-room-experience.md#手动验收) 执行；不启动浏览器或桌面界面自动化检查。
 
@@ -124,3 +124,15 @@ Windows 11 原生窗口、DPI、输入法与跳棋 AI 仍需对应平台验收�
 检查脚本的静态源码依赖与目录加载由 [Node 导入检查](../tests/smoke-imports.test.ts) 在独立进程验证，不启动浏览器。
 
 布局变化后的动画副本与尺寸同步、源元素透明度保留由 [动画采样测试](../tests/table-animation-sampling.test.ts) 覆盖；浏览器落点精度入口为 [体验检查](../scripts/verify-experience.mjs)。
+
+手机牌桌、共享主题与链接加入见 [人工验收入口](mobile-table-review.md)；非界面检查见 [手机结构](../tests/mobile-experience.test.tsx)、[邀请解析](../tests/invitation.test.ts)、[缩放几何](../tests/map-view.test.ts)、[主题](../tests/themes.test.ts)、[原生重试](../src-tauri/src/hosting_retry.rs)。
+
+横幅授权、去重与回放注释见 [横幅测试](../tests/banner.test.ts)，本机开关、时钟差与队列见 [显示测试](../tests/banner-display.test.tsx)，图片隔离和回收见 [文件存储](../tests/attachments.test.ts)、[本机图片](../tests/chat-image-storage.test.ts)，HTTP 与连接见 [媒体 HTTP](../tests/media-http.test.ts)、[WebSocket](../tests/connection.test.ts)，等待室与快捷键见 [结构](../tests/mobile-room-toolbar.test.tsx)、[注册](../tests/room-command-registration.test.tsx)，声音资源见 [调度](../tests/cue-player.test.ts)。真实手机与桌面界面验收见 [手动步骤](mobile-social-experience.md#手动验收)。
+
+横屏视口、图片档位与指令目录见 [策略检查](../tests/landscape-social-policy.test.ts)，全部游戏的真实组件静态输出与共享开关契约见 [结构检查](../tests/landscape-game-structure.test.tsx)，地图旋转后相对位置见 [几何检查](../tests/map-view.test.ts)。这些检查不运行浏览器或操作屏幕，实际验收见 [横屏手动清单](mobile-landscape-plan.md#手动验收)。
+
+Graphwar 规则、回放、真实 CPU Worker 与 HTTP/WebSocket 验证见 [测试入口与手动清单](graphwar-plan.md#验证入口)。静态组件检查不启动界面；Windows、手机与跨网络验收由用户手动执行。
+
+Graphwar 的血量、弧长衰减、自适应采样、密集地图通路和战术行为见 [平衡检查与手动审核](graphwar-balance-plan.md#验证与手动审核)。界面、设备性能和真人难度仍由用户手动判断。
+
+Graphwar 选兵、首轮护阵、移动判定、补位幂等及地图初始记录见 [战术测试](../tests/graphwar-tactics.test.ts)。指定士兵间投掷通过 [真实 WebSocket](../tests/graphwar-network.test.ts) 检查；实际轨迹、图层与触控由用户按 [手动清单](graphwar-interaction-plan.md#手动审核) 验收。

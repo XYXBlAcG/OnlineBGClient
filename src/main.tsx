@@ -1,10 +1,17 @@
+import { useMobileViewport } from "./client/use-mobile-viewport";
+import type { Attachment } from "./domain/attachments";
+import { BannerLayer } from "./client/social/BannerLayer";
+import { useGameFeedback } from "./client/use-game-feedback";
+import { cuePlayer } from "./client/sound";
+import { RoomToolbar } from "./client/RoomToolbar";
 import { roomReadiness } from "./client/room-readiness";
+import { invitationLink, parseInvitation } from "./client/invitation";
+import { ThemeControl } from "./client/ThemeControl";
 import { AuxiliaryRoot } from "./client/native/AuxiliaryRoot";
 import { auxiliaryView } from "./client/native/contract";
 import { nativeMain, useNativeWindow } from "./client/native/windows";
 import { ComputeDiagnostics } from "./client/ComputeDiagnostics";
 import type { ComputeDiagnostic } from "./domain/compute-diagnostics";
-import { RoomSetup } from "./client/RoomSetup";
 import { beginnerGuides } from "./client/beginner-guides";
 import { BeginnerGuide } from "./client/BeginnerGuide";
 import { Notices } from "./client/Notices";
@@ -27,7 +34,6 @@ import { About } from "./client/About";
 import { Records } from "./client/Records";
 import { ClientStore } from "./client/storage";
 import { Settings } from "./client/Settings";
-import { GameCommands } from "./client/GameCommands";
 import { CommandRegistry } from "./client/commands";
 import { loadPreferences, type Preferences } from "./client/preferences";
 import { Select } from "./client/ui/Controls";
@@ -58,6 +64,8 @@ import { gameCatalogue } from "./domain/catalogue";
 import { cardNames, skillNames } from "./domain/terms";
 import "./styles.css";
 import "./client/ui/experience.css";
+import "./client/ui/social-experience.css";
+import "./client/ui/mobile-landscape.css";
 
 const emptyInteractions: InteractionEvent[] = [];
 const invited = new URLSearchParams(location.search);
@@ -71,6 +79,7 @@ const initialService =
 
 function App() {
   const mobile = useMobile();
+  useMobileViewport(mobile);
   const windowWidth = useWindowWidth();
   const narrowLayout = windowWidth < sidebarBreakpoint;
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -121,11 +130,21 @@ function App() {
     !!snapshot &&
     !!beginnerGuides[snapshot.kind] &&
     !!preferences.beginnerGuides[snapshot.kind];
+  useGameFeedback(snapshot, preferences);
   const guideShown = guideEnabled && sidebarTab === "guide";
   const sidebarOpen =
     guideShown || (sidebarTab === "chat" && preferences.chatVisible);
   const detachedSidebar = nativeMain() && narrowLayout;
-  const sidebarVisible = sidebarOpen && !focused && !detachedSidebar;
+  const immersive =
+    mobile &&
+    focused &&
+    !!snapshot?.state &&
+    !snapshot.finished &&
+    tab === "game";
+  const sidebarVisible =
+    sidebarOpen &&
+    (!focused || (mobile && sidebarTab === "chat")) &&
+    !detachedSidebar;
   const sidebarWidth = Math.min(
     preferences.sidebarWidth,
     sidebarBounds(windowWidth).max,
@@ -237,6 +256,15 @@ function App() {
         text,
       });
   }, []);
+  const sendImage = useCallback((attachment: Attachment) => {
+    if (session.current)
+      connection.current?.send({
+        type: "chat-image",
+        token: session.current.token,
+        id: crypto.randomUUID(),
+        attachment,
+      });
+  }, []);
   const receive = async (response: Response) => {
     if (response.type === "activity") {
       setActionPending(response.pending);
@@ -272,6 +300,7 @@ function App() {
       setInteractions((events) => [...events, response.event].slice(-8));
     if (response.type === "error") {
       setNotice(response.message);
+      if (preferencesRef.current.turnSound) cuePlayer.play("reject");
       if (response.diagnostic) setComputeFailure(response.diagnostic);
     }
     if (response.type === "session") {
@@ -293,9 +322,10 @@ function App() {
         .catch((error) => setNotice(String(error)));
       setSnapshot(response.snapshot);
       if (connection.current instanceof NetworkConnection) {
-        const url = new URL(connection.current.endpoint);
-        url.searchParams.set("room", response.snapshot.room);
-        localStorage.setItem("onlinebg.last-room", url.href);
+        localStorage.setItem(
+          "onlinebg.last-room",
+          invitationLink(response.snapshot.room, connection.current.endpoint),
+        );
       }
     }
   };
@@ -307,13 +337,18 @@ function App() {
     setInteractions([]);
   }, [snapshot?.room, snapshot?.kind, !!snapshot?.state]);
   const interact = useCallback(
-    (target: number, kind: InteractionKind) =>
+    (
+      target: number,
+      kind: InteractionKind,
+      units?: import("./domain/social").InteractionUnits,
+    ) =>
       connection.current?.send({
         type: "interaction",
         token: session.current!.token,
         id: crypto.randomUUID(),
         target,
         kind,
+        units,
       }),
     [],
   );
@@ -331,9 +366,10 @@ function App() {
     setStatus("连接已取消");
   };
   const toggleChat = () => {
-    const open = sidebarTab !== "chat" || !preferences.chatVisible || focused;
+    const open =
+      sidebarTab !== "chat" || !preferences.chatVisible || (!mobile && focused);
     setSidebarTab(open ? "chat" : null);
-    setFocused(false);
+    if (!mobile) setFocused(false);
     setGuideLocated(false);
     setPreferences((value) => ({ ...value, chatVisible: open }));
   };
@@ -402,16 +438,10 @@ function App() {
       if (generation === launch.current) setBusy(false);
     }
   };
-  const join = (name: string, invitation: string, endpoint: string) => {
+  const join = (name: string, invitation: string) => {
     launch.current++;
     try {
-      let room = invitation.trim();
-      if (/^https?:\/\//.test(room)) {
-        const url = new URL(room);
-        room = url.searchParams.get("room") || "";
-        endpoint = url.searchParams.get("service") || url.origin;
-      }
-      if (!room) throw new Error("邀请链接没有房间号");
+      const { room, service: endpoint } = parseInvitation(invitation);
       connection.current?.close();
       localStorage.setItem("player-name", name);
       setMode("network");
@@ -541,11 +571,8 @@ function App() {
     const timer = setTimeout(() => setInviteCopied(false), 2500);
     return () => clearTimeout(timer);
   }, [inviteCopied]);
-  const invitationUrl = () => {
-    const url = new URL(service);
-    if (snapshot) url.searchParams.set("room", snapshot.room);
-    return url.href;
-  };
+  const invitationUrl = () =>
+    snapshot ? invitationLink(snapshot.room, service) : service;
   const invite = async () => {
     const url = new URL(invitationUrl());
     try {
@@ -690,9 +717,18 @@ function App() {
       snapshot: snapshot!,
       preferences,
       endpoint: mode === "network" ? service : undefined,
+      token: session.current?.token,
     },
     (intent) => {
       if (intent.type === "chat-text") sendChat(intent.text);
+      if (intent.type === "chat-image") sendImage(intent.attachment);
+      if (intent.type === "chat-image-quality")
+        setPreferences((value) => ({ ...value, imageQuality: intent.quality }));
+      if (intent.type === "chat-banners")
+        setPreferences((value) => ({
+          ...value,
+          bannerDisplay: intent.enabled,
+        }));
       if (intent.type === "close") {
         setSidebarTab((value) => (value === "chat" ? null : value));
         setPreferences((value) => ({ ...value, chatVisible: false }));
@@ -731,7 +767,9 @@ function App() {
   };
   return (
     <MotionProvider preferences={preferences}>
-      <div className={`app-shell ${mobile ? "mobile-shell" : ""}`}>
+      <div
+        className={`app-shell ${mobile ? "mobile-shell" : ""} ${immersive ? "mobile-immersive" : ""}`}
+      >
         <Confirmation />
         {!nativeMain() && (
           <Panel
@@ -771,6 +809,11 @@ function App() {
           />
         )}
         <Settings
+          mediaSession={
+            snapshot?.canManage && session.current && mode === "network"
+              ? { ...session.current, endpoint: service }
+              : undefined
+          }
           canConfigureAI={
             !snapshot ||
             (snapshot.canManage && (!snapshot.host || snapshot.actor < 0))
@@ -864,7 +907,6 @@ function App() {
                     join(
                       localStorage.getItem("player-name") || "我",
                       localStorage.getItem("onlinebg.last-room")!,
-                      service,
                     )
                   }
                 >
@@ -892,128 +934,46 @@ function App() {
             }
           >
             <section className="game-area">
-              <div className="room-toolbar">
-                <strong>
-                  {gameCatalogue[snapshot.kind].name} · {snapshot.room}
-                </strong>
-                {latencyMs !== undefined && mode === "network" && (
-                  <small
-                    className="network-latency"
-                    title="最近操作的网络往返时间"
-                  >
-                    {latencyMs} ms
-                  </small>
-                )}
-                {(mobile || !snapshot.state || tab !== "game") && (
-                  <button
-                    aria-pressed={focused}
-                    onClick={() => setFocused(!focused)}
-                  >
-                    {focused ? "恢复界面" : "专注模式"}
-                  </button>
-                )}
-                {snapshot.canManage &&
-                  snapshot.state &&
-                  snapshot.config.ai.length > 0 && (
-                    <button
-                      onClick={() => {
-                        if (snapshot.aiPaused) setComputeFailure(null);
-                        connection.current!.send({
-                          type: "ai-run",
-                          token: session.current!.token,
-                          enabled: snapshot.aiPaused,
-                        });
-                      }}
-                    >
-                      {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
-                    </button>
-                  )}
-                {snapshot.canManage && (
-                  <RoomSetup
-                    snapshot={snapshot}
-                    onError={setNotice}
-                    onApply={(setup) =>
-                      connection.current!.send({
-                        type: "game",
-                        token: session.current!.token,
-                        setup,
-                      })
-                    }
-                  />
-                )}
-                {mode === "network" && (
-                  <div className="room-invite">
-                    {!mobile && (
-                      <button onClick={invite} aria-live="polite">
-                        {inviteCopied ? "已复制邀请" : "复制邀请"}
-                      </button>
-                    )}
-                    <button onClick={() => setInviteOpen(true)}>
-                      {mobile ? "邀请" : "邀请二维码"}
-                    </button>
-                  </div>
-                )}
-                <details
-                  className="room-options"
-                  onClick={(event) => {
-                    if (
-                      event.target instanceof Element &&
-                      event.target.closest('button:not([role="combobox"])')
-                    )
-                      event.currentTarget.open = false;
-                  }}
-                >
-                  <summary>房间操作</summary>
-                  <div>
-                    {snapshot.actor >= 0 && (
-                      <GameCommands
-                        snapshot={snapshot}
-                        act={act}
-                        registry={registry}
-                        bindings={preferences.bindings}
-                        pending={actionPending}
-                      />
-                    )}
-                    {snapshot.canManage && gameCatalogue[snapshot.kind].ai && (
-                      <label className="room-tempo">
-                        AI 间隔{" "}
-                        <Select
-                          aria-label="对局 AI 间隔"
-                          value={snapshot.config.aiDelayMs}
-                          onValueChange={(value) =>
-                            connection.current!.send({
-                              type: "tempo",
-                              token: session.current!.token,
-                              delayMs: Number(value),
-                            })
-                          }
-                        >
-                          {[
-                            0,
-                            500,
-                            1000,
-                            1500,
-                            2000,
-                            3000,
-                            5000,
-                            snapshot.config.aiDelayMs,
-                          ]
-                            .filter(
-                              (value, index, values) =>
-                                values.indexOf(value) === index,
-                            )
-                            .sort((a, b) => a - b)
-                            .map((value) => (
-                              <option key={value} value={value}>
-                                {value / 1000} 秒
-                              </option>
-                            ))}
-                        </Select>
-                      </label>
-                    )}
-                  </div>
-                </details>
-              </div>
+              <RoomToolbar
+                snapshot={snapshot}
+                mobile={mobile}
+                focused={focused}
+                onFocus={() => setFocused(!focused)}
+                preferences={preferences}
+                onTheme={(theme) =>
+                  setPreferences((value) => ({ ...value, theme }))
+                }
+                latency={latencyMs ?? undefined}
+                network={mode === "network"}
+                invite={invite}
+                inviteCopied={inviteCopied}
+                onInvite={() => setInviteOpen(true)}
+                send={(command) =>
+                  connection.current!.send({
+                    ...command,
+                    token: session.current!.token,
+                  })
+                }
+                onError={setNotice}
+                act={act}
+                registry={registry}
+                pending={actionPending}
+                guideAvailable={!!beginnerGuides[snapshot.kind]}
+                guideEnabled={guideEnabled}
+                onGuide={() => {
+                  setFocused(false);
+                  setGuideLocated(false);
+                  setSidebarTab(!guideEnabled ? "guide" : null);
+                  setPreferences((value) => ({
+                    ...value,
+                    chatVisible: false,
+                    beginnerGuides: {
+                      ...value.beginnerGuides,
+                      [snapshot.kind]: !guideEnabled,
+                    },
+                  }));
+                }}
+              />
               <ComputeDiagnostics
                 diagnostic={computeFailure}
                 onError={setNotice}
@@ -1062,6 +1022,7 @@ function App() {
                   </Select>
                 )}
                 <BeginnerGuide
+                  showToggle={!mobile}
                   key={snapshot.kind}
                   snapshot={snapshot}
                   dock={guideDock}
@@ -1298,7 +1259,19 @@ function App() {
                           }
                         }}
                       >
+                        <span
+                          className="game-turn-indicator"
+                          hidden={
+                            !snapshot.playing ||
+                            snapshot.paused ||
+                            !snapshot.candidates.length
+                          }
+                          role="status"
+                        >
+                          {actionPending ? "操作确认中…" : "轮到你了"}
+                        </span>
                         <OriginalGame
+                          pending={actionPending}
                           onAutoplay={(enabled) =>
                             connection.current!.send({
                               type: "autoplay",
@@ -1400,7 +1373,7 @@ function App() {
                 >
                   聊天{unread > 0 ? ` · ${unread}` : ""}
                 </button>
-                {guideEnabled && (
+                {guideEnabled && !immersive && (
                   <button
                     aria-pressed={guideShown}
                     onClick={() => {
@@ -1429,6 +1402,17 @@ function App() {
                   ×
                 </button>
               </nav>
+              {immersive && (
+                <div className="mobile-chat-tools">
+                  <button onClick={() => setFocused(false)}>恢复界面</button>
+                  <ThemeControl
+                    value={preferences.theme}
+                    onChange={(theme) =>
+                      setPreferences((value) => ({ ...value, theme }))
+                    }
+                  />
+                </div>
+              )}
               <div
                 ref={setGuideDock}
                 className="room-guide-slot"
@@ -1438,7 +1422,6 @@ function App() {
               <ChatPanel
                 showClose={false}
                 snapshot={snapshot}
-                compact={mobile}
                 endpoint={mode === "network" ? service : undefined}
                 preferences={{
                   ...preferences,
@@ -1452,10 +1435,35 @@ function App() {
                     chatVisible: false,
                   }));
                 }}
+                token={session.current?.token}
+                onImage={sendImage}
+                onImageQuality={(imageQuality) =>
+                  setPreferences((value) => ({ ...value, imageQuality }))
+                }
+                onBannerDisplay={(bannerDisplay) =>
+                  setPreferences((value) => ({ ...value, bannerDisplay }))
+                }
                 onText={sendChat}
               />
             </aside>
           </main>
+        )}
+        {snapshot && (
+          <BannerLayer
+            serverTime={snapshot.serverTime}
+            room={snapshot.room}
+            messages={snapshot.chat}
+            preferences={preferences}
+          />
+        )}
+        {immersive && (
+          <button
+            className={`immersive-chat ${unread ? "chat-unread" : ""}`}
+            onClick={toggleChat}
+            aria-expanded={sidebarVisible}
+          >
+            聊天{unread ? ` · ${unread}` : ""}
+          </button>
         )}
       </div>
     </MotionProvider>

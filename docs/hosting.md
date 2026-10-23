@@ -11,6 +11,7 @@
 ## 实现入口
 
 - [原生生命周期与组件准备](../src-tauri/src/hosting.rs)
+- [重试上限与取消策略](../src-tauri/src/hosting_retry.rs)
 - [组件来源及哈希](../src-tauri/hosting-runtime.json)
 - [服务资源构建](../scripts/build-hosting.mjs)
 - [大厅入口](../src/client/Lobby.tsx)

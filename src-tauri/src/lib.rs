@@ -5,6 +5,8 @@ mod desktop;
 #[cfg(not(mobile))]
 pub mod hosting;
 #[cfg(not(mobile))]
+mod hosting_retry;
+#[cfg(not(mobile))]
 pub mod windows;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

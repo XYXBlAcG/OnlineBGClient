@@ -1,3 +1,6 @@
+import { attachmentSchema } from "../domain/attachments";
+import { AttachmentStore } from "./attachments";
+import { MediaHttp } from "./media-http";
 import { SnapshotStream } from "../domain/sync";
 import { availableParallelism } from "node:os";
 import { ComputePool, SearchCoordinator } from "../domain/compute";
@@ -15,6 +18,16 @@ import { protocolVersion, type Response } from "../domain/protocol";
 const gateway = new Gateway();
 const dataRoot = resolve(process.env.DATA_ROOT || ".data");
 mkdirSync(dataRoot, { recursive: true });
+const media = new MediaHttp(
+  gateway,
+  new AttachmentStore(resolve(dataRoot, "attachments")),
+);
+const mediaCleanup = setInterval(() => {
+  void media.store
+    .prune(new Set(gateway.rooms.keys()))
+    .catch((error) => console.error("图片缓存清理失败", error));
+}, 60000);
+mediaCleanup.unref();
 const store = new RoomStore(resolve(dataRoot, "rooms.sqlite"));
 for (const room of store.load()) {
   gateway.rooms.set(room.id, room);
@@ -65,6 +78,7 @@ const server = createServer(async (request, response) => {
   }
   try {
     const url = new URL(request.url || "/", "http://localhost");
+    if (await media.handle(request, response, url)) return;
     if (url.pathname === "/room-info") {
       const room = gateway.rooms.get(url.searchParams.get("room") || "");
       response.writeHead(room ? 200 : 404, {
@@ -164,6 +178,22 @@ sockets.on("connection", (socket) => {
       try {
         const input = JSON.parse(data.toString());
         requestId = typeof input?.id === "string" ? input.id : undefined;
+        if (input.type === "chat-image") {
+          const session = sessions.get(socket);
+          if (!session || session.token !== input.token)
+            throw new Error("连接身份不匹配");
+          const bytes = await media.store.get(
+            session.room,
+            input.attachment?.id,
+          );
+          if (!bytes) throw new Error("图片尚未上传或已清理，请重新发送");
+          const attachment = await media.store.put(session.room, bytes);
+          if (
+            JSON.stringify(attachment) !==
+            JSON.stringify(attachmentSchema.parse(input.attachment))
+          )
+            throw new Error("图片信息不匹配");
+        }
         const result = gateway.handle(input, sessions.get(socket));
         for (const [other, session] of sessions)
           if (

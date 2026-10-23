@@ -1,3 +1,4 @@
+import { cuePlayer, type Cue } from "./sound";
 import { isTauri } from "@tauri-apps/api/core";
 import {
   isPermissionGranted,
@@ -20,18 +21,6 @@ export function notifyMessage(name: string, text: string): void {
   else if ("Notification" in window && Notification.permission === "granted")
     new Notification(`${name} · 房间消息`, { body: text });
 }
-export function playCue(): void {
-  const context = new AudioContext();
-  const oscillator = context.createOscillator(),
-    gain = context.createGain();
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.frequency.value = 680;
-  gain.gain.setValueAtTime(0.04, context.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.12);
-  oscillator.start();
-  oscillator.stop(context.currentTime + 0.12);
-  oscillator.onended = () => {
-    void context.close();
-  };
+export function playCue(kind: Cue = "message", volume?: number): void {
+  cuePlayer.play(kind, volume);
 }

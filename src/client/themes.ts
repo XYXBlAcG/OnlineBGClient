@@ -98,6 +98,7 @@ export function applyTheme(id: string): void {
   const theme = themes.get(effective);
   const root = document.documentElement;
   root.dataset.theme = id;
+  root.dataset.colorScheme = theme.scheme;
   root.style.colorScheme = theme.scheme;
   for (const [name, value] of Object.entries(theme.tokens))
     root.style.setProperty(`--${name}`, value);

@@ -1,3 +1,5 @@
+import { invitationLink } from "./invitation";
+import { ThemeControl } from "./ThemeControl";
 import { MotionControls } from "./MotionControls";
 import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
@@ -16,7 +18,7 @@ export function MobileJoin({
   room: string;
   service: string;
   busy: boolean;
-  onJoin: (name: string, room: string, service: string) => void;
+  onJoin: (name: string, invitation: string) => void;
 }) {
   const [name, setName] = useState(localStorage.getItem("player-name") || ""),
     [invitation, setInvitation] = useState(room);
@@ -42,7 +44,7 @@ export function MobileJoin({
           localStorage.getItem(`room:${new URL(service).origin}:${room}`) &&
           name.trim()
         )
-          onJoin(name.trim(), room, service);
+          onJoin(name.trim(), invitationLink(room, service));
       })
       .catch((error) => {
         if (!controller.signal.aborted) setError(String(error));
@@ -61,7 +63,10 @@ export function MobileJoin({
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          onJoin(name.trim(), invitation, service);
+          onJoin(
+            name.trim(),
+            room ? invitationLink(room, service) : invitation,
+          );
         }}
       >
         {!room && (
@@ -83,6 +88,10 @@ export function MobileJoin({
         <AvatarPicker
           value={preferences.avatar}
           onChange={(avatar) => onPreferencesChange({ ...preferences, avatar })}
+        />
+        <ThemeControl
+          value={preferences.theme}
+          onChange={(theme) => onPreferencesChange({ ...preferences, theme })}
         />
         <details>
           <summary>动效偏好</summary>

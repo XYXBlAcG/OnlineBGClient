@@ -1,3 +1,4 @@
+import { ReplayBanners } from "./social/ReplayBanners";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
 import { useEffect, useState, useMemo } from "react";
@@ -91,6 +92,7 @@ export function Records({
   const preview: Snapshot | null =
     selected && frames[step]
       ? {
+          serverTime: Date.now(),
           apiVersion: protocolVersion,
           rulesVersion: selected.rulesVersion,
           room: selected.room,
@@ -113,6 +115,7 @@ export function Records({
           candidates: [],
           computation: null,
           aiPaused: false,
+          bannerPolicy: { mode: "off", members: [] },
           chat: [],
           chatSequence: 0,
           chatTotals: {},
@@ -268,6 +271,7 @@ export function Records({
               }}
             />
           </div>
+          {!loading && <ReplayBanners record={selected} step={step} />}
           {loading ? (
             <p>正在重放…</p>
           ) : (

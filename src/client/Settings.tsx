@@ -1,3 +1,5 @@
+import { MediaCacheControls } from "./social/MediaCacheControls";
+import type { MediaSession } from "./social/media";
 import { MotionControls } from "./MotionControls";
 import { useState } from "react";
 import { AvatarPicker } from "./AvatarPicker";
@@ -6,7 +8,7 @@ import type { PerformanceSettings } from "../domain/performance";
 import { PhraseSettings } from "./PhraseSettings";
 import { CacheSettings } from "./CacheSettings";
 import { enableNotifications } from "./notifications";
-import { themes } from "./themes";
+import { ThemeControl } from "./ThemeControl";
 import { Panel, Select, Slider, Switch } from "./ui/Controls";
 import type { Preferences } from "./preferences";
 import type { AppCommand } from "./commands";
@@ -21,6 +23,7 @@ export function Settings({
   onError,
   canConfigureAI = true,
   roomPerformance,
+  mediaSession,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -29,6 +32,7 @@ export function Settings({
   commands: AppCommand[];
   canConfigureAI?: boolean;
   roomPerformance?: PerformanceSettings;
+  mediaSession?: MediaSession;
   onError: (message: string) => void;
   onBind: (id: string, binding: string) => void;
 }) {
@@ -47,6 +51,7 @@ export function Settings({
       })),
       canConfigureAI,
       roomPerformance,
+      mediaSession,
     },
     (intent) => {
       if (intent.type === "close") onOpenChange(false);
@@ -83,26 +88,10 @@ export function Settings({
         <div className="settings-body">
           <section hidden={section !== "外观"} className="settings-section">
             <h3>外观</h3>
-            <div className="setting-row">
-              <span>主题</span>
-              <Select
-                aria-label="外观主题"
-                value={preferences.theme}
-                onValueChange={(theme) =>
-                  onChange({
-                    ...preferences,
-                    theme: theme as Preferences["theme"],
-                  })
-                }
-              >
-                <option value="system">跟随系统</option>
-                {themes.list().map((theme) => (
-                  <option key={theme.id} value={theme.id}>
-                    {theme.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <ThemeControl
+              value={preferences.theme}
+              onChange={(theme) => onChange({ ...preferences, theme })}
+            />
             <MotionControls
               preferences={preferences}
               onChange={(motion) => onChange({ ...preferences, ...motion })}
@@ -124,6 +113,33 @@ export function Settings({
             className="settings-section"
           >
             <h3>消息与互动</h3>
+            <Switch
+              label="本机显示横幅与全屏表情"
+              checked={preferences.bannerDisplay}
+              onCheckedChange={(bannerDisplay) =>
+                onChange({ ...preferences, bannerDisplay })
+              }
+            />
+            <Switch
+              label="回合与结算提示音"
+              checked={preferences.turnSound}
+              onCheckedChange={(turnSound) =>
+                onChange({ ...preferences, turnSound })
+              }
+            />
+            <label>
+              提示音量 · {Math.round(preferences.soundVolume * 100)}%
+              <Slider
+                aria-label="提示音量"
+                min={0}
+                max={1}
+                step={0.05}
+                value={preferences.soundVolume}
+                onValueChange={(soundVolume) =>
+                  onChange({ ...preferences, soundVolume })
+                }
+              />
+            </label>
             <Switch
               label="消息提示音"
               checked={preferences.messageSound}
@@ -221,6 +237,9 @@ export function Settings({
             />
           </div>
           <div hidden={section !== "数据"}>
+            {mediaSession?.endpoint && (
+              <MediaCacheControls session={mediaSession} onError={onError} />
+            )}
             <CacheSettings
               onError={onError}
               onAuditCleared={() =>

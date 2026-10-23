@@ -4,9 +4,10 @@ export function effectMotion(
   dx: number,
   dy: number,
   particleLimit = Infinity,
+  exaggeration=1,
 ) {
   const at = (x: number, y: number, scale = 1, angle = 0) =>
-    `translate(calc(-50% + ${x}px),calc(-50% + ${y}px)) rotate(${angle}deg) scale(${scale})`;
+    `translate(calc(-50% + ${x}px),calc(-50% + ${y}px)) rotate(${angle}deg) scale(${scale*exaggeration})`;
   const spin = ["impact", "confetti", "orbit", "bounce"].includes(style);
   const body: Keyframe[] = [
     { opacity: 0, transform: at(0, 0, 0.4) },
@@ -51,8 +52,8 @@ export function effectMotion(
   );
   const fragments = Array.from({ length: count }, (_, index): Keyframe[] => {
     const angle = (index * Math.PI * 2) / count,
-      x = Math.cos(angle) * 125,
-      y = Math.sin(angle) * 95;
+      x = Math.cos(angle) * 125 * exaggeration,
+      y = Math.sin(angle) * 95 * exaggeration;
     if (style === "rain")
       return [
         { opacity: 0, transform: at(x, -130, 0.6) },

@@ -1,5 +1,7 @@
+import { balance as graphwarBalance } from "./graphwar/balance";
 import {
   sichuanPlugin,
+  graphwarPlugin,
   catanPlugin,
   splendorPlugin,
   poisonPlugin,
@@ -10,6 +12,20 @@ import {
   flightPlugin,
 } from "./builtin-rules";
 export const gameCatalogue = {
+  graphwar: {
+    rules: graphwarPlugin,
+    apiVersion: 1,
+    name: "Graphwar",
+    category: "策略",
+    description: "用函数画出炮火的轨迹",
+    minPlayers: 2,
+    maxPlayers: graphwarBalance.maxPlayers,
+    presentation: { kind: "graphwar" },
+    team: false,
+    symbol: "ƒ",
+    ai: true,
+    version: graphwarBalance.version,
+  },
   scmj: {
     rules: sichuanPlugin,
     apiVersion: 1,
@@ -142,3 +158,7 @@ export const gameKinds = Object.keys(gameCatalogue) as [
   GameKind,
   ...GameKind[],
 ];
+
+export const maxRoomSeats = Math.max(
+  ...gameKinds.map((kind) => gameCatalogue[kind].maxPlayers),
+);

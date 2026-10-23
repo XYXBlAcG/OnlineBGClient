@@ -1,5 +1,27 @@
 import { it, expect } from "vitest";
 import { ThemeRegistry, lightTheme } from "../src/client/themes";
+import { applyTheme } from "../src/client/themes";
+import { vi } from "vitest";
+
+it("publishes the effective scheme for every game while retaining manual and system choices", () => {
+  const root = {
+    dataset: {} as Record<string, string>,
+    style: { colorScheme: "", setProperty: vi.fn() },
+  };
+  vi.stubGlobal("document", { documentElement: root });
+  vi.stubGlobal("matchMedia", () => ({ matches: true }));
+  try {
+    applyTheme("system");
+    expect(root.dataset.theme).toBe("system");
+    expect(root.dataset.colorScheme).toBe("dark");
+    applyTheme("light");
+    expect(root.dataset.colorScheme).toBe("light");
+    applyTheme("dark");
+    expect(root.dataset.colorScheme).toBe("dark");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
 
 it("registers validated theme plugins and rejects duplicated identities or partial palettes", () => {
   const registry = new ThemeRegistry();
@@ -36,10 +58,17 @@ it("restores system theme when a saved plugin is unavailable without discarding 
   vi.unstubAllGlobals();
 });
 
-it('hides strategy auditing by default and preserves an explicit saved opt-in', async () => {
-  const { preferencesSchema, loadPreferences } = await import('../src/client/preferences');
-  const { vi } = await import('vitest');
+it("hides strategy auditing by default and preserves an explicit saved opt-in", async () => {
+  const { preferencesSchema, loadPreferences } =
+    await import("../src/client/preferences");
+  const { vi } = await import("vitest");
   expect(preferencesSchema.parse({}).auditVisible).toBe(false);
-  vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ auditVisible: true }) });
-  try { expect(loadPreferences().auditVisible).toBe(true); } finally { vi.unstubAllGlobals(); }
+  vi.stubGlobal("localStorage", {
+    getItem: () => JSON.stringify({ auditVisible: true }),
+  });
+  try {
+    expect(loadPreferences().auditVisible).toBe(true);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

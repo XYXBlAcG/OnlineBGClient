@@ -1,6 +1,6 @@
 # OnlineBGClient
 
-轻量多游戏桌面客户端，复用 Hullqin 游戏界面与规则。游戏能力由 [游戏目录](src/domain/catalogue.ts) 定义；软件实现入口见 [架构](docs/architecture.md)。
+轻量多游戏桌面客户端，复用 Hullqin 游戏界面与规则，并提供自研游戏牌桌。游戏能力由 [游戏目录](src/domain/catalogue.ts) 定义；软件实现入口见 [架构](docs/architecture.md)。
 
 ## 开发运行
 

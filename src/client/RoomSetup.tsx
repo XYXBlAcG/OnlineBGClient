@@ -1,3 +1,5 @@
+import { balanceSeats } from "../domain/room-balance";
+import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
@@ -23,13 +25,15 @@ export function RoomSetup({
   onClose?: () => void;
 }) {
   const [open, setOpen] = useState(auxiliaryView === "roomsetup"),
-    [config, setConfig] = useState(snapshot.config),
+    [draftConfig, updateConfig] = useState(snapshot.config),
     [retain, setRetain] = useState<string[]>(
       snapshot.seats.filter((s) => !s.difficulty && s.name).map((s) => s.id),
     ),
     [members, setMembers] = useState<string[]>(
       snapshot.seats.filter((s) => !s.difficulty && s.name).map((s) => s.id),
     );
+  const config = balanceSeats(draftConfig);
+  const setConfig = (next: typeof config) => updateConfig(balanceSeats(next));
   const detached = useNativeWindow(
     "roomsetup",
     open,
@@ -93,10 +97,10 @@ export function RoomSetup({
                   kind,
                   humans,
                   ai: g.ai
-                    ? Array.from(
-                        { length: total - humans },
-                        (_, i) =>
-                          config.ai[i] || { difficulty: "normal", name: "" },
+                    ? Array.from({ length: total - humans }, (_, i) =>
+                        config.ai[i]
+                          ? { ...config.ai[i], balance: undefined }
+                          : { difficulty: "normal", name: "" },
                       )
                     : [],
                   team: g.team && config.team,
@@ -116,7 +120,8 @@ export function RoomSetup({
               aria-label="下一局真人席位"
               value={config.humans}
               onValueChange={(value) => {
-                const humans = Number(value);
+                const humans = Number(value),
+                  manual = config.ai.filter((entry) => !entry.balance);
                 setConfig({
                   ...config,
                   humans,
@@ -125,14 +130,13 @@ export function RoomSetup({
                         {
                           length: Math.max(
                             game.minPlayers - humans,
-                            Math.min(
-                              config.ai.length,
-                              game.maxPlayers - humans,
-                            ),
+                            Math.min(manual.length, game.maxPlayers - humans),
                           ),
                         },
                         (_, i) =>
-                          config.ai[i] || { difficulty: "normal", name: "" },
+                          manual[i]
+                            ? { ...manual[i], balance: undefined }
+                            : { difficulty: "normal", name: "" },
                       )
                     : [],
                 });
@@ -181,10 +185,10 @@ export function RoomSetup({
                 onValueChange={(value) =>
                   setConfig({
                     ...config,
-                    ai: Array.from(
-                      { length: Number(value) },
-                      (_, i) =>
-                        config.ai[i] || { difficulty: "normal", name: "" },
+                    ai: Array.from({ length: Number(value) }, (_, i) =>
+                      config.ai[i]
+                        ? { ...config.ai[i], balance: undefined }
+                        : { difficulty: "normal", name: "" },
                     ),
                   })
                 }
@@ -207,6 +211,17 @@ export function RoomSetup({
                 )}
               </Select>
             </label>
+          )}
+          {config.ai.some((s) => s.balance) && (
+            <p className="muted">
+              已自动加入平衡补位 AI，可在席位列表调整名称与难度。
+            </p>
+          )}
+          {config.kind === "graphwar" && (
+            <GraphwarOptionsControl
+              value={config.graphwar}
+              onChange={(graphwar) => setConfig({ ...config, graphwar })}
+            />
           )}
           {config.kind === "scmj" && (
             <MahjongOptionsControl

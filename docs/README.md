@@ -22,3 +22,12 @@
 - [四川麻将：血战到底、AI 与验证入口](sichuan-mahjong-plan.md)
 
 - [多人房间、记录管理与手动验收](multiplayer-room-experience.md)
+- [手机沉浸牌桌、主题与公网重试验收](mobile-table-review.md)
+- [手机等待室、横幅权限与图片聊天](mobile-social-experience.md)
+
+- [手机横屏、横幅表现与图片清晰度](mobile-landscape-plan.md)
+- [Graphwar、AI 与手动验收](graphwar-plan.md)
+
+- [Graphwar 战术、平衡与互动审核](graphwar-balance-plan.md)
+
+- [Graphwar 牌桌、选兵与非对称地图](graphwar-interaction-plan.md)

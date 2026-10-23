@@ -1,0 +1,662 @@
+:root[data-mobile-orientation="landscape"] .mobile-shell:has(.playing-room) {
+  height: var(--mobile-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .app-toolbar {
+  flex: none;
+  min-height: 36px;
+  padding: 2px max(8px, env(safe-area-inset-right));
+  gap: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .app-toolbar
+  > div:first-child {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .app-toolbar button {
+  min-height: 32px;
+  padding: 4px 10px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .playing-room {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0 max(6px, env(safe-area-inset-right)) env(safe-area-inset-bottom)
+    max(6px, env(safe-area-inset-left));
+  gap: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .game-area {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .room-toolbar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  gap: 8px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .room-heading
+  strong {
+  font-size: 15px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .room-heading {
+  justify-content: flex-start;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .room-primary-actions {
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .room-primary-actions
+  > button {
+  min-width: 64px;
+  padding: 6px 10px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .room-navigation {
+  flex: none;
+  align-self: flex-end;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .room-navigation:not(:has(.segmented)) {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .game-stage {
+  flex: 1;
+  min-height: 0;
+  grid-area: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .original-game {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  margin: 0;
+  padding: 3px 5px;
+  overflow: hidden;
+  gap: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game
+  > .button-container {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .game-avatar {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .room-sidebar {
+  position: fixed;
+  top: var(--mobile-top, 0px);
+  bottom: auto;
+  right: env(safe-area-inset-right);
+  left: auto;
+  width: clamp(300px, 45vw, 440px);
+  height: var(--mobile-height, 100dvh);
+  max-height: var(--mobile-height, 100dvh);
+  border-radius: 16px 0 0 16px;
+  padding: 6px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .room-sidebar
+  .chat-panel {
+  max-height: none;
+  bottom: auto;
+  padding: 4px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .chat-heading {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .mobile-chat-tools {
+  flex: none;
+  gap: 4px;
+}
+:root[data-mobile-orientation="landscape"][data-mobile-keyboard="true"]
+  .mobile-shell
+  .room-sidebar {
+  width: min(640px, 100vw);
+}
+:root[data-mobile-keyboard="true"] .mobile-shell .chat-compose-tools {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+:root[data-mobile-keyboard="true"] .mobile-shell .chat-upload-quality {
+  display: none;
+}
+:root[data-mobile-keyboard="true"] .mobile-shell .chat-composer {
+  gap: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell.mobile-immersive
+  .room-layout {
+  height: var(--mobile-height, 100dvh);
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell.mobile-immersive
+  .game-area
+  > :not(.game-stage) {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="uno"] {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 1fr);
+  grid-template-rows: 70px minmax(0, 1fr) auto;
+  --uno-action-height: 40px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="uno"]
+  [data-table-region="piles"] {
+  grid-area: 1 / 1;
+  gap: 2px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="uno"]
+  [data-table-region="status"] {
+  grid-area: 1 / 2;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="uno"]
+  [data-table-region="players"] {
+  grid-area: 2 / 1 / 3 / -1;
+  display: flex;
+  justify-content: flex-start;
+  overflow: auto;
+  margin: 0;
+  gap: 8px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="uno"]
+  [data-table-region="players"]
+  > .w-36 {
+  display: contents;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="uno"]
+  [data-table-region="players"]
+  .flex.mt-2 {
+  min-width: 140px;
+  flex: none;
+  margin: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="uno"]
+  .uno-last-card {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="uno"]
+  [data-table-region="hand"] {
+  grid-area: 3 / 1 / 4 / -1;
+  min-width: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="uno"]
+  [data-table-region="hand"]
+  .uno-list {
+  margin-top: 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="ddz"] {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ddz"]
+  > div:not([class]) {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ddz"]
+  > .table-hand-region {
+  flex: none;
+  margin-top: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ddz"]
+  .ddz-poker-list {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-top: 8px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ddz"]
+  .mt-4 {
+  margin-top: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="sgs"] {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="sgs"]
+  [data-table-region="public"] {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="sgs"]
+  [data-table-region="public"]
+  > .flex:first-child {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  flex: none;
+  align-items: flex-start;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="sgs"]
+  [data-table-region="public"]
+  > .flex:first-child
+  > * {
+  flex-shrink: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="sgs"]
+  [data-table-region="hand"] {
+  flex: none;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="sgs"]
+  .sgs-card-list {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-top: 8px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="ktd"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(220px, 32vw, 330px);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ktd"]
+  > .map-viewport {
+  grid-area: 1 / 1 / 3 / 2;
+  min-height: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ktd"]
+  [data-table-region="actions"] {
+  grid-area: 1 / 2;
+  margin: 0;
+  max-height: 40dvh;
+  overflow: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ktd"]
+  [data-table-region="hand"] {
+  grid-area: 2 / 2;
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ktd"]
+  .catan-hand-panel
+  > .mb-1 {
+  width: 100%;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ktd"]
+  .map-tools {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="ccbs"] {
+  --ccbs-scale: 0.5;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ccbs"]
+  .splendor-table {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(210px, 30vw, 300px);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ccbs"]
+  [data-table-region="public"] {
+  grid-area: 1 / 1 / 3 / 2;
+  min-height: 0;
+  overflow: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ccbs"]
+  [data-table-region="actions"] {
+  grid-area: 1 / 2;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ccbs"]
+  [data-table-region="collection"] {
+  grid-area: 2 / 2;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  align-self: stretch;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="ccbs"]
+  .table-collection
+  > div {
+  display: block;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="dy"] {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="dy"]
+  > .flex {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: flex-start;
+  flex: none;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="dy"]
+  [data-table-region="public"] {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="dy"]
+  [data-table-region="hand"] {
+  flex: none;
+  margin: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="dy"]
+  [data-table-region="hand"]
+  > div {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="fxq"] {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="tq"] {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game:is([data-game="fxq"], [data-game="tq"])
+  .map-viewport {
+  min-height: 0;
+  flex: 1;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="tq"]
+  > div:has(> .map-viewport) {
+  min-height: 0;
+  flex: 1;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game:is([data-game="fxq"], [data-game="tq"])
+  > .flex {
+  flex: none;
+  margin: 0;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="scmj"] {
+  padding: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-board {
+  grid-template-columns: 120px minmax(0, 1fr) 120px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "west north east" "own own own";
+  padding: 4px;
+  gap: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-own {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  grid-template-areas: "south actions" "south hand" "footer footer";
+  gap: 2px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-south {
+  grid-area: south;
+  flex-direction: column;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-actions {
+  grid-area: actions;
+  gap: 4px;
+  min-height: 36px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-hand {
+  grid-area: hand;
+  min-height: 54px;
+  overflow-x: auto;
+  justify-content: flex-start;
+  padding-top: 8px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-footer {
+  grid-area: footer;
+  min-height: 18px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-seat:not(.scmj-south)
+  .scmj-river {
+  max-height: 100%;
+  min-height: 0;
+  overflow: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-tile {
+  flex-shrink: 0;
+  min-width: 30px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  [data-game="scmj"]
+  .scmj-seat:not(.scmj-south) {
+  min-height: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="graphwar"] {
+  padding: 0;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-table {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(225px, 30%);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 3px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-heading {
+  grid-column: 1/-1;
+  padding: 2px 8px;
+  font-size: 11px;
+  gap: 8px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .gw-table
+  > .map-viewport {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-board-space {
+  min-height: 0;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-player-status {
+  grid-column: 1;
+  grid-row: 4;
+  font-size: 10px;
+  padding: 0 7px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-tactical-status {
+  grid-column: 1;
+  grid-row: 3;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-controls {
+  grid-column: 2;
+  grid-row: 2/5;
+  overflow-y: auto;
+  padding: 4px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-input-row {
+  flex-wrap: wrap;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-input-row input {
+  flex: 1;
+  width: calc(100% - 35px);
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-toolbar {
+  align-items: stretch;
+  gap: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .gw-toolbar
+  .ui-select {
+  max-width: 100%;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-last-shot {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .gw-soldier
+  .game-avatar {
+  min-width: 28px;
+  min-height: 28px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .gw-table:has(.gw-controls)
+  .gw-keyboard {
+  max-height: none;
+  overflow: visible;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .gw-table:not(:has(.gw-controls)) {
+  grid-template-columns: minmax(0, 1fr);
+}

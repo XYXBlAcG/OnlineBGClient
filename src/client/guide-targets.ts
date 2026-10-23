@@ -3,6 +3,11 @@ import { UpstreamRuntime } from "../upstream/runtime";
 import type { GuideSnapshot } from "./guide-position";
 import { CardGuides } from "../domain/card-guide";
 export const guideTargetKeys = [
+  "gw.soldier",
+  "gw.axes",
+  "gw.terrain",
+  "gw.formula",
+  "gw.controls",
   "scmj.hand",
   "scmj.lack",
   "scmj.actions",
@@ -43,6 +48,11 @@ export interface TargetQuery {
   wait: string;
 }
 const labels: Record<GuideTargetKey, [string, string]> = {
+  "gw.soldier": ["查看当前发射士兵", "等待战场出现"],
+  "gw.axes": ["查看坐标轴", "等待战场出现"],
+  "gw.terrain": ["查看障碍", "当前是开阔战场；浮岛或堡垒地图才有障碍"],
+  "gw.formula": ["查看函数输入框", "当前为回放或对局已结束"],
+  "gw.controls": ["查看发射操作", "当前为回放或对局已结束"],
   "scmj.hand": ["查看自己的麻将手牌", "等待发牌"],
   "scmj.lack": ["查看定缺花色", "等待手牌出现"],
   "scmj.actions": ["查看当前合法操作", "等待换牌、定缺或轮到自己行动"],
