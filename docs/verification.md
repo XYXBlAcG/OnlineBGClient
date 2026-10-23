@@ -136,3 +136,5 @@ Graphwar 规则、回放、真实 CPU Worker 与 HTTP/WebSocket 验证见 [测�
 Graphwar 的血量、弧长衰减、自适应采样、密集地图通路和战术行为见 [平衡检查与手动审核](graphwar-balance-plan.md#验证与手动审核)。界面、设备性能和真人难度仍由用户手动判断。
 
 Graphwar 选兵、首轮护阵、移动判定、补位幂等及地图初始记录见 [战术测试](../tests/graphwar-tactics.test.ts)。指定士兵间投掷通过 [真实 WebSocket](../tests/graphwar-network.test.ts) 检查；实际轨迹、图层与触控由用户按 [手动清单](graphwar-interaction-plan.md#手动审核) 验收。
+
+CI 房间身份与标题通过 [语义契约](../src/client/room-surface.ts) 和 [共享脚本入口](../scripts/browser-controls.mjs) 读取，不解析展示文案；契约检查见 [静态组件](../tests/mobile-room-toolbar.test.tsx)、[脚本](../tests/smoke-contract.test.ts)。手机拖动以触摸输入检查。界面 smoke 在 GitHub runner 执行，本机仍由用户手动验收。

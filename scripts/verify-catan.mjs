@@ -1,3 +1,4 @@
+import { roomGame, readRoomId } from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
@@ -50,10 +51,8 @@ try {
   await host.getByLabel("昵称", { exact: true }).fill("岛主");
   await host.getByRole("button", { name: "跨网络联机", exact: true }).click();
   await host.getByRole("button", { name: "创建房间", exact: true }).click();
-  await host.locator(".room-toolbar > strong").waitFor();
-  const room = (await host.locator(".room-toolbar > strong").innerText())
-    .split("·")[1]
-    .trim();
+  await roomGame(host).waitFor();
+  const room = await readRoomId(host);
   for (let index = 1; index < players; index++) {
     const guest = pages[index];
     await guest.goto(`${endpoint}/?room=${room}`);
@@ -78,7 +77,7 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 160));
   }
   await expect(host.getByRole("button", { name: /掷骰子/ })).toBeEnabled();
-  await host.locator(".room-toolbar > strong").click();
+  await roomGame(host).click();
   await host.keyboard.press("d");
   await expect(host.getByRole("button", { name: /掷骰子/ })).toBeDisabled();
   for (const page of pages) {

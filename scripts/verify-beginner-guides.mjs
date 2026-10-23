@@ -1,4 +1,9 @@
-import { openRoomSetup } from "./browser-controls.mjs";
+import {
+  openRoomSetup,
+  roomGame,
+  readRoomId,
+  chooseRoomOption,
+} from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, mkdir } from "node:fs/promises";
@@ -121,10 +126,8 @@ try {
     await choose(host, "总席位", "2 人");
     await host.getByRole("button", { name: "跨网络联机", exact: true }).click();
     await host.getByRole("button", { name: "创建房间", exact: true }).click();
-    await expect(host.locator(".room-toolbar > strong")).toBeVisible();
-    const room = (await host.locator(".room-toolbar > strong").innerText())
-      .split("·")[1]
-      .trim();
+    await expect(roomGame(host)).toBeVisible();
+    const room = await readRoomId(host);
     const mobileContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       isMobile: true,
@@ -138,7 +141,7 @@ try {
       .getByRole("button", { name: "加入 / 恢复房间", exact: true })
       .click();
     await expect(mobile.locator(".mobile-shell")).toBeVisible();
-    await mobile.getByRole("button", { name: "新手引导", exact: true }).click();
+    await chooseRoomOption(mobile, "新手引导");
     const mobileGuide = mobile.getByRole("region", { name: `${name}新手引导` });
     await expect(mobileGuide).toBeVisible();
     await mobileGuide.getByRole("button", { name: "下一步" }).focus();
@@ -159,12 +162,10 @@ try {
       await openRoomSetup(host);
       await choose(host, "下一局游戏", target);
       await host.getByRole("button", { name: "应用", exact: true }).click();
-      await expect(mobile.locator(".room-toolbar > strong")).toContainText(
-        target,
-      );
+      await expect(roomGame(mobile)).toContainText(target);
     }
     await expect(mobileGuide).toHaveCount(0);
-    await mobile.getByRole("button",{name:"新手引导",exact:true}).click();
+    await chooseRoomOption(mobile, "新手引导");
     await expect(mobileGuide).toContainText("1 / 5");
     await mobileContext.close();
     await context.close();

@@ -1,3 +1,4 @@
+import { roomSurface } from "./room-surface";
 import { useState } from "react";
 import type { Command, Snapshot } from "../domain/protocol";
 import { gameCatalogue } from "../domain/catalogue";
@@ -65,7 +66,10 @@ export function RoomToolbar({
         <RoomSetup
           snapshot={snapshot}
           onError={onError}
-          onApply={(setup) => send({ type: "game", setup })}
+          onApply={(setup) => {
+            send({ type: "game", setup });
+            setOpen(false);
+          }}
         />
       )}
       {mobile && guideAvailable && (
@@ -143,13 +147,31 @@ export function RoomToolbar({
     </>
   );
   return (
-    <div className="room-toolbar">
+    <div
+      className="room-toolbar"
+      role="region"
+      aria-label={roomSurface.region}
+      data-room-id={snapshot.room}
+    >
       <div className="room-heading">
-        <strong>{gameCatalogue[snapshot.kind].name}</strong>
+        <strong aria-label={roomSurface.game}>
+          {gameCatalogue[snapshot.kind].name}
+        </strong>
         <small>
           {snapshot.seats.filter((seat) => seat.name).length}/
           {snapshot.seats.length} 人
-          {latency !== undefined && network ? ` · ${latency} ms` : ""}
+          {latency !== undefined && network && (
+            <>
+              {" "}
+              ·{" "}
+              <output
+                className="network-latency"
+                aria-label={roomSurface.latency}
+              >
+                {latency} ms
+              </output>
+            </>
+          )}
         </small>
         {!mobile && <small>{snapshot.room}</small>}
       </div>

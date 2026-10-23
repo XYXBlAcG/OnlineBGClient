@@ -1,3 +1,4 @@
+import { roomGame, readRoomId } from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, mkdir } from "node:fs/promises";
@@ -62,10 +63,8 @@ try {
     .getByRole("button", { name: "跨网络联机", exact: true })
     .click();
   await desktop.getByRole("button", { name: "创建房间", exact: true }).click();
-  await desktop.locator(".room-toolbar > strong").waitFor();
-  const room = (await desktop.locator(".room-toolbar > strong").innerText())
-    .split("·")[1]
-    .trim();
+  await roomGame(desktop).waitFor();
+  const room = await readRoomId(desktop);
   await mobile.goto(`${endpoint}/?room=${room}`);
   await mobile.getByLabel("昵称", { exact: true }).fill("手机商人");
   await mobile

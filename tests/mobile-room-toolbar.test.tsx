@@ -47,3 +47,40 @@ it("keeps appearance and setup inside the closed menu and immersion out of the w
     ),
   ).toContain("沉浸牌桌");
 });
+it("exposes structured room identity independently from title layout and latency text", () => {
+  const room = new Room("room-42", {
+    kind: "uno",
+    humans: 1,
+    ai: [{ difficulty: "easy", name: "" }],
+    team: false,
+    training: false,
+  });
+  const token = room.claim("我");
+  const html = renderToStaticMarkup(
+    <RoomToolbar
+      snapshot={room.snapshot(token)}
+      mobile={false}
+      focused={false}
+      onFocus={() => {}}
+      preferences={defaultPreferences}
+      onTheme={() => {}}
+      latency={360}
+      network
+      invite={() => {}}
+      inviteCopied={false}
+      onInvite={() => {}}
+      send={() => {}}
+      onError={() => {}}
+      act={() => {}}
+      registry={new CommandRegistry()}
+      pending={false}
+      guideAvailable={false}
+      guideEnabled={false}
+      onGuide={() => {}}
+    />,
+  );
+  expect(html).toContain('aria-label="房间信息"');
+  expect(html).toContain('data-room-id="room-42"');
+  expect(html).toContain('aria-label="当前房间游戏"');
+  expect(html).toContain('aria-label="网络往返延迟"');
+});

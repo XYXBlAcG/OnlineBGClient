@@ -1,4 +1,4 @@
-import { openRoomSetup } from './browser-controls.mjs';
+import { openRoomSetup, roomGame, readRoomId } from './browser-controls.mjs';
 import { tsImport } from 'tsx/esm/api';
 import { chromium, expect } from '@playwright/test';
 import { existsSync } from 'node:fs';
@@ -78,10 +78,10 @@ try {
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await choose(page, '房间游戏', '斗地主');
-  await expect(page.locator('.room-toolbar > strong')).toContainText('斗地主');
+  await expect(roomGame(page)).toContainText('斗地主');
   await page.reload();
   await page.getByRole('button', { name: '恢复本地对局', exact: true }).click();
-  await expect(page.locator('.room-toolbar > strong')).toContainText('斗地主');
+  await expect(roomGame(page)).toContainText('斗地主');
   await page.getByRole('button', { name: '开始对局', exact: true }).click();
   await page.getByRole('button', { name: '抢地主', exact: true }).click();
   await expect(page.locator('.ddz-poker[draggable=true]')).toHaveCount(20);
@@ -97,8 +97,8 @@ try {
   await expect(host.getByRole('slider', { name: 'AI 动作间隔' })).toHaveCount(0);
   await host.getByRole('button', { name: '跨网络联机', exact: true }).click();
   await host.getByRole('button', { name: '创建房间', exact: true }).click();
-  const header = host.locator('.room-toolbar > strong'); await header.waitFor();
-  const room = (await header.innerText()).split('·')[1].trim();
+  const header = roomGame(host); await header.waitFor();
+  const room = await readRoomId(host);
   const guests = [];
   for (const name of ['甲', '乙']) {
     const guest = await createPage(); await guest.goto(`${endpoint}/?room=${room}`); await guest.getByLabel('昵称', { exact: true }).fill(name);
@@ -125,7 +125,8 @@ try {
   await host.getByRole('button', { name: '结束游戏', exact: true }).click(); await host.getByRole('button', { name: '确认结束', exact: true }).click();
   await choose(host, '房间游戏', '飞行棋');
   for (const client of [host, ...guests]) {
-    await expect(client.locator('.room-toolbar > strong')).toHaveText(`飞行棋 · ${room}`);
+    await expect(roomGame(client)).toHaveText('飞行棋');
+    expect(await readRoomId(client)).toBe(room);
     await client.getByRole('heading', { name: '等待开局', exact: true }).waitFor();
   }
   for (const guest of guests) await guest.getByRole('button', { name: '准备', exact: true }).click();

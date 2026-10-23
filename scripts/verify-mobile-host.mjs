@@ -1,4 +1,4 @@
-import { openRoomSetup } from "./browser-controls.mjs";
+import { openRoomSetup, roomGame, readRoomId } from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { createServer, request } from "node:http";
 import { existsSync } from "node:fs";
@@ -124,9 +124,7 @@ try {
     host.getByRole("heading", { name: "服务运行中", exact: true }),
   ).toBeVisible();
   await expect(host.locator(".original-game")).toHaveCount(0);
-  const room = (await host.locator(".room-toolbar > strong").innerText())
-    .split("·")[1]
-    .trim();
+  const room = await readRoomId(host);
   for (const [index, page] of [first, second].entries()) {
     await page.goto(`${endpoint}/?room=${room}`);
     await page.getByLabel("昵称", { exact: true }).fill(`手机${index + 1}`);
@@ -147,7 +145,10 @@ try {
     host.getByText("对局进行中 · 电脑不占席位", { exact: true }),
   ).toBeVisible();
   await host.getByRole("button", { name: "打开设置", exact: true }).click();
-  await host.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"AI 计算",exact:true}).click();
+  await host
+    .getByRole("navigation", { name: "设置分组" })
+    .getByRole("button", { name: "AI 计算", exact: true })
+    .click();
   await choose(host, "CPU加速模式", "多线程");
   await host
     .getByRole("dialog")
@@ -167,9 +168,12 @@ try {
       await new Promise((resolve) =>
         requestAnimationFrame(() => setTimeout(resolve, 0)),
       );
-      const bounds=document.querySelector(".action-feedback").getBoundingClientRect();
+      const bounds = document
+        .querySelector(".action-feedback")
+        .getBoundingClientRect();
       return {
-        visible:bounds.height > 0 && bounds.bottom <= innerHeight && bounds.top >= 0,
+        visible:
+          bounds.height > 0 && bounds.bottom <= innerHeight && bounds.top >= 0,
         elapsed: performance.now() - start,
         busy: document.querySelector(".game-stage").getAttribute("aria-busy"),
       };
@@ -205,7 +209,9 @@ try {
   ).toBeVisible();
   const gameClonesOnChat = await first.evaluate(() => window.gameClones);
   expect(gameClonesOnChat).toBe(0);
-  await second.getByRole("button", { name: "关闭辅助区域", exact: true }).click();
+  await second
+    .getByRole("button", { name: "关闭辅助区域", exact: true })
+    .click();
   await first.evaluate(() => {
     window.structuredClone = window.originalClone;
   });
@@ -213,9 +219,7 @@ try {
   await choose(first, "下一局游戏", "卡坦岛");
   await first.getByRole("button", { name: "应用", exact: true }).click();
   await first.getByRole("button", { name: "应用配置", exact: true }).click();
-  await expect(second.locator(".room-toolbar > strong")).toContainText(
-    "卡坦岛",
-  );
+  await expect(roomGame(second)).toContainText("卡坦岛");
   await expect(first.locator(".seat-row")).toHaveCount(2);
   await second.getByRole("button", { name: "准备", exact: true }).click();
   await first.getByRole("button", { name: "开始对局", exact: true }).click();

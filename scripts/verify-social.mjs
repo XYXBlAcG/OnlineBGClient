@@ -1,4 +1,9 @@
-import { openRoomSetup, chooseRoomOption } from "./browser-controls.mjs";
+import {
+  openRoomSetup,
+  chooseRoomOption,
+  roomGame,
+  readRoomId,
+} from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { TestService } from "./service-harness.mjs";
 import { existsSync } from "node:fs";
@@ -65,10 +70,8 @@ try {
   await choose(host, "总席位", "3 人");
   await host.getByRole("button", { name: "跨网络联机", exact: true }).click();
   await host.getByRole("button", { name: "创建房间", exact: true }).click();
-  await host.locator(".room-toolbar > strong").waitFor();
-  const room = (await host.locator(".room-toolbar > strong").innerText())
-    .split("·")[1]
-    .trim();
+  await roomGame(host).waitFor();
+  const room = await readRoomId(host);
   const guest = await page(),
     mobile = await page(true);
   for (const p of [guest, mobile]) {
@@ -126,7 +129,7 @@ try {
   expect(
     await host
       .locator(".interaction-layer")
-      .evaluate((node) => node.closest(".original-game") !== null),
+      .evaluate((node) => node.parentElement === document.body),
   ).toBe(true);
   await guest
     .getByRole("banner")
@@ -185,7 +188,10 @@ try {
     .toBe(Math.round(savedWidth));
   await host.getByRole("button", { name: "打开设置", exact: true }).click();
 
-  await host.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"常用语",exact:true}).click();
+  await host
+    .getByRole("navigation", { name: "设置分组" })
+    .getByRole("button", { name: "常用语", exact: true })
+    .click();
   await host.locator(".phrase-settings summary").first().click();
   await host
     .getByLabel("常用语内容 1", { exact: true })
@@ -316,7 +322,7 @@ try {
   await host.getByRole("button", { name: "结束游戏", exact: true }).click();
   await host.getByRole("button", { name: "确认结束", exact: true }).click();
   await choose(host, "房间游戏", "斗地主");
-  await expect(mobile.locator(".room-toolbar>strong")).toContainText("斗地主");
+  await expect(roomGame(mobile)).toContainText("斗地主");
   for (const p of [guest, mobile])
     await p.getByRole("button", { name: "准备", exact: true }).click();
   await host.getByRole("button", { name: "开始对局", exact: true }).click();

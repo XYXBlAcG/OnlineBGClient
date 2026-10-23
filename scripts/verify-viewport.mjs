@@ -1,3 +1,4 @@
+import { chooseRoomOption } from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, mkdir } from "node:fs/promises";
@@ -114,6 +115,9 @@ try {
             { width: 1366, height: 768 },
             { width: 1280, height: 600 },
           ]) {
+        console.log(
+          `VIEWPORT ${kind}/${players}/${mobile ? "touch" : "mouse"} ${size.width}x${size.height}`,
+        );
         await page.setViewportSize(size);
         await expect
           .poll(() =>
@@ -167,22 +171,47 @@ try {
             .getByRole("button", { name: "移动地图", exact: true })
             .click();
           const bounds = await page.locator(".map-scroll").boundingBox();
-          await page.mouse.move(
-            bounds.x + bounds.width / 2,
-            bounds.y + bounds.height / 2,
-          );
-          await page.mouse.down();
-          await page.mouse.move(
-            bounds.x + bounds.width / 2 - 40,
-            bounds.y + bounds.height / 2 - 30,
-            { steps: 4 },
-          );
-          await page.mouse.up();
-          expect(
-            await page
-              .locator(".map-scroll")
-              .evaluate((node) => node.scrollLeft > 0 || node.scrollTop > 0),
-          ).toBe(true);
+          if (mobile) {
+            const session = await context.newCDPSession(page),
+              x = bounds.x + bounds.width / 2,
+              y = bounds.y + bounds.height / 2;
+            try {
+              await session.send("Input.dispatchTouchEvent", {
+                type: "touchStart",
+                touchPoints: [{ x, y }],
+              });
+              for (let step = 1; step <= 4; step++)
+                await session.send("Input.dispatchTouchEvent", {
+                  type: "touchMove",
+                  touchPoints: [{ x: x - 10 * step, y: y - 7.5 * step }],
+                });
+              await session.send("Input.dispatchTouchEvent", {
+                type: "touchEnd",
+                touchPoints: [],
+              });
+            } finally {
+              await session.detach();
+            }
+          } else {
+            await page.mouse.move(
+              bounds.x + bounds.width / 2,
+              bounds.y + bounds.height / 2,
+            );
+            await page.mouse.down();
+            await page.mouse.move(
+              bounds.x + bounds.width / 2 - 40,
+              bounds.y + bounds.height / 2 - 30,
+              { steps: 4 },
+            );
+            await page.mouse.up();
+          }
+          await expect
+            .poll(() =>
+              page
+                .locator(".map-scroll")
+                .evaluate((node) => node.scrollLeft > 0 || node.scrollTop > 0),
+            )
+            .toBe(true);
           await page
             .getByRole("button", { name: "适配窗口", exact: true })
             .click();
@@ -191,12 +220,8 @@ try {
       await page.setViewportSize(
         mobile ? { width: 390, height: 844 } : { width: 1280, height: 720 },
       );
-      const toggle = page.getByRole("button", {
-        name: "新手引导",
-        exact: true,
-      });
-      if (await toggle.count()) {
-        await toggle.click();
+      if (["ktd", "ccbs", "sgs", "dy", "tq"].includes(kind)) {
+        await chooseRoomOption(page, "新手引导");
         await expect(page.locator(".beginner-guide-content")).toBeVisible();
         await expect(
           page.getByRole("button", { name: "下一步", exact: true }),
@@ -225,7 +250,7 @@ try {
       }
       if (mobile) {
         await page
-          .getByRole("button", { name: "专注模式", exact: true })
+          .getByRole("button", { name: "沉浸牌桌", exact: true })
           .click();
         await expect(page.locator(".room-sidebar")).toBeHidden();
         await page

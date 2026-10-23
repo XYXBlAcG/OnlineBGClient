@@ -68,12 +68,12 @@ try {
   await expect(page.getByRole("alert")).toContainText("弹窗内的操作提示");
   await page.getByRole("navigation",{name:"设置分组"}).getByRole("button",{name:"数据",exact:true}).click();
   await expect(
-    page.getByText("旧表情缓存 · 22 B", { exact: true }),
+    page.getByText("聊天图片缓存 · 22 B", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "清理选中缓存", exact: true }).click();
   await page.getByRole("button", { name: "清理缓存", exact: true }).click();
   await expect(
-    page.getByText("旧表情缓存 · 0 B", { exact: true }),
+    page.getByText("聊天图片缓存 · 0 B", { exact: true }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator(".original-game")).toBeVisible();
