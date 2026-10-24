@@ -30,7 +30,10 @@ export async function placeCatanBuilding(page, peers = [page]) {
   const board = page.locator('.original-game[data-game="ktd"]');
   await expect(board).toHaveAttribute("data-game-version", /\d+/);
   const version = Number(await board.getAttribute("data-game-version"));
-  await board.locator('[data-guide-target="ktd.build"]').first().click();
+  const target = board.locator('[data-guide-target="ktd.build"]').first();
+  if (await page.evaluate(() => navigator.maxTouchPoints > 0))
+    await target.tap();
+  else await target.click();
   for (const peer of peers)
     await expect(
       peer.locator('.original-game[data-game="ktd"]'),
