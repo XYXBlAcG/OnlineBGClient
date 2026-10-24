@@ -135,6 +135,12 @@ try {
       }
     }
   });
+  await owner.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
   const dimensions = await owner.evaluate(() => {
     const flipper = document.querySelector(".game-motion-flipper"),
       shell = flipper.parentElement,

@@ -959,17 +959,17 @@ function App() {
                 registry={registry}
                 pending={actionPending}
                 guideAvailable={!!beginnerGuides[snapshot.kind]}
-                guideEnabled={guideEnabled}
+                guideShown={guideShown}
                 onGuide={() => {
                   setFocused(false);
                   setGuideLocated(false);
-                  setSidebarTab(!guideEnabled ? "guide" : null);
+                  setSidebarTab(!guideShown ? "guide" : null);
                   setPreferences((value) => ({
                     ...value,
                     chatVisible: false,
                     beginnerGuides: {
                       ...value.beginnerGuides,
-                      [snapshot.kind]: !guideEnabled,
+                      [snapshot.kind]: !guideShown,
                     },
                   }));
                 }}

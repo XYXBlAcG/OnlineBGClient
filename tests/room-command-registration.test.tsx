@@ -39,7 +39,7 @@ it("preserves game shortcut registration while the room menu is closed", async (
           registry={registry}
           pending={false}
           guideAvailable={false}
-          guideEnabled={false}
+          guideShown={false}
           onGuide={() => {}}
         />,
       );

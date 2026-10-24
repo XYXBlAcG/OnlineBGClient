@@ -1,4 +1,9 @@
-import { openRoomSetup, roomGame, readRoomId } from "./browser-controls.mjs";
+import {
+  placeCatanBuilding,
+  openRoomSetup,
+  roomGame,
+  readRoomId,
+} from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { createServer, request } from "node:http";
 import { existsSync } from "node:fs";
@@ -225,14 +230,7 @@ try {
   await first.getByRole("button", { name: "开始对局", exact: true }).click();
   for (const actor of [0, 0, 1, 1, 1, 1, 0, 0]) {
     const page = actor ? second : first;
-    await page
-      .locator('.original-game svg circle.cursor-pointer[opacity="0.5"]')
-      .first()
-      .click();
-    await expect(page.locator(".game-stage")).toHaveAttribute(
-      "aria-busy",
-      "false",
-    );
+    await placeCatanBuilding(page, [first, second]);
   }
   await expect(first.getByRole("button", { name: /掷骰子/ })).toBeEnabled();
   await mkdir(".tmp/screenshots", { recursive: true });

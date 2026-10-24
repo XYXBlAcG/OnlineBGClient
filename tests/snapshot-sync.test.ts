@@ -28,6 +28,7 @@ it("sends only changed fields and preserves unchanged game references", () => {
     JSON.stringify(full).length / 2,
   );
   expect(replica.apply({ ...delta, base: 0 } as typeof delta)).toBeNull();
-  const restored = replica.apply(stream.next(room.snapshot(first), true));
-  expect(restored).toEqual(room.snapshot(first));
+  const snapshot = room.snapshot(first);
+  const restored = replica.apply(stream.next(snapshot, true));
+  expect(restored).toEqual(snapshot);
 });

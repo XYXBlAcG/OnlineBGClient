@@ -1,4 +1,4 @@
-import { chooseRoomOption } from "./browser-controls.mjs";
+import { chooseRoomOption, pinchMap } from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, mkdir } from "node:fs/promises";
@@ -163,13 +163,19 @@ try {
           }
           expect(mapHeight).toBeGreaterThan(70);
           await expect(page.locator(".catan-hand-panel")).toBeVisible();
-          await page
-            .getByRole("button", { name: "放大地图", exact: true })
-            .click();
+          const landscape = mobile && size.width > size.height;
+          if (landscape) {
+            await expect(page.locator(".map-tools")).toBeHidden();
+            await pinchMap(page, 1.5);
+          } else {
+            await page
+              .getByRole("button", { name: "放大地图", exact: true })
+              .click();
+            await page
+              .getByRole("button", { name: "移动地图", exact: true })
+              .click();
+          }
           await expect(page.locator(".map-tools output")).toHaveText("150%");
-          await page
-            .getByRole("button", { name: "移动地图", exact: true })
-            .click();
           const bounds = await page.locator(".map-scroll").boundingBox();
           if (mobile) {
             const session = await context.newCDPSession(page),
@@ -212,9 +218,14 @@ try {
                 .evaluate((node) => node.scrollLeft > 0 || node.scrollTop > 0),
             )
             .toBe(true);
-          await page
-            .getByRole("button", { name: "适配窗口", exact: true })
-            .click();
+          if (landscape) {
+            await pinchMap(page, 2 / 3);
+            await expect(page.locator(".map-tools output")).toHaveText("100%");
+          } else {
+            await page
+              .getByRole("button", { name: "适配窗口", exact: true })
+              .click();
+          }
         }
       }
       await page.setViewportSize(

@@ -1,4 +1,8 @@
-import { roomGame, readRoomId } from "./browser-controls.mjs";
+import {
+  placeCatanBuilding,
+  roomGame,
+  readRoomId,
+} from "./browser-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
@@ -65,16 +69,11 @@ try {
   await host.getByRole("button", { name: "开始对局", exact: true }).click();
   await host.getByRole("button", { name: "放大地图", exact: true }).click();
   await expect(host.locator(".map-tools output")).toHaveText("150%");
-  const targets = pages.map((page) =>
-    page.locator('.original-game svg circle.cursor-pointer[opacity="0.5"]'),
-  );
   for (const actor of [
     ...Array.from({ length: players }, (_, i) => i),
     ...Array.from({ length: players }, (_, i) => players - 1 - i),
   ].flatMap((actor) => [actor, actor])) {
-    await expect(targets[actor].first()).toBeVisible();
-    await targets[actor].first().click();
-    await new Promise((resolve) => setTimeout(resolve, 160));
+    await placeCatanBuilding(pages[actor], pages);
   }
   await expect(host.getByRole("button", { name: /掷骰子/ })).toBeEnabled();
   await roomGame(host).click();
@@ -119,12 +118,7 @@ try {
   await local.getByRole("button", { name: "开始对局", exact: true }).click();
   for (const actor of [0, 0, 1, 1, 2, 2, 2, 2, 1, 1, 0, 0]) {
     await choose(local, "当前本地玩家", `玩家 ${actor + 1}`);
-    const target = local
-      .locator('.original-game svg circle.cursor-pointer[opacity="0.5"]')
-      .first();
-    await expect(target).toBeVisible();
-    await target.click();
-    await local.waitForTimeout(160);
+    await placeCatanBuilding(local);
   }
   await expect(local.getByRole("button", { name: /掷骰子/ })).toBeEnabled();
   if (errors.length) throw new Error(errors.join("\n"));

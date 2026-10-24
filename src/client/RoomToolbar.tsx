@@ -29,7 +29,7 @@ export function RoomToolbar({
   registry,
   pending,
   guideAvailable,
-  guideEnabled,
+  guideShown,
   onGuide,
 }: {
   snapshot: Snapshot;
@@ -55,7 +55,7 @@ export function RoomToolbar({
   registry: CommandRegistry;
   pending: boolean;
   guideAvailable: boolean;
-  guideEnabled: boolean;
+  guideShown: boolean;
   onGuide: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -74,13 +74,13 @@ export function RoomToolbar({
       )}
       {mobile && guideAvailable && (
         <button
-          aria-pressed={guideEnabled}
+          aria-pressed={guideShown}
           onClick={() => {
             setOpen(false);
             onGuide();
           }}
         >
-          {guideEnabled ? "关闭新手引导" : "新手引导"}
+          {guideShown ? "关闭新手引导" : "新手引导"}
         </button>
       )}
       {mobile &&

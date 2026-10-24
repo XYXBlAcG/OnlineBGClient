@@ -4,6 +4,8 @@
 
 | 范围 | 入口 |
 | --- | --- |
+| 动画目标跟随布局与清理 | [布局跟随测试](../tests/table-anchors.test.ts)、[采样测试](../tests/table-animation-sampling.test.ts) |
+| 卡坦岛原牌桌与规则联动 | [多席位渲染测试](../tests/catan-renderer.test.tsx)、[版本同步与触屏手势](../scripts/browser-controls.mjs) |
 | 游戏语义与 UNO 3D 翻牌 | [语义测试](../tests/game-motion-events.test.ts)、[八游戏浏览器检查](../scripts/verify-experience.mjs)、[UNO 双视角检查](../scripts/verify-uno-motion.mjs)、[原生翻牌检查](../scripts/native-motion-smoke.js)（`COMPANION_SMOKE_PROFILE=motion`） |
 | 四川麻将规则、隐藏牌、并行 AI 与确定性回放 | [规则测试](../tests/sichuan-mahjong.test.ts)、[AI 测试](../tests/sichuan-ai.test.ts) |
 | 四川麻将真实服务三端＋AI、手机布局、结算和回放 | [浏览器验证](../scripts/verify-sichuan.mjs)、[结果](../artifacts/review/sichuan-verification.json) |

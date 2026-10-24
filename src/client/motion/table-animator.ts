@@ -1,3 +1,4 @@
+import { TableAnchors } from "./table-anchors";
 import type { GameMotionEvent } from "../game-motion-events";
 import type { GameHighlight } from "../game-motion";
 import { findSample, sampleTable, type TableSample } from "./table-sample";
@@ -13,6 +14,7 @@ const center = (b: DOMRect) => ({
   y: b.y + b.height / 2,
 });
 export class TableAnimator {
+  private anchors = new TableAnchors();
   private animations = new Set<Animation>();
   private copies = new Set<HTMLElement>();
   private masks = new Map<HTMLElement | SVGElement, string>();
@@ -29,6 +31,7 @@ export class TableAnimator {
   }
   cancel = () => {
     this.closed = true;
+    this.anchors.clear();
     cancelAnimationFrame(this.frame);
     for (const animation of this.animations) animation.cancel();
     for (const copy of this.copies) copy.remove();
@@ -56,7 +59,11 @@ export class TableAnimator {
     );
     return animation;
   }
-  private shell(bounds: DOMRect, content?: Element): HTMLDivElement {
+  private shell(
+    bounds: DOMRect,
+    content?: Element,
+    target?: Element,
+  ): HTMLDivElement {
     const shell = document.createElement("div");
     shell.className = "game-motion-copy";
     shell.inert = true;
@@ -71,6 +78,7 @@ export class TableAnimator {
     if (content) shell.append(content.cloneNode(true));
     document.body.append(shell);
     this.copies.add(shell);
+    if (target) this.anchors.add(shell, target);
     return shell;
   }
   private mask(node: Element) {
@@ -80,6 +88,7 @@ export class TableAnimator {
     }
   }
   private release(shell: HTMLElement, node?: Element) {
+    this.anchors.delete(shell);
     shell.remove();
     this.copies.delete(shell);
     if (node instanceof HTMLElement || node instanceof SVGElement) {
@@ -250,7 +259,7 @@ export class TableAnimator {
         if (event.type === "build") {
           this.mask(after.node);
           usedMasks.add(after.node);
-          const shell = this.shell(after.bounds, after.copy);
+          const shell = this.shell(after.bounds, after.copy, after.node);
           shell.dataset.motionEvent = "build";
           shell.style.transformOrigin = "center bottom";
           this.land(after.bounds);
@@ -337,7 +346,7 @@ export class TableAnimator {
         const content = draw
           ? back?.cloneNode(true)
           : after.copy.cloneNode(true);
-        const shell = this.shell(after.bounds);
+        const shell = this.shell(after.bounds, undefined, after.node);
         shell.dataset.motionEvent = event.type;
         if (reveal) shell.dataset.motionReveal = String(event.card);
         if (actualCard) {
@@ -442,7 +451,7 @@ export class TableAnimator {
         if (Math.abs(dx) + Math.abs(dy) < 3) continue;
         this.mask(after.node);
         usedMasks.add(after.node);
-        const shell = this.shell(after.bounds, after.copy);
+        const shell = this.shell(after.bounds, after.copy, after.node);
         this.animate(
           shell,
           [
