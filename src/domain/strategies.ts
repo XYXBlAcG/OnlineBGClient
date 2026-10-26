@@ -1,3 +1,5 @@
+import { ExpeditionStrategy } from "./expedition/ai";
+import { DominionStrategy } from "./dominion/strategy";
 import { GraphwarStrategy } from "./graphwar/strategy";
 import { MahjongStrategy } from "./mahjong/strategy";
 import { CatanStrategy } from "./catan-strategy";
@@ -24,6 +26,8 @@ export class Strategies {
   private kernels = new Map<GameKind, () => Strategy>();
   constructor() {
     for (const [Factory, kinds] of [
+      [ExpeditionStrategy, ["expedition"]],
+      [DominionStrategy, ["dominion"]],
       [Strategy, ["uno", "sgs", "fxq", "tq", "dy"]],
       [CatanStrategy, ["ktd"]],
       [MahjongStrategy, ["scmj"]],

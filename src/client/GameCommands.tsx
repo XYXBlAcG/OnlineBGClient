@@ -1,3 +1,4 @@
+import { gameQuickActions } from "./game-quick-actions";
 import { useNativeWindow } from "./native/windows";
 import { auxiliaryView } from "./native/contract";
 import { useEffect, useRef, useState } from "react";
@@ -87,34 +88,21 @@ export function GameCommands({
         },
       },
     ];
-    const quick =
-      kind === "uno"
-        ? { type: "uno-draw", title: "摸牌 / 不出", binding: "D" }
-        : kind === "ktd"
-          ? { type: "ktd-action", title: "掷骰", binding: "D" }
-          : kind === "fxq"
-            ? { type: "fxq-roll", title: "掷骰", binding: "D" }
-            : null;
-    if (quick)
+    for (const quick of gameQuickActions[kind] ?? [])
       entries.push({
-        id: `${kind}.${quick.type}`,
+        id: `${kind}.${quick.id}`,
         title: quick.title,
         binding: quick.binding,
         enabled: () =>
           !latest.current.open &&
-          latest.current.snapshot.candidates.some(
-            (candidate) =>
-              candidate.action.type === quick.type &&
-              (candidate.action.type !== "ktd-action" ||
-                candidate.action.move.kind === "roll"),
+          !latest.current.pending &&
+          latest.current.snapshot.candidates.some((candidate) =>
+            quick.matches(candidate.action),
           ),
         run: () => {
           if (latest.current.pending) return;
           const candidate = latest.current.snapshot.candidates.find(
-            (candidate) =>
-              candidate.action.type === quick.type &&
-              (candidate.action.type !== "ktd-action" ||
-                candidate.action.move.kind === "roll"),
+            (candidate) => quick.matches(candidate.action),
           );
           if (candidate) latest.current.act(candidate.action);
         },

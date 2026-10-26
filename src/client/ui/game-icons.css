@@ -1,0 +1,43 @@
+.game-symbol[data-game-icon="ccbs"] {
+  background: #167d85;
+  color: #fff;
+}
+.game-symbol[data-game-icon="dy"] {
+  background: #9863bf;
+  color: #fff;
+}
+.game-symbol[data-game-icon="ktd"] {
+  background: #328a72;
+}
+.game-symbol[data-game-icon="ddz"] {
+  background: #98622c;
+}
+.game-symbol[data-game-icon="tq"] {
+  background: #6e49b6;
+}
+.game-symbol[data-game-icon="fxq"] {
+  background: #2471cf;
+}
+.game-symbol[data-game-icon="sgs"] {
+  background: #b64242;
+}
+.game-symbol[data-game-icon="uno"] {
+  background: transparent;
+}
+.game-symbol[data-game-icon="expedition"] {
+  background: linear-gradient(140deg, #7251be, #353e88);
+  color: #fff;
+}
+.game-symbol[data-game-icon="dominion"] {
+  background: linear-gradient(140deg, #a67123, #664323);
+  color: #fff0c4;
+}
+.game-symbol svg {
+  width: 30px;
+  height: 30px;
+}
+.game-symbol:is([data-game-icon="expedition"], [data-game-icon="dominion"])
+  svg {
+  width: 36px;
+  height: 36px;
+}

@@ -12,6 +12,10 @@ export class CuePlayer {
   private context: AudioContext | null = null;
   private lastAt = -Infinity;
   private volume = 0.5;
+  private ducked = false;
+  setDucked(ducked: boolean): void {
+    this.ducked = ducked;
+  }
   constructor(private create: () => AudioContext = () => new AudioContext()) {}
   setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
@@ -37,7 +41,10 @@ export class CuePlayer {
       oscillator.connect(gain);
       gain.connect(context.destination);
       oscillator.frequency.value = note;
-      gain.gain.setValueAtTime(0.055 * volume, start);
+      gain.gain.setValueAtTime(
+        0.055 * volume * (this.ducked ? 0.25 : 1),
+        start,
+      );
       gain.gain.exponentialRampToValueAtTime(0.001, start + 0.14);
       oscillator.start(start);
       oscillator.stop(start + 0.15);

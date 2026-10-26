@@ -8,6 +8,16 @@ export interface LocalSave {
   tokens: string[];
   token: string;
 }
+export interface RunLink {
+  id: string;
+  token: string;
+  room: string;
+  endpoint: string | null;
+  hosted: boolean;
+  updated: number;
+  names: string[];
+  floor: number;
+}
 interface CachedImage {
   bytes: Blob;
   preview: Blob;
@@ -46,13 +56,19 @@ interface ClientDatabase extends DBSchema {
       expires: number | null;
     };
   };
+  runs: { key: string; value: LocalSave };
+  runLinks: { key: string; value: RunLink };
   local: { key: string; value: LocalSave };
   records: { key: string; value: ReplayRecord };
 }
 export class ClientStore {
   private observed = new Set<string>();
-  private database = openDB<ClientDatabase>("onlinebg-client", 4, {
+  private database = openDB<ClientDatabase>("onlinebg-client", 5, {
     upgrade(database) {
+      if (!database.objectStoreNames.contains("runs"))
+        database.createObjectStore("runs");
+      if (!database.objectStoreNames.contains("runLinks"))
+        database.createObjectStore("runLinks");
       if (!database.objectStoreNames.contains("attachments"))
         database.createObjectStore("attachments");
       if (!database.objectStoreNames.contains("recordSettings"))
@@ -184,6 +200,25 @@ export class ClientStore {
     }
     await transaction.done;
     if (selection.records) publishHistory();
+  }
+  async saveRun(id: string, save: LocalSave): Promise<void> {
+    await (await this.database).put("runs", save, id);
+  }
+  async run(id: string): Promise<LocalSave | undefined> {
+    return (await this.database).get("runs", id);
+  }
+  async linkRun(link: RunLink): Promise<void> {
+    await (await this.database).put("runLinks", link, link.id);
+  }
+  async runLinks(): Promise<RunLink[]> {
+    return (await this.database).getAll("runLinks");
+  }
+  async abandonRun(id: string): Promise<void> {
+    const db = await this.database,
+      tx = db.transaction(["runs", "runLinks"], "readwrite");
+    await tx.objectStore("runs").delete(id);
+    await tx.objectStore("runLinks").delete(id);
+    await tx.done;
   }
   async saveLocal(save: LocalSave): Promise<void> {
     const persisted = { ...save, room: { ...save.room, records: [] } };

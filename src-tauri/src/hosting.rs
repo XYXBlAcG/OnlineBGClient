@@ -126,6 +126,11 @@ impl Hosting {
         let mut command = Command::new(node);
         let data = match std::env::var_os("COMPANION_HOST_DATA") { Some(path) => PathBuf::from(path), None => app.path().app_data_dir().map_err(|e| e.to_string())?.join("rooms") };
         command.arg(resources.join("main.mjs")).env("DATA_ROOT", data).env("PORT", "0").env("HOST", "127.0.0.1").env("STATIC_ROOT", resources.join("web"));
+        match crate::voice::load() {
+            Ok(Some(config)) => { command.env("LIVEKIT_URL", config.url).env("LIVEKIT_API_KEY", config.api_key).env("LIVEKIT_API_SECRET", config.secret); }
+            Ok(None) => {}
+            Err(message) => { let _ = app.emit("voice-config-error", message); }
+        }
         let (mut server, lines) = spawn(command)?;
         let deadline = Instant::now() + Duration::from_secs(30);
         let port = loop {

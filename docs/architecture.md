@@ -26,6 +26,7 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 引导中的实际局面与合法动作 | [局面投影](../src/client/guide-position.ts)、[快照契约](../src/domain/protocol.ts) |
 | 武将与锦囊的悬停、聚焦和触屏详情 | [公共详情组件](../src/client/DetailSurface.tsx)、[锦囊牌面](../src/client/CardSurface.tsx)、[锦囊内容](../src/domain/card-guide.ts)、[武将牌面](../src/client/HeroSurface.tsx) |
 | 大厅与游戏分类 | [大厅](../src/client/Lobby.tsx) |
+| 客户端语音与媒体授权 | [配置、实现与验证](client-voice.md) |
 | 系统菜单、托盘和窗口退出 | [桌面](../src-tauri/src/desktop.rs)、[应用入口](../src-tauri/src/lib.rs) |
 | 服务存档 | [SQLite](../src/server/storage.ts) |
 | 本地存档与记录 | [IndexedDB](../src/client/storage.ts) |
@@ -85,3 +86,7 @@ AI 只接收对应席位可见信息。审核展示实际候选、特征贡献�
 四川麻将领域、牌桌、向听依赖与验证入口见 [四川麻将](sichuan-mahjong-plan.md)。自研和原站牌桌使用目录中的显式 `presentation` 类型。
 
 本机历史归档策略、共享控件和多人房间入口见 [多人房间](multiplayer-room-experience.md)。
+
+领土的卡池、规则、私牌投影、AI 与牌桌入口见 [Dominion](dominion.md)。牌桌快捷动作统一注册于 [语义快捷键目录](../src/client/game-quick-actions.ts)。
+
+秘塔远征的战斗与冒险、规则声明的协作行动窗口、独立冒险存档及按需回放入口见 [秘塔远征](expedition.md)。

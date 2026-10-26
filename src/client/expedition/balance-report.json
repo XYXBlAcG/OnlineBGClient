@@ -1,0 +1,96 @@
+{
+  "seedPrefix": "expedition-v1-",
+  "seedStart": 0,
+  "sampleCount": 100,
+  "rows": [
+    {
+      "policy": "random",
+      "name": "随机合法",
+      "runs": 100,
+      "wins": 0,
+      "winRate": 0,
+      "meanHp": 0,
+      "meanRounds": 14.97,
+      "meanBlocked": 56.35,
+      "meanCards": 60.43,
+      "actions": 9054,
+      "elapsedMs": 564.4142499999999
+    },
+    {
+      "policy": "attack",
+      "name": "进攻优先",
+      "runs": 100,
+      "wins": 67,
+      "winRate": 0.67,
+      "meanHp": 13.31,
+      "meanRounds": 11.6,
+      "meanBlocked": 22.36,
+      "meanCards": 64.17,
+      "actions": 8784,
+      "elapsedMs": 2379.268625
+    },
+    {
+      "policy": "balanced",
+      "name": "团队生存",
+      "runs": 100,
+      "wins": 100,
+      "winRate": 1,
+      "meanHp": 33.53,
+      "meanRounds": 12.16,
+      "meanBlocked": 58.08,
+      "meanCards": 70.58,
+      "actions": 9677,
+      "elapsedMs": 2616.710416
+    }
+  ],
+  "environment": "Apple M1; darwin arm64; Node 26.3.0",
+  "holdout": {
+    "seedPrefix": "expedition-v1-",
+    "seedStart": 1000,
+    "sampleCount": 200,
+    "rows": [
+      {
+        "policy": "random",
+        "name": "随机合法",
+        "runs": 200,
+        "wins": 0,
+        "winRate": 0,
+        "meanHp": 0,
+        "meanRounds": 14.905,
+        "meanBlocked": 55.755,
+        "meanCards": 59.515,
+        "actions": 17911,
+        "elapsedMs": 1047.6396670000004
+      },
+      {
+        "policy": "attack",
+        "name": "进攻优先",
+        "runs": 200,
+        "wins": 144,
+        "winRate": 0.72,
+        "meanHp": 15.1,
+        "meanRounds": 11.525,
+        "meanBlocked": 21.54,
+        "meanCards": 63.95,
+        "actions": 17543,
+        "elapsedMs": 4693.617625000001
+      },
+      {
+        "policy": "balanced",
+        "name": "团队生存",
+        "runs": 200,
+        "wins": 200,
+        "winRate": 1,
+        "meanHp": 33,
+        "meanRounds": 12.095,
+        "meanBlocked": 55.825,
+        "meanCards": 70.145,
+        "actions": 19242,
+        "elapsedMs": 5177.620583
+      }
+    ],
+    "environment": "Apple M1; darwin arm64; Node 26.3.0"
+  },
+  "rulesHash": "51c27cfed7cd",
+  "generatedAt": "2026-10-25T04:18:42.612Z"
+}

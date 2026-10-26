@@ -8,6 +8,8 @@ pub mod hosting;
 mod hosting_retry;
 #[cfg(not(mobile))]
 pub mod windows;
+#[cfg(not(mobile))]
+pub mod voice;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,6 +34,10 @@ pub fn run() {
         .setup(desktop::setup)
         .on_menu_event(desktop::menu)
         .invoke_handler(tauri::generate_handler![
+            voice::voice_config,
+            voice::voice_save_config,
+            voice::voice_request,
+            voice::voice_active,
             hosting::start_host,
             hosting::stop_host,
             hosting::clear_cache,
@@ -53,7 +59,7 @@ pub fn run() {
                 use tauri::{Emitter, Manager};
                 let hosting = app.state::<std::sync::Arc<hosting::Hosting>>();
                 if let tauri::RunEvent::ExitRequested { api, .. } = &event {
-                    if hosting.running() && !app.state::<desktop::Desktop>().quitting() {
+                    if (hosting.running() || app.state::<desktop::Desktop>().voice_active()) && !app.state::<desktop::Desktop>().quitting() {
                         api.prevent_exit();
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.show();

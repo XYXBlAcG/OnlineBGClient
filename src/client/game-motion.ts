@@ -15,6 +15,12 @@ export function gameHighlights(
   const target = (name: string) =>
     highlights.push({ selector: `[data-guide-target="${name}"]` });
   switch (next.kind) {
+    case "dominion":
+      if (previous.kind === "dominion") {
+        if (next.view.turn !== previous.view.turn) player(next.view.turn);
+        if (next.view.coins !== previous.view.coins) target("dominion.status");
+      }
+      break;
     case "sgs":
       if (previous.kind === "sgs") {
         next.view.playerBlood.forEach((hp, i) => {

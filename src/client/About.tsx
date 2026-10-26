@@ -1,7 +1,6 @@
 import { useNativeWindow } from "./native/windows";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { ExternalLink } from "./ExternalLink";
 import { Panel } from "./ui/Controls";
-import profile from "./about.json";
 import { productName } from "../../src-tauri/tauri.conf.json";
 import { version } from "../../package.json";
 
@@ -41,20 +40,9 @@ export function About({
       ).map(([key, label, text]) => (
         <p key={key}>
           {label}
-          <a
-            href={profile[key]}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(event) => {
-              if (!isTauri()) return;
-              event.preventDefault();
-              void invoke("open_link", { key }).catch((error) =>
-                onError(String(error)),
-              );
-            }}
-          >
+          <ExternalLink name={key} onError={onError}>
             {text}
-          </a>
+          </ExternalLink>
         </p>
       ))}
     </Panel>

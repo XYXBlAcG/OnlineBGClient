@@ -1,5 +1,7 @@
 import { balance as graphwarBalance } from "./graphwar/balance";
 import {
+  expeditionPlugin,
+  dominionPlugin,
   sichuanPlugin,
   graphwarPlugin,
   catanPlugin,
@@ -12,6 +14,21 @@ import {
   flightPlugin,
 } from "./builtin-rules";
 export const gameCatalogue = {
+  expedition:{rules:expeditionPlugin,apiVersion:1,name:"秘塔远征",category:"合作",description:"协作构筑 · 探索裂隙遗迹",minPlayers:1,maxPlayers:4,presentation:{kind:"expedition"},team:false,symbol:"✧",ai:true,version:"1"},
+  dominion: {
+    rules: dominionPlugin,
+    apiVersion: 1,
+    name: "领土 · Dominion",
+    category: "策略",
+    description: "构筑牌库与王国竞逐",
+    minPlayers: 2,
+    maxPlayers: 4,
+    presentation: { kind: "dominion" },
+    team: false,
+    symbol: "♜",
+    ai: true,
+    version: "1",
+  },
   graphwar: {
     rules: graphwarPlugin,
     apiVersion: 1,

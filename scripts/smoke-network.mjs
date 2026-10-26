@@ -1,45 +1,12 @@
-import {SnapshotReplica} from '../src/domain/sync.ts';
-import WebSocket from 'ws';
+import {NetworkTestClient} from './network-test-client.mjs';
 import assert from 'node:assert/strict';
 
 const endpoint = process.env.TEST_SERVICE || 'http://127.0.0.1:8787';
 const kind = process.env.TEST_GAME || 'uno';
-assert.ok(['uno', 'sgs', 'fxq', 'tq'].includes(kind));
-class Client {
-  messages = [];
-  replica = new SnapshotReplica();
-  waiters = new Set();
-  constructor() {
-    const url = new URL('/connect', endpoint);
-    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    this.socket = new WebSocket(url);
-    this.socket.on('message', message => {
-      let value = JSON.parse(message.toString());
-      if(value.type === 'snapshot' || value.type === 'patch') {const snapshot=this.replica.apply(value);assert.ok(snapshot);value={type:'snapshot',snapshot};}
-      this.messages.push(value);
-      for (const waiter of this.waiters) waiter(value);
-    });
-  }
-  async open() {
-    await new Promise((resolve, reject) => { this.socket.once('open', resolve); this.socket.once('error', reject); });
-  }
-  send(command) { this.socket.send(JSON.stringify(command)); }
-  async wait(predicate, after = 0) {
-    const latest = this.messages.slice(after).findLast(predicate);
-    if (latest) return latest;
-    return await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { this.waiters.delete(waiter); reject(new Error('Timed out waiting for server response')); }, 15000);
-      const waiter = value => {
-        if (predicate(value)) { clearTimeout(timer); this.waiters.delete(waiter); resolve(value); }
-      };
-      this.waiters.add(waiter);
-    });
-  }
-  close() { this.socket.close(); }
-}
+assert.ok(['uno', 'sgs', 'fxq', 'tq', 'dominion'].includes(kind));
 
-const first = new Client();
-const second = new Client();
+const first = new NetworkTestClient(endpoint);
+const second = new NetworkTestClient(endpoint);
 let resumed;
 try {
   await Promise.all([first.open(), second.open()]);
@@ -67,7 +34,7 @@ try {
   await second.wait(message => message.type === 'snapshot' && message.snapshot.chat.some(message => message.text === '双客户端消息验证'));
   second.close();
   await first.wait(message => message.type === 'snapshot' && !message.snapshot.seats[1].online);
-  resumed = new Client();
+  resumed = new NetworkTestClient(endpoint);
   await resumed.open();
   resumed.send({ type: 'join', room: sessionA.room, name: '网络测试乙', token: sessionB.token });
   const restored = await resumed.wait(message => message.type === 'session');
@@ -77,6 +44,11 @@ try {
   assert.equal(snapshot.decisions.length, 0);
   if (kind === 'fxq') assert.equal(snapshot.state.view.planePositionList.length, 12);
   else if (kind === 'tq') assert.equal(snapshot.state.view.playerPieces.length, 3);
+  else if (kind === 'dominion') {
+    assert.equal(snapshot.state.kind, 'dominion');
+    assert.ok(snapshot.state.view.players[0].hand.every(card => card === 'hidden'));
+    assert.ok(snapshot.state.view.players[1].deck.every(card => card === 'hidden'));
+  }
   else {
     const hands = kind === 'uno' ? snapshot.state.view.playerCards : snapshot.state.view.playerHandCard;
     assert.ok(hands[0].every(card => card < 0));

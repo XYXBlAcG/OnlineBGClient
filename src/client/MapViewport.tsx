@@ -1,6 +1,7 @@
 import { createUseGesture, dragAction, pinchAction } from "@use-gesture/react";
 import {
   mapZoom,
+  fitMapZoom,
   zoomScroll,
   resizeScroll,
   type MapViewBounds,
@@ -30,12 +31,20 @@ export function MapViewport({
   children,
   focusTarget,
   compact = false,
+  naturalSize,
+  initialZoom,
+  fitWidthOnMount = false,
+  focusLabel = "当前士兵",
 }: {
   children: ReactElement<HTMLAttributes<HTMLDivElement>>;
   focusTarget?: string;
   compact?: boolean;
+  naturalSize?: { width: number; height: number };
+  initialZoom?: number;
+  fitWidthOnMount?: boolean;
+  focusLabel?: string;
 }) {
-  const [zoom, setZoom] = useState(focusTarget ? 1.6 : 1);
+  const [zoom, setZoom] = useState(initialZoom ?? (focusTarget ? 1.6 : 1));
   const [moving, setMoving] = useState(false);
   const [focusRequest, setFocusRequest] = useState(focusTarget ? 1 : 0);
   const viewport = useRef<HTMLDivElement>(null);
@@ -44,6 +53,12 @@ export function MapViewport({
   useLayoutEffect(() => {
     const box = viewport.current;
     if (!box) return;
+    if (fitWidthOnMount && naturalSize)
+      setZoom(
+        mapZoom(
+          Math.min(initialZoom ?? 1, box.clientWidth / naturalSize.width),
+        ),
+      );
     bounds.current = readBounds(box);
     const observer = new ResizeObserver(() => {
       const next = readBounds(box),
@@ -112,7 +127,11 @@ export function MapViewport({
   );
   useLayoutEffect(() => {
     if (anchor.current && viewport.current) {
-      const position = zoomScroll(anchor.current, zoom);
+      const position = zoomScroll(
+        anchor.current,
+        zoom,
+        naturalSize ? "intrinsic" : "fitted",
+      );
       viewport.current.scrollLeft = position.left;
       viewport.current.scrollTop = position.top;
       anchor.current = undefined;
@@ -161,13 +180,36 @@ export function MapViewport({
         ＋
       </button>
       {focusTarget && (
-        <button onClick={() => setFocusRequest((value) => value + 1)}>
-          当前士兵
+        <button
+          onClick={() => {
+            if (naturalSize && viewport.current)
+              setZoom(
+                mapZoom(
+                  Math.min(
+                    initialZoom ?? 1,
+                    viewport.current.clientWidth / naturalSize.width,
+                  ),
+                ),
+              );
+            setFocusRequest((value) => value + 1);
+          }}
+        >
+          {focusLabel}
         </button>
       )}
       <button
         onClick={() => {
-          setZoom(1);
+          setZoom(
+            naturalSize && viewport.current
+              ? fitMapZoom(
+                  {
+                    width: viewport.current.clientWidth,
+                    height: viewport.current.clientHeight,
+                  },
+                  naturalSize,
+                )
+              : 1,
+          );
           setMoving(false);
           viewport.current?.scrollTo(0, 0);
         }}
@@ -191,6 +233,9 @@ export function MapViewport({
       )}
       <div
         ref={viewport}
+        tabIndex={0}
+        role="region"
+        aria-label="地图可滚动区域"
         onScroll={(event) => {
           const next = readBounds(event.currentTarget);
           if (
@@ -211,16 +256,23 @@ export function MapViewport({
         <div
           className="map-canvas"
           style={{
-            width: `${Math.max(1, zoom) * 100}%`,
-            height: `${Math.max(1, zoom) * 100}%`,
+            ...(naturalSize
+              ? { minWidth: 0, minHeight: 0, marginInline: "auto" }
+              : {}),
+            width: naturalSize
+              ? `${naturalSize.width * zoom}px`
+              : `${Math.max(1, zoom) * 100}%`,
+            height: naturalSize
+              ? `${naturalSize.height * zoom}px`
+              : `${Math.max(1, zoom) * 100}%`,
           }}
         >
           {cloneElement(children, {
             className: `${children.props.className || ""} fitted-map`,
             style: {
               ...children.props.style,
-              width: `${Math.min(1, zoom) * 100}%`,
-              height: `${Math.min(1, zoom) * 100}%`,
+              width: naturalSize ? "100%" : `${Math.min(1, zoom) * 100}%`,
+              height: naturalSize ? "100%" : `${Math.min(1, zoom) * 100}%`,
             },
           })}
         </div>

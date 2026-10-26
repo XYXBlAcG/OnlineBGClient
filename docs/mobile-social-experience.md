@@ -26,7 +26,7 @@
 | 音频复用与反馈 | [声音调度](../src/client/sound.ts)、[回合反馈](../src/client/use-game-feedback.ts) |
 | 设置与样式 | [设置](../src/client/Settings.tsx)、[房主权限](../src/client/social/BannerPermissions.tsx)、[共享样式](../src/client/ui/social-experience.css) |
 
-不接入语音或云端游戏部署。现有公网服务升级后需重新启动，参与者刷新页面；协议不匹配时按现有版本检查拒绝连接。
+手机浏览器不接入语音或云端游戏部署；桌面客户端语音的配置与验证见[客户端语音](client-voice.md)。现有公网服务升级后需重新启动，参与者刷新页面；协议不匹配时按现有版本检查拒绝连接。
 
 横屏、清晰度档位与扩展指令的入口和人工检查见 [手机横屏与聊天表现](mobile-landscape-plan.md)。
 

@@ -3,6 +3,24 @@ import { UpstreamRuntime } from "../upstream/runtime";
 import type { GuideSnapshot } from "./guide-position";
 import { CardGuides } from "../domain/card-guide";
 export const guideTargetKeys = [
+  "expedition.card",
+  "expedition.intent",
+  "expedition.status",
+  "expedition.party",
+  "expedition.profession",
+  "expedition.map",
+  "expedition.scene",
+  "expedition.actions",
+  "expedition.hand",
+  "expedition.rewards",
+  "expedition.shop",
+  "expedition.choices",
+  "dominion.supply",
+  "dominion.hand",
+  "dominion.actions",
+  "dominion.status",
+  "dominion.players",
+  "dominion.choice",
   "gw.soldier",
   "gw.axes",
   "gw.terrain",
@@ -48,6 +66,25 @@ export interface TargetQuery {
   wait: string;
 }
 const labels: Record<GuideTargetKey, [string, string]> = {
+  "expedition.card": ["查看可用手牌", "等待自己的手牌与可用能量"],
+  "expedition.intent": ["查看敌方意图", "进入战斗后可查看敌方意图"],
+  "expedition.status": ["查看远征状态", "进入相应远征阶段后可定位"],
+  "expedition.party": ["查看队友", "进入相应远征阶段后可定位"],
+  "expedition.profession": ["查看职业选择", "进入相应远征阶段后可定位"],
+  "expedition.map": ["查看路线", "进入相应远征阶段后可定位"],
+  "expedition.scene": ["查看敌方意图", "进入相应远征阶段后可定位"],
+  "expedition.actions": ["查看战斗操作", "进入相应远征阶段后可定位"],
+  "expedition.hand": ["查看我的手牌", "进入相应远征阶段后可定位"],
+  "expedition.rewards": ["查看奖励", "进入相应远征阶段后可定位"],
+  "expedition.shop": ["查看商店", "进入相应远征阶段后可定位"],
+  "expedition.choices": ["查看当前选择", "进入相应远征阶段后可定位"],
+
+  "dominion.supply": ["查看供应牌堆", "等待领土开局"],
+  "dominion.hand": ["查看我的手牌", "等待发牌"],
+  "dominion.actions": ["查看阶段操作", "等待轮到自己"],
+  "dominion.status": ["查看行动、购买与金币", "等待领土开局"],
+  "dominion.players": ["查看玩家与牌库数量", "等待开局"],
+  "dominion.choice": ["查看当前卡牌效果", "打出需要选择的牌后会出现"],
   "gw.soldier": ["查看当前发射士兵", "等待战场出现"],
   "gw.axes": ["查看坐标轴", "等待战场出现"],
   "gw.terrain": ["查看障碍", "当前是开阔战场；浮岛或堡垒地图才有障碍"],
@@ -104,6 +141,18 @@ export function guideTarget(
   };
   if (!snapshot?.state || snapshot.actor < 0) return query;
   const { state, actor, candidates } = snapshot;
+  if (key === "expedition.card" && state.kind === "expedition") {
+    query.within = "expedition.hand";
+    query.ids = [
+      ...new Set(
+        candidates.flatMap((c) =>
+          c.action.type === "expedition-action" && c.action.move.type === "card"
+            ? [c.action.move.instance]
+            : [],
+        ),
+      ),
+    ];
+  }
   if (key === "tq.camp" && state.kind === "tq") {
     query.key = "tq.cell";
     query.ids = checkers.targets(state.view, actor).map(String);

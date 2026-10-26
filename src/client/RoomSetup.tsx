@@ -1,3 +1,5 @@
+import { ExpeditionOptionsControl } from "./expedition/ExpeditionOptionsControl";
+import { DominionOptionsControl } from "./dominion/DominionOptionsControl";
 import { balanceSeats } from "../domain/room-balance";
 import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
@@ -221,6 +223,18 @@ export function RoomSetup({
             <GraphwarOptionsControl
               value={config.graphwar}
               onChange={(graphwar) => setConfig({ ...config, graphwar })}
+            />
+          )}
+          {config.kind === "expedition" && (
+            <ExpeditionOptionsControl
+              value={config.expedition}
+              onChange={(expedition) => setConfig({ ...config, expedition })}
+            />
+          )}
+          {config.kind === "dominion" && (
+            <DominionOptionsControl
+              value={config.dominion}
+              onChange={(dominion) => setConfig({ ...config, dominion })}
             />
           )}
           {config.kind === "scmj" && (

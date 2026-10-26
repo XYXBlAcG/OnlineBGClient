@@ -120,6 +120,7 @@ export class TableAnimator {
     for (const event of events) {
       if (
         event.type === "celebrate" ||
+        event.type === "effect" ||
         event.type === "beam" ||
         event.type === "collect" ||
         (event.type === "draw" && event.card === undefined)
@@ -166,7 +167,11 @@ export class TableAnimator {
             ? event.target
             : event.source,
         );
-        const after = findSample(this.current, event.target);
+        const after =
+          findSample(this.current, event.target) ??
+          (event.type === "effect"
+            ? findSample(this.previous, event.target)
+            : undefined);
         if (event.type === "celebrate") {
           if (!after) return;
           const b = after.bounds,
@@ -198,6 +203,92 @@ export class TableAnimator {
             () => {},
           );
           this.land(b);
+          return;
+        }
+        if (event.type === "effect") {
+          if (!before || !after) return;
+          const a = center(before.bounds),
+            b = center(after.bounds),
+            delay = Math.min(index * 55, 240),
+            travel = event.card ? 440 : 300;
+          const moving = event.card
+            ? this.shell(before.bounds, before.copy)
+            : this.shell(new DOMRect(a.x - 6, a.y - 6, 12, 12));
+          moving.dataset.motionEvent = "effect";
+          moving.dataset.effect = event.kind;
+          moving.classList.add(
+            event.card ? "game-motion-cast" : "game-motion-orb",
+          );
+          if (before.key) consumed.add(before.key);
+          const dx = b.x - a.x,
+            dy = b.y - a.y;
+          this.animate(
+            moving,
+            [
+              { transform: "translate(0,0) scale(1)", opacity: 1 },
+              {
+                transform: `translate(${dx * 0.5}px,${dy * 0.5 - 28}px) scale(${event.card ? 0.65 : 1.8})`,
+                opacity: 1,
+                offset: 0.5,
+              },
+              {
+                transform: `translate(${dx}px,${dy}px) scale(${event.card ? 0.12 : 0.6})`,
+                opacity: 0,
+              },
+            ],
+            travel,
+            delay,
+          ).finished.then(
+            () => this.release(moving),
+            () => {},
+          );
+          const impact = this.shell(
+            after.bounds,
+            undefined,
+            after.node.isConnected ? after.node : undefined,
+          );
+          impact.dataset.effect = event.kind;
+          impact.classList.add("game-motion-impact");
+          this.animate(
+            impact,
+            [
+              { transform: "scale(.65)", opacity: 0 },
+              { transform: "scale(1)", opacity: 1, offset: 0.25 },
+              { transform: "scale(1.35)", opacity: 0 },
+            ],
+            420,
+            delay + travel - 60,
+          ).finished.then(
+            () => this.release(impact),
+            () => {},
+          );
+          if (event.amount > 0) {
+            const label = this.shell(
+              new DOMRect(b.x - 35, after.bounds.y, 70, 32),
+              undefined,
+              after.node.isConnected ? after.node : undefined,
+            );
+            label.classList.add("game-motion-effect-value");
+            label.dataset.effect = event.kind;
+            label.textContent = `${event.kind === "heal" ? "+" : event.kind === "damage" ? "−" : event.kind === "block" ? "◈" : "✦"}${event.amount}`;
+            this.animate(
+              label,
+              [
+                { transform: "translateY(4px) scale(.75)", opacity: 0 },
+                {
+                  transform: "translateY(-10px) scale(1.15)",
+                  opacity: 1,
+                  offset: 0.2,
+                },
+                { transform: "translateY(-42px) scale(.95)", opacity: 0 },
+              ],
+              650,
+              delay + travel - 60,
+            ).finished.then(
+              () => this.release(label),
+              () => {},
+            );
+          }
           return;
         }
         if (event.type === "collect") {

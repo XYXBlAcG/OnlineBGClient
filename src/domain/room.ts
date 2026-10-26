@@ -1,3 +1,4 @@
+import { heroContent } from "./expedition/content";
 import {
   parseChatCommand,
   bannerCommands,
@@ -35,11 +36,6 @@ import {
 } from "./protocol";
 import type { Action, AiResult, Decision, GameState, Seat } from "./types";
 
-function simultaneousWindow(state: GameState | null): string {
-  if (state?.kind !== "scmj") return "";
-  const v = state.view;
-  return `${v.phase}:${v.turn}:${v.pending?.actor}:${v.pending?.tile}:${v.pending?.rob}`;
-}
 export class Room {
   readonly engine = new GameEngine();
   readonly config: RoomConfig;
@@ -78,6 +74,7 @@ export class Room {
   private accepted = new Set<string>();
   private resolutionAt = 0;
   private ended = false;
+  private pendingResume: import("./types").GameState | null = null;
   private roundVersion = 0;
   private simultaneousSince = 0;
   private lastMoveAt = 0;
@@ -174,38 +171,53 @@ export class Room {
       )
     )
       throw new Error("等待所有真人玩家在线并准备");
-    if (this.replay) {
-      this.records.push(this.replay);
-      this.records = this.records.slice(-20);
-    }
     this.seats.forEach((seat) => (seat.autoplay = false));
-    this.state = this.engine.create(
-      this.config.kind,
-      this.seats.length,
-      `${this.seed}:round:${this.version}`,
-      this.config.team,
-      { mahjong: this.config.mahjong, graphwar: this.config.graphwar },
-    );
-    this.replay = {
-      format: 1,
-      room: this.id,
-      config: structuredClone(this.config),
-      rulesVersion: gameCatalogue[this.config.kind].version,
-      names: this.seats.map((seat) => seat.name),
-      avatars: this.seats.map(seatAvatar),
-      seed: `${this.seed}:round:${this.version}`,
-      startedAt: Date.now(),
-      ...(this.state.kind === "graphwar"
-        ? {
-            graphwarInitial: structuredClone({
-              teams: this.state.view.teams,
-              terrain: this.state.view.terrain,
-              soldiers: this.state.view.soldiers,
-            }),
-          }
-        : {}),
-      events: [],
-    };
+    if (this.pendingResume) {
+      this.state = this.pendingResume;
+      this.pendingResume = null;
+      this.replay!.names = this.seats.map((seat) => seat.name);
+      this.replay!.avatars = this.seats.map(seatAvatar);
+    } else {
+      if (this.replay) {
+        this.records.push(this.replay);
+        this.records = this.records.slice(-20);
+      }
+      this.state = this.engine.create(
+        this.config.kind,
+        this.seats.length,
+        `${this.seed}:round:${this.version}`,
+        this.config.team,
+        {
+          expedition: this.config.expedition,
+          dominion: this.config.dominion,
+          mahjong: this.config.mahjong,
+          graphwar: this.config.graphwar,
+        },
+      );
+      this.replay = {
+        format: 1,
+        room: this.id,
+        config: structuredClone(this.config),
+        rulesVersion: gameCatalogue[this.config.kind].version,
+        names: this.seats.map((seat) => seat.name),
+        avatars: this.seats.map(seatAvatar),
+        seed: `${this.seed}:round:${this.version}`,
+        startedAt: Date.now(),
+        ...(this.state.kind === "graphwar"
+          ? {
+              graphwarInitial: structuredClone({
+                teams: this.state.view.teams,
+                terrain: this.state.view.terrain,
+                soldiers: this.state.view.soldiers,
+              }),
+            }
+          : {}),
+        ...(this.state.kind === "expedition"
+          ? { expeditionMap: structuredClone(this.state.view.map) }
+          : {}),
+        events: [],
+      };
+    }
     this.version++;
     this.roundVersion = this.version;
     this.simultaneousSince = this.version;
@@ -225,9 +237,19 @@ export class Room {
     this.updateResolution();
   }
 
-  end(token: string): void {
+  get hasEnded(): boolean {
+    return this.ended;
+  }
+  get pendingRunId(): string | undefined {
+    return this.pendingResume?.kind === "expedition"
+      ? this.pendingResume.view.runId
+      : undefined;
+  }
+
+  end(token: string, discardResume = false): void {
     if (!this.canManage(token)) throw new Error("只有房主可以结束对局");
     this.ended = true;
+    if (discardResume) this.pendingResume = null;
     this.queued = null;
     this.version++;
   }
@@ -272,6 +294,7 @@ export class Room {
       ),
     };
     this.state = null;
+    this.pendingResume = null;
     this.computation = null;
     this.aiPaused = false;
     this.replay = null;
@@ -291,14 +314,14 @@ export class Room {
     const key = `${token}:${id}`;
     if (this.accepted.has(key)) return;
     if (this.seats[actor].autoplay) throw new Error("请先取消托管，再手动操作");
-    const simultaneous =
-      action.type === "scmj-action" &&
-      ["exchange", "lack", "respond"].includes(action.move.type) &&
-      version >= this.simultaneousSince;
+    const window = this.state
+      ? this.engine.actionWindow(this.state, action)
+      : undefined;
+    const simultaneous = !!window && version >= this.simultaneousSince;
     if (
       version < this.roundVersion ||
       version > this.version ||
-      (this.version !== version && action.type !== "sgs-hero" && !simultaneous)
+      (this.version !== version && !simultaneous)
     )
       throw new Error("对局已更新，请根据最新局面操作");
     if (!this.state || this.ended) throw new Error("对局未开始或已结束");
@@ -309,7 +332,10 @@ export class Room {
       action,
       `${this.seed}:move:${this.version}`,
     );
-    if (simultaneousWindow(this.state) !== simultaneousWindow(next))
+    if (
+      this.engine.actionWindow(this.state, action) !==
+      this.engine.actionWindow(next, action)
+    )
       this.simultaneousSince = this.version + 1;
     this.state = next;
     this.queued = null;
@@ -509,7 +535,8 @@ export class Room {
       .find(
         (actor) =>
           this.seats[actor].difficulty !== null ||
-          (this.config.kind === "scmj" && this.seats[actor].autoplay),
+          (["scmj", "expedition"].includes(this.config.kind) &&
+            this.seats[actor].autoplay),
       );
     if (actor === undefined) return null;
     return {
@@ -526,7 +553,7 @@ export class Room {
   acceptDecision(decision: AiResult, version: number): boolean {
     if (!this.state || this.ended || this.paused || version !== this.version)
       return false;
-    const oldWindow = simultaneousWindow(this.state);
+    const oldWindow = this.engine.actionWindow(this.state, decision.chosen);
     this.state = this.engine.apply(
       this.state,
       decision.actor,
@@ -534,7 +561,7 @@ export class Room {
       `${this.seed}:move:${this.version}`,
     );
     this.version++;
-    if (oldWindow !== simultaneousWindow(this.state))
+    if (oldWindow !== this.engine.actionWindow(this.state, decision.chosen))
       this.simultaneousSince = this.version;
     this.lastMoveAt = Date.now();
     this.replay!.events.push({
@@ -628,6 +655,13 @@ export class Room {
       this.projection.set(actor, projected);
     }
     return {
+      resumeRoles:
+        this.pendingResume?.kind === "expedition"
+          ? this.pendingResume.view.combat.heroes.map((h, i) => ({
+              profession: heroContent[h.profession].name,
+              name: this.replay?.names[i] ?? "",
+            }))
+          : undefined,
       serverTime: Date.now(),
       apiVersion: protocolVersion,
       rulesVersion: gameCatalogue[this.config.kind].version,
@@ -675,17 +709,24 @@ export class Room {
     };
   }
 
-  setAutoplay(token: string, enabled: boolean): void {
-    const actor = this.identity(token);
+  setAutoplay(token: string, enabled: boolean, index?: number): void {
+    const caller = this.identity(token),
+      actor = index ?? caller;
+    if (actor !== caller && !this.canManage(token))
+      throw new Error("只有房主可以托管其他席位");
     if (
       actor < 0 ||
-      this.config.kind !== "scmj" ||
+      !["scmj", "expedition"].includes(this.config.kind) ||
+      !this.seats[actor] ||
+      this.seats[actor].difficulty !== null ||
       !this.state ||
       this.ended ||
       this.engine.finished(this.state)
     )
       throw new Error("当前不能托管此席位");
+    const wasPaused = this.paused;
     this.seats[actor].autoplay = enabled;
+    if (wasPaused && !this.paused) this.updateResolution();
     this.queued = null;
     this.version++;
   }
@@ -844,6 +885,10 @@ export class Room {
   export(): RoomArchive {
     return {
       format: 1,
+      pendingResume: this.pendingResume ?? undefined,
+      checkpoint: this.state
+        ? { version: this.version, state: structuredClone(this.state) }
+        : undefined,
       id: this.id,
       seed: this.seed,
       config: this.config,
@@ -869,6 +914,7 @@ export class Room {
   }
   static restore(archive: RoomArchive): Room {
     if (archive.format !== 1) throw new Error("房间存档版本不支持");
+    archive = structuredClone(archive);
     if (archive.messageSequence === undefined) {
       archive = structuredClone(archive);
       archive.seats.forEach((seat) => {
@@ -911,10 +957,47 @@ export class Room {
     room.decisions = room.config.auditEnabled ? archive.decisions : [];
     room.summaries = room.config.auditEnabled ? archive.summaries : [];
     room.accepted = new Set(archive.accepted);
-    if (archive.replay)
-      room.state = new Replay(archive.replay).frames().at(-1)!;
+    if (archive.replay) {
+      const replay = new Replay(archive.replay);
+      room.state = archive.pendingResume
+        ? null
+        : archive.checkpoint?.version === archive.version
+          ? structuredClone(archive.checkpoint.state)
+          : replay.frame(replay.record.events.length);
+    }
+    room.pendingResume = archive.pendingResume ?? null;
+    if (room.pendingResume) room.state = null;
     room.lastMoveAt = Date.now();
     room.updateResolution();
+    return room;
+  }
+
+  static resumeRun(archive: RoomArchive, token: string): Room {
+    const room = Room.restore(archive);
+    if (
+      room.state?.kind !== "expedition" ||
+      room.state.view.rulesVersion !== 1 ||
+      room.state.view.contentVersion !== 1
+    )
+      throw new Error("远征内容版本不兼容，原存档保留");
+    room.pendingResume = room.state;
+    room.state = null;
+    room.ended = false;
+    room.aiPaused = false;
+    room.seats.forEach((seat, index) => {
+      if (!seat.difficulty && seat.token !== token)
+        room.seats[index] = {
+          name: "",
+          difficulty: null,
+          ready: false,
+          online: false,
+        };
+    });
+    room.claim("", token);
+    room.version++;
+    room.roundVersion = room.version;
+    room.simultaneousSince = room.version;
+    room.accepted.clear();
     return room;
   }
 
@@ -930,6 +1013,8 @@ export class Room {
 
 export interface RoomArchive {
   format: 1;
+  pendingResume?: import("./types").GameState;
+  checkpoint?: { version: number; state: import("./types").GameState };
   id: string;
   seed: string;
   config: RoomConfig;

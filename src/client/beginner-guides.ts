@@ -1,3 +1,5 @@
+import { expeditionGuide } from "./expedition/guide";
+import { dominionGuide } from "./dominion/guide";
 import { graphwarGuide } from "./graphwar/guide";
 import type { GameKind } from "../domain/catalogue";
 
@@ -14,6 +16,8 @@ export interface BeginnerGuide {
   }[];
 }
 export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
+  expedition: expeditionGuide,
+  dominion: dominionGuide,
   graphwar: graphwarGuide,
   scmj: {
     goal: "先打缺，再凑四组顺子或刻子加一对将，或七对。胡牌后离场，其余继续，直到三家胡牌或牌墙耗尽。",

@@ -1,0 +1,44 @@
+html {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 35%, transparent) transparent;
+}
+:is(.app-shell, .ui-panel, .ui-select-menu, .ui-popover, .native-window-root),
+:is(.app-shell, .ui-panel, .ui-select-menu, .ui-popover, .native-window-root)
+  * {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 35%, transparent) transparent;
+}
+:is(.app-shell, .ui-panel, .ui-select-menu, .ui-popover, .native-window-root)
+  ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+:is(.app-shell, .ui-panel, .ui-select-menu, .ui-popover, .native-window-root)
+  ::-webkit-scrollbar-track {
+  background: transparent;
+}
+:is(.app-shell, .ui-panel, .ui-select-menu, .ui-popover, .native-window-root)
+  ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  border-radius: 6px;
+}
+:is(.app-shell, .ui-panel, .native-window-root) .map-scroll {
+  scrollbar-width: none;
+}
+:is(.app-shell, .ui-panel, .native-window-root) .map-scroll::-webkit-scrollbar {
+  display: none;
+}
+@media (max-width: 600px) {
+  .map-tools {
+    flex-wrap: wrap;
+  }
+}
+@media (forced-colors: active) {
+  :is(.app-shell, .ui-panel, .native-window-root) .map-scroll {
+    scrollbar-width: auto;
+  }
+  :is(.app-shell, .ui-panel, .native-window-root)
+    .map-scroll::-webkit-scrollbar {
+    display: block;
+  }
+}

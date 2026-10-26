@@ -149,6 +149,7 @@ export function RoomToolbar({
   return (
     <div
       className="room-toolbar"
+      hidden={focused}
       role="region"
       aria-label={roomSurface.region}
       data-room-id={snapshot.room}
@@ -176,7 +177,7 @@ export function RoomToolbar({
         {!mobile && <small>{snapshot.room}</small>}
       </div>
       <div className="room-primary-actions">
-        {(!mobile || snapshot.playing) && (
+        {snapshot.playing && (
           <button aria-pressed={focused} onClick={onFocus}>
             {focused ? "恢复界面" : mobile ? "沉浸牌桌" : "专注模式"}
           </button>

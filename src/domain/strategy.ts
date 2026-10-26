@@ -279,6 +279,8 @@ export class Strategy {
   }
   sample(observation: GameState, actor: number, seed: string): GameState {
     if (
+      observation.kind === "expedition" ||
+      observation.kind === "dominion" ||
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
@@ -400,6 +402,8 @@ export class Strategy {
   }
   hostility(observation: GameState, actor: number, target: number): number {
     if (
+      observation.kind === "expedition" ||
+      observation.kind === "dominion" ||
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
@@ -433,6 +437,8 @@ export class Strategy {
     audit = true,
   ): DecisionCandidate {
     if (
+      observation.kind === "expedition" ||
+      observation.kind === "dominion" ||
       observation.kind === "ddz" ||
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
@@ -712,6 +718,8 @@ export class Strategy {
   }
   protected position(state: GameState, actor: number): number {
     if (
+      state.kind === "expedition" ||
+      state.kind === "dominion" ||
       state.kind === "ddz" ||
       state.kind === "ktd" ||
       state.kind === "scmj" ||

@@ -80,6 +80,7 @@ export class GameEngine {
   project(state: GameState, actor: number): GameState {
     return this.plugins.get(state.kind)!.project(state, actor);
   }
+  actionWindow(state:GameState,action:Action):string|undefined {return this.plugins.get(state.kind)!.actionWindow(state,action);}
   keepValue(card: number): number {
     return this.sgsRules.keepValue(card);
   }

@@ -1,3 +1,5 @@
+import { ExpeditionAdventure } from "./expedition/adventure";
+import { DominionRules } from "./dominion/rules";
 import { GraphwarRules } from "./graphwar/rules";
 import { SichuanRules } from "./mahjong/rules";
 import { SplendorRules } from "./splendor";
@@ -83,3 +85,9 @@ export function sichuanPlugin(runtime: UpstreamRuntime) {
 export function graphwarPlugin(runtime: UpstreamRuntime) {
   return new GameAdapter("graphwar", new GraphwarRules(() => runtime.random()));
 }
+
+export function dominionPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter("dominion", new DominionRules(() => runtime.random()));
+}
+
+export function expeditionPlugin(runtime:UpstreamRuntime){return new GameAdapter("expedition",new ExpeditionAdventure(()=>runtime.random()));}

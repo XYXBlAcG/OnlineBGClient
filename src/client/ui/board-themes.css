@@ -14,3 +14,4 @@
 [data-color-scheme="dark"] .original-game[data-game="uno"] [data-guide-target="uno.status"] { color:var(--text); }
 [data-color-scheme="dark"] .original-game[data-game="ddz"] > .text-center { color:var(--text); }
 [data-color-scheme="dark"] .original-game[data-game="scmj"] .scmj-score { color:var(--text); }
+.original-game:is([data-game="dominion"],[data-game="graphwar"],[data-game="expedition"]) { background:var(--surface); color:var(--text); }

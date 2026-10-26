@@ -1,0 +1,497 @@
+.expedition-table {
+  --exp-ink: var(--accent);
+  --exp-blue: #4492bd;
+  --exp-green: #43a27b;
+  --exp-red: #da6966;
+  --exp-card-height: 174px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  background: var(--surface);
+  border-radius: 18px;
+  color: var(--text);
+}
+.expedition-table:has(.exp-battle) {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-areas: "status" "scene" "preview" "allies" "controls" "hand";
+  grid-template-rows: auto minmax(180px, 1fr) auto auto auto auto;
+  gap: 6px;
+}
+.exp-table-status {
+  grid-area: status;
+}
+.exp-battle {
+  grid-area: scene;
+  min-height: 0;
+}
+.exp-preview {
+  grid-area: preview;
+  margin: 0;
+  font-size: 12px;
+  color: var(--accent);
+}
+.exp-ally-bar {
+  grid-area: allies;
+  justify-content: space-between;
+}
+.exp-table-controls {
+  grid-area: controls;
+  padding: 8px 0;
+}
+.exp-table-hand {
+  grid-area: hand;
+}
+.exp-table-status,
+.exp-table-controls,
+.exp-ally-bar,
+.exp-party {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.exp-table-status > div {
+  display: grid;
+  gap: 5px;
+  margin-right: auto;
+}
+.exp-table-status small,
+.exp-progress {
+  color: var(--muted);
+}
+.exp-table-status strong {
+  font-size: 20px;
+}
+.exp-professions,
+.exp-relic-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.exp-professions > button,
+.exp-relic-choices > button {
+  min-height: 220px;
+  white-space: normal;
+  padding: 22px;
+  text-align: left;
+  background: var(--canvas);
+  border-radius: 20px;
+}
+.exp-professions > button > span,
+.exp-relic-choices > button > span {
+  font-size: 48px;
+  color: var(--accent);
+}
+.expedition-table .exp-scene {
+  height: 100%;
+  min-height: 0;
+  container-type: size;
+}
+.expedition-table .exp-heroes,
+.expedition-table .exp-enemies {
+  gap: clamp(4px, 1.5vw, 22px);
+  justify-content: space-around;
+  min-width: 0;
+  width: 44%;
+}
+.expedition-table .exp-heroes {
+  left: 3%;
+  right: auto;
+  bottom: 5%;
+}
+.expedition-table .exp-enemies {
+  right: 3%;
+  left: auto;
+  bottom: 20%;
+}
+.expedition-table .exp-unit {
+  width: clamp(70px, 11vw, 145px);
+  min-width: 0;
+}
+.expedition-table .exp-target {
+  width: 100%;
+  height: min(130px, 45cqh);
+  aspect-ratio: auto;
+}
+.expedition-table .exp-unit-name {
+  min-width: 0;
+}
+.expedition-table .exp-unit-name strong {
+  white-space: normal;
+  font-size: 13px;
+}
+.expedition-table .exp-intent {
+  font-size: 11px;
+  min-width: 0;
+}
+.expedition-table .exp-figure {
+  width: 100%;
+  height: 100%;
+}
+.exp-scene-avatar {
+  position: absolute;
+  left: 0;
+  top: 25%;
+  z-index: 2;
+}
+.exp-scene-marks {
+  display: grid;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 10px;
+}
+.exp-table-hand,
+.exp-reward-cards,
+.exp-inspect-cards {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 8px 4px 12px;
+  scroll-snap-type: x proximity;
+}
+.exp-table-hand .exp-card,
+.exp-reward-cards .exp-card,
+.exp-inspect-cards .exp-card {
+  flex: 0 0 132px;
+  scroll-snap-align: start;
+  height: var(--exp-card-height, 174px);
+}
+.exp-table-controls > span {
+  font-size: 13px;
+  color: var(--muted);
+  margin-right: auto;
+}
+.exp-ally-bar > div,
+.exp-party > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.exp-ally-bar button:not(.game-avatar) {
+  font-size: 12px;
+  padding: 6px;
+  white-space: normal;
+}
+.exp-ally-bar small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.expedition-table .game-avatar {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  padding: 0;
+}
+.exp-shop {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 16px;
+}
+.exp-shop > article {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+.exp-shop .exp-card {
+  height: 210px;
+}
+.exp-node-content {
+  padding: 12px 0;
+}
+.exp-node-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.exp-node-actions button {
+  white-space: normal;
+  min-height: 40px;
+}
+.exp-inspect-cards {
+  --exp-ink: var(--accent);
+  --exp-blue: #4492bd;
+  --exp-card-height: 180px;
+  flex-wrap: wrap;
+}
+.exp-reward-cards {
+  --exp-card-height: 205px;
+}
+.exp-reward-cards .exp-card {
+  flex-basis: 160px;
+}
+@media (max-width: 700px) {
+  .expedition-table {
+    padding: 10px;
+    gap: 8px;
+  }
+  .exp-table-status strong {
+    font-size: 17px;
+  }
+  .exp-professions,
+  .exp-relic-choices {
+    grid-template-columns: 1fr;
+  }
+  .exp-professions > button {
+    min-height: 125px;
+    padding: 14px;
+  }
+  .exp-professions > button > span {
+    float: right;
+  }
+  .expedition-table .exp-unit {
+    width: clamp(46px, 12vw, 90px);
+  }
+  .expedition-table .exp-heroes,
+  .expedition-table .exp-enemies {
+    gap: 3px;
+    width: auto;
+  }
+  .expedition-table .exp-heroes {
+    left: 3%;
+    right: 3%;
+    bottom: 4%;
+  }
+  .expedition-table .exp-enemies {
+    left: 10%;
+    right: 10%;
+    bottom: auto;
+    top: 4%;
+  }
+  .expedition-table .exp-health b {
+    font-size: 12px;
+  }
+  .expedition-table .exp-health small {
+    font-size: 9px;
+  }
+  .expedition-table .exp-intent span {
+    font-size: 10px;
+  }
+  .exp-ally-bar > div {
+    flex: 1 1 45%;
+    font-size: 11px;
+  }
+  .exp-table-hand .exp-card {
+    flex-basis: 117px;
+  }
+  .exp-table-controls {
+    gap: 7px;
+  }
+  .exp-table-controls > span {
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 700px) and (orientation: portrait) {
+  .expedition-table:has(.exp-battle) {
+    grid-template-rows: auto minmax(250px, 1fr) auto auto auto auto;
+  }
+  .expedition-table .exp-target {
+    height: min(80px, 23cqh);
+  }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .expedition-table:has(.exp-battle) {
+    --exp-card-height: 125px;
+    grid-template-rows: auto minmax(110px, 1fr) auto 0 auto auto;
+    gap: 3px;
+    padding: 5px;
+  }
+  .expedition-table .exp-ally-bar {
+    display: none;
+  }
+  .expedition-table .exp-heroes {
+    left: 3%;
+    right: auto;
+    width: 44%;
+    bottom: 3%;
+  }
+  .expedition-table .exp-enemies {
+    left: auto;
+    right: 3%;
+    width: 44%;
+    top: auto;
+    bottom: 12%;
+  }
+  .expedition-table .exp-unit-name small {
+    display: none;
+  }
+  .expedition-table .exp-unit-name strong,
+  .expedition-table .exp-intent span {
+    font-size: 10px;
+  }
+  .expedition-table .exp-intent {
+    margin-bottom: 0;
+  }
+  .expedition-table .exp-target {
+    height: min(85px, 43cqh);
+  }
+  .expedition-table .exp-table-hand {
+    padding: 3px;
+  }
+  .expedition-table .exp-statuses {
+    display: none;
+  }
+  .expedition-table .exp-card-art {
+    height: 20px;
+    font-size: 20px;
+  }
+  .expedition-table .exp-table-controls {
+    padding: 2px;
+  }
+  .expedition-table .exp-table-status strong {
+    font-size: 15px;
+  }
+  .exp-table-hand .exp-card {
+    flex-basis: 105px;
+  }
+}
+[data-game-motion="reduced"] .expedition-table * {
+  animation: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .expedition-table * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.exp-route {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.exp-route > .map-viewport {
+  flex: 1;
+  min-height: 280px;
+}
+.exp-route .map-scroll {
+  min-height: 0;
+  flex: 1;
+  max-height: 65dvh;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--accent) 6%, var(--canvas)),
+    var(--canvas)
+  );
+  border-radius: 16px;
+}
+.exp-route-canvas {
+  position: relative;
+  container-type: inline-size;
+}
+.exp-route-nodes {
+  position: absolute;
+  inset: 0;
+}
+.exp-route-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.exp-route-links path {
+  stroke: var(--line);
+  stroke-width: 2.5;
+}
+.exp-route-links path[data-visited="true"] {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+.exp-route-links path[data-reachable="true"] {
+  stroke: var(--accent);
+  stroke-dasharray: 7 5;
+}
+.exp-route-floor {
+  fill: var(--muted);
+  font: 13px system-ui;
+}
+.exp-route-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--raised);
+  color: var(--muted);
+  font: clamp(7px, 1.9444cqw, 56px) system-ui;
+  box-shadow: 0 2px 9px #0001;
+  cursor: pointer;
+}
+.exp-route-node b {
+  line-height: 1;
+  font-size: 1.65em;
+}
+.exp-route-node > span {
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.exp-route-node small {
+  line-height: 1.1;
+  font-size: 0.72em;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exp-route-node[data-available="true"] {
+  color: var(--accent);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    0 3px 10px #0001;
+}
+.exp-route-node[data-current="true"] {
+  color: var(--accent-text);
+  background: var(--accent);
+}
+.exp-route-node[data-current="true"] small {
+  color: inherit;
+}
+.exp-route-node[data-visited="true"]:not([data-current="true"]) {
+  color: var(--text);
+}
+.exp-route-node:disabled {
+  cursor: default;
+}
+.exp-route .map-view-menu {
+  flex: none;
+}
+[data-game-motion="enhanced"] .expedition-table .exp-float {
+  display: none;
+}
+[data-game-motion="enhanced"] .expedition-table .exp-figure {
+  animation: exp-enter 480ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+[data-game-motion="enhanced"]
+  .expedition-table
+  .exp-route-node[data-available="true"] {
+  animation: exp-route-glow 1.8s ease-in-out 2;
+}
+@keyframes exp-enter {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes exp-route-glow {
+  50% {
+    filter: drop-shadow(
+      0 0 5px color-mix(in srgb, var(--accent) 50%, transparent)
+    );
+  }
+}

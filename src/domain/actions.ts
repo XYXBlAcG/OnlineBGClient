@@ -1,3 +1,5 @@
+import { expeditionMoveSchema } from "./expedition/adventure-types";
+import { dominionMoveSchema } from "./dominion/types";
 import {
   graphwarFireSchema,
   graphwarPassSchema,
@@ -10,6 +12,8 @@ import { catanMoveSchema } from "./catan-actions";
 import { z } from "zod";
 const ids = z.array(z.number().int().min(-160).max(160)).max(160);
 export const actionSchema = z.discriminatedUnion("type", [
+  z.object({ type:z.literal("expedition-action"),move:expeditionMoveSchema }),
+  z.object({ type: z.literal("dominion-action"), move: dominionMoveSchema }),
   graphwarFireSchema,
   graphwarPassSchema,
   graphwarMoveSchema,

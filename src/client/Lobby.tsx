@@ -1,3 +1,8 @@
+import { GameIcon } from "./GameIcon";
+import { ExpeditionOptionsControl } from "./expedition/ExpeditionOptionsControl";
+import { expeditionOptionsSchema } from "../domain/expedition/adventure-types";
+import { DominionOptionsControl } from "./dominion/DominionOptionsControl";
+import { dominionOptionsSchema } from "../domain/dominion/types";
 import { balanceSeats } from "../domain/room-balance";
 import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
 import { graphwarOptionsSchema } from "../domain/graphwar/types";
@@ -54,6 +59,10 @@ export function Lobby({
   ]);
   const [aiDelayMs, setDelay] = useState(1500);
   const [graphwar, setGraphwar] = useState(graphwarOptionsSchema.parse({}));
+  const [expedition, setExpedition] = useState(
+    expeditionOptionsSchema.parse({}),
+  );
+  const [dominion, setDominion] = useState(dominionOptionsSchema.parse({}));
   const [mahjong, setMahjong] = useState(mahjongOptionsSchema.parse({}));
   const [catanTrades, setCatanTrades] = useState(true);
   const [team, setTeam] = useState(false);
@@ -151,61 +160,7 @@ export function Lobby({
                   onClick={() => changeGame(key)}
                   aria-pressed={kind === key}
                 >
-                  <span className="game-symbol" data-game-icon={key}>
-                    {key === "uno" ? (
-                      <svg viewBox="0 0 48 48" aria-hidden="true">
-                        <rect
-                          x="6"
-                          y="8"
-                          width="25"
-                          height="33"
-                          rx="5"
-                          fill="#e5444e"
-                          transform="rotate(-12 18 24)"
-                        />
-                        <rect
-                          x="16"
-                          y="6"
-                          width="25"
-                          height="34"
-                          rx="5"
-                          fill="#246bd2"
-                          transform="rotate(10 28 24)"
-                        />
-                        <ellipse
-                          cx="29"
-                          cy="23"
-                          rx="8"
-                          ry="13"
-                          fill="#fff"
-                          transform="rotate(24 29 23)"
-                        />
-                        <text
-                          x="29"
-                          y="27"
-                          textAnchor="middle"
-                          fontSize="10"
-                          fontWeight="bold"
-                          fill="#c32636"
-                        >
-                          UNO
-                        </text>
-                      </svg>
-                    ) : key === "dy" ? (
-                      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                        <path
-                          d="M12 3h8M14 3v10L5 26a2 2 0 0 0 2 3h18a2 2 0 0 0 2-3l-9-13V3M10 20h12"
-                          stroke="currentColor"
-                          strokeWidth="2.4"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <circle cx="16" cy="24" r="1.5" fill="currentColor" />
-                      </svg>
-                    ) : (
-                      gameCatalogue[key].symbol
-                    )}
-                  </span>
+                  <GameIcon kind={key} />
                   <strong>{gameCatalogue[key].name}</strong>
                   <span>{gameCatalogue[key].description}</span>
                   <small>
@@ -378,6 +333,15 @@ export function Lobby({
             )}
           </>
         )}
+        {kind === "expedition" && (
+          <ExpeditionOptionsControl
+            value={expedition}
+            onChange={setExpedition}
+          />
+        )}
+        {kind === "dominion" && (
+          <DominionOptionsControl value={dominion} onChange={setDominion} />
+        )}
         {kind === "scmj" && (
           <MahjongOptionsControl value={mahjong} onChange={setMahjong} />
         )}
@@ -537,6 +501,8 @@ export function Lobby({
                 aiDelayMs,
                 auditEnabled: preferences.auditVisible,
                 catanTrades,
+                expedition,
+                dominion,
                 mahjong,
                 graphwar,
                 performance: preferences.performance,

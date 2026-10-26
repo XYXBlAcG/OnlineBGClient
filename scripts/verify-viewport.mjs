@@ -269,8 +269,8 @@ try {
         await expect(page.locator(".room-sidebar")).toBeVisible();
         await expect(page.locator(".chat-panel")).toBeVisible();
         await page
-          .locator(".mobile-chat-tools")
-          .getByRole("button", { name: "恢复界面", exact: true })
+          .locator(".focus-controls")
+          .getByRole("button", { name: "退出专注", exact: true })
           .tap();
         await expect(page.locator(".mobile-immersive")).toHaveCount(0);
         await expect(page.locator(".room-toolbar")).toBeVisible();

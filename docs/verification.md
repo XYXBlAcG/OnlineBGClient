@@ -4,6 +4,7 @@
 
 | 范围 | 入口 |
 | --- | --- |
+| 客户端语音、房间授权与 HTTP／SDK | [验证索引与人工通话步骤](client-voice.md#实现与验证索引) |
 | 动画目标跟随布局与清理 | [布局跟随测试](../tests/table-anchors.test.ts)、[采样测试](../tests/table-animation-sampling.test.ts) |
 | 卡坦岛原牌桌与规则联动 | [多席位渲染测试](../tests/catan-renderer.test.tsx)、[版本同步与触屏手势](../scripts/browser-controls.mjs) |
 | 游戏语义与 UNO 3D 翻牌 | [语义测试](../tests/game-motion-events.test.ts)、[八游戏浏览器检查](../scripts/verify-experience.mjs)、[UNO 双视角检查](../scripts/verify-uno-motion.mjs)、[原生翻牌检查](../scripts/native-motion-smoke.js)（`COMPANION_SMOKE_PROFILE=motion`） |
@@ -140,3 +141,13 @@ Graphwar 的血量、弧长衰减、自适应采样、密集地图通路和战�
 Graphwar 选兵、首轮护阵、移动判定、补位幂等及地图初始记录见 [战术测试](../tests/graphwar-tactics.test.ts)。指定士兵间投掷通过 [真实 WebSocket](../tests/graphwar-network.test.ts) 检查；实际轨迹、图层与触控由用户按 [手动清单](graphwar-interaction-plan.md#手动审核) 验收。
 
 CI 房间身份与标题通过 [语义契约](../src/client/room-surface.ts) 和 [共享脚本入口](../scripts/browser-controls.mjs) 读取，不解析展示文案；契约检查见 [静态组件](../tests/mobile-room-toolbar.test.tsx)、[脚本](../tests/smoke-contract.test.ts)。手机拖动以触摸输入检查。界面 smoke 在 GitHub runner 执行，本机仍由用户手动验收。
+
+Dominion 的规则、真实 CPU Worker、房间恢复、回放与静态组件验证见 [验证入口与手动审核](dominion.md#非界面验证)。
+
+Dominion 的隔离浏览器截图与布局尺寸检查入口见 [界面验证](dominion.md#非界面验证)；截图检查须有界面自动化授权，不操作用户桌面。
+
+秘塔远征的首章固定种子实测、真实 Worker、重启后的 HTTP/WebSocket 恢复和手动审核见 [验证入口](expedition.md#非界面验证)。
+
+专注模式、变化宽度路线、动效生命周期和语音控件结构的验证入口见 [体验清单](expedition-experience.md)。
+
+首次使用的偏好默认值、大厅设置直达与连麦配置指引由 [入口测试](../tests/quick-start.test.tsx) 覆盖；实际操作见 [使用指南](getting-started.md) 和 [语音人工验收](client-voice.md#手动审核)。测试不启动麦克风或打开系统浏览器。

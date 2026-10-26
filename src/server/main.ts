@@ -1,3 +1,5 @@
+import { VoiceAuthority, LiveKitMedia } from "./voice";
+import { VoiceHttp } from "./voice-http";
 import { attachmentSchema } from "../domain/attachments";
 import { AttachmentStore } from "./attachments";
 import { MediaHttp } from "./media-http";
@@ -16,6 +18,35 @@ import { Gateway } from "../domain/gateway";
 import { protocolVersion, type Response } from "../domain/protocol";
 
 const gateway = new Gateway();
+const voiceConfig =
+  process.env.LIVEKIT_URL &&
+  process.env.LIVEKIT_API_KEY &&
+  process.env.LIVEKIT_API_SECRET
+    ? {
+        url: process.env.LIVEKIT_URL,
+        apiKey: process.env.LIVEKIT_API_KEY,
+        secret: process.env.LIVEKIT_API_SECRET,
+      }
+    : null;
+const voice = new VoiceHttp(
+  new VoiceAuthority(
+    gateway,
+    voiceConfig,
+    voiceConfig ? new LiveKitMedia(voiceConfig) : null,
+  ),
+);
+let voiceReconciling = false;
+const voiceSweep = setInterval(() => {
+  if (voiceReconciling) return;
+  voiceReconciling = true;
+  void voice.authority
+    .reconcileAll()
+    .catch(() => console.error("语音成员清理失败，将自动重试"))
+    .finally(() => {
+      voiceReconciling = false;
+    });
+}, 4000);
+voiceSweep.unref();
 const dataRoot = resolve(process.env.DATA_ROOT || ".data");
 mkdirSync(dataRoot, { recursive: true });
 const media = new MediaHttp(
@@ -29,6 +60,7 @@ const mediaCleanup = setInterval(() => {
 }, 60000);
 mediaCleanup.unref();
 const store = new RoomStore(resolve(dataRoot, "rooms.sqlite"));
+for (const [id, archive] of store.loadRuns()) gateway.runs.set(id, archive);
 for (const room of store.load()) {
   gateway.rooms.set(room.id, room);
   store.save(room);
@@ -78,6 +110,7 @@ const server = createServer(async (request, response) => {
   }
   try {
     const url = new URL(request.url || "/", "http://localhost");
+    if (await voice.handle(request, response, url)) return;
     if (await media.handle(request, response, url)) return;
     if (url.pathname === "/room-info") {
       const room = gateway.rooms.get(url.searchParams.get("room") || "");
@@ -141,7 +174,11 @@ const publish = (
 ) => {
   const room = gateway.rooms.get(roomId);
   if (!room) return;
-  if (persist) store.save(room);
+  if (persist) {
+    store.save(room);
+    gateway.rememberRun(room);
+    store.saveRuns(gateway.runs);
+  }
   if (socket && response) send(socket, response);
   for (const [socket, session] of sessions) {
     if (session.room !== roomId) continue;
@@ -195,6 +232,16 @@ sockets.on("connection", (socket) => {
             throw new Error("图片信息不匹配");
         }
         const result = gateway.handle(input, sessions.get(socket));
+        store.saveRuns(gateway.runs);
+        if (result.response?.type === "run-abandoned") {
+          publish(result.session.room);
+          send(socket, result.response);
+          return;
+        }
+        if (["close", "leave", "game"].includes(input.type))
+          void voice.authority
+            .reconcile(result.session.room)
+            .catch(() => console.error("语音成员同步失败，将自动重试"));
         for (const [other, session] of sessions)
           if (
             other !== socket &&

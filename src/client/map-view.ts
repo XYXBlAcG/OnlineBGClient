@@ -9,8 +9,12 @@ export interface MapAnchor {
 export function zoomScroll(
   anchor: MapAnchor,
   zoom: number,
+  mode: "fitted" | "intrinsic" = "fitted",
 ): { left: number; top: number } {
-  const scale = Math.max(1, zoom) / Math.max(1, anchor.zoom);
+  const scale =
+    mode === "intrinsic"
+      ? zoom / anchor.zoom
+      : Math.max(1, zoom) / Math.max(1, anchor.zoom);
   return {
     left: Math.max(0, (anchor.left + anchor.x) * scale - anchor.x),
     top: Math.max(0, (anchor.top + anchor.y) * scale - anchor.y),
@@ -46,4 +50,13 @@ export function resizeScroll(
       ),
     ),
   };
+}
+
+export function fitMapZoom(
+  view: { width: number; height: number },
+  content: { width: number; height: number },
+): number {
+  return mapZoom(
+    Math.min(view.width / content.width, view.height / content.height),
+  );
 }

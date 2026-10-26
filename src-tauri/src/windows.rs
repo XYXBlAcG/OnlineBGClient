@@ -204,7 +204,7 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
     }
     let hosting = window.state::<std::sync::Arc<crate::hosting::Hosting>>();
     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-        if hosting.running() {
+        if hosting.running() || window.state::<crate::desktop::Desktop>().voice_active() {
             api.prevent_close();
             let _ = window.emit("desktop-command", "close");
         }

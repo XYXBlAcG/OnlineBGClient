@@ -1,3 +1,5 @@
+import { ExpeditionTable } from "./expedition/ExpeditionTable";
+import { DominionTable } from "./dominion/DominionTable";
 import { GraphwarTable } from "./graphwar/GraphwarTable";
 import { SichuanTable } from "./mahjong/SichuanTable";
 import type { MotionPreferences } from "./MotionControls";
@@ -66,7 +68,7 @@ export const OriginalGame = memo(function OriginalGame({
   pending?: boolean;
   act: (action: Action) => void;
   end: () => void;
-  onAutoplay?: (enabled: boolean) => void;
+  onAutoplay?: (enabled: boolean, index?: number) => void;
   onReplay?: () => void;
   restart?: () => void;
   onInteract?: (
@@ -81,11 +83,10 @@ export const OriginalGame = memo(function OriginalGame({
   const view = useMemo(
     () =>
       snapshot.state &&
-      snapshot.state.kind !== "scmj" &&
-      snapshot.state.kind !== "graphwar"
+      gameCatalogue[snapshot.kind].presentation.kind === "upstream"
         ? structuredClone(snapshot.state.view)
         : null,
-    [snapshot.state],
+    [snapshot.kind, snapshot.state],
   );
   runtime.bridge.readOnly = replay;
   runtime.bridge.skipLegacyMotion =
@@ -188,6 +189,7 @@ export const OriginalGame = memo(function OriginalGame({
       data-motion-scope="game"
       data-game-motion={animationActive ? gameMotion : "reduced"}
       data-game={snapshot.kind}
+      data-renderer={presentation.kind === "upstream" ? "upstream" : "client"}
       data-game-version={snapshot.version}
       onKeyDown={(event) => {
         if (
@@ -214,8 +216,27 @@ export const OriginalGame = memo(function OriginalGame({
         }
       }}
     >
-      {presentation.kind === "graphwar" &&
-      snapshot.state?.kind === "graphwar" ? (
+      {presentation.kind === "expedition" &&
+      snapshot.state?.kind === "expedition" ? (
+        <ExpeditionTable
+          onAutoplay={onAutoplay}
+          snapshot={snapshot}
+          act={act}
+          replay={replay}
+          avatar={avatarContext}
+          pending={pending}
+        />
+      ) : presentation.kind === "dominion" &&
+        snapshot.state?.kind === "dominion" ? (
+        <DominionTable
+          snapshot={snapshot}
+          act={act}
+          replay={replay}
+          avatar={avatarContext}
+          pending={pending}
+        />
+      ) : presentation.kind === "graphwar" &&
+        snapshot.state?.kind === "graphwar" ? (
         <GraphwarTable
           view={snapshot.state.view}
           end={end}

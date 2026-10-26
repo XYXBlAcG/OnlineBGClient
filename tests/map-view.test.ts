@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { mapZoom, zoomScroll } from "../src/client/map-view";
+import { fitMapZoom, mapZoom, zoomScroll } from "../src/client/map-view";
 it("bounds map zoom and keeps the pinch anchor at the same screen position", () => {
   expect(mapZoom(0.1)).toBe(0.25);
   expect(mapZoom(10)).toBe(4);
@@ -41,4 +41,11 @@ it("preserves a map's relative center when rotating and clamps it inside the new
       { width: 700, height: 200, scrollWidth: 700, scrollHeight: 200 },
     ),
   ).toEqual({ left: 0, top: 0 });
+});
+it("preserves intrinsic map anchors below 100% and fits a full tall route into the viewport", () => {
+  const anchor = { left: 120, top: 400, x: 100, y: 80, zoom: 0.8 };
+  expect(zoomScroll(anchor, 0.4, "intrinsic")).toEqual({ left: 10, top: 160 });
+  expect(
+    fitMapZoom({ width: 360, height: 600 }, { width: 720, height: 1440 }),
+  ).toBeCloseTo(600 / 1440);
 });

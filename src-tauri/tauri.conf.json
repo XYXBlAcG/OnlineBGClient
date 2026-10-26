@@ -16,7 +16,9 @@
         "width": 1160,
         "height": 820,
         "minWidth": 640,
-        "minHeight": 580
+        "minHeight": 580,
+        "create": false,
+        "backgroundThrottling": "disabled"
       }
     ]
   },
@@ -32,6 +34,10 @@
     ],
     "resources": {
       "resources/hosting/": "hosting/"
+    },
+    "macOS": {
+      "infoPlist": "Info.plist",
+      "entitlements": "Entitlements.plist"
     }
   }
 }

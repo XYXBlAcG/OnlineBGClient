@@ -32,3 +32,24 @@ it("sends only changed fields and preserves unchanged game references", () => {
   const restored = replica.apply(stream.next(snapshot, true));
   expect(restored).toEqual(snapshot);
 });
+
+it("removes optional fields across JSON wire patches", () => {
+  const room = new Room("optional", {
+      kind: "uno",
+      humans: 1,
+      ai: [{ difficulty: "easy", name: "" }],
+      team: false,
+      training: false,
+    }),
+    token = room.claim("甲"),
+    stream = new SnapshotStream(),
+    replica = new SnapshotReplica();
+  const first = room.snapshot(token);
+  first.resumeRoles = [{ profession: "铁卫", name: "甲" }];
+  replica.apply(JSON.parse(JSON.stringify(stream.next(first))));
+  const second = room.snapshot(token);
+  second.resumeRoles = undefined;
+  expect(
+    replica.apply(JSON.parse(JSON.stringify(stream.next(second))))?.resumeRoles,
+  ).toBeUndefined();
+});

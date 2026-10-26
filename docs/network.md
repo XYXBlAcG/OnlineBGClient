@@ -12,7 +12,7 @@
 
 临时隧道命令为 `cloudflared tunnel --url http://127.0.0.1:8787 --protocol http2`。隧道会将本地服务公开，测试时使用独立测试房间和测试昵称，结束后停止进程。已完成公网 HTTPS/WSS 路径验证，覆盖见 [验证入口](verification.md)。临时测试结束后不保留公网入口。
 
-自建服务可直接运行 Node.js 或使用 [Dockerfile](../Dockerfile)。容器暴露 8787，持久化使用 DATA_ROOT 对应挂载目录，公网 HTTPS 在代理层配置。没有语音需求，因此不需要 STUN/TURN。
+自建服务可直接运行 Node.js 或使用 [Dockerfile](../Dockerfile)。容器暴露 8787，持久化使用 DATA_ROOT 对应挂载目录，公网 HTTPS 在代理层配置。游戏通道不需要 STUN/TURN。客户端语音走独立 LiveKit 媒体通道，配置与验证边界见[客户端语音](client-voice.md)，不复用 HTTP 隧道传输音频。
 
 服务存档入口见 [SQLite 存储](../src/server/storage.ts)，通过 DATA_ROOT 指定数据目录。服务重启后玩家用原凭据恢复席位；真人掉线时暂停对局，全部恢复后继续。浏览器会按服务地址与房间保存自己的恢复凭据。不要清除客户端站点数据后再尝试恢复原席位。
 

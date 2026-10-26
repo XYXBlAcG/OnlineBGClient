@@ -1,0 +1,1340 @@
+.expedition-demo {
+  --exp-ink: #eac17f;
+  --exp-blue: #8eb8ce;
+  --exp-green: #80c3a5;
+  --exp-red: #ed938b;
+  --exp-card-height: 166px;
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(150px, 1fr) auto auto auto;
+  gap: 0;
+  max-width: 1800px;
+  margin: auto;
+  padding: 0 24px;
+  background: var(--canvas);
+  overflow: hidden;
+}
+.exp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--line);
+}
+.exp-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.exp-brand > span {
+  font-size: 35px;
+  color: var(--exp-ink);
+}
+.exp-brand > div {
+  display: grid;
+  gap: 2px;
+}
+.exp-brand strong {
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+.exp-brand small,
+.exp-muted {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.exp-toolbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.exp-toolbar-actions button,
+.exp-toolbar-actions .ui-select {
+  font-size: 12px;
+  min-height: 34px;
+}
+.exp-runbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 76px;
+  padding: 10px 0;
+}
+.exp-location small {
+  color: var(--exp-ink);
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+.expedition-demo .exp-location h1 {
+  font-size: 23px;
+  margin: 5px 0 0;
+  font-weight: 650;
+  letter-spacing: 2px;
+}
+.exp-route {
+  display: flex;
+  gap: 50px;
+  align-items: center;
+}
+.exp-route > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  position: relative;
+}
+.exp-route > span:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 8px);
+  width: 34px;
+  height: 1px;
+  background: var(--line);
+}
+.exp-route b {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+}
+.exp-route small {
+  font-size: 11px;
+}
+.exp-route .current {
+  color: var(--exp-ink);
+}
+.exp-route .current b {
+  border-color: var(--exp-ink);
+  background: color-mix(in srgb, var(--exp-ink) 10%, transparent);
+}
+.exp-route .complete {
+  color: var(--exp-green);
+}
+.exp-round {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+}
+.exp-round strong {
+  font-size: 14px;
+}
+.exp-round small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.exp-battle-area {
+  min-height: 0;
+  position: relative;
+  isolation: isolate;
+}
+.exp-scene {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 65% 15%, #30434b44, transparent 65%),
+    linear-gradient(180deg, var(--surface), var(--canvas));
+}
+.exp-scenery {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--exp-blue);
+  pointer-events: none;
+}
+.exp-heroes,
+.exp-enemies {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+}
+.exp-heroes {
+  left: 9%;
+  bottom: 6%;
+}
+.exp-enemies {
+  right: 8%;
+  bottom: 22%;
+}
+.exp-unit {
+  width: clamp(100px, 12vw, 155px);
+  text-align: center;
+  position: relative;
+}
+.exp-unit-name {
+  display: grid;
+  gap: 3px;
+  min-height: 18px;
+}
+.exp-unit-name strong {
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.exp-unit-name small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.exp-target {
+  display: block;
+  position: relative;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 20px;
+}
+.exp-figure {
+  display: block;
+  width: 100%;
+  height: clamp(95px, 15dvh, 155px);
+  filter: drop-shadow(0 7px 9px #0002);
+  transition: transform 160ms;
+}
+.exp-hero .exp-figure {
+  height: clamp(100px, 17dvh, 170px);
+}
+.exp-target:hover .exp-figure {
+  transform: translateY(-3px);
+}
+.exp-target.is-legal {
+  outline: 1px dashed var(--exp-ink);
+  outline-offset: 1px;
+  background: radial-gradient(ellipse at center, #e8ba6220, transparent 75%);
+}
+.exp-target.is-legal::after {
+  content: "◎";
+  position: absolute;
+  top: 40%;
+  left: 43%;
+  font-size: 26px;
+  color: var(--exp-ink);
+  pointer-events: none;
+}
+.exp-hero.is-controlled .exp-unit-name strong {
+  color: var(--exp-ink);
+}
+.exp-hero.is-controlled::after {
+  content: "";
+  position: absolute;
+  width: 70%;
+  height: 7px;
+  background: var(--exp-ink);
+  border-radius: 50%;
+  filter: blur(8px);
+  opacity: 0.35;
+  bottom: 26px;
+  left: 15%;
+  pointer-events: none;
+}
+.exp-health {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  margin: 7px 0 3px;
+  font-variant-numeric: tabular-nums;
+}
+.exp-health > div {
+  position: absolute;
+  bottom: -5px;
+  left: 8%;
+  width: 84%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--field);
+}
+.exp-health > div > span {
+  display: block;
+  height: 100%;
+  background: var(--exp-green);
+  transition: width 240ms;
+}
+.exp-enemy .exp-health > div > span {
+  background: var(--exp-red);
+}
+.exp-health > b {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+.exp-health small {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.exp-health em {
+  font-size: 12px;
+  font-style: normal;
+  color: var(--exp-blue);
+}
+.exp-intent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  margin: 0 auto 4px;
+  min-height: 39px;
+}
+.exp-intent > b {
+  font-size: 17px;
+  color: var(--exp-red);
+  border: 1px solid #d8816333;
+  background: #d8816310;
+  border-radius: 9px;
+  padding: 3px 12px;
+}
+.exp-intent > span {
+  color: var(--muted);
+}
+.exp-intent.block > b {
+  color: var(--exp-blue);
+  background: #7395c115;
+  border-color: #7395c133;
+}
+.exp-intent.strength > b {
+  color: var(--exp-ink);
+}
+.exp-statuses {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  min-height: 16px;
+  margin-top: 10px;
+}
+.exp-statuses span {
+  font-size: 9px;
+  color: var(--exp-ink);
+  padding: 2px 5px;
+  background: var(--field);
+  border-radius: 5px;
+}
+.exp-unit.is-defeated {
+  opacity: 0.24;
+  filter: grayscale(1);
+}
+.exp-unit.is-downed {
+  opacity: 0.35;
+}
+.exp-unit-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.exp-float {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-size: 29px;
+  font-weight: 800;
+  transform: translate(-50%, -50%);
+  color: var(--exp-red);
+  text-shadow: 0 2px 8px #0008;
+  animation: exp-float 500ms both ease-out;
+}
+.exp-float-block {
+  color: var(--exp-blue);
+}
+.exp-float-heal {
+  color: var(--exp-green);
+}
+.exp-float-status {
+  color: var(--exp-ink);
+}
+.exp-target-hint {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--exp-ink);
+  background: var(--field);
+  padding: 5px 10px;
+  border-radius: 10px;
+  pointer-events: none;
+}
+.exp-live-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 5px;
+  min-height: 48px;
+}
+.exp-live-stats > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.exp-live-stats small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.exp-live-stats b {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.exp-live-stats p {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 0 0 auto;
+}
+.exp-hand-zone {
+  min-width: 0;
+  min-height: 0;
+  border-top: 1px solid var(--line);
+  padding: 8px 0 0;
+}
+.exp-hand-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.exp-hero-tabs {
+  display: flex;
+  gap: 5px;
+}
+.exp-hero-tabs button {
+  font-size: 12px;
+  min-height: 32px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+.exp-hero-tabs button[aria-pressed="true"] {
+  box-shadow: inset 0 -2px var(--exp-ink);
+  color: var(--exp-ink);
+}
+.exp-hero-tabs span {
+  font-size: 12px;
+}
+.exp-hand-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.exp-hand-meta > span {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 8px;
+}
+.exp-hand-meta button {
+  font-size: 12px;
+  min-height: 32px;
+}
+.exp-hand-meta kbd {
+  font-size: 10px;
+  opacity: 0.6;
+  padding-left: 12px;
+  font-family: inherit;
+}
+.exp-hand {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  overflow: auto;
+  padding: 5px 4px 3px;
+  scrollbar-width: thin;
+  min-width: 0;
+}
+.exp-hand-card {
+  flex: 0 0 128px;
+  position: relative;
+}
+.exp-hand-card > kbd {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font: 9px inherit;
+  color: var(--muted);
+  pointer-events: none;
+  opacity: 0.55;
+}
+.exp-card {
+  --card-tint: var(--exp-blue);
+  position: relative;
+  border-radius: 12px;
+  background: var(--raised);
+  color: var(--text);
+  height: var(--exp-card-height);
+  box-shadow: 0 2px 10px #0002;
+  transition: transform 150ms;
+}
+.exp-card[data-card-type="attack"] {
+  --card-tint: var(--exp-ink);
+}
+.exp-card-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--card-tint);
+  border-radius: 12px;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--card-tint) 7%, transparent),
+    transparent 65%
+  );
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  gap: 6px;
+}
+.exp-card-main:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.exp-card.is-selected {
+  transform: translateY(-5px);
+  box-shadow:
+    0 0 0 2px var(--exp-ink),
+    0 9px 20px #0003;
+}
+.exp-card-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 8px;
+}
+.exp-card-top strong {
+  font-size: 12px;
+}
+.exp-cost {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  height: 21px;
+  width: 21px;
+  flex: none;
+  background: var(--field);
+  color: var(--exp-ink);
+  font-size: 12px;
+}
+.exp-card-art {
+  color: var(--card-tint);
+  font-size: 32px;
+  text-align: center;
+  line-height: 1;
+}
+.exp-card-text {
+  font-size: 11px;
+  line-height: 1.5;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.exp-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 9px;
+  padding-right: 15px;
+}
+.exp-card-bottom i {
+  font-style: normal;
+  color: var(--exp-ink);
+}
+.exp-card .card-detail-button {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  padding: 0 !important;
+  width: 21px;
+  height: 21px;
+  min-height: 21px !important;
+  min-width: 21px;
+  border: 0;
+  background: transparent !important;
+  color: var(--muted);
+  font-size: 12px;
+}
+.exp-selection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 35px;
+  padding: 4px;
+  text-align: center;
+  justify-content: center;
+}
+.exp-selection > span {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.exp-selection button {
+  font-size: 11px;
+  min-height: 28px;
+  padding: 4px 9px;
+  flex: none;
+}
+.exp-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 51px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+.exp-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.exp-controls input {
+  font-size: 11px;
+  width: 180px;
+  min-height: 30px;
+}
+.exp-controls > button {
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+.exp-motion {
+  display: flex;
+  gap: 14px;
+  margin-left: auto;
+}
+.exp-motion .ui-switch-label {
+  font-size: 11px;
+  gap: 7px;
+}
+.exp-rewards,
+.exp-result {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 4;
+  overflow: auto;
+}
+.expedition-demo .exp-rewards h2,
+.exp-result h2 {
+  font-size: 24px;
+  letter-spacing: 2px;
+  margin: 0 0 7px;
+}
+.exp-rewards > * {
+  flex-shrink: 0;
+}
+.exp-rewards > p,
+.exp-result p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.exp-reward-heroes {
+  display: flex;
+  gap: 24px;
+  max-width: 900px;
+  width: 100%;
+  margin: 12px 0;
+}
+.exp-reward-heroes > div {
+  flex: 1;
+}
+.exp-reward-heroes > div > strong {
+  font-size: 13px;
+}
+.exp-reward-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+.exp-reward-options button {
+  font-size: 12px;
+  text-align: left;
+  flex: 1 1 100px;
+}
+.exp-reward-options small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+.exp-result > span {
+  font-size: 55px;
+  color: var(--exp-ink);
+}
+.exp-balance.ui-panel {
+  width: min(980px, calc(100vw - 24px));
+}
+.exp-balance p {
+  margin: 9px 0;
+}
+.exp-report-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 12px 0;
+}
+.exp-report-table,
+.exp-turn-table {
+  overflow: auto;
+}
+.exp-balance table,
+.exp-log-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.exp-balance th,
+.exp-balance td,
+.exp-log-panel th,
+.exp-log-panel td {
+  text-align: left;
+  padding: 10px 9px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.exp-report-table tbody tr:last-child {
+  background: var(--hover);
+}
+.exp-benchmark-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  margin: 16px 0;
+}
+.exp-benchmark-actions progress {
+  width: 130px;
+  height: 7px;
+  accent-color: var(--accent);
+}
+.exp-number-sheet {
+  margin: 20px 0;
+  font-size: 13px;
+}
+.exp-number-sheet summary {
+  cursor: pointer;
+}
+.exp-number-sheet td:last-child {
+  white-space: normal;
+  min-width: 180px;
+}
+.exp-method {
+  background: var(--field);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.exp-method p {
+  color: var(--muted);
+}
+.exp-log-panel.ui-panel {
+  width: min(680px, calc(100vw - 24px));
+}
+.exp-event-log {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 20px 0 0;
+  font-size: 12px;
+}
+.exp-event-log li {
+  display: flex;
+  gap: 12px;
+}
+.exp-event-log small {
+  color: var(--muted);
+  min-width: 30px;
+}
+[data-color-scheme="light"] .expedition-demo {
+  --exp-ink: #9a6529;
+  --exp-blue: #426f91;
+  --exp-green: #28775f;
+  --exp-red: #b9443e;
+}
+[data-color-scheme="light"] .exp-scene {
+  background:
+    radial-gradient(ellipse at 65% 15%, #b9ced366, transparent 65%),
+    linear-gradient(180deg, #edf0eb, #f1eee7);
+}
+[data-game-motion="enhanced"] .exp-float {
+  animation: exp-impact 720ms ease-out both;
+}
+[data-game-motion="enhanced"] .exp-float::before {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  animation: exp-ring 550ms ease-out both;
+}
+[data-game-motion="enhanced"] .exp-hand-card {
+  animation: exp-deal 260ms ease-out both;
+}
+[data-motion="false"] .expedition-demo * {
+  transition: none;
+}
+[data-game-motion="reduced"] .expedition-demo * {
+  animation: none !important;
+  transition: none !important;
+}
+@keyframes exp-float {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -40px);
+  }
+}
+@keyframes exp-impact {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(1.9);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -8px) scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -55px) scale(0.8);
+  }
+}
+@keyframes exp-ring {
+  from {
+    transform: scale(0.25);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+@keyframes exp-deal {
+  from {
+    opacity: 0.1;
+    transform: translateY(14px) rotate(2deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-height: 740px) {
+  .expedition-demo {
+    --exp-card-height: 125px;
+  }
+  .exp-toolbar {
+    min-height: 50px;
+  }
+  .exp-runbar {
+    min-height: 60px;
+    padding: 6px 0;
+  }
+  .exp-live-stats {
+    min-height: 36px;
+    padding: 7px 4px;
+  }
+  .exp-card-art {
+    font-size: 21px;
+  }
+  .exp-card-main {
+    padding: 7px;
+    gap: 4px;
+  }
+  .exp-hand-heading {
+    margin-bottom: 4px;
+  }
+  .exp-controls {
+    min-height: 42px;
+  }
+  .exp-selection {
+    min-height: 27px;
+  }
+}
+@media (max-width: 700px) {
+  .expedition-demo {
+    padding: 0 10px;
+    --exp-card-height: 145px;
+    grid-template-rows: auto auto minmax(150px, 1fr) auto auto auto;
+  }
+  .exp-toolbar {
+    min-height: 69px;
+    gap: 8px;
+  }
+  .exp-brand strong {
+    font-size: 16px;
+  }
+  .exp-brand > span {
+    font-size: 27px;
+  }
+  .exp-brand small {
+    font-size: 9px;
+  }
+  .exp-toolbar-actions {
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .exp-toolbar-actions button {
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+  .exp-toolbar-actions .ui-select {
+    font-size: 10px;
+    min-height: 30px;
+    padding: 4px 8px;
+  }
+  .exp-route {
+    gap: 10px;
+  }
+  .exp-route small {
+    display: none;
+  }
+  .exp-route > span:not(:last-child)::after {
+    display: none;
+  }
+  .exp-runbar {
+    min-height: 60px;
+    gap: 9px;
+  }
+  .expedition-demo .exp-location h1 {
+    font-size: 18px;
+  }
+  .exp-location small {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .exp-round small {
+    display: none;
+  }
+  .exp-round strong {
+    font-size: 12px;
+  }
+  .exp-heroes {
+    left: 3%;
+    gap: 10px;
+  }
+  .exp-enemies {
+    right: 3%;
+    gap: 8px;
+  }
+  .exp-unit {
+    width: 77px;
+  }
+  .exp-unit-name strong {
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+  .exp-unit-name small {
+    font-size: 9px;
+  }
+  .exp-health > b {
+    font-size: 12px;
+  }
+  .exp-intent > b {
+    font-size: 14px;
+    padding: 2px 8px;
+  }
+  .exp-intent {
+    font-size: 9px;
+    min-height: 35px;
+  }
+  .exp-figure,
+  .exp-hero .exp-figure {
+    height: 105px;
+  }
+  .exp-live-stats {
+    gap: 12px;
+    min-height: 39px;
+    padding: 6px 0;
+  }
+  .exp-live-stats > div {
+    display: grid;
+    gap: 3px;
+  }
+  .exp-live-stats p {
+    display: none;
+  }
+  .exp-hand-meta > span {
+    display: none;
+  }
+  .exp-hand-heading {
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+  .exp-hand-meta {
+    gap: 5px;
+  }
+  .exp-hand-meta button {
+    font-size: 10px;
+    padding: 6px 7px;
+  }
+  .exp-hand-meta kbd {
+    display: none;
+  }
+  .exp-hero-tabs button {
+    gap: 9px;
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  .exp-hand {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .exp-hand-card {
+    flex-basis: 108px;
+  }
+  .exp-card-art {
+    font-size: 25px;
+  }
+  .exp-card-top strong {
+    font-size: 11px;
+  }
+  .exp-card-main {
+    padding: 8px;
+    gap: 5px;
+  }
+  .exp-hand-card > kbd {
+    display: none;
+  }
+  .exp-selection {
+    min-height: 29px;
+    text-align: left;
+  }
+  .exp-selection span {
+    font-size: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .exp-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 78px;
+    padding: 6px 0;
+  }
+  .exp-controls input {
+    width: 145px;
+  }
+  .exp-motion {
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+  }
+  .exp-rewards,
+  .exp-result {
+    padding: 12px;
+  }
+  .exp-rewards {
+    justify-content: flex-start;
+  }
+  .expedition-demo .exp-rewards h2,
+  .exp-result h2 {
+    font-size: 17px;
+  }
+  .exp-rewards > p {
+    font-size: 10px;
+    margin: 0;
+  }
+  .exp-reward-heroes {
+    gap: 10px;
+    margin: 7px 0;
+  }
+  .exp-reward-options button {
+    padding: 5px 7px;
+    font-size: 11px;
+  }
+  .exp-reward-options small {
+    display: none;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .expedition-demo {
+    --exp-card-height: 80px;
+    padding: 0 10px;
+    grid-template-rows: 38px 38px minmax(90px, 1fr) 28px auto 34px;
+  }
+  .exp-toolbar {
+    min-height: 0;
+  }
+  .exp-brand strong {
+    font-size: 14px;
+  }
+  .exp-brand small,
+  .exp-brand > span {
+    display: none;
+  }
+  .exp-toolbar-actions button,
+  .exp-toolbar-actions .ui-select {
+    min-height: 27px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  .exp-runbar {
+    min-height: 0;
+    padding: 3px 0;
+  }
+  .expedition-demo .exp-location h1 {
+    font-size: 14px;
+    margin: 0;
+  }
+  .exp-location small {
+    display: none;
+  }
+  .exp-route small {
+    font-size: 9px;
+  }
+  .exp-route b {
+    width: 21px;
+    height: 21px;
+  }
+  .exp-round small {
+    display: none;
+  }
+  .exp-round strong {
+    font-size: 11px;
+  }
+  .exp-figure,
+  .exp-hero .exp-figure {
+    height: 65px;
+  }
+  .exp-unit {
+    width: 88px;
+  }
+  .exp-heroes {
+    left: 10%;
+    bottom: 1%;
+    gap: 20px;
+  }
+  .exp-enemies {
+    right: 9%;
+    bottom: 8%;
+    gap: 23px;
+  }
+  .exp-unit-name {
+    min-height: 12px;
+    gap: 0;
+  }
+  .exp-unit-name strong {
+    font-size: 10px;
+  }
+  .exp-unit-name small {
+    display: none;
+  }
+  .exp-intent {
+    min-height: 24px;
+    gap: 0;
+    margin: 0;
+  }
+  .exp-intent > b {
+    font-size: 11px;
+    padding: 1px 8px;
+  }
+  .exp-intent > span {
+    font-size: 8px;
+  }
+  .exp-health {
+    margin: 2px 0 0;
+  }
+  .exp-health > b {
+    font-size: 10px;
+  }
+  .exp-health small {
+    font-size: 8px;
+  }
+  .exp-statuses {
+    min-height: 0;
+    margin: 5px 0 0;
+  }
+  .exp-statuses span {
+    font-size: 8px;
+    padding: 0 3px;
+  }
+  .exp-live-stats {
+    min-height: 0;
+    padding: 1px 2px;
+    gap: 15px;
+  }
+  .exp-live-stats small {
+    font-size: 9px;
+  }
+  .exp-live-stats b {
+    font-size: 11px;
+  }
+  .exp-hand-zone {
+    padding-top: 3px;
+  }
+  .exp-hand-heading {
+    margin-bottom: 2px;
+  }
+  .exp-hand-meta button,
+  .exp-hero-tabs button {
+    min-height: 25px;
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+  .exp-hand-meta > span {
+    font-size: 9px;
+  }
+  .exp-hand {
+    gap: 7px;
+    padding: 3px 3px 1px;
+  }
+  .exp-hand-card {
+    flex-basis: 114px;
+  }
+  .exp-card-main {
+    padding: 5px 7px;
+    gap: 2px;
+  }
+  .exp-cost {
+    width: 17px;
+    height: 17px;
+    font-size: 10px;
+  }
+  .exp-card-top strong {
+    font-size: 10px;
+  }
+  .exp-card-art {
+    display: none;
+  }
+  .exp-card-text {
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .exp-card-bottom {
+    font-size: 8px;
+  }
+  .exp-selection {
+    min-height: 20px;
+    padding: 2px;
+  }
+  .exp-selection > span {
+    font-size: 9px;
+  }
+  .exp-selection button {
+    min-height: 20px;
+    padding: 2px 7px;
+    font-size: 9px;
+  }
+  .exp-controls {
+    min-height: 0;
+    flex-wrap: nowrap;
+    padding: 2px 0;
+  }
+  .exp-controls > button {
+    min-height: 25px;
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  .exp-controls input {
+    width: 140px;
+    min-height: 25px;
+    padding: 4px 7px;
+  }
+  .exp-motion {
+    width: auto;
+    margin-left: auto;
+  }
+  .exp-motion .ui-switch-label {
+    font-size: 9px;
+  }
+  .exp-rewards {
+    padding: 8px;
+    justify-content: flex-start;
+  }
+  .expedition-demo .exp-rewards h2 {
+    font-size: 15px;
+  }
+  .exp-rewards > p {
+    display: none;
+  }
+  .exp-reward-options small {
+    display: none;
+  }
+  .exp-reward-options {
+    margin-top: 4px;
+  }
+  .exp-reward-options button {
+    font-size: 10px;
+    padding: 4px 6px;
+    min-height: 25px;
+  }
+  .exp-reward-heroes {
+    margin: 5px 0;
+    gap: 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .expedition-demo * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .exp-enemies {
+    bottom: 2%;
+  }
+  .exp-enemy .exp-figure {
+    height: 52px;
+  }
+  .exp-intent {
+    height: 22px;
+    min-height: 22px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 4px;
+  }
+  .exp-intent > b {
+    font-size: 11px;
+  }
+  .exp-intent > span {
+    white-space: nowrap;
+  }
+}
+
+[data-game-motion="enhanced"] .exp-unit-fx:has(.exp-float-damage)::before {
+  content: "";
+  position: absolute;
+  inset: 20% 10%;
+  border-radius: 50%;
+  background: #f79a7066;
+  filter: blur(15px);
+  animation: exp-ring 350ms both;
+}

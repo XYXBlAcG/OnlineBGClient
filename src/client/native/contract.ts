@@ -96,6 +96,7 @@ export type AuxiliaryPayload =
       canConfigureAI: boolean;
       roomPerformance?: Snapshot["config"]["performance"];
       mediaSession?: MediaSession;
+      initialSection?: string;
     }
   | {
       view: "chat";
@@ -116,7 +117,7 @@ export type AuxiliaryPayload =
       pending: boolean;
     }
   | { view: "roomsetup"; snapshot: Snapshot }
-  | { view: "exit"; hosting: boolean };
+  | { view: "exit"; hosting: boolean; voice?: boolean };
 export interface AuxiliaryFrame {
   revision: number;
   payload: AuxiliaryPayload;

@@ -1,7 +1,7 @@
 import { ReplayBanners } from "./social/ReplayBanners";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { GameEngine } from "../domain/engine";
 import { gameCatalogue } from "../domain/catalogue";
 import { Replay, type ReplayRecord } from "../domain/replay";
@@ -34,8 +34,15 @@ export function Records({
   const [store] = useState(() => new ClientStore());
   const [records, setRecords] = useState<ReplayRecord[]>([]);
   const [selected, setSelected] = useState<ReplayRecord | null>(null);
-  const [frames, setFrames] = useState<GameState[]>([]);
+  const [frame, setFrame] = useState<{
+    index: number;
+    state: GameState;
+  } | null>(null);
+  const replayWorker = useRef<Worker | null>(null);
+  const wantedFrame = useRef(0);
+  const frameCount = selected ? selected.events.length + 1 : 0;
   const [step, setStep] = useState(0);
+  wantedFrame.current = step;
   const [actor, setActor] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -65,32 +72,43 @@ export function Records({
       type: "module",
     });
     worker.onmessage = (event) => {
+      if (!event.data.error && event.data.index !== wantedFrame.current) return;
       setLoading(false);
       if (event.data.error) onError(event.data.error);
-      else setFrames(event.data.frames);
+      else setFrame({ index: event.data.index, state: event.data.state });
     };
     worker.onerror = (event) => {
       setLoading(false);
       onError(event.message);
     };
-    worker.postMessage(selected);
-    return () => worker.terminate();
+    replayWorker.current = worker;
+    worker.postMessage({ record: selected, index: 0 });
+    return () => {
+      worker.terminate();
+      replayWorker.current = null;
+    };
   }, [selected]);
   useEffect(() => {
-    if (!selected || loading || !playing || frames.length < 2) return;
-    if (step >= frames.length - 1) {
+    if (selected && replayWorker.current) {
+      setLoading(true);
+      replayWorker.current.postMessage({ index: step });
+    }
+  }, [step]);
+  useEffect(() => {
+    if (!selected || loading || !playing || frameCount < 2) return;
+    if (step >= frameCount - 1) {
       setPlaying(false);
       return;
     }
     const timer = window.setTimeout(
-      () => setStep((value) => Math.min(value + 1, frames.length - 1)),
+      () => setStep((value) => Math.min(value + 1, frameCount - 1)),
       1000 / speed,
     );
     return () => window.clearTimeout(timer);
-  }, [selected, loading, playing, frames.length, step, speed]);
+  }, [selected, loading, playing, frameCount, step, speed]);
   if (detached) return null;
   const preview: Snapshot | null =
-    selected && frames[step]
+    selected && frame && frame.index === step
       ? {
           serverTime: Date.now(),
           apiVersion: protocolVersion,
@@ -111,7 +129,7 @@ export function Records({
             online: true,
             ready: true,
           })),
-          state: engine.project(frames[step], actor),
+          state: engine.project(frame.state, actor),
           candidates: [],
           computation: null,
           aiPaused: false,
@@ -142,7 +160,7 @@ export function Records({
                 const input = await importJson();
                 if (!input) return;
                 const replay = new Replay(input);
-                replay.frames();
+                replay.frame(replay.record.events.length);
                 await store.saveRecord(replay.record);
                 setRecords(await store.records());
               } catch (error) {
@@ -161,7 +179,7 @@ export function Records({
           >
             <button
               onClick={() => {
-                setFrames([]);
+                setFrame(null);
                 setStep(0);
                 setActor(0);
                 setPlaying(false);
@@ -222,15 +240,15 @@ export function Records({
           )}
           <div className="replay-controls">
             <button
-              disabled={loading || frames.length < 2}
+              disabled={loading || frameCount < 2}
               onClick={() => {
-                if (!playing && step === frames.length - 1) setStep(0);
+                if (!playing && step === frameCount - 1) setStep(0);
                 setPlaying((value) => !value);
               }}
             >
               {playing
                 ? "暂停回放"
-                : step === frames.length - 1 && frames.length > 1
+                : step === frameCount - 1 && frameCount > 1
                   ? "重新播放"
                   : "播放回放"}
             </button>
@@ -257,17 +275,17 @@ export function Records({
               ))}
             </Select>
             <span>
-              {step} / {Math.max(0, frames.length - 1)}
+              {step} / {Math.max(0, frameCount - 1)}
             </span>
             <Slider
               aria-label="回放进度"
               value={step}
               min={0}
-              max={Math.max(1, frames.length - 1)}
+              max={Math.max(1, frameCount - 1)}
               step={1}
               onValueChange={(value) => {
                 setPlaying(false);
-                setStep(Math.min(value, Math.max(0, frames.length - 1)));
+                setStep(Math.min(value, Math.max(0, frameCount - 1)));
               }}
             />
           </div>

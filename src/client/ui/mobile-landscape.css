@@ -660,3 +660,4 @@
   .gw-table:not(:has(.gw-controls)) {
   grid-template-columns: minmax(0, 1fr);
 }
+:root[data-mobile-orientation="landscape"] .mobile-shell .original-game:is([data-game="dominion"],[data-game="expedition"]) { min-height:0; flex:1; padding:2px; }

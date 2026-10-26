@@ -25,6 +25,8 @@ command-group = "5.0.1"
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 tauri-plugin-window-state = "2"
 
+keyring = { version = "3.6.3", features = ["apple-native", "windows-native"] }
+
 [profile.release]
 strip = true
 lto = "thin"

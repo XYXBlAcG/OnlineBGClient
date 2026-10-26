@@ -144,6 +144,8 @@ export interface PoisonView {
   finish: number;
 }
 export type GameState =
+  | import("./expedition/adventure-types").ExpeditionGameState
+  | import("./dominion/types").DominionState
   | import("./graphwar/types").GraphwarState
   | import("./mahjong/types").MahjongState
   | { kind: "ccbs"; view: import("./splendor-actions").SplendorView }

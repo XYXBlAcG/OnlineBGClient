@@ -214,6 +214,7 @@ function openResponse(
 }
 export class SichuanRules implements Rules<"scmj"> {
   constructor(private random: () => number) {}
+  actionWindow(state:import("./types").MahjongState,action:Action):string|undefined {const v=state.view;return action.type === "scmj-action" && ["exchange","lack","respond"].includes(action.move.type) ? `${v.phase}:${v.turn}:${v.pending?.actor}:${v.pending?.tile}:${v.pending?.rob}` : undefined;}
   create(players: number): MahjongState {
     if (players !== 4) throw new Error("四川麻将需要四个席位");
     const wall = Array.from({ length: 108 }, (_, i) => i);

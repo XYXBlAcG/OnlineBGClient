@@ -1,3 +1,5 @@
+import { expeditionOptionsSchema } from "./expedition/adventure-types";
+import { dominionOptionsSchema } from "./dominion/types";
 import { balanceSeats } from "./room-balance";
 import { maxRoomSeats } from "./catalogue";
 import { graphwarOptionsSchema } from "./graphwar/types";
@@ -46,7 +48,11 @@ export const configSchema = z
     team: z.boolean(),
     training: z.boolean(),
     auditEnabled: z.boolean().default(false),
+    expedition: expeditionOptionsSchema.default(
+      expeditionOptionsSchema.parse({}),
+    ),
     graphwar: graphwarOptionsSchema.default(graphwarOptionsSchema.parse({})),
+    dominion: dominionOptionsSchema.default(dominionOptionsSchema.parse({})),
     mahjong: mahjongOptionsSchema.default({ cap: 3, selfDraw: "base" }),
     catanTrades: z.boolean().default(true),
     performance: performanceSchema.default({ mode: "auto", threads: 8 }),
@@ -84,7 +90,17 @@ export const seatConfigSchema = z.discriminatedUnion("type", [
 ]);
 export type SeatConfig = z.infer<typeof seatConfigSchema>;
 export const commandSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("abandon-run"),
+    run: z.string().min(1).max(100),
+    token: z.string().min(1).max(100),
+  }),
   z.object({ type: z.literal("restore-local") }),
+  z.object({
+    type: z.literal("restore-run"),
+    run: z.string().min(1).max(100),
+    token: z.string().min(1).max(100),
+  }),
   z.object({
     type: z.literal("create"),
     hostOnly: z.boolean().optional(),
@@ -111,6 +127,12 @@ export const commandSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("autoplay"),
+    index: z
+      .number()
+      .int()
+      .min(0)
+      .max(maxRoomSeats - 1)
+      .optional(),
     token: z.string(),
     enabled: z.boolean(),
   }),
@@ -191,8 +213,9 @@ export interface DecisionSummary {
   simulations: number;
   version: number;
 }
-export const protocolVersion = 14;
+export const protocolVersion = 16;
 export interface Snapshot {
+  resumeRoles?: { profession: string; name: string }[];
   serverTime: number;
   apiVersion: number;
   rulesVersion: string;
@@ -231,6 +254,7 @@ export interface Snapshot {
   records: ReplayRecord[];
 }
 export type Response =
+  | { type: "run-abandoned"; run: string }
   | { type: "session"; room: string; token: string; localTokens?: string[] }
   | { type: "snapshot"; snapshot: Snapshot; revision?: number }
   | {
@@ -238,6 +262,7 @@ export type Response =
       base: number;
       revision: number;
       changes: Partial<Snapshot>;
+      removed?: (keyof Snapshot)[];
     }
   | { type: "activity"; pending: boolean; latencyMs?: number }
   | {

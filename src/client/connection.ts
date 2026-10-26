@@ -75,7 +75,10 @@ export class NetworkConnection implements Connection {
 
   constructor(
     readonly endpoint: string,
-    private initial: Extract<Command, { type: "create" | "join" }>,
+    private initial: Extract<
+      Command,
+      { type: "create" | "join" | "restore-run" | "abandon-run" }
+    >,
     private receive: (response: Response) => void,
     private status: (status: string) => void,
   ) {
@@ -145,7 +148,14 @@ export class NetworkConnection implements Connection {
     socket.onopen = () => {
       if (this.stopped || socket !== this.socket) return;
       const command = this.session
-        ? { type: "join", ...this.session, name: this.initial.name }
+        ? {
+            type: "join",
+            ...this.session,
+            name:
+              "name" in this.initial
+                ? this.initial.name
+                : localStorage.getItem("player-name") || "我",
+          }
         : this.initial;
       this.socket!.send(JSON.stringify(command));
     };

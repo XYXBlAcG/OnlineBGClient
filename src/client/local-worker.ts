@@ -24,10 +24,23 @@ let pending:
 let session: { room: string; token: string } | undefined;
 let tokens: string[] = [];
 let failedVersion = -1;
+const persistedRuns = new Map<string, import("../domain/room").RoomArchive>();
 const send = (response: Response) => postMessage(response);
 const publish = async () => {
   if (session) {
     const room = gateway.rooms.get(session.room)!;
+    gateway.rememberRun(room);
+    if (room.state?.kind === "expedition" && room.engine.finished(room.state))
+      await store.abandonRun(room.state.view.runId);
+    for (const [id, archive] of gateway.runs)
+      if (persistedRuns.get(id) !== archive) {
+        await store.saveRun(id, {
+          room: archive,
+          tokens,
+          token: archive.host?.token ?? archive.seats[0].token!,
+        });
+        persistedRuns.set(id, archive);
+      }
     await store.saveLocal(
       structuredClone({ room: room.export(), tokens, token: session.token }),
     );
@@ -84,7 +97,38 @@ onmessage = (event: MessageEvent<unknown>) => {
         )
           throw new Error("图片尚未上传或已清理");
       }
+      if (command.type === "restore-run" || command.type === "abandon-run") {
+        const saved = await store.run(command.run);
+        if (!saved) throw new Error("远征存档不存在");
+        gateway.runs.set(command.run, saved.room);
+        tokens = saved.tokens;
+      }
       const result = gateway.handle(command, session);
+      if (result.response?.type === "run-abandoned") {
+        await store.abandonRun(result.response.run);
+        send(result.response);
+        return;
+      }
+      for (const [id, archive] of gateway.runs)
+        if (persistedRuns.get(id) !== archive) {
+          await store.saveRun(id, {
+            room: archive,
+            tokens: archive.seats.flatMap((s) => (s.token ? [s.token] : [])),
+            token: archive.host?.token ?? archive.seats[0].token!,
+          });
+          persistedRuns.set(id, archive);
+        }
+      if (command.type === "restore-run") {
+        failedVersion = -1;
+        const room = gateway.rooms.get(result.session.room)!;
+        tokens = [result.session.token];
+        for (let i = 1; i < room.config.humans; i++) {
+          const token = room.claim(`玩家 ${i + 1}`);
+          room.setReady(token, true);
+          tokens.push(token);
+        }
+        send({ type: "session", ...result.session, localTokens: tokens });
+      }
       if (["end", "game", "close", "leave"].includes(command.type)) {
         pending?.controller.abort();
         pending = undefined;

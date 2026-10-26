@@ -1,3 +1,4 @@
+import { MotionLifetime } from "./motion/motion-lifetime";
 import { useLayoutEffect, useRef } from "react";
 import type { GameSnapshot } from "./OriginalGame";
 import { usePresentation } from "./motion";
@@ -17,10 +18,16 @@ export function GameMotionLayer({
   const ref = useRef<HTMLSpanElement>(null),
     previous = useRef<{ snapshot: GameSnapshot; nodes: TableSample[] }>();
   const { game } = usePresentation();
+  const lifetime = useRef(new MotionLifetime(3));
+  useLayoutEffect(() => {
+    previous.current = undefined;
+    return () => lifetime.current.clear();
+  }, [snapshot.room, snapshot.kind, snapshot.actor, game, active, rate]);
   useLayoutEffect(() => {
     const surface = ref.current?.closest(".original-game");
     if (!surface || !snapshot.state || game !== "enhanced" || !active) {
       previous.current = undefined;
+      lifetime.current.clear();
       return;
     }
     const nodes = sampleTable(surface),
@@ -33,25 +40,34 @@ export function GameMotionLayer({
       last.snapshot.actor === snapshot.actor &&
       snapshot.version === last.snapshot.version + 1 &&
       last.snapshot.state;
-    const animator = continuous
-      ? new TableAnimator(surface, last.nodes, nodes, rate)
-      : undefined;
-    if (animator && last?.snapshot.state)
-      animator.play(
-        gameMotionEvents(last.snapshot.state, snapshot.state, snapshot.actor),
-        gameHighlights(last.snapshot.state, snapshot.state),
-      );
+    const events = continuous
+        ? gameMotionEvents(last.snapshot.state!, snapshot.state, snapshot.actor)
+        : [],
+      highlights = continuous
+        ? gameHighlights(last.snapshot.state!, snapshot.state)
+        : [];
+    const animator =
+      continuous &&
+      (snapshot.kind !== "expedition" || events.length || highlights.length)
+        ? new TableAnimator(surface, last.nodes, nodes, rate)
+        : undefined;
+    animator?.play(events, highlights);
+    if (animator && snapshot.kind === "expedition")
+      lifetime.current.keep(animator, 1700 / rate + 100);
     const invalidate = () => {
-      animator?.cancel();
+      lifetime.current.clear();
+      if (snapshot.kind !== "expedition") animator?.cancel();
       previous.current = { snapshot, nodes: sampleTable(surface) };
     };
     window.addEventListener("resize", invalidate);
     surface.addEventListener("scroll", invalidate, true);
-    surface.addEventListener("pointerdown", invalidate, true);
-    surface.addEventListener("pointerup", invalidate, true);
-    surface.addEventListener("keydown", invalidate, true);
+    if (snapshot.kind !== "expedition") {
+      surface.addEventListener("pointerdown", invalidate, true);
+      surface.addEventListener("pointerup", invalidate, true);
+      surface.addEventListener("keydown", invalidate, true);
+    }
     return () => {
-      animator?.cancel();
+      if (snapshot.kind !== "expedition") animator?.cancel();
       window.removeEventListener("resize", invalidate);
       surface.removeEventListener("scroll", invalidate, true);
       surface.removeEventListener("pointerdown", invalidate, true);

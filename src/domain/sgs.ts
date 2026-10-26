@@ -24,6 +24,7 @@ export class SgsRules {
   finished(state: SgsState): boolean {
     return state.view.stage === this.constants.PR.FINISH;
   }
+  actionWindow(state:SgsState,action:Action):string|undefined {return action.type === "sgs-hero" && [1,2].includes(state.view.stage) ? `heroes:${state.view.stage}` : undefined;}
   actors(state: SgsState): number[] {
     if (this.finished(state)) return [];
     const view = state.view;

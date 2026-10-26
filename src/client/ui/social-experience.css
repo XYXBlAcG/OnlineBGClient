@@ -1,5 +1,5 @@
 .room-heading {
-  flex: 1;
+  flex: 1 0 230px;
   min-width: 0;
   display: flex;
   align-items: baseline;
@@ -279,7 +279,7 @@
   position: absolute;
   z-index: 3;
   left: 50%;
-  top: 6px;
+  top: 18px;
   transform: translateX(-50%);
   pointer-events: none;
   padding: 5px 12px;
@@ -508,3 +508,5 @@
 :root[data-mobile-keyboard="true"] .social-banner strong[data-length="long"] {
   font-size: min(36px, calc(var(--mobile-height) * 0.14));
 }
+
+@media(max-height:540px) and (orientation:landscape){.game-turn-indicator{top:12px;padding:3px 10px}}

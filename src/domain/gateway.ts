@@ -1,14 +1,89 @@
 import { commandSchema, type Command, type Response } from "./protocol";
-import { Room } from "./room";
+import { Room, type RoomArchive } from "./room";
 
 export class Gateway {
   readonly rooms = new Map<string, Room>();
+  readonly runs = new Map<string, RoomArchive>();
+  rememberRun(room: Room): void {
+    if (room.state?.kind === "expedition" && room.engine.finished(room.state)) {
+      this.runs.delete(room.state.view.runId);
+      return;
+    }
+    if (
+      room.state?.kind === "expedition" &&
+      !room.hasEnded &&
+      !room.engine.finished(room.state)
+    ) {
+      const id = room.state.view.runId;
+      if (this.runs.get(id)?.version !== room.version)
+        this.runs.set(
+          id,
+          structuredClone({
+            ...room.export(),
+            records: [],
+            decisions: [],
+            summaries: [],
+            accepted: [],
+          }),
+        );
+    }
+  }
 
   handle(
     input: unknown,
     session?: { room: string; token: string },
   ): { session: { room: string; token: string }; response?: Response } {
     const command = commandSchema.parse(input);
+    if (command.type === "restore-run" || command.type === "abandon-run") {
+      const save = this.runs.get(command.run);
+      if (!save || command.token !== (save.host?.token ?? save.seats[0].token))
+        throw new Error("远征存档不存在或原房主身份不匹配");
+      if (command.type === "abandon-run") {
+        const current = this.rooms.get(save.id);
+        if (
+          (current?.state?.kind === "expedition" &&
+            current.state.view.runId === command.run) ||
+          current?.pendingRunId === command.run
+        )
+          current.end(command.token, true);
+        this.runs.delete(command.run);
+        return {
+          session: { room: save.id, token: command.token },
+          response: { type: "run-abandoned", run: command.run },
+        };
+      }
+      const current = this.rooms.get(save.id);
+      if (
+        current &&
+        (current.config.kind !== "expedition" ||
+          (current.state?.kind === "expedition" &&
+            current.state.view.runId !== command.run &&
+            !current.hasEnded))
+      )
+        throw new Error("原房间正在进行其他游戏，请先关闭原房间再恢复远征");
+      if (
+        current &&
+        (current.pendingRunId === command.run ||
+          (current.state?.kind === "expedition" &&
+            current.state.view.runId === command.run &&
+            current.seats.some(
+              (seat) =>
+                !seat.difficulty && seat.online && seat.token !== command.token,
+            )))
+      ) {
+        current.claim("", command.token);
+        return {
+          session: { room: current.id, token: command.token },
+          response: { type: "session", room: current.id, token: command.token },
+        };
+      }
+      const room = Room.resumeRun(save, command.token);
+      this.rooms.set(room.id, room);
+      return {
+        session: { room: room.id, token: command.token },
+        response: { type: "session", room: room.id, token: command.token },
+      };
+    }
     if (command.type === "restore-local")
       throw new Error("该命令仅用于本地存档");
     if (command.type === "create") {
@@ -36,6 +111,7 @@ export class Gateway {
       throw new Error("连接身份不匹配");
     const room = this.rooms.get(session.room);
     if (!room) throw new Error("房间不存在");
+    this.rememberRun(room);
     if (command.type === "close") {
       if (!room.canManage(command.token))
         throw new Error("只有房主可以关闭房间");
@@ -58,6 +134,7 @@ export class Gateway {
       };
     }
     this.execute(room, command);
+    this.rememberRun(room);
     if (command.type === "leave")
       return { session, response: { type: "left" } };
     return {
@@ -73,12 +150,18 @@ export class Gateway {
 
   execute(
     room: Room,
-    command: Exclude<Command, { type: "create" | "join" | "restore-local" }>,
+    command: Exclude<
+      Command,
+      {
+        type:
+          "create" | "join" | "restore-local" | "restore-run" | "abandon-run";
+      }
+    >,
   ): void {
     if (command.type === "seat")
       room.configureSeat(command.token, command.index, command.config);
     if (command.type === "autoplay")
-      room.setAutoplay(command.token, command.enabled);
+      room.setAutoplay(command.token, command.enabled, command.index);
     if (command.type === "avatar")
       room.setAvatar(command.token, command.avatar);
     if (command.type === "ready") room.setReady(command.token, command.ready);

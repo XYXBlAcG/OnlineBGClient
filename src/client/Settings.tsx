@@ -1,7 +1,9 @@
+import { VoiceSettings } from "./voice/VoiceSettings";
+import { isTauri } from "@tauri-apps/api/core";
 import { MediaCacheControls } from "./social/MediaCacheControls";
 import type { MediaSession } from "./social/media";
 import { MotionControls } from "./MotionControls";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AvatarPicker } from "./AvatarPicker";
 import { useNativeWindow } from "./native/windows";
 import type { PerformanceSettings } from "../domain/performance";
@@ -24,7 +26,9 @@ export function Settings({
   canConfigureAI = true,
   roomPerformance,
   mediaSession,
+  initialSection = "外观",
 }: {
+  initialSection?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preferences: Preferences;
@@ -36,7 +40,10 @@ export function Settings({
   onError: (message: string) => void;
   onBind: (id: string, binding: string) => void;
 }) {
-  const [section, setSection] = useState("外观");
+  const [section, setSection] = useState(initialSection);
+  useEffect(() => {
+    if (open) setSection(initialSection);
+  }, [open, initialSection]);
   const detached = useNativeWindow(
     "settings",
     open,
@@ -52,6 +59,7 @@ export function Settings({
       canConfigureAI,
       roomPerformance,
       mediaSession,
+      initialSection,
     },
     (intent) => {
       if (intent.type === "close") onOpenChange(false);
@@ -73,19 +81,31 @@ export function Settings({
     >
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="设置分组">
-          {["外观", "消息与互动", "AI 计算", "常用语", "数据", "快捷键"].map(
-            (label) => (
-              <button
-                key={label}
-                aria-pressed={section === label}
-                onClick={() => setSection(label)}
-              >
-                {label}
-              </button>
-            ),
-          )}
+          {[
+            "外观",
+            "消息与互动",
+            ...(isTauri() ? ["声音与语音"] : []),
+            "AI 计算",
+            "常用语",
+            "数据",
+            "快捷键",
+          ].map((label) => (
+            <button
+              key={label}
+              aria-pressed={section === label}
+              onClick={() => setSection(label)}
+            >
+              {label}
+            </button>
+          ))}
         </nav>
         <div className="settings-body">
+          {section === "声音与语音" && isTauri() && (
+            <VoiceSettings
+              value={preferences.voice}
+              onChange={(voice) => onChange({ ...preferences, voice })}
+            />
+          )}
           <section hidden={section !== "外观"} className="settings-section">
             <h3>外观</h3>
             <ThemeControl

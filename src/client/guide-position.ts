@@ -1,3 +1,5 @@
+import { incoming } from "../domain/expedition/rules";
+import { definition, cardText } from "../domain/expedition/content";
 import { catanResourceNames } from "../domain/catan";
 import { splendorColors } from "../domain/splendor";
 import type { Snapshot } from "../domain/protocol";
@@ -13,6 +15,38 @@ export function guidePosition({
 }: GuideSnapshot): string[] {
   if (!state || actor < 0) return [];
   switch (state.kind) {
+    case "expedition": {
+      const run = state.view,
+        hero = run.combat.heroes[actor];
+      if (!hero) return [];
+      const playable = candidates.find(
+        (c) =>
+          c.action.type === "expedition-action" &&
+          c.action.move.type === "card",
+      );
+      const card =
+        playable?.action.type === "expedition-action" &&
+        playable.action.move.type === "card"
+          ? hero.hand.find(
+              (c) =>
+                playable.action.type === "expedition-action" &&
+                playable.action.move.type === "card" &&
+                c.id === playable.action.move.instance,
+            )
+          : undefined;
+      return [
+        `你是${hero.name}，${hero.hp}/${hero.maxHp} 生命，${hero.energy} 能量，${hero.gold} 金币。`,
+        ...(run.phase === "battle"
+          ? [
+              `敌方本轮预计对你造成 ${incoming(run.combat, actor)} 点攻击伤害；当前 ${hero.block} 格挡。`,
+              card
+                ? `现在可出${definition(card).name}：${cardText(card)}`
+                : "没有可出的手牌时可以使用药水或结束行动。",
+            ]
+          : ["全员完成当前选择后继续；票数相同由本层领队裁决。"]),
+      ];
+    }
+
     case "graphwar": {
       const v = state.view,
         me = v.soldiers.filter((s) => s.player === actor && s.hp > 0);
@@ -27,6 +61,16 @@ export function guidePosition({
         `当前阶段：${state.view.phase === "exchange" ? "换三张" : state.view.phase === "lack" ? "定缺" : state.view.phase === "response" ? "响应" : "摸打"}；牌墙余 ${state.view.wall.length} 张。`,
         `你有 ${state.view.hands[actor].length} 张手牌，得分 ${state.view.scores[actor]}，可选 ${candidates.length} 个合法动作。`,
       ];
+    case "dominion": {
+      const v = state.view;
+      return [
+        `第 ${v.round} 轮，当前 ${v.actions} 行动、${v.buys} 购买、${v.coins} 金币。`,
+        `行省剩余 ${v.supply.province} 张，供应中已有 ${Object.values(v.supply).filter((n) => n === 0).length} 堆售罄。`,
+        v.prompt
+          ? v.prompt.title
+          : "先处理行动牌，再打出财宝购买；新牌通常进入弃牌区。",
+      ];
+    }
     case "ccbs": {
       const v = state.view;
       return [

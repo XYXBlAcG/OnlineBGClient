@@ -1,3 +1,4 @@
+import { VoiceDock } from "./voice/VoiceControls";
 import type { ImageQuality, Attachment } from "../domain/attachments";
 import { ChatComposer } from "./social/ChatComposer";
 import { ChatImage } from "./social/ChatImage";
@@ -174,6 +175,7 @@ export function ChatPanel({
         onBannerDisplay={onBannerDisplay}
         onImageQuality={onImageQuality}
       />
+      <VoiceDock />
     </aside>
   );
 }

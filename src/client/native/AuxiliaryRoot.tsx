@@ -174,6 +174,7 @@ export function AuxiliaryRoot() {
             canConfigureAI={payload.canConfigureAI}
             roomPerformance={payload.roomPerformance}
             mediaSession={payload.mediaSession}
+            initialSection={payload.initialSection}
             onChange={(preferences) =>
               send({ view: "settings", type: "preferences", preferences })
             }
@@ -233,17 +234,19 @@ export function AuxiliaryRoot() {
             <p>
               {payload.hosting
                 ? "公网房间仍在运行。隐藏窗口可以继续为其他玩家提供服务。"
-                : "退出客户端？"}
+                : payload.voice
+                  ? "语音通话仍在进行。隐藏窗口保持通话，退出客户端会离开语音。"
+                  : "退出客户端？"}
             </p>
             <div className="confirmation-actions">
               <button onClick={close}>取消</button>
-              {payload.hosting && (
+              {(payload.hosting || payload.voice) && (
                 <button
                   onClick={() =>
                     send({ view: "exit", type: "exit", operation: "hide" })
                   }
                 >
-                  保留房间，隐藏窗口
+                  隐藏窗口，继续运行
                 </button>
               )}
               <button

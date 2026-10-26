@@ -12,8 +12,20 @@ export const phraseGroupsSchema = z
 export type PhraseGroup = z.infer<typeof phraseGroupsSchema>[number];
 export const defaultPhraseGroups = phraseGroupsSchema.parse(presets);
 const gamePhrases: Record<GameKind, string[]> = {
-  graphwar: ["这条曲线绕得漂亮！", "队友小心，我要开炮了！", "先打通这堵墙。", "给我一点时间算一算。"],
- scmj:["这把先打缺。","碰一个！","自摸！","别急，等我想一想。"],
+  expedition: ["这轮先保住队友。", "我来破甲，你来收尾。", "先别结束，我还有一张牌。", "营地见，大家一起到塔顶！"],
+  dominion: [
+    "这套牌开始运转了。",
+    "再买一张就收手。",
+    "我的铜币怎么又回来了？",
+    "这个回合要起飞了！",
+  ],
+  graphwar: [
+    "这条曲线绕得漂亮！",
+    "队友小心，我要开炮了！",
+    "先打通这堵墙。",
+    "给我一点时间算一算。",
+  ],
+  scmj: ["这把先打缺。", "碰一个！", "自摸！", "别急，等我想一想。"],
   ccbs: [
     "这张卡我先预留了。",
     "差一颗宝石！",

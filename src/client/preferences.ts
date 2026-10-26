@@ -1,3 +1,4 @@
+import { voicePreferencesSchema } from "../domain/voice";
 import { defaultPhraseGroups, phraseGroupsSchema } from "../domain/phrases";
 import { performanceSchema } from "../domain/performance";
 import { avatarSchema } from "../domain/avatar";
@@ -6,6 +7,8 @@ import { themes } from "./themes";
 import { gameKinds } from "../domain/catalogue";
 
 export const preferencesSchema = z.object({
+  quickStartOpen: z.boolean().default(true),
+  voice: voicePreferencesSchema.default(voicePreferencesSchema.parse({})),
   theme: z.string().default("system"),
   motion: z.boolean().default(true),
   enhancedGameMotion: z.boolean().default(false),

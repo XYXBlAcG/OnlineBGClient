@@ -1,0 +1,46 @@
+.app-toolbar[hidden],
+.room-toolbar[hidden] {
+  display: none;
+}
+.app-shell.table-focused {
+  height: var(--mobile-height, 100dvh);
+  min-height: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.table-focused .room-layout {
+  height: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 6px;
+  gap: 6px;
+  width: 100%;
+}
+.table-focused .game-area > :not(.game-stage) {
+  display: none;
+}
+.table-focused .game-stage {
+  min-height: 0;
+  flex: 1;
+}
+.table-focused .original-game {
+  margin: 0;
+  min-height: 0;
+}
+.focus-controls {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 4px max(8px, env(safe-area-inset-right))
+    max(4px, env(safe-area-inset-bottom));
+  min-height: 38px;
+  background: var(--canvas);
+}
+.focus-controls button {
+  font-size: 12px;
+  min-height: 30px;
+}

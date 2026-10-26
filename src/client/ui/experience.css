@@ -111,8 +111,8 @@
   font-size: 13px;
 }
 .original-game .game-avatar {
-  background: #f3f6fa;
-  color: #253249;
+  background: var(--raised);
+  color: var(--text);
 }
 .original-game .game-avatar-name {
   font-weight: 600;
@@ -265,3 +265,9 @@
   place-items: center;
   box-shadow: 0 4px 12px #0003;
 }
+.game-motion-copy[data-effect=damage]{--effect-tone:#f2aa58}.game-motion-copy[data-effect=block]{--effect-tone:#57a9f4}.game-motion-copy[data-effect=heal]{--effect-tone:#55ce91}.game-motion-copy[data-effect=status]{--effect-tone:#c197f1}
+.game-motion-cast{filter:drop-shadow(0 0 10px var(--effect-tone));transform-origin:center}
+.game-motion-orb{border-radius:50%;background:var(--effect-tone);box-shadow:0 0 12px 6px color-mix(in srgb,var(--effect-tone) 55%,transparent)}
+.game-motion-impact{border:3px solid var(--effect-tone);border-radius:50%;box-shadow:inset 0 0 16px color-mix(in srgb,var(--effect-tone) 30%,transparent),0 0 18px color-mix(in srgb,var(--effect-tone) 30%,transparent)}
+.game-motion-impact[data-effect=block]{border-radius:30% 30% 45% 45%;border-width:4px}
+.game-motion-effect-value{font-size:25px;font-weight:800;color:var(--effect-tone);text-align:center;text-shadow:0 2px 3px #0009}

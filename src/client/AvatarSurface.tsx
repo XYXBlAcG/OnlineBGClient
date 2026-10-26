@@ -13,6 +13,7 @@ import { PhraseMenu } from "./PhraseMenu";
 export interface AvatarSurfaceProps {
   index: number;
   effectAnchor?: boolean;
+  showName?: boolean;
   unit?: number;
   onChoose?: () => void;
   className?: string;
@@ -34,6 +35,7 @@ export interface AvatarSurfaceProps {
 export function AvatarSurface({
   index,
   effectAnchor = true,
+  showName = true,
   unit,
   onChoose,
   className = "",
@@ -53,6 +55,7 @@ export function AvatarSurface({
   const trigger = (
     <button
       type="button"
+      data-control="custom"
       className={`game-avatar ${className} ${isTurn ? "is-turn" : ""}`}
       data-game-avatar={effectAnchor ? index : undefined}
       data-game-unit={unit}
@@ -64,7 +67,7 @@ export function AvatarSurface({
       }
     >
       <span className="game-avatar-face">{seatAvatar(seat)}</span>
-      <span className="game-avatar-name">{seat.name}</span>
+      {showName && <span className="game-avatar-name">{seat.name}</span>}
       {children}
     </button>
   );

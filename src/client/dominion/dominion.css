@@ -1,0 +1,631 @@
+.dominion-table {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr);
+  container-type: inline-size;
+  min-width: 0;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  gap: 8px;
+  color: var(--text);
+  height: 100%;
+}
+.dominion-table > * {
+  min-width: 0;
+}
+.dominion-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: none;
+  padding: 4px 2px;
+}
+.dominion-status > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+.dominion-status small {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.dominion-status strong {
+  font-size: 16px;
+}
+.dominion-resources {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dominion-resources > span {
+  background: var(--field);
+  border-radius: 9px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.dominion-resources b {
+  font-size: 17px;
+  padding-left: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.dominion-players {
+  display: flex;
+  gap: 8px;
+  flex: none;
+  overflow-x: auto;
+  padding: 2px;
+}
+.dominion-players > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 0 150px;
+  max-width: 260px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--field);
+}
+.dominion-players .is-active {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.dominion-players .game-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+}
+.dominion-players .game-avatar-face {
+  font-size: 24px;
+}
+.dominion-player-info {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.dominion-player-name {
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.dominion-players small {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.dominion-center {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  overflow: hidden;
+  gap: 14px;
+  align-items: start;
+}
+.dominion-supply {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.dominion-supply-tabs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex: none;
+  padding-bottom: 6px;
+}
+.dominion-supply-tabs button {
+  font-size: 12px;
+  padding: 5px 10px;
+  min-height: 30px;
+}
+.dominion-supply-tabs button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.dominion-supply-tabs > span {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+.dominion-supply-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 220px));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  max-height: 347px;
+  justify-content: center;
+  gap: 7px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 2px;
+  align-content: start;
+}
+.dominion-card {
+  --dom-tint: #a97843;
+  --dom-face: var(--raised);
+  position: relative;
+  min-width: 0;
+  border-radius: 10px;
+  isolation: isolate;
+  background: var(--dom-face);
+  box-shadow: 0 2px 6px #00000012;
+  overflow: hidden;
+}
+.dominion-card[data-card-type="treasure"] {
+  --dom-tint: #ad7b23;
+}
+.dominion-card[data-card-type="victory"] {
+  --dom-tint: #438865;
+}
+.dominion-card[data-card-type="curse"] {
+  --dom-tint: #9760b3;
+}
+.dominion-table .dominion-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+  padding: 9px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: inset 0 3px var(--dom-tint);
+  min-width: 0;
+}
+.dominion-card-main:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.dominion-table .dominion-card-main:not(:disabled) {
+  box-shadow:
+    inset 0 3px var(--dom-tint),
+    inset 0 0 0 2px var(--accent);
+  cursor: pointer;
+}
+.dominion-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  align-items: center;
+}
+.dominion-card-heading b {
+  font-size: 13px;
+}
+.dominion-price {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: var(--field);
+  color: var(--dom-tint);
+  font-weight: 750;
+  font-size: 12px;
+}
+.dominion-card-symbol {
+  display: block;
+  text-align: center;
+  font-size: 32px;
+  line-height: 1.15;
+  color: var(--dom-tint);
+  opacity: 0.8;
+}
+.dominion-card-text {
+  font-size: 11px;
+  line-height: 1.45;
+  min-height: 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--muted);
+}
+.dominion-card-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--dom-tint);
+  margin-top: auto;
+  padding-right: 20px;
+}
+.dominion-card-footer strong {
+  color: var(--text);
+  font-size: 12px;
+}
+.dominion-card .card-detail-button {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  z-index: 2;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 2px;
+  font-size: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.dominion-ledger {
+  overflow-y: auto;
+  min-height: 0;
+  font-size: 12px;
+  padding: 2px;
+}
+.dominion-ledger-content details {
+  margin-bottom: 10px;
+}
+.dominion-ledger-content summary {
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px 0;
+}
+.dominion-log {
+  padding-left: 17px;
+  margin: 4px 0;
+  display: grid;
+  gap: 8px;
+  line-height: 1.5;
+}
+.dominion-log b {
+  font-size: 10px;
+  color: var(--muted);
+}
+.dominion-inventory {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+}
+.dominion-inventory > span {
+  display: flex;
+  justify-content: space-between;
+}
+.dominion-inventory p {
+  word-break: break-word;
+}
+.dominion-played {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.dominion-played > span {
+  padding: 4px;
+  background: var(--field);
+  border-radius: 5px;
+}
+.dominion-choice {
+  flex: none;
+  display: grid;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: var(--field);
+  box-shadow: inset 3px 0 var(--accent);
+  max-height: 25dvh;
+  overflow: auto;
+}
+.dominion-choice > strong {
+  font-size: 13px;
+}
+.dominion-choice-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.dominion-choice-actions button {
+  font-size: 12px;
+  padding: 6px 9px;
+  min-height: 32px;
+  background: var(--raised);
+}
+.dominion-revealed {
+  display: flex;
+  gap: 6px;
+}
+.dominion-revealed .dominion-card {
+  width: 110px;
+}
+.dominion-own {
+  flex: none;
+  min-height: 0;
+  padding-top: 5px;
+}
+.dominion-own-heading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.dominion-own-heading > strong {
+  font-size: 13px;
+}
+.dominion-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.dominion-actions button {
+  font-size: 12px;
+  padding: 7px 12px;
+  min-height: 34px;
+  white-space: nowrap;
+}
+.dominion-hand {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 2px 2px 5px;
+}
+.dominion-hand .dominion-card {
+  flex: 0 0 100px;
+}
+.dominion-card.is-small .dominion-card-main {
+  min-height: 93px;
+}
+.dominion-card.is-small .dominion-card-symbol {
+  font-size: 25px;
+}
+.dominion-wait {
+  display: block;
+  text-align: center;
+  color: var(--muted);
+  padding-top: 4px;
+}
+.dominion-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  border: 0;
+  padding: 10px 0;
+}
+.dominion-options legend {
+  font-size: 12px;
+  color: var(--muted);
+}
+.dominion-options label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+.dominion-options input {
+  width: 16px;
+  height: 16px;
+}
+.dominion-options small {
+  color: var(--muted);
+}
+[data-game-motion="enhanced"] .dominion-hand > .dominion-card {
+  animation: dominion-deal 230ms ease-out both;
+}
+@keyframes dominion-deal {
+  from {
+    opacity: 0.3;
+    transform: translateY(12px) rotate(2deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+@container (max-width: 1040px) {
+  .dominion-center {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dominion-ledger {
+    display: none;
+  }
+}
+.mobile-shell .dominion-table {
+  gap: 5px;
+}
+.mobile-shell .dominion-status {
+  gap: 5px;
+}
+.mobile-shell .dominion-status strong {
+  font-size: 13px;
+}
+.mobile-shell .dominion-resources {
+  gap: 4px;
+}
+.mobile-shell .dominion-resources > span {
+  font-size: 10px;
+  padding: 4px 6px;
+}
+.mobile-shell .dominion-resources b {
+  font-size: 14px;
+}
+.mobile-shell .dominion-players > div {
+  min-width: 116px;
+}
+.mobile-shell .dominion-supply-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: none;
+  grid-auto-rows: 138px;
+  max-height: none;
+  gap: 5px;
+}
+.mobile-shell .dominion-card-text {
+  -webkit-line-clamp: 2;
+  font-size: 10px;
+}
+.mobile-shell .dominion-table .dominion-card-main {
+  padding: 7px;
+}
+.mobile-shell .dominion-card-symbol {
+  font-size: 24px;
+}
+.mobile-shell .dominion-hand .dominion-card {
+  flex-basis: 92px;
+}
+.mobile-shell .dominion-card.is-small .dominion-card-main {
+  min-height: 87px;
+}
+.mobile-shell .dominion-actions button {
+  font-size: 11px;
+  padding: 6px 8px;
+}
+.mobile-shell .dominion-supply-tabs > span {
+  font-size: 10px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-players
+  > div {
+  flex-basis: 148px;
+  padding: 3px 7px;
+  gap: 7px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-players
+  small {
+  font-size: 10px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-players
+  .game-avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-players
+  .game-avatar-face {
+  font-size: 16px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .dominion-status {
+  padding: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-status
+  small {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .dominion-center {
+  min-height: 85px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .dominion-supply-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  max-height: 159px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .dominion-card-symbol {
+  display: none;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-hand
+  .dominion-card-main {
+  min-height: 54px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .dominion-own-heading {
+  margin-bottom: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dominion-hand > .dominion-card {
+    animation: none !important;
+  }
+}
+
+@media (max-height: 740px) and (min-width: 901px) {
+  .dominion-supply-grid {
+    max-height: 247px;
+  }
+  .dominion-supply .dominion-card-symbol {
+    display: none;
+  }
+  .dominion-players > div {
+    padding: 5px 8px;
+  }
+  .dominion-card.is-small .dominion-card-main {
+    min-height: 76px;
+  }
+  .dominion-card-symbol {
+    font-size: 24px;
+  }
+  .dominion-table {
+    gap: 5px;
+  }
+  .dominion-supply .dominion-card-main {
+    padding: 7px;
+    gap: 2px;
+  }
+  .dominion-supply .dominion-card-text {
+    -webkit-line-clamp: 1;
+    flex: none;
+  }
+}
+.mobile-shell .dominion-own-heading {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.mobile-shell .dominion-actions {
+  gap: 6px;
+}
+
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-supply
+  .dominion-card-text {
+  -webkit-line-clamp: 1;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-card-heading
+  b {
+  font-size: 12px;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .dominion-price {
+  min-width: 18px;
+  height: 18px;
+  font-size: 11px;
+}
+
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-actions
+  button,
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .dominion-supply-tabs
+  button {
+  min-height: 34px;
+}
+
+[data-color-scheme="dark"] .dominion-card {
+  --dom-tint: #d3aa75;
+}
+[data-color-scheme="dark"] .dominion-card[data-card-type="treasure"] {
+  --dom-tint: #ddb45f;
+}
+[data-color-scheme="dark"] .dominion-card[data-card-type="victory"] {
+  --dom-tint: #7bc59d;
+}
+[data-color-scheme="dark"] .dominion-card[data-card-type="curse"] {
+  --dom-tint: #bda0e4;
+}
+.mobile-shell .dominion-hand::after {
+  content: "";
+  flex: 0 0 86px;
+}

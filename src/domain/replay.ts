@@ -1,3 +1,4 @@
+import { expeditionMapSchema } from "./expedition/adventure-types";
 import { maxRoomSeats } from "./catalogue";
 import { graphwarShotSchema, graphwarInitialSchema } from "./graphwar/types";
 import { GraphwarRules } from "./graphwar/rules";
@@ -11,6 +12,7 @@ import { GameEngine } from "./engine";
 export const replaySchema = z.object({
   format: z.literal(1),
   graphwarInitial: graphwarInitialSchema.optional(),
+  expeditionMap: expeditionMapSchema.optional(),
   room: z.string().min(1).max(12),
   config: configSchema,
   rulesVersion: z.string(),
@@ -90,24 +92,45 @@ export class Replay {
     )
       throw new Error("记录席位不完整");
   }
-  frames() {
-    const initial =
-      this.record.config.kind === "graphwar"
-        ? graphwarInitialSchema.parse(this.record.graphwarInitial)
-        : undefined;
-    let state = this.engine.create(
-      this.record.config.kind,
-      this.record.names.length,
-      this.record.seed,
-      this.record.config.team,
-      {
-        mahjong: this.record.config.mahjong,
-        graphwar: this.record.config.graphwar,
-        graphwarInitial: initial,
-      },
-    );
-    const frames = [structuredClone(state)];
-    for (const event of this.record.events) {
+  private checkpoints = new Map<number, import("./types").GameState>();
+  private last:
+    { index: number; state: import("./types").GameState } | undefined;
+  frame(index: number): import("./types").GameState {
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index > this.record.events.length
+    )
+      throw new Error("回放帧超出范围");
+    const cached = [
+      ...this.checkpoints,
+      ...(this.last ? [[this.last.index, this.last.state] as const] : []),
+    ]
+      .filter(([i]) => i <= index)
+      .sort(([a], [b]) => b - a)[0];
+    let cursor = cached?.[0] ?? 0;
+    let state = cached
+      ? structuredClone(cached[1])
+      : this.engine.create(
+          this.record.config.kind,
+          this.record.names.length,
+          this.record.seed,
+          this.record.config.team,
+          {
+            expedition: this.record.config.expedition,
+            expeditionMap: this.record.expeditionMap,
+            expeditionLayout: this.record.expeditionMap ? 2 : 1,
+            dominion: this.record.config.dominion,
+            mahjong: this.record.config.mahjong,
+            graphwar: this.record.config.graphwar,
+            graphwarInitial:
+              this.record.config.kind === "graphwar"
+                ? graphwarInitialSchema.parse(this.record.graphwarInitial)
+                : undefined,
+          },
+        );
+    while (cursor < index) {
+      const event = this.record.events[cursor++];
       state =
         event.type === "action"
           ? state.kind === "graphwar" && event.action.type === "graphwar-fire"
@@ -119,8 +142,18 @@ export class Replay {
               )
             : this.engine.apply(state, event.actor, event.action, event.seed)
           : this.engine.resolve(state, event.seed);
-      frames.push(structuredClone(state));
+      if (cursor % 32 === 0) {
+        this.checkpoints.set(cursor, structuredClone(state));
+        if (this.checkpoints.size > 8)
+          this.checkpoints.delete(this.checkpoints.keys().next().value!);
+      }
     }
-    return frames;
+    this.last = { index, state: structuredClone(state) };
+    return state;
+  }
+  frames() {
+    return Array.from({ length: this.record.events.length + 1 }, (_, index) =>
+      this.frame(index),
+    );
   }
 }

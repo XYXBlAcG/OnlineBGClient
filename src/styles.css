@@ -1,3 +1,4 @@
+@import url("./client/ui/scroll-surfaces.css");
 @import url('/upstream/main.css');
 @import url("/upstream/ktd.css");
 @import url("/upstream/dy.css");
@@ -20,12 +21,12 @@ body { display: block; height: auto; background: var(--canvas); color: var(--tex
 .app-shell { min-height: 100vh; }
 .app-shell *, .ui-panel *, .ui-select-menu *, .native-window-root * { box-sizing: border-box; }
 button, input, select, textarea { font: inherit; }
-:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) button:where(:not(.original-game button)), .ui-select {
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) button:where(:not(.original-game[data-renderer="upstream"] button,[data-control="custom"])), .ui-select {
   border: 0; background: var(--field); color: var(--text); border-radius: 8px; padding: 8px 13px; min-height: 34px; cursor: pointer; user-select: none; transition: background 140ms, transform 120ms;
 }
-:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) button:where(:not(.original-game button)):hover, .ui-select:hover { background: var(--hover); }
-:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) button:where(:not(.original-game button)):active { transform: translateY(1px); }
-:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) button:where(:not(.original-game button)):disabled { color: var(--disabled-text); background: var(--disabled); cursor: default; opacity: 1; transform: none; }
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) button:where(:not(.original-game[data-renderer="upstream"] button,[data-control="custom"])):hover, .ui-select:hover { background: var(--hover); }
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) button:where(:not(.original-game[data-renderer="upstream"] button,[data-control="custom"])):active { transform: translateY(1px); }
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) button:where(:not(.original-game[data-renderer="upstream"] button,[data-control="custom"])):disabled { color: var(--disabled-text); background: var(--disabled); cursor: default; opacity: 1; transform: none; }
 :is(.app-shell, .ui-panel, .ui-popover, .native-window-root) :is(input:not([type=checkbox]), textarea) { border: 0; border-radius: 8px; padding: 9px 12px; background: var(--field); color: var(--text); min-width: 0; }
 :is(.app-shell, .ui-panel, .ui-popover, .ui-select-menu, .native-window-root) :focus-visible, .ui-select:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 :is(.app-shell, .ui-panel, .ui-popover, .native-window-root) h1 { font-size: 30px; font-weight: 650; margin: 10px 0 24px; }
@@ -54,12 +55,6 @@ button, input, select, textarea { font: inherit; }
 .game-card strong { font-size: 18px; }
 .game-picker span { font-size: 12px; color: var(--muted); }
 .game-picker .game-symbol { width: 44px; height: 44px; display: grid; place-items: center; font-size: 24px; color: #fff; border-radius: 12px; margin-bottom: 6px; font-weight: 700; }
-.game-symbol[data-game-icon="uno"] { background: transparent; }
-.game-symbol[data-game-icon="sgs"] { background: #b64242; }
-.game-symbol[data-game-icon="fxq"] { background: #2471cf; }
-.game-symbol[data-game-icon="tq"] { background: #6e49b6; }
-.game-symbol[data-game-icon="ddz"] { background: #98622c; }
-.game-symbol[data-game-icon="ktd"] { background: #328a72; }
 .room-setup { background: var(--surface); padding: 24px; border-radius: 14px; align-self: start; }
 .room-setup .segmented { margin-top: 18px; }
 .room-setup > label:not(.checkbox, .ui-switch-label), .advanced > label:not(.checkbox, .ui-switch-label) { display: flex; flex-direction: column; gap: 7px; margin: 20px 0; font-size: 13px; }
@@ -278,9 +273,6 @@ kbd { font-size: 11px; font-family: inherit; color: var(--muted); }
 .action-feedback { position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:max-content;max-width:90%;padding:10px 18px;border-radius:12px;background:var(--text);color:var(--surface);box-shadow:0 6px 24px #0002;pointer-events:none;z-index:20; }
 .network-latency { color:var(--muted);font-variant-numeric:tabular-nums; }
 
-.game-symbol[data-game-icon="dy"] { background: #9863bf; color: #fff; }
-.game-symbol[data-game-icon="ccbs"] { background: #167d85; color: #fff; }
-.game-symbol svg { width: 30px; height: 30px; }
 .catan-hand-panel { background: transparent; color: #22252b; }
 .beginner-guide { flex:none; margin:0; display:flex; gap:4px; align-items:center; }
 .beginner-guide-content { height:100%; min-height:0; display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:14px; background:var(--raised); }

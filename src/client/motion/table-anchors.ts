@@ -4,6 +4,10 @@ export class TableAnchors {
   private update = () => {
     this.frame = 0;
     for (const [shell, target] of this.targets) {
+      if (target.isConnected === false) {
+        this.targets.delete(shell);
+        continue;
+      }
       const bounds = target.getBoundingClientRect();
       Object.assign(shell.style, {
         left: `${bounds.x}px`,

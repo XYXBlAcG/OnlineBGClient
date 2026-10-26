@@ -11,7 +11,9 @@ import { Room } from "../src/domain/room";
 it("registers actionable guides for the supported games", () => {
   expect(Object.keys(beginnerGuides).sort()).toEqual([
     "ccbs",
+    "dominion",
     "dy",
+    "expedition",
     "graphwar",
     "ktd",
     "scmj",

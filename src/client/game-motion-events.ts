@@ -1,5 +1,7 @@
+import { expeditionMotionEvents } from "./expedition/motion-events";
 import type { GameState } from "../domain/types";
 export type GameMotionEvent =
+ | {type:"effect";kind:"damage"|"block"|"heal"|"status";amount:number;source:string;target:string;card?:boolean}
   | { type: "celebrate"; target: string; label: string }
   | { type: "collect"; count: number; source: string; target: string }
   | {
@@ -35,6 +37,23 @@ export function gameMotionEvents(
   if (previous.kind !== next.kind) return [];
   const events: GameMotionEvent[] = [];
   switch (next.kind) {
+    case "expedition":
+      if(previous.kind === "expedition")events.push(...expeditionMotionEvents(previous,next,actor));
+      break;
+    case "dominion":
+      if (
+        previous.kind === "dominion" &&
+        previous.view.sequence !== next.view.sequence
+      )
+        for (const event of next.view.events)
+          if (event.type === "gain")
+            events.push({
+              type: "collect",
+              count: 1,
+              source: `[data-motion-zone="dominion.supply-${event.card}"]`,
+              target: avatar(event.actor),
+            });
+      break;
     case "scmj":
       if (previous.kind === "scmj") {
         const view = next.view,

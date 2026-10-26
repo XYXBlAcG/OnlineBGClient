@@ -8,6 +8,17 @@ export interface KeyInput {
   isComposing: boolean;
   editing: boolean;
 }
+export function keyboardBinding(
+  input: Pick<KeyInput, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">,
+): string {
+  return [
+    ...(input.ctrlKey ? ["Control"] : []),
+    ...(input.metaKey ? ["Meta"] : []),
+    ...(input.altKey ? ["Alt"] : []),
+    ...(input.shiftKey ? ["Shift"] : []),
+    input.key.length === 1 ? input.key.toUpperCase() : input.key,
+  ].join("+");
+}
 export interface AppCommand {
   id: string;
   title: string;
@@ -49,13 +60,7 @@ export class CommandRegistry {
   }
   dispatch(input: KeyInput, scope: string): boolean {
     if (input.editing || input.isComposing || input.repeat) return false;
-    const binding = [
-      ...(input.ctrlKey ? ["Control"] : []),
-      ...(input.metaKey ? ["Meta"] : []),
-      ...(input.altKey ? ["Alt"] : []),
-      ...(input.shiftKey ? ["Shift"] : []),
-      input.key.length === 1 ? input.key.toUpperCase() : input.key,
-    ].join("+");
+    const binding = keyboardBinding(input);
     const command = this.list().find(
       (command) =>
         command.binding === binding &&

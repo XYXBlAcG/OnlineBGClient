@@ -61,8 +61,10 @@ function Particle({
       end.y - start.y,
       enhanced ? 16 : 10,
       event.units ? (enhanced ? 1.8 : 1.4) : 1,
+      enhanced,
     );
     element.style.setProperty("--effect-color", effect.color);
+    const fragments: HTMLSpanElement[] = [];
     let frame = 0,
       positionKey = "";
     const track = () => {
@@ -82,16 +84,18 @@ function Particle({
         .join(":");
       if (motion && key !== positionKey) {
         positionKey = key;
-        const frames = effectMotion(
+        const nextFrames = effectMotion(
           effect.style,
           a.x + a.width / 2 - b.x - b.width / 2,
           a.y + a.height / 2 - b.y - b.height / 2,
           enhanced ? 16 : 10,
           event.units ? (enhanced ? 1.8 : 1.4) : 1,
+          enhanced,
+          frames,
         );
         element.getAnimations()[0]?.effect &&
           (element.getAnimations()[0].effect as KeyframeEffect).setKeyframes(
-            frames.body,
+            nextFrames.body,
           );
         fragments.forEach((f) => {
           f.style.left = `${a.x + a.width / 2}px`;
@@ -110,10 +114,10 @@ function Particle({
       };
     }
     const animation = element.animate(frames.body, {
-      duration: event.units ? 1700 : enhanced ? 1200 : 1900,
-      easing: "ease-out",
+      duration: frames.duration,
+      easing: enhanced ? "linear" : "ease-out",
     });
-    const fragments = frames.fragments.map((keyframes, index) => {
+    frames.fragments.forEach((keyframes, index) => {
       const fragment = document.createElement("span");
       fragment.dataset.fragment = event.id;
       fragment.className = `interaction-fragment effect-${effect.style}`;
@@ -122,11 +126,11 @@ function Particle({
       fragment.style.top = `${end.y}px`;
       element.parentElement?.appendChild(fragment);
       fragment.animate(keyframes, {
-        duration: enhanced ? 480 : 750,
-        delay: (event.units ? 820 : enhanced ? 580 : 950) + (index % 4) * 45,
+        duration: frames.fragmentDuration,
+        delay: frames.impactAt + (index % 4) * 24,
         easing: "ease-out",
       }).onfinish = () => fragment.remove();
-      return fragment;
+      fragments.push(fragment);
     });
     animation.onfinish = () => onEnd(event.id);
     return () => {
@@ -164,6 +168,9 @@ export function Interactions({
   sound: boolean;
   onEnd: (id: string) => void;
 }) {
+  useEffect(() => {
+    events.slice(0, -6).forEach((event) => onEnd(event.id));
+  }, [events, onEnd]);
   const anchor = useRef<HTMLSpanElement>(null);
   const [surface, setSurface] = useState<HTMLElement | null>(null);
   useEffect(() => {
@@ -176,7 +183,7 @@ export function Interactions({
         events.length > 0 &&
         createPortal(
           <div className="interaction-layer" data-motion-scope="game">
-            {events.map((event) => (
+            {events.slice(-6).map((event) => (
               <Particle
                 key={event.id}
                 event={event}

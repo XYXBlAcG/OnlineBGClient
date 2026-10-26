@@ -116,3 +116,45 @@ it("poison public placement uses one-based actor and collects the overflowing po
   }
   expect(collected).toBe(true);
 });
+
+it("animates a Dominion gain once without repeating it on room metadata updates", () => {
+  const room = new Room("dom-motion", {
+    kind: "dominion",
+    humans: 2,
+    ai: [],
+    team: false,
+    training: false,
+  });
+  const first = room.claim("甲"),
+    second = room.claim("乙");
+  room.setReady(second, true);
+  room.start(first);
+  room.act(first, "treasure", room.version, {
+    type: "dominion-action",
+    move: { type: "treasures" },
+  });
+  const before = room.snapshot(first);
+  room.act(first, "buy", room.version, {
+    type: "dominion-action",
+    move: { type: "buy", card: "copper" },
+  });
+  const after = room.snapshot(first);
+  expect(gameMotionEvents(before.state!, after.state!, 0)).toEqual([
+    {
+      type: "collect",
+      count: 1,
+      source: '[data-motion-zone="dominion.supply-copper"]',
+      target: '[data-game-avatar="0"]',
+    },
+  ]);
+  expect(
+    gameMotionEvents(after.state!, structuredClone(after.state!), 0),
+  ).toEqual([]);
+});
+it("秘塔远征的伤害路径落在战斗角色上，不落在玩家列表",()=>{
+ const room=new Room("exp-motion",{kind:"expedition",humans:1,ai:[],team:false,training:false}),token=room.claim("甲");room.start(token);
+ room.act(token,"class",room.version,{type:"expedition-action",move:{type:"profession",profession:0}});room.act(token,"route",room.version,room.snapshot(token).candidates[0].action);
+ if(room.state?.kind!=="expedition")throw new Error("game");
+ const before=structuredClone(room.state),next=structuredClone(before);next.view.combat.sequence++;next.view.combat.visuals=[{kind:"damage",amount:6,source:0,target:{side:"enemy",index:0}}];
+ expect(gameMotionEvents(before,next,0)).toContainEqual({type:"effect",kind:"damage",amount:6,source:'[data-exp-target="hero-0"]',target:'[data-exp-target="enemy-0"]'});
+});

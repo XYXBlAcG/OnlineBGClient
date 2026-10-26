@@ -4,10 +4,27 @@ use tauri::menu::{Menu, MenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
 
 #[derive(Default)]
-pub struct Desktop { quitting: AtomicBool }
-impl Desktop { pub fn quitting(&self) -> bool { self.quitting.load(Ordering::SeqCst) } }
+pub struct Desktop { quitting: AtomicBool, voice: AtomicBool }
+impl Desktop {
+    pub fn quitting(&self) -> bool { self.quitting.load(Ordering::SeqCst) }
+    pub fn voice_active(&self) -> bool { self.voice.load(Ordering::SeqCst) }
+    pub fn set_voice(&self, active: bool) { self.voice.store(active, Ordering::SeqCst); }
+}
 
 pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?
+        .on_permission_request(|webview, kind| {
+            use tauri::webview::{PermissionKind, PermissionResponse};
+            match kind {
+                PermissionKind::Microphone => {
+                    let local = webview.url().map(|url| url.scheme() == "tauri" || matches!(url.host_str(), Some("tauri.localhost") | Some("localhost") | Some("127.0.0.1"))).unwrap_or(false);
+                    if webview.label() == "main" && local { PermissionResponse::Default } else { PermissionResponse::Deny }
+                }
+                PermissionKind::Camera => PermissionResponse::Deny,
+                _ => PermissionResponse::Default,
+            }
+        })
+        .build()?;
     let about = MenuItem::with_id(app, "about", "关于 OnlineBGClient", true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", "设置…", true, Some("CmdOrCtrl+,"))?;
     let records = MenuItem::with_id(app, "records", "对局记录", true, None::<&str>)?;
@@ -42,7 +59,7 @@ pub fn quit_app(app: tauri::AppHandle, state: tauri::State<'_, Desktop>) {
 #[tauri::command]
 pub fn open_link(key: String) -> Result<(), String> {
     let profile: serde_json::Value = serde_json::from_str(include_str!("../../src/client/about.json")).map_err(|error| error.to_string())?;
-    if !["github", "original"].contains(&key.as_str()) { return Err("链接未配置".into()); }
+    if !["github", "original", "livekit"].contains(&key.as_str()) { return Err("链接未配置".into()); }
     let url = profile[&key].as_str().ok_or("链接未配置")?;
     #[cfg(target_os = "macos")]
     let mut command = std::process::Command::new("open");

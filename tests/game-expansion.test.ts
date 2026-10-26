@@ -7,7 +7,7 @@ it("isolates the Catan hand panel and gives Poison a visible icon surface", () =
   expect(factories.includes("mt-2 text-center bg-gray-700 pt-1 text-sm")).toBe(
     false,
   );
-  expect(readFileSync("src/styles.css", "utf8")).toContain(
+  expect(readFileSync("src/client/ui/game-icons.css", "utf8")).toContain(
     '.game-symbol[data-game-icon="dy"]',
   );
 });

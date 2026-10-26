@@ -1,4 +1,6 @@
 # 文档索引
+
+- [第一次使用：开房、加入、手机与连麦](getting-started.md)
 - [项目运行](../README.md)
 - [架构与实现入口](architecture.md)
 - [一键临时公网房间](hosting.md)
@@ -31,3 +33,13 @@
 - [Graphwar 战术、平衡与互动审核](graphwar-balance-plan.md)
 
 - [Graphwar 牌桌、选兵与非对称地图](graphwar-interaction-plan.md)
+
+- [领土 Dominion：规则、AI 与手动审核](dominion.md)
+
+- [秘塔远征：合作卡牌肉鸽待审核方案](cooperative-roguelike-plan.md)
+- [秘塔远征：首章、联机、AI、存档与审核](expedition.md)
+- [秘塔远征：独立战斗样板](expedition-demo.md)
+- [客户端连麦：配置、实现与人工验收](client-voice.md)
+- [客户端连麦：技术、界面与验收方案](client-voice-plan.md)
+
+- [专注牌桌、远征路线与动效审核](expedition-experience.md)

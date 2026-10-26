@@ -1,0 +1,33 @@
+.run-shelf {
+  width: 100%;
+  max-width: 1240px;
+  margin: 24px auto 0;
+  padding: 0 24px;
+  display: grid;
+  gap: 12px;
+}
+.run-shelf .record-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.run-shelf .record-row > button:first-child {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 14px 16px;
+}
+.run-shelf .record-row small {
+  display: block;
+  margin-top: 6px;
+}
+.run-shelf .record-row > button:last-child {
+  flex: none;
+}
+@media (max-width: 600px) {
+  .run-shelf {
+    padding-inline: 16px;
+  }
+}
