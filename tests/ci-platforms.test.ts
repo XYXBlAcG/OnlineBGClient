@@ -41,3 +41,10 @@ it("gates packaging on protocol checks and publishes only signed version tags", 
   expect(workflow).not.toContain("publish_preview");
   expect(workflow).toContain("TAURI_SIGNING_PRIVATE_KEY:");
 });
+
+it("builds static client resources before real HTTP integration tests on clean runners", () => {
+  const workflow = readFileSync(".github/workflows/desktop.yml", "utf8");
+  expect(workflow.indexOf("run: npm run build")).toBeLessThan(
+    workflow.indexOf("run: npm test"),
+  );
+});

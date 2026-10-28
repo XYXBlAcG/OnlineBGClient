@@ -43,8 +43,8 @@ jobs:
       - run: npm run upstream:build
       - run: npm run server:build
       - run: node scripts/release-version.mjs
-      - run: npm test
       - run: npm run build
+      - run: npm test
       - run: npm run hosting:build
         env:
           GH_TOKEN: ${{ github.token }}
