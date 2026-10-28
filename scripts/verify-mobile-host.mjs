@@ -123,6 +123,7 @@ try {
   await choose(host, "总席位", "2 人");
   await host.getByLabel("昵称", { exact: true }).fill("服务电脑");
   await host.getByRole("button", { name: "跨网络联机", exact: true }).click();
+  await host.getByRole("tab", { name: "创建房间", exact: true }).click();
   await host.getByLabel("仅启动服务，不参与游戏").check();
   await host.getByRole("button", { name: "创建房间", exact: true }).click();
   await expect(

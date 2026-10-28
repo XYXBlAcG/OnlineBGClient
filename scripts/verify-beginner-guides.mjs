@@ -125,6 +125,7 @@ try {
     await choose(host, "真人人数", "2 人");
     await choose(host, "总席位", "2 人");
     await host.getByRole("button", { name: "跨网络联机", exact: true }).click();
+  await host.getByRole("tab", { name: "创建房间", exact: true }).click();
     await host.getByRole("button", { name: "创建房间", exact: true }).click();
     await expect(roomGame(host)).toBeVisible();
     const room = await readRoomId(host);

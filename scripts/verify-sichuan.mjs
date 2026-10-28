@@ -306,7 +306,7 @@ try {
   });
   await expect(replay.locator(".scmj-table")).toBeVisible();
   await expect(
-    replay.getByRole("button", { name: "结束游戏", exact: true }),
+    replay.getByRole("button", { name: "结束对局", exact: true }),
   ).toHaveCount(0);
   await expect(
     replay.getByRole("button", { name: "播放回放", exact: true }),

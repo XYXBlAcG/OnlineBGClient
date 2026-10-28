@@ -110,6 +110,36 @@ const server = createServer(async (request, response) => {
   }
   try {
     const url = new URL(request.url || "/", "http://localhost");
+    if (url.pathname === "/runs/abandon") {
+      response.setHeader("Content-Type", "application/json");
+      response.setHeader("Cache-Control", "no-store");
+      try {
+        if (request.method !== "POST") throw new Error("不支持的存档操作");
+        request.setTimeout(10000, () => request.destroy());
+        const chunks: Buffer[] = [];
+        let length = 0;
+        for await (const chunk of request) {
+          length += chunk.length;
+          if (length > 2048) throw new Error("请求过大");
+          chunks.push(Buffer.from(chunk));
+        }
+        const input = JSON.parse(Buffer.concat(chunks).toString());
+        if (input.type !== "abandon-run") throw new Error("不支持的存档操作");
+        const result = gateway.handle(input);
+        store.saveRuns(gateway.runs);
+        publish(result.session.room);
+        response.writeHead(200);
+        response.end(JSON.stringify(result.response));
+      } catch (error) {
+        response.writeHead(400);
+        response.end(
+          JSON.stringify({
+            error: error instanceof Error ? error.message : "存档维护失败",
+          }),
+        );
+      }
+      return;
+    }
     if (await voice.handle(request, response, url)) return;
     if (await media.handle(request, response, url)) return;
     if (url.pathname === "/room-info") {

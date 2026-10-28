@@ -10,14 +10,17 @@ it("keeps game baseline independent of the interface Boolean", () => {
       });
       expect(motionPolicy(preferences, false, true)).toEqual({
         ui: motion,
+        social: true,
         game: enhancedGameMotion ? "enhanced" : "baseline",
       });
       expect(motionPolicy(preferences, true, true)).toEqual({
         ui: false,
+        social: false,
         game: "reduced",
       });
       expect(motionPolicy(preferences, false, false)).toEqual({
         ui: false,
+        social: false,
         game: "reduced",
       });
     }

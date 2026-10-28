@@ -151,3 +151,13 @@ Dominion 的隔离浏览器截图与布局尺寸检查入口见 [界面验证](d
 专注模式、变化宽度路线、动效生命周期和语音控件结构的验证入口见 [体验清单](expedition-experience.md)。
 
 首次使用的偏好默认值、大厅设置直达与连麦配置指引由 [入口测试](../tests/quick-start.test.tsx) 覆盖；实际操作见 [使用指南](getting-started.md) 和 [语音人工验收](client-voice.md#手动审核)。测试不启动麦克风或打开系统浏览器。
+
+变声算法的实际离线样本、输出路由、组合键录入和横幅颜色见 [使用与验证入口](voice-effects-and-input.md#实现与非界面检查)。
+
+大厅、存档维护、快捷键与平台菜单的实现索引、非界面证据和人工步骤见 [房间体验审核](room-experience.md)。
+
+文字选择范围、原生全选与场景过渡检查见 [审核入口](selection-and-scene-transitions.md)。
+
+开房／开局反馈、窗口就绪、隐藏复用及相关人工步骤见 [操作与窗口审核](action-feedback-and-windows.md)。
+
+正式更新的许可、代理、版本、官方签名与跨版本安装验收见 [软件更新](updating.md)。

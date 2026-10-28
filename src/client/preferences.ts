@@ -1,3 +1,5 @@
+import { updatePreferencesSchema } from "./updates/model";
+import { bannerColorSchema } from "../domain/banner";
 import { voicePreferencesSchema } from "../domain/voice";
 import { defaultPhraseGroups, phraseGroupsSchema } from "../domain/phrases";
 import { performanceSchema } from "../domain/performance";
@@ -7,6 +9,16 @@ import { themes } from "./themes";
 import { gameKinds } from "../domain/catalogue";
 
 export const preferencesSchema = z.object({
+  updates: updatePreferencesSchema.default(updatePreferencesSchema.parse({})),
+  network: z
+    .object({
+      temporary: z.boolean().default(true),
+      service: z.string().default(""),
+    })
+    .default({ temporary: true, service: "" }),
+  showQuickStart: z.boolean().default(true),
+  showVoiceShortcut: z.boolean().default(true),
+  computeDetails: z.boolean().default(false),
   quickStartOpen: z.boolean().default(true),
   voice: voicePreferencesSchema.default(voicePreferencesSchema.parse({})),
   theme: z.string().default("system"),
@@ -17,6 +29,7 @@ export const preferencesSchema = z.object({
   chatVisible: z.boolean().default(false),
   sidebarWidth: z.number().int().min(280).max(520).default(320),
   imageQuality: z.enum(["clear", "data"]).default("clear"),
+  bannerColor: bannerColorSchema.default("#ffce37"),
   bannerDisplay: z.boolean().default(true),
   soundVolume: z.number().min(0).max(1).default(0.5),
   turnSound: z.boolean().default(false),

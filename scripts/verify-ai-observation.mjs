@@ -83,8 +83,8 @@ try {
   await expect(page.locator(".original-game[data-game=tq]")).toBeVisible();
   await page.getByRole("button", { name: "暂停 AI 测试", exact: true }).click();
   await expect(page.locator(".original-game [data-game-avatar]")).toHaveCount(6);
-  await page.getByRole("button", { name: "结束游戏", exact: true }).click();
-  await page.getByRole("button", { name: "确认结束", exact: true }).click();
+  await page.locator('[data-room-action="end"]').click();
+  await page.getByRole("dialog").getByRole("button", { name: "结束对局", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "开始对局", exact: true }),
   ).toBeVisible();
@@ -111,6 +111,7 @@ try {
   await network
     .getByRole("button", { name: "跨网络联机", exact: true })
     .click();
+  await network.getByRole("tab", { name: "创建房间", exact: true }).click();
   await network.getByText("更多设置", { exact: true }).click();
   await network.getByLabel("房间服务地址", { exact: true }).fill(endpoint);
   await network.getByRole("button", { name: "创建房间", exact: true }).click();

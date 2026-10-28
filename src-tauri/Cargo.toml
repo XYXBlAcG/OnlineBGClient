@@ -1,6 +1,6 @@
 [package]
 name = "hullqin-companion"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
@@ -26,9 +26,14 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 tauri-plugin-window-state = "2"
 
 keyring = { version = "3.6.3", features = ["apple-native", "windows-native"] }
+tauri-plugin-updater = "2"
+semver = "1"
 
 [profile.release]
 strip = true
 lto = "thin"
 codegen-units = 16
 panic = "abort"
+
+[dev-dependencies]
+tauri = {version="2",features= ["test"] }

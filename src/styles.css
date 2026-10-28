@@ -1,3 +1,4 @@
+@import url("./client/ui/selection.css");
 @import url("./client/ui/scroll-surfaces.css");
 @import url('/upstream/main.css');
 @import url("/upstream/ktd.css");
@@ -57,7 +58,7 @@ button, input, select, textarea { font: inherit; }
 .game-picker .game-symbol { width: 44px; height: 44px; display: grid; place-items: center; font-size: 24px; color: #fff; border-radius: 12px; margin-bottom: 6px; font-weight: 700; }
 .room-setup { background: var(--surface); padding: 24px; border-radius: 14px; align-self: start; }
 .room-setup .segmented { margin-top: 18px; }
-.room-setup > label:not(.checkbox, .ui-switch-label), .advanced > label:not(.checkbox, .ui-switch-label) { display: flex; flex-direction: column; gap: 7px; margin: 20px 0; font-size: 13px; }
+.room-setup > label:not(.checkbox, .ui-switch-label), .lobby-body > label:not(.checkbox, .ui-switch-label) { display: flex; flex-direction: column; gap: 7px; margin: 20px 0; font-size: 13px; }
 .room-setup .primary-button { width: 100%; margin-top: 18px; }
 .room-setup .ai-setting { padding: 0; gap: 8px; }
 .room-setup .ai-setting input { width: 110px; flex: 1; }
@@ -66,7 +67,6 @@ button, input, select, textarea { font: inherit; }
 .tempo-control { position: relative; }
 .tempo-control output { position: absolute; right: 0; color: var(--accent); font-weight: 600; }
 .invite-entry { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
-.advanced { margin-top: 20px; font-size: 13px; color: var(--muted); }
 .room-layout { width:100%; margin: 0 auto; padding: 10px; height: calc(100dvh - 58px); display: grid; grid-template-columns: minmax(0,1fr) clamp(260px,var(--chat-width,280px),min(520px,45vw)); gap: 10px; }
 .room-layout.chat-hidden { grid-template-columns: 1fr; }
 .game-area { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
@@ -435,3 +435,33 @@ kbd { font-size: 11px; font-family: inherit; color: var(--muted); }
   .room-ready-actions > button { min-height:44px; }
   .ui-select-menu .ui-select-item { min-height:44px; }
 }
+
+.binding-editor { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.binding-editor [role="alert"] { color:var(--text); }
+.banner-color-setting { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.banner-color-setting input[type="color"] { width:52px; height:36px; padding:3px; }
+
+
+.lobby-shell[data-entry="join"] {grid-template-columns:minmax(0,360px);justify-content:center;}
+
+.shortcut-group h4 {margin:14px 0 6px;font-size:13px;color:var(--muted);user-select:none;}
+.binding-editor input.key-binding {width:180px;outline:2px solid var(--accent);}
+
+.scene-surface { display:contents; }
+.lobby-body {display:flow-root;min-width:0;}
+.lobby-shell {overflow-x:clip;}
+
+.game-library[hidden] {display:none!important;}
+.operation-working {position:relative;}
+.operation-working::before {content:"";display:inline-block;width:12px;height:12px;margin-right:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:operation-spin .7s linear infinite;}
+@keyframes operation-spin {to{transform:rotate(360deg)}}
+@keyframes window-content-in {from{opacity:.1}to{opacity:1}}
+.native-window-root[data-window-visible=true] {animation:window-content-in 180ms ease-out;}
+
+:root[data-motion=false] .operation-working::before, :root[data-motion=false] .native-window-root {animation:none!important;}
+
+.release-notes {margin-top:20px;}
+.release-notes section+section {margin-top:16px;}
+.release-notes ul {padding-left:20px;line-height:1.8;}
+.update-notes {white-space:pre-line;line-height:1.6;}
+.settings-section progress {width:100%;accent-color:var(--accent);}

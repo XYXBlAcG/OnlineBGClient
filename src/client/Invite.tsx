@@ -37,7 +37,9 @@ export function Invite({
   return (
     <Panel title="邀请朋友" open={open} onOpenChange={onOpenChange}>
       {qr && <img className="invite-qr" src={qr} alt="房间邀请二维码" />}
-      <p className="invite-url">{url}</p>
+      <p className="invite-url" data-copyable tabIndex={0}>
+        {url}
+      </p>
       <button
         onClick={() =>
           void navigator.clipboard

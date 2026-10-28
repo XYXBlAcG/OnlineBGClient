@@ -1,46 +1,68 @@
 import { expect, it } from "vitest";
 import { mkdtemp, mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { join, basename } from "node:path";
 import { prepareRelease } from "../scripts/release-assets.mjs";
-it("requires both platforms, checks the stable tag and hashes named downloads", async () => {
+it("requires both signed platforms and produces a stable deterministic updater manifest", async () => {
   const root = await mkdtemp(join(tmpdir(), "onlinebg-release-"));
   try {
-    await mkdir(join(root, "windows"));
-    await mkdir(join(root, "mac"));
-    await writeFile(join(root, "windows", "setup.exe"), "MZinstaller");
-    await expect(
-      prepareRelease(root, join(root, "out"), "0.1.0", "v0.1.0"),
-    ).rejects.toThrow("macOS");
+    const exe = join(root, "setup.exe"),
+      mac = join(root, "app.dmg"),
+      update = join(root, "OnlineBGClient.app.tar.gz"),
+      output = join(root, "out");
+    await writeFile(exe, "MZinstaller");
     await writeFile(
-      join(root, "mac", "OnlineBGClient-macOS-arm64.zip"),
-      "PKbundle",
+      exe + ".sig",
+      Buffer.from("windows signature test fixture").toString("base64"),
     );
     await expect(
-      prepareRelease(root, join(root, "out"), "0.1.0", "v0.2.0"),
+      prepareRelease(root, output, "0.2.0", "v0.2.0", "owner/repo"),
+    ).rejects.toThrow("macOS");
+    const dmg = Buffer.alloc(1024);
+    dmg.write("koly", 512);
+    await writeFile(mac, dmg);
+    await writeFile(update, Buffer.from([31, 139, 1, 2]));
+    await expect(
+      prepareRelease(root, output, "0.2.0", "v0.2.0", "owner/repo"),
+    ).rejects.toThrow();
+    await writeFile(
+      update + ".sig",
+      Buffer.from("mac signature test fixture").toString("base64"),
+    );
+    await expect(
+      prepareRelease(root, output, "0.2.0", "v0.3.0", "owner/repo"),
     ).rejects.toThrow("版本");
     const result = await prepareRelease(
       root,
-      join(root, "out"),
-      "0.1.0",
-      "v0.1.0",
+      output,
+      "0.2.0",
+      "v0.2.0",
+      "owner/repo",
     );
-    expect(result.assets.map((p) => basename(p))).toEqual([
-      "OnlineBGClient-0.1.0-Windows-x64.exe",
-      "OnlineBGClient-0.1.0-macOS-arm64.zip",
-      "SHA256SUMS.txt",
+    const manifest = JSON.parse(
+      await readFile(join(output, "latest.json"), "utf8"),
+    );
+    expect(manifest.version).toBe("0.2.0");
+    expect(Object.keys(manifest.platforms).sort()).toEqual([
+      "darwin-aarch64",
+      "windows-x86_64",
     ]);
-    const repeated = await prepareRelease(
-      root,
-      join(root, "out"),
-      "0.1.0",
-      "v0.1.0",
+    expect(manifest.platforms["darwin-aarch64"].url).toContain(
+      "/v0.2.0/OnlineBGClient-0.2.0-macOS-arm64.app.tar.gz",
     );
-    expect(repeated).toEqual(result);
-    const hashes = await readFile(result.assets[2], "utf8");
-    expect(hashes).toMatch(/^[a-f0-9]{64}  OnlineBGClient-/);
-    expect(hashes.split("\n").filter(Boolean)).toHaveLength(2);
+    expect(result.assets.map((path) => basename(path))).not.toContain(
+      expect.stringContaining(".zip"),
+    );
+    const first = await readFile(join(output, "latest.json"), "utf8");
+    await prepareRelease(root, output, "0.2.0", "v0.2.0", "owner/repo");
+    expect(await readFile(join(output, "latest.json"), "utf8")).toBe(first);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+it("keeps the native, application and published version on the same source", async () => {
+  const { releaseVersion } = await import("../scripts/release-version.mjs");
+  const { version } = await import("../package.json");
+  expect(await releaseVersion()).toBe(version);
 });

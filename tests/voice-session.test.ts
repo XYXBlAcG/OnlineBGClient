@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import {
   VoiceSession,
   type VoiceTransport,
@@ -166,5 +166,41 @@ it("requires renewed room authorization before resuming a live microphone", asyn
   release({ ...status, members: [{ ...status.members[0], muted: true }] });
   await restoring;
   expect(transports[0].sends.at(-1)).toBe(false);
+  await session.command({ type: "leave" });
+});
+
+it("keeps a failed output-device selection from ending an otherwise connected voice session", async () => {
+  const output = vi
+    .spyOn(Transport.prototype, "output")
+    .mockRejectedValue(new Error("unsupported output"));
+  const { session } = fixture();
+  try {
+    await session.configure(room, voicePreferencesSchema.parse({}), true);
+    await session.command({ type: "join" });
+    expect(session.snapshot().phase).toBe("connected");
+    expect(session.snapshot().error).toContain("系统默认输出");
+    expect(session.snapshot().muted).toBe(true);
+    await session.command({ type: "leave" });
+  } finally {
+    output.mockRestore();
+  }
+});
+it("applies effect changes without granting permission to send the microphone", async () => {
+  const { session, transports } = fixture(),
+    options = voicePreferencesSchema.parse({});
+  await session.configure(room, options, true);
+  await session.command({ type: "join" });
+  const sending = vi.spyOn(transports[0], "sending");
+  await session.configure(
+    room,
+    voicePreferencesSchema.parse({ ...options, effect: { preset: "robot" } }),
+    true,
+  );
+  expect(sending).toHaveBeenLastCalledWith(
+    false,
+    "default",
+    expect.objectContaining({ preset: "robot" }),
+  );
+  expect(session.snapshot().muted).toBe(true);
   await session.command({ type: "leave" });
 });

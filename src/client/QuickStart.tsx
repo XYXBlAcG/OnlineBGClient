@@ -1,27 +1,34 @@
 import "./ui/quick-start.css";
 export function QuickStart({
   desktop,
+  showGuide = true,
+  showVoice = true,
   expanded,
   onExpandedChange,
   onVoiceSettings,
 }: {
   desktop: boolean;
+  showGuide?: boolean;
+  showVoice?: boolean;
   expanded: boolean;
   onExpandedChange: (open: boolean) => void;
   onVoiceSettings: () => void;
 }) {
+  if (!showGuide && (!desktop || !showVoice)) return null;
   return (
     <section className="quick-start" aria-label="快速上手">
       <div className="quick-start-heading">
-        <button
-          type="button"
-          aria-expanded={expanded}
-          aria-controls="quick-start-content"
-          onClick={() => onExpandedChange(!expanded)}
-        >
-          快速上手
-        </button>
-        {desktop && (
+        {showGuide && (
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls="quick-start-content"
+            onClick={() => onExpandedChange(!expanded)}
+          >
+            快速上手
+          </button>
+        )}
+        {desktop && showVoice && (
           <button
             type="button"
             className="primary-button"
@@ -31,7 +38,7 @@ export function QuickStart({
           </button>
         )}
       </div>
-      {expanded && (
+      {showGuide && expanded && (
         <div id="quick-start-content" className="quick-start-steps">
           <div>
             <strong>1 · 选游戏</strong>

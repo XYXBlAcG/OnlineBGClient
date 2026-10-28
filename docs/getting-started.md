@@ -40,3 +40,5 @@
 | 麦克风正常但仍没有声音 | 检查耳机静音、语音音量、系统输出设备；更多见[语音指南](client-voice.md) |
 
 首次引导与大厅入口实现见 [QuickStart](../src/client/QuickStart.tsx)，语音设置说明见 [VoiceSetupGuide](../src/client/voice/VoiceSetupGuide.tsx)。本指南不代表 Windows、手机或真实跨网通话已经完成实机验收。
+
+高级房间服务地址与临时公网入口偏好位于「设置 → 联机」，实现与人工检查见 [操作与窗口](action-feedback-and-windows.md)。

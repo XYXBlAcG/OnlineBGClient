@@ -72,19 +72,7 @@ export default {
         className: "button-container",
         children: (0, h.jsx)("div", {
           className: "button-right",
-          children: (0, h.jsx)(s.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, c.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
-                return m(i.Z.OwnerExitGame, {
-                  data: o.d4.encode(y.enableCt ? {
-                    ct: new Uint8Array([1])
-                  } : {}).finish()
-                });
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), (0, h.jsx)(f.Z, {
         view: y,
@@ -5259,17 +5247,7 @@ export default {
           })]
         }), I && H && (0, x.jsx)("div", {
           className: "mt-1",
-          children: (0, x.jsx)(i.Z, {
-            small: !0,
-            onClick: function () {
-              return h(u.Z.OwnerExitGame, {
-                data: d.AD.encode({
-                  mapId: l.mapId
-                }).finish()
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })]
       });
     },
@@ -6667,19 +6645,7 @@ export default {
         className: "button-container",
         children: (0, x.jsx)("div", {
           className: "button-right",
-          children: (0, x.jsx)(i.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, l.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
-                return h(u.Z.OwnerExitGame, {
-                  data: d.AD.encode({
-                    mapId: C.mapId
-                  }).finish()
-                });
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), (0, x.jsx)(companionMapBridge.mapViewport, {
         children: (0, x.jsxs)("div", {
@@ -6754,17 +6720,7 @@ export default {
         className: "button-container",
         children: (0, x.jsx)("div", {
           className: "button-right",
-          children: (0, x.jsx)(i.Z, {
-            small: !0,
-            onClick: function () {
-              return h(u.Z.OwnerExitGame, {
-                data: d.AD.encode({
-                  mapId: 0
-                }).finish()
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), (0, x.jsx)("div", {
         className: "text-center",
@@ -8290,15 +8246,7 @@ export default {
         className: "button-container",
         children: (0, d.jsx)("div", {
           className: "button-right",
-          children: (0, d.jsx)(s.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, j.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
-                return a(r.Z.OwnerExitGame);
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), (0, d.jsx)("div", {
         className: "flex justify-evenly mt-4",
@@ -9215,17 +9163,7 @@ export default {
               return a((0, l.G4)(r, t.playerList.length));
             },
             children: "\u91cd\u65b0\u53d1\u724c"
-          }), (0, o.jsx)(C.Z, {
-            className: "ml-4",
-            onClick: function () {
-              return u(i.Z.OwnerExitGame, {
-                data: s.w.encode({
-                  rule: r.rule
-                }).finish()
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })]
+          }), null]
         })]
       });
     },
@@ -9767,27 +9705,7 @@ export default {
         className: "button-container",
         children: (0, o.jsx)("div", {
           className: "button-right",
-          children: (0, o.jsx)(C.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, a.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
-                return n(i.Z.OwnerExitGame, {
-                  data: s.w.encode(u.isRoundFinish ? {
-                    rule: 2,
-                    team13Level: 2,
-                    team24Level: 2,
-                    lastRankList: []
-                  } : {
-                    rule: 2,
-                    team13Level: u.team13Level,
-                    team24Level: u.team24Level,
-                    lastRankList: (0, N.Z)(u.lastRankList)
-                  }).finish()
-                });
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), (0, o.jsx)("div", {
         className: "text-center text-sm -mt-4 mb-4",
@@ -9841,19 +9759,7 @@ export default {
         className: "button-container",
         children: (0, o.jsx)("div", {
           className: "button-right",
-          children: (0, o.jsx)(C.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, a.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
-                return n(i.Z.OwnerExitGame, {
-                  data: s.w.encode({
-                    rule: d.rule
-                  }).finish()
-                });
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), (0, o.jsxs)("div", {
         className: "text-center text-sm -mt-4 mb-4",
@@ -11913,15 +11819,7 @@ export default {
         className: "button-container",
         children: (0, c.jsx)("div", {
           className: "button-right",
-          children: (0, c.jsx)(i.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, a.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
-                return n(s.Z.OwnerExitGame);
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), (0, c.jsxs)("div", {
         className: "flex justify-center items-center",
@@ -15582,19 +15480,7 @@ export default {
         className: "button-container",
         children: (0, S.jsx)("div", {
           className: "button-right",
-          children: (0, S.jsx)(l.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, s.Z)("\u786E\u8BA4\u7ED3\u675F\u6E38\u620F\u5417\uFF1F", function () {
-                return t(a.Z.OwnerExitGame, {
-                  data: Be.L.encode({
-                    rule: o.rule
-                  }).finish()
-                });
-              });
-            },
-            children: "\u7ED3\u675F\u6E38\u620F"
-          })
+          children: null
         })
       }), I.$H.V >= o.v ? [c.PR.CHOOSE0, c.PR.CHOOSE1].includes(o.stage) ? (0, S.jsx)(Xe, {
         room: r,
@@ -18391,19 +18277,7 @@ export default {
         className: "button-container",
         children: (0, u.jsx)("div", {
           className: "button-right",
-          children: (0, u.jsx)(s.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, a.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
-                return l(n.Z.OwnerExitGame, {
-                  data: o.b.encode({
-                    rule: f.rule
-                  }).finish()
-                });
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), (0, u.jsx)("div", {
         className: "flex justify-evenly",
@@ -18919,19 +18793,7 @@ export default {
         className: "button-container",
         children: (0, d.jsx)("div", {
           className: "button-right",
-          children: (0, d.jsx)(o.Z, {
-            small: !0,
-            onClick: function () {
-              return (0, a.Z)("\u786e\u8ba4\u7ed3\u675f\u6e38\u620f\u5417\uff1f", function () {
-                return u(c.Z.OwnerExitGame, {
-                  data: l.QY.encode({
-                    prop: p.prop
-                  }).finish()
-                });
-              });
-            },
-            children: "\u7ed3\u675f\u6e38\u620f"
-          })
+          children: null
         })
       }), !m.finish && (0, d.jsx)("div", {
         className: "text-center",

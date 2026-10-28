@@ -1,3 +1,4 @@
+import type { CommandRegistry } from "./commands";
 import { ExpeditionOptionsControl } from "./expedition/ExpeditionOptionsControl";
 import { DominionOptionsControl } from "./dominion/DominionOptionsControl";
 import { balanceSeats } from "../domain/room-balance";
@@ -5,7 +6,7 @@ import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { gameCatalogue, gameKinds, type GameKind } from "../domain/catalogue";
 import {
   configSchema,
@@ -17,11 +18,15 @@ import { confirmation } from "./confirmation-controller";
 import { difficultyNames } from "./Lobby";
 export function RoomSetup({
   snapshot,
+  registry,
+  binding = "",
   onApply,
   onError,
   onClose,
 }: {
   snapshot: Snapshot;
+  registry?: CommandRegistry;
+  binding?: string;
   onApply: (setup: Setup) => void;
   onError: (message: string) => void;
   onClose?: () => void;
@@ -49,24 +54,31 @@ export function RoomSetup({
       if (intent.type === "error") onError(intent.message);
     },
   );
+  const openSetup = () => {
+    setConfig(structuredClone(snapshot.config));
+    const ids = snapshot.seats
+      .filter((s) => !s.difficulty && s.name)
+      .map((s) => s.id);
+    setRetain(ids);
+    setMembers(ids);
+    setOpen(true);
+  };
+  useEffect(
+    () =>
+      registry?.register({
+        id: "room.setup",
+        title: "游戏与人数",
+        scope: "global",
+        binding,
+        enabled: () => snapshot.canManage,
+        run: openSetup,
+      }),
+    [registry, snapshot, binding],
+  );
   const game = gameCatalogue[config.kind];
   return (
     <>
-      {!auxiliaryView && (
-        <button
-          onClick={() => {
-            setConfig(structuredClone(snapshot.config));
-            const ids = snapshot.seats
-              .filter((s) => !s.difficulty && s.name)
-              .map((s) => s.id);
-            setRetain(ids);
-            setMembers(ids);
-            setOpen(true);
-          }}
-        >
-          游戏与人数
-        </button>
-      )}
+      {!auxiliaryView && <button onClick={openSetup}>游戏与人数</button>}
       {!detached && (
         <Panel
           open={open}

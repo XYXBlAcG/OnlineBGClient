@@ -239,7 +239,6 @@ export const OriginalGame = memo(function OriginalGame({
         snapshot.state?.kind === "graphwar" ? (
         <GraphwarTable
           view={snapshot.state.view}
-          end={end}
           snapshot={snapshot}
           act={act}
           replay={replay}
@@ -252,7 +251,6 @@ export const OriginalGame = memo(function OriginalGame({
         <SichuanTable
           snapshot={snapshot}
           act={act}
-          end={end}
           replay={replay}
           onAutoplay={onAutoplay}
           avatar={avatarContext}

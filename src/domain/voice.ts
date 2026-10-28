@@ -1,6 +1,8 @@
+import { voiceEffectSchema } from "./voice-effects";
 import { z } from "zod";
 export const voiceLimit = 8;
 export const voicePreferencesSchema = z.object({
+  effect: voiceEffectSchema.default(voiceEffectSchema.parse({})),
   input: z.string().default("default"),
   output: z.string().default("default"),
   volume: z.number().min(0).max(1).default(1),
@@ -70,6 +72,7 @@ export interface VoiceView {
   outputSupported: boolean;
   testing: boolean;
   inputLevel: number;
+  effect: z.infer<typeof voiceEffectSchema>;
 }
 export const initialVoice: VoiceView = {
   phase: "unavailable",
@@ -86,8 +89,10 @@ export const initialVoice: VoiceView = {
   outputSupported: false,
   testing: false,
   inputLevel: 0,
+  effect: voiceEffectSchema.parse({}),
 };
 export const voiceIntentSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("effect"), effect: voiceEffectSchema }),
   z.object({ type: z.literal("sync") }),
   z.object({ type: z.literal("settings") }),
   z.object({

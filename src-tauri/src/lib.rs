@@ -7,9 +7,11 @@ pub mod hosting;
 #[cfg(not(mobile))]
 mod hosting_retry;
 #[cfg(not(mobile))]
-pub mod windows;
+mod updater;
 #[cfg(not(mobile))]
 pub mod voice;
+#[cfg(not(mobile))]
+pub mod windows;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,6 +24,8 @@ pub fn run() {
         .manage(std::sync::Arc::new(hosting::Hosting::default()))
         .manage(desktop::Desktop::default())
         .manage(windows::Windows::default())
+        .manage(updater::Updates::default())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 .with_state_flags(
@@ -39,14 +43,25 @@ pub fn run() {
             voice::voice_request,
             voice::voice_active,
             hosting::start_host,
+            hosting::abandon_hosted_run,
             hosting::stop_host,
             hosting::clear_cache,
             cache::cache_usage,
             desktop::quit_app,
+            updater::updater_state,
+            updater::updater_check,
+            updater::updater_download,
+            updater::updater_install,
+            updater::updater_activity,
+            updater::updater_authorize,
+            updater::updater_can_install,
+            updater::updater_completion,
+            desktop::sync_menu,
             desktop::open_link,
             windows::present_auxiliary,
             windows::close_auxiliary,
             windows::auxiliary_state,
+            windows::auxiliary_ready,
             windows::auxiliary_intent
         ])
         .on_window_event(windows::window_event);
@@ -59,7 +74,9 @@ pub fn run() {
                 use tauri::{Emitter, Manager};
                 let hosting = app.state::<std::sync::Arc<hosting::Hosting>>();
                 if let tauri::RunEvent::ExitRequested { api, .. } = &event {
-                    if (hosting.running() || app.state::<desktop::Desktop>().voice_active()) && !app.state::<desktop::Desktop>().quitting() {
+                    if (hosting.running() || app.state::<desktop::Desktop>().voice_active())
+                        && !app.state::<desktop::Desktop>().quitting()
+                    {
                         api.prevent_exit();
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.show();

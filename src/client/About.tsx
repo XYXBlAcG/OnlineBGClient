@@ -1,3 +1,4 @@
+import releases from "./releases.json";
 import { useNativeWindow } from "./native/windows";
 import { ExternalLink } from "./ExternalLink";
 import { Panel } from "./ui/Controls";
@@ -45,6 +46,19 @@ export function About({
           </ExternalLink>
         </p>
       ))}
+      <div className="release-notes">
+        {releases.map((release) => (
+          <section key={release.version}>
+            <h3>{release.version}</h3>
+            <small>{release.date}</small>
+            <ul>
+              {release.changes.map((change) => (
+                <li key={change}>{change}</li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </Panel>
   );
 }

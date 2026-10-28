@@ -1,3 +1,4 @@
+import { VoiceEffectControls } from "./VoiceEffectControls";
 import { VoiceSetupGuide } from "./VoiceSetupGuide";
 import "../ui/quick-start.css";
 import { useEffect, useState, useRef } from "react";
@@ -151,6 +152,10 @@ export function VoiceSettings({
           </button>
         </div>
       </details>
+      <VoiceEffectControls
+        value={value.effect}
+        onChange={(effect) => onChange({ ...value, effect })}
+      />
       <div className="voice-device-grid">
         <label>
           麦克风

@@ -18,7 +18,7 @@
   gap: 6px;
   width: 100%;
 }
-.table-focused .game-area > :not(.game-stage) {
+.table-focused .game-area > :not(.game-stage,.game-status-row) {
   display: none;
 }
 .table-focused .game-stage {

@@ -39,7 +39,16 @@
 - [秘塔远征：合作卡牌肉鸽待审核方案](cooperative-roguelike-plan.md)
 - [秘塔远征：首章、联机、AI、存档与审核](expedition.md)
 - [秘塔远征：独立战斗样板](expedition-demo.md)
+- [变声、输出设备、快捷键与横幅审核](voice-effects-and-input.md)
 - [客户端连麦：配置、实现与人工验收](client-voice.md)
 - [客户端连麦：技术、界面与验收方案](client-voice-plan.md)
 
 - [专注牌桌、远征路线与动效审核](expedition-experience.md)
+
+- [大厅、存档维护、快捷键与平台菜单审核](room-experience.md)
+
+- [文字选择与场景过渡审核](selection-and-scene-transitions.md)
+
+- [创建／开始反馈、回合状态与原生窗口审核](action-feedback-and-windows.md)
+
+- [软件更新、签名与正式发布](updating.md)

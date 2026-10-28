@@ -1,0 +1,56 @@
+[
+  {
+    "id": "application",
+    "title": "OnlineBGClient",
+    "items": [
+      { "id": "app.about", "title": "关于 OnlineBGClient" },
+      { "id": "app.show", "title": "显示主窗口" },
+      { "id": "quit", "title": "退出", "binding": "Meta+Q" }
+    ]
+  },
+  {
+    "id": "room",
+    "title": "房间",
+    "items": [
+      { "id": "app.invite", "title": "复制邀请" },
+      { "id": "room.setup", "title": "游戏与人数" },
+      { "id": "room.leave", "title": "离开房间" }
+    ]
+  },
+  {
+    "id": "game",
+    "title": "对局",
+    "items": [
+      { "id": "room.ready", "title": "准备" },
+      { "id": "room.start", "title": "开始对局" },
+      { "id": "room.ai", "title": "暂停 AI" },
+      { "id": "game.actions", "title": "游戏操作" },
+      { "id": "room.end", "title": "结束对局" }
+    ]
+  },
+  {
+    "id": "view",
+    "title": "视图",
+    "items": [
+      { "id": "view.focus", "title": "专注模式" },
+      { "id": "app.chat", "title": "聊天" },
+      { "id": "view.guide", "title": "新手引导" },
+      { "id": "app.records", "title": "对局记录" }
+    ]
+  },
+  {
+    "id": "settings",
+    "title": "设置",
+    "items": [
+      { "id": "app.settings", "title": "设置" },
+      { "id": "settings.appearance", "title": "外观" },
+      { "id": "settings.social", "title": "消息与互动" },
+      { "id": "settings.updates", "title": "软件更新" },
+      { "id": "settings.voice", "title": "声音与语音" },
+      { "id": "settings.shortcuts", "title": "快捷键" },
+      { "id": "settings.network", "title": "联机" },
+      { "id": "settings.compute", "title": "AI 计算" },
+      { "id": "settings.data", "title": "数据" }
+    ]
+  }
+]

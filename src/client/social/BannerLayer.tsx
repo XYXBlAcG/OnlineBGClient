@@ -1,8 +1,9 @@
+import { bannerContrast } from "./banner-color";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { bannerLifetime } from "../../domain/banner";
 import { interactionCatalogue, type ChatMessage } from "../../domain/social";
-import { useMotion } from "../use-motion";
+import { usePresentation } from "../motion";
 import type { Preferences } from "../preferences";
 type BannerMessage = Extract<ChatMessage, { type: "banner" }>;
 type QueuedBanner = BannerMessage & { receivedAt: number };
@@ -22,7 +23,7 @@ export function BannerLayer({
   const [queue, setQueue] = useState<QueuedBanner[]>([]),
     [, tick] = useState(0);
   const seen = useRef(0);
-  const motion = useMotion(preferences.enhancedGameMotion);
+  const { social: motion } = usePresentation();
   const clock = useMemo(
     () => ({ server: serverTime ?? Date.now(), received: Date.now() }),
     [serverTime],
@@ -122,10 +123,21 @@ export function BannerLayer({
     <div
       key={`${room}:${current.sequence}`}
       className={`social-banner banner-${banner.kind} ${motion ? "banner-animated" : ""}`}
-      data-motion-scope="game"
+      data-motion-scope="social"
       data-style={effect?.style}
       data-preset={"style" in banner ? (banner.style ?? "gold") : "gold"}
-      style={{ animationDuration: `${duration}ms` }}
+      style={
+        {
+          animationDuration: `${duration}ms`,
+          ...("color" in banner && banner.color
+            ? {
+                "--banner-color": banner.color,
+                "--banner-stroke": bannerContrast(banner.color),
+              }
+            : {}),
+        } as React.CSSProperties
+      }
+      data-custom-color={"color" in banner && !!banner.color}
       aria-live="polite"
       role="status"
     >

@@ -13,7 +13,6 @@ import { GraphwarBoard } from "./GraphwarBoard";
 import { usePreview } from "./use-preview";
 import { readFormulaHistory, saveFormulaHistory } from "./formula-history";
 import { Select } from "../ui/Controls";
-import { confirmation } from "../confirmation-controller";
 import "./graphwar.css";
 const keys = [
   "x",
@@ -65,7 +64,6 @@ export function GraphwarTable({
   snapshot,
   view,
   act,
-  end,
   replay,
   avatar,
   pending,
@@ -75,7 +73,6 @@ export function GraphwarTable({
   snapshot: GameSnapshot;
   view: import("../../domain/graphwar/types").GraphwarView;
   act: (action: Action) => void;
-  end: () => void;
   replay: boolean;
   avatar: Omit<AvatarSurfaceProps, "index">;
   pending: boolean;
@@ -244,23 +241,6 @@ export function GraphwarTable({
         <span className="gw-team-blue">蓝队 {alive[0]}</span>
         <span className="gw-team-orange">橙队 {alive[1]}</span>
         {!replay && !snapshot.finished && <TurnClock snapshot={snapshot} />}
-        {!replay && snapshot.canManage && !snapshot.finished && (
-          <details className="gw-room-menu">
-            <summary>房间 ⋯</summary>
-            <button
-              className="gw-end"
-              onClick={() => {
-                void confirmation
-                  .request("结束当前对局并保存回放？", "结束游戏")
-                  .then((ok) => {
-                    if (ok) end();
-                  });
-              }}
-            >
-              结束游戏
-            </button>
-          </details>
-        )}
         <small>
           {graphwarModes[view.options.mode].name} ·{" "}
           {graphwarMaps[view.options.map]} · {view.sequence}/{actionLimit(view)}

@@ -99,8 +99,8 @@ try {
   expect(await completed()).toBe(paused);
   await page.getByRole("button", { name: "继续 AI 测试", exact: true }).click();
   await expect.poll(completed, { timeout: 180000 }).toBeGreaterThanOrEqual(30);
-  await page.getByRole("button", { name: "结束游戏", exact: true }).click();
-  await page.getByRole("button", { name: "确认结束", exact: true }).click();
+  await page.locator('[data-room-action="end"]').click();
+  await page.getByRole("dialog").getByRole("button", { name: "结束对局", exact: true }).click();
   await expect
     .poll(() =>
       page.evaluate(

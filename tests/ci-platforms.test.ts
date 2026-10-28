@@ -28,13 +28,16 @@ it("cannot omit a platform from a tagged release", () => {
     }),
   ).toHaveLength(2);
 });
-it("gates native packaging on browser checks and omits Windows AI smoke", () => {
+it("gates packaging on protocol checks and publishes only signed version tags", () => {
   const workflow = readFileSync(".github/workflows/desktop.yml", "utf8");
-  const smoke = workflow.indexOf("run: npm run verify:smoke");
+  const smoke = workflow.indexOf("run: npm run verify:expedition-chapter");
   expect(smoke).toBeGreaterThan(workflow.indexOf("run: npm run hosting:build"));
-  expect(workflow.indexOf("- uses: tauri-apps/tauri-action@")).toBeGreaterThan(
+  expect(workflow.indexOf("uses: tauri-apps/tauri-action@")).toBeGreaterThan(
     smoke,
   );
   expect(workflow).not.toContain("run: node scripts/native-smoke-runner.mjs");
   expect(workflow).toContain("cache-workspace-crates: true");
+  expect(workflow).not.toContain("playwright install");
+  expect(workflow).not.toContain("publish_preview");
+  expect(workflow).toContain("TAURI_SIGNING_PRIVATE_KEY:");
 });

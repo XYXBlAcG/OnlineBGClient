@@ -114,3 +114,15 @@ it("lets guests roll for fun but reserves clear for the host and records fixed r
   ).toBe(true);
   expect(Room.restore(room.export()).snapshot(host).chat[0]).toEqual(result);
 });
+
+it("preserves explicit banner colors through authority snapshots and room restore", () => {
+  const { room, host, guest } = create();
+  room.chat(host, "colored", "/title --color #6633ff 好牌");
+  expect(room.snapshot(guest).chat.at(-1)).toMatchObject({
+    type: "banner",
+    banner: { color: "#6633ff", text: "好牌" },
+  });
+  expect(Room.restore(room.export()).snapshot(host).chat.at(-1)).toMatchObject({
+    banner: { color: "#6633ff" },
+  });
+});

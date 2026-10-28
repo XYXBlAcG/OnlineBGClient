@@ -14,8 +14,11 @@ export class TestService {
     return `http://127.0.0.1:${port}`;
   }
   async stop() {
-    if (!this.process || this.process.exitCode !== null) return;
-    const stopped = new Promise(resolve => this.process.once('exit', resolve));
-    this.process.kill(); await stopped;
+    const child=this.process;
+    this.process=undefined;
+    if(!child || child.exitCode!==null)return;
+    const exited=new Promise(resolve=>child.once('exit',resolve));
+    child.kill('SIGTERM');
+    await exited;
   }
 }

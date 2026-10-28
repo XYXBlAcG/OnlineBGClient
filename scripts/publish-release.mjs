@@ -1,3 +1,4 @@
+import { releaseVersion } from "./release-version.mjs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { readFile, writeFile, mkdtemp, rm } from "node:fs/promises";
@@ -5,6 +6,7 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { createHash } from "node:crypto";
 import { prepareRelease } from "./release-assets.mjs";
+await releaseVersion();
 const execute = promisify(execFile);
 const {
   GITHUB_REPOSITORY: repo,
@@ -18,15 +20,14 @@ const pkg = JSON.parse(await readFile("package.json", "utf8")),
   tauri = JSON.parse(await readFile("src-tauri/tauri.conf.json", "utf8"));
 if (tauri.version !== "../package.json")
   throw new Error("桌面版本必须引用 package.json");
-const stable = ref.startsWith("refs/tags/v"),
-  tag = stable
-    ? ref.slice("refs/tags/".length)
-    : `preview-${run}-${sha.slice(0, 12)}`;
+if (!ref.startsWith("refs/tags/v")) throw new Error("仅正式版本标签可以发布");
+const tag = ref.slice("refs/tags/".length);
 const { assets } = await prepareRelease(
   "artifacts/release-input",
   "artifacts/release-output",
   pkg.version,
   tag,
+  repo,
 );
 let existing;
 try {
@@ -64,7 +65,11 @@ if (existing && !existing.draft) {
     await rm(directory, { recursive: true, force: true });
   }
 } else {
-  const notes = `${stable ? "正式版" : "预览版"} ${pkg.version}\n\n构建提交：${sha}\n\nWindows x64：下载 .exe 安装包。\nmacOS Apple Silicon：下载 .zip 并解压应用。\n\nSHA256SUMS.txt 提供安装包校验值。私有仓库下载需要仓库访问权限。\n`;
+  const history = JSON.parse(
+    await readFile("src/client/releases.json", "utf8"),
+  );
+  const release = history.find((item) => item.version === pkg.version);
+  const notes = `${release.changes.map((change) => `- ${change}`).join("\n")}\n\nWindows：下载 .exe。macOS：下载 .dmg，打开后将应用拖到 Applications。\nlatest.json 和 .app.tar.gz 为客户端自动更新资源。\n`;
   await writeFile("artifacts/release-output/notes.md", notes);
   if (!existing)
     await execute("gh", [
@@ -77,12 +82,10 @@ if (existing && !existing.draft) {
       sha,
       "--draft",
       "--title",
-      stable
-        ? `OnlineBGClient ${pkg.version}`
-        : `OnlineBGClient ${pkg.version} · 预览 ${run}`,
+      `OnlineBGClient ${pkg.version}`,
       "--notes-file",
       "artifacts/release-output/notes.md",
-      ...(stable ? ["--verify-tag"] : ["--prerelease", "--latest=false"]),
+      "--verify-tag",
     ]);
   await execute("gh", [
     "release",
@@ -116,7 +119,7 @@ if (existing && !existing.draft) {
     "--repo",
     repo,
     "--draft=false",
-    ...(stable ? ["--latest"] : ["--latest=false"]),
+    "--latest",
   ]);
   console.log(`Published ${tag}`);
 }

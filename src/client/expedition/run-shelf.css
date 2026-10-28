@@ -31,3 +31,5 @@
     padding-inline: 16px;
   }
 }
+.run-shelf-status {min-height:68px;display:flex;align-items:center;}
+.run-shelf-entry p {margin:6px 0;font-size:13px;overflow-wrap:anywhere;}

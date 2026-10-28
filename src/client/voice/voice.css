@@ -161,3 +161,22 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.voice-effect-controls {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 0;
+}
+.voice-effect-controls .ui-select {
+  max-width: 100%;
+}
+.voice-effect-controls small {
+  line-height: 1.6;
+}
+.voice-dock .voice-effect-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}

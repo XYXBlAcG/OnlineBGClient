@@ -81,3 +81,74 @@ export function useNativeWindow(
 export function sendAuxiliary(intent: AuxiliaryIntent) {
   return invoke("auxiliary_intent", { intent });
 }
+
+export async function bindAuxiliary(
+  id: string,
+  binding: string,
+): Promise<void> {
+  const request = crypto.randomUUID();
+  return new Promise<void>((resolve, reject) => {
+    let dispose: (() => void) | undefined;
+    let finished = false;
+    const finish = (error?: string) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      dispose?.();
+      error ? reject(new Error(error)) : resolve();
+    };
+    const timer = setTimeout(() => finish("保存超时，请重试"), 10000);
+    void listen<{ request: string; error?: string }>(
+      "binding-result",
+      (event) => {
+        if (event.payload.request === request) finish(event.payload.error);
+      },
+    )
+      .then((stop) => {
+        dispose = stop;
+        if (finished) {
+          stop();
+          return;
+        }
+        void sendAuxiliary({
+          view: "settings",
+          type: "binding",
+          request,
+          id,
+          binding,
+        }).catch((error) => finish(String(error)));
+      })
+      .catch((error) => finish(String(error)));
+  });
+}
+
+export function useWindowReady(
+  frame: import("./contract").AuxiliaryFrame | undefined,
+  ready: boolean,
+  onError: (message: string) => void,
+) {
+  const latest = useRef(onError);
+  latest.current = onError;
+  useEffect(() => {
+    if (!frame?.visible || !ready) return;
+    let active = true;
+    document.querySelector(".native-window-root")?.getBoundingClientRect();
+    void invoke("auxiliary_ready", {
+      view: frame.payload.view,
+      revision: frame.revision,
+      background: getComputedStyle(document.documentElement)
+        .getPropertyValue("--canvas")
+        .trim()
+        .replace(
+          /^#([\da-f]{4})$/i,
+          (_match, value: string) =>
+            `#${[...value].map((digit) => digit.repeat(2)).join("")}`,
+        ),
+    }).catch((error) => {
+      if (active) latest.current(String(error));
+    });
+    return () => {
+      active = false;
+    };
+  }, [frame?.revision, frame?.visible, ready]);
+}

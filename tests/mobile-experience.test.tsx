@@ -21,7 +21,9 @@ it("covers every board with shared theme tokens and keeps phone immersion full-h
   expect(theme).not.toContain("invert(");
   const mobile = readFileSync("src/client/ui/mobile-table.css", "utf8");
   expect(mobile).toContain(".mobile-shell.mobile-immersive .room-layout");
-  expect(mobile).toContain(".mobile-immersive .game-area > :not(.game-stage)");
+  expect(mobile).toContain(
+    ".mobile-immersive .game-area > :not(.game-stage,.game-status-row)",
+  );
   expect(mobile).not.toContain(
     ".mobile-immersive .room-sidebar { display:none",
   );

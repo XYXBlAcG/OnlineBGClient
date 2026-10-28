@@ -38,11 +38,11 @@
 - 固定种子首章基准：`npm run benchmark:expedition-chapter`；[完整报告](../artifacts/expedition-chapter/benchmark.json)保留样本、策略、人数、结果与耗时。使用普通启发式、公开投影，不含搜索；小样本不代表真人胜率或平衡已完成。
 - HTTP/WebSocket：先运行 `npm run server:build`，再运行 `npm run verify:expedition-chapter`；[脚本](../scripts/smoke-expedition.mjs)使用隔离临时数据库，[结果](../artifacts/expedition-chapter/network.json)记录并发、服务重启、新设备接管及永久放弃检查。
 
-打包、签名、资源一致性与实际包内服务的校验记录见 [审核校验](../artifacts/review/map-social-polish/verification.json)。
+构建、包校验与自动更新入口见 [软件更新](updating.md)。
 
 ## 手动审核
 
-[macOS 审核应用](../artifacts/review/map-social-polish/OnlineBGClient.app)。退出旧客户端后打开；不需要安装或填写 LiveKit。使用本地临时签名，未公证。
+客户端安装与公开下载见 [软件更新](updating.md)。退出旧客户端后安装；游戏无需填写 LiveKit。
 
 1. 大厅建立秘塔远征，分别选择三种职业，检查手牌、头像、卡牌详情与浅色／深色显示。
 2. 战斗中选牌、选高亮目标、确认自身牌，查看敌方意图和出牌预览；用数字键、上下箭头、Enter、Esc 和 E，并在设置里改键。

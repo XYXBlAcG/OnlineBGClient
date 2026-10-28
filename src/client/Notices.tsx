@@ -34,7 +34,9 @@ export function Notices({
           <span className="notification-icon" aria-hidden="true">
             {success ? "✓" : "!"}
           </span>
-          <span>{notice}</span>
+          <span data-copyable tabIndex={0}>
+            {notice}
+          </span>
           <button aria-label="关闭提示" onClick={onDismiss}>
             ×
           </button>

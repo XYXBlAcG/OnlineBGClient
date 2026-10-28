@@ -64,7 +64,11 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
       send: (intent: VoiceIntent) => {
         if (!isTauri()) return;
         if (owner) {
-          if (intent.type === "settings")
+          if (intent.type === "effect")
+            window.dispatchEvent(
+              new CustomEvent("voice-effect", { detail: intent.effect }),
+            );
+          else if (intent.type === "settings")
             window.dispatchEvent(new Event("voice-settings"));
           else void owner.command(intent).catch((error) => owner.fail(error));
         } else void emitTo("main", "voice-command", intent);

@@ -1,6 +1,6 @@
 # 游戏、AI 与发布入口
 
-保留各游戏原站牌桌，统一使用房间、动作校验、联机、回放、快捷键和社交能力。其他体验提案见 [待审核功能](product-next-plan.md)，自动更新与平台扩展见 [后续规划](roadmap.md)。
+保留各游戏原站牌桌，统一使用房间、动作校验、联机、回放、快捷键和社交能力。其他体验提案见 [待审核功能](product-next-plan.md)，自动更新见 [软件更新](updating.md)，平台扩展见 [后续规划](roadmap.md)。
 
 | 职责 | 唯一入口 |
 | --- | --- |
@@ -22,4 +22,4 @@
 
 璀璨宝石采用原站基础版，不接入扩展、漫威或双人对决版。原站允许少拿宝石与放弃回合；原站候选和执行规则是本客户端的唯一规则来源。出版商规则用于核对：[基础版规则](https://cdn.svc.asmodee.net/production-spacecowboys/uploads/2025/10/SCSPL01EN_SPLENDOR_RULES_LIGHT.pdf)。
 
-Release 包含 Windows x64 安装包、macOS arm64 ZIP 和校验文件。私有仓库下载需要仓库访问权限；客户端自动更新、GPU 模型和公开分发不在当前范围。审核与作者提交入口见 [操作说明](review-and-submit.md)。
+正式签名更新、产物类型与公开下载见 [软件更新](updating.md)，审核与作者提交见 [操作说明](review-and-submit.md)。

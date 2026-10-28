@@ -66,6 +66,7 @@ export const auxiliaryIntentSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("binding"),
+    request: z.string().min(1),
     view: z.literal("settings"),
     id: z.string(),
     binding: z.string(),
@@ -119,6 +120,7 @@ export type AuxiliaryPayload =
   | { view: "roomsetup"; snapshot: Snapshot }
   | { view: "exit"; hosting: boolean; voice?: boolean };
 export interface AuxiliaryFrame {
+  visible: boolean;
   revision: number;
   payload: AuxiliaryPayload;
 }

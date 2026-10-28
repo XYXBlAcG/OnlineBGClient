@@ -29,20 +29,32 @@ export interface AppCommand {
 }
 export class CommandRegistry {
   private commands = new Map<string, AppCommand>();
+  private entries: AppCommand[] = [];
+  private listeners = new Set<() => void>();
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+  private publish() {
+    this.entries = [...this.commands.values()];
+    this.listeners.forEach((listener) => listener());
+  }
   register(command: AppCommand): () => void {
     if (this.commands.has(command.id)) throw new Error("命令标识重复");
-    this.commands.set(command.id, command);
+    this.commands.set(command.id, { ...command });
+    this.publish();
     return () => {
       this.commands.delete(command.id);
+      this.publish();
     };
   }
-  list(): AppCommand[] {
-    return [...this.commands.values()];
-  }
+  list = (): AppCommand[] => this.entries;
   bind(id: string, binding: string): void {
     const command = this.commands.get(id);
     if (!command) throw new Error("命令不存在");
-    if (/^(Meta\+Q|Alt\+F4|Control\+W|Meta\+W)$/i.test(binding))
+    if (/^(Meta\+Q|Alt\+F4|Control\+W|Meta\+W|Meta\+A|Control\+A)$/i.test(binding))
       throw new Error("该组合键由系统保留");
     if (
       binding &&
@@ -56,7 +68,8 @@ export class CommandRegistry {
       )
     )
       throw new Error("快捷键冲突");
-    command.binding = binding;
+    this.commands.set(id, { ...command, binding });
+    this.publish();
   }
   dispatch(input: KeyInput, scope: string): boolean {
     if (input.editing || input.isComposing || input.repeat) return false;
@@ -71,4 +84,29 @@ export class CommandRegistry {
     command.run();
     return true;
   }
+}
+export function formatBinding(
+  binding: string,
+  platform = typeof navigator === "undefined" ? "" : navigator.platform,
+): string {
+  const mac = /Mac|iPhone|iPad/.test(platform);
+  const names: Record<string, string> = mac
+    ? {
+        Meta: "⌘",
+        Control: "⌃",
+        Alt: "⌥",
+        Shift: "⇧",
+        Enter: "↩",
+        Escape: "Esc",
+        ArrowUp: "↑",
+        ArrowDown: "↓",
+        ArrowLeft: "←",
+        ArrowRight: "→",
+        " ": "Space",
+      }
+    : { Meta: "Win", Control: "Ctrl", " ": "Space" };
+  return binding
+    .split("+")
+    .map((key) => names[key] ?? key)
+    .join(mac ? "" : "+");
 }

@@ -45,3 +45,5 @@
 - [动作语义测试](../tests/game-motion-events.test.ts)、[头像身份测试](../tests/avatar.test.ts)、[策略测试](../tests/motion-policy.test.ts)、[反馈测试](../tests/game-motion.test.ts)。
 - [完整牌桌检查](../scripts/verify-workspace.mjs)、[横竖屏检查](../scripts/verify-viewport.mjs)、[社交检查](../scripts/verify-social.mjs)、[缓存检查](../scripts/verify-cache.mjs)。
 - [原生检查](../scripts/native-smoke-runner.mjs)、[辅助窗口检查](../scripts/native-auxiliary-smoke.js)。Windows WebView2 和真实手机仍需对应设备验收。
+
+大厅与房间切换、文字选择及原生全选的实现与人工验收见 [场景过渡](selection-and-scene-transitions.md)。

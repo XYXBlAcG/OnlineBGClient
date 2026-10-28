@@ -2,6 +2,7 @@ import { Select } from "./ui/Controls";
 export function FocusControls({
   onExit,
   onChat,
+  onEnd,
   unread,
   chatOpen = false,
   players = [],
@@ -10,6 +11,7 @@ export function FocusControls({
 }: {
   onExit: () => void;
   onChat: () => void;
+  onEnd?: () => void;
   unread: number;
   chatOpen?: boolean;
   players?: { id: string; name: string }[];
@@ -30,6 +32,11 @@ export function FocusControls({
             </option>
           ))}
         </Select>
+      )}
+      {onEnd && (
+        <button data-room-action="end" onClick={onEnd}>
+          结束对局
+        </button>
       )}
       <button onClick={onExit}>退出专注</button>
       <button

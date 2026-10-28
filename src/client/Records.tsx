@@ -16,7 +16,9 @@ export function Records({
   open,
   onOpenChange,
   onError,
+  onReady,
 }: {
+  onReady?: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onError: (message: string) => void;
@@ -57,7 +59,10 @@ export function Records({
           if (active)
             setRecords(records.sort((a, b) => b.startedAt - a.startedAt));
         })
-        .catch((error) => onError(String(error)));
+        .catch((error) => onError(String(error)))
+        .finally(() => {
+          if (active) onReady?.();
+        });
     };
     refresh();
     const unsubscribe = subscribeRecords(refresh);

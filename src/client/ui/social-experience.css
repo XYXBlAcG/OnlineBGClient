@@ -275,20 +275,8 @@
 .banner-animated[data-style="rain"] .banner-effect-particles span {
   animation-name: banner-rain;
 }
-.game-turn-indicator {
-  position: absolute;
-  z-index: 3;
-  left: 50%;
-  top: 18px;
-  transform: translateX(-50%);
-  pointer-events: none;
-  padding: 5px 12px;
-  border-radius: 16px;
-  background: var(--raised);
-  color: var(--accent);
-  font-size: 12px;
-  box-shadow: 0 2px 10px #0002;
-}
+.game-status-row {display:flex;align-items:center;justify-content:center;flex:0 0 22px;min-height:22px;}
+.game-turn-indicator {position:static;color:var(--accent);font-size:12px;pointer-events:none;}
 .game-turn-indicator[hidden] {
   display: none;
 }
@@ -509,4 +497,6 @@
   font-size: min(36px, calc(var(--mobile-height) * 0.14));
 }
 
-@media(max-height:540px) and (orientation:landscape){.game-turn-indicator{top:12px;padding:3px 10px}}
+@media(max-height:540px) and (orientation:landscape){.game-status-row{flex-basis:18px;min-height:18px}}
+
+.social-banner[data-custom-color="true"] strong { background:none; color:var(--banner-color); -webkit-text-fill-color:var(--banner-color); -webkit-text-stroke-color:var(--banner-stroke,#252532); text-shadow:0 3px 0 var(--banner-stroke,#252532),0 6px 14px #0009; }

@@ -4,7 +4,7 @@
 
 [下载版本](https://github.com/XYXBlAcG/OnlineBGClient/releases) · [快速上手](docs/getting-started.md) · [连麦配置](docs/client-voice.md#配置与实际连麦) · [文档索引](docs/README.md)
 
-私有仓库的下载需要仓库访问权限。GitHub Actions 构建完成后会发布安装包；尚未完成的构建可在 Actions 中查看进度。客户端自动更新暂未接入。
+正式安装包公开下载。客户端支持启动检查、代理下载和经许可后自动安装；设置与首次安装说明见 [软件更新](docs/updating.md)。
 
 ## 第一次玩
 

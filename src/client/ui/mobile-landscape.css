@@ -173,7 +173,7 @@
 :root[data-mobile-orientation="landscape"]
   .mobile-shell.mobile-immersive
   .game-area
-  > :not(.game-stage) {
+  > :not(.game-stage,.game-status-row) {
   display: none;
 }
 :root[data-mobile-orientation="landscape"]

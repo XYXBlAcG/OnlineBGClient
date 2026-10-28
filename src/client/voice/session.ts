@@ -1,3 +1,5 @@
+import type { VoiceEffect } from "../../domain/voice-effects";
+import { canSelectOutput } from "./audio-output";
 import { voiceError } from "./errors";
 import { MicrophoneProbe } from "./probe";
 import {
@@ -22,10 +24,11 @@ export interface VoiceTransportEvents {
   playback: (blocked: boolean) => void;
   permission: (muted: boolean) => void;
   deviceLost: () => void;
+  processingError?: (message: string) => void;
 }
 export interface VoiceTransport {
   connect(grant: VoiceGrant, events: VoiceTransportEvents): Promise<void>;
-  sending(enabled: boolean, input: string): Promise<void>;
+  sending(enabled: boolean, input: string, effect?: VoiceEffect): Promise<void>;
   output(id: string): Promise<void>;
   volume(id: string, value: number): void;
   deafen(enabled: boolean): void;
@@ -104,10 +107,22 @@ export class VoiceSession {
       await leaving;
       if (epoch !== this.epoch) return;
     }
+    this.update({ effect: options.effect });
     if (oldOptions.input !== options.input && this.view.testing) {
       this.probe.stop();
       this.update({ testing: false, inputLevel: 0 });
     }
+    if (
+      this.view.testing &&
+      JSON.stringify(oldOptions.effect) !== JSON.stringify(options.effect)
+    )
+      await this.probe.effect(options.effect);
+    if (this.view.testing && oldOptions.output !== options.output)
+      await this.probe
+        .output(options.output)
+        .catch(() =>
+          this.update({ error: "无法切换试听输出，请选择系统默认输出。" }),
+        );
     if (!room) return;
     if ((changed || !this.view.configured) && online) {
       const epoch = this.epoch;
@@ -140,7 +155,13 @@ export class VoiceSession {
         error: "输入设备已更改，请确认后重新开启麦克风",
       });
     if (this.transport && oldOptions.output !== options.output)
-      await this.transport.output(options.output);
+      await this.transport
+        .output(options.output)
+        .catch(() =>
+          this.update({
+            error: "无法切换到所选扬声器，请选择系统默认输出；通话保持连接。",
+          }),
+        );
     this.applyVolumes();
     if (!online) this.pressed = false;
     await this.sending();
@@ -167,7 +188,11 @@ export class VoiceSession {
       .catch(() => {})
       .then(async () => {
         if (transport && transport === this.transport && epoch === this.epoch)
-          await transport.sending(enabled, this.options.input);
+          await transport.sending(
+            enabled,
+            this.options.input,
+            this.options.effect,
+          );
       });
     return this.sendQueue;
   }
@@ -250,6 +275,9 @@ export class VoiceSession {
         playback: (blocked) => {
           if (epoch === this.epoch) this.update({ playbackBlocked: blocked });
         },
+        processingError: (message) => {
+          if (epoch === this.epoch) this.fail(new Error(message));
+        },
         deviceLost: () => {
           if (epoch === this.epoch)
             this.fail(new Error("麦克风已断开，请选择设备后重新开麦"));
@@ -265,7 +293,13 @@ export class VoiceSession {
         transport.close();
         return;
       }
-      await transport.output(this.options.output);
+      await transport
+        .output(this.options.output)
+        .catch(() =>
+          this.update({
+            error: "无法切换到所选扬声器，请选择系统默认输出；通话保持连接。",
+          }),
+        );
       if (epoch !== this.epoch) {
         transport.close();
         return;
@@ -323,6 +357,14 @@ export class VoiceSession {
             this.options.input,
             intent.loopback,
             (level) => this.update({ inputLevel: level }),
+            this.options.effect,
+            this.options.output,
+            (error) =>
+              this.update({
+                testing: false,
+                inputLevel: 0,
+                error: voiceError(error),
+              }),
           );
           if (started) this.update({ testing: true, error: "" });
         } else {
@@ -383,9 +425,7 @@ export class VoiceSession {
               name: d.label || "系统音频设备（授权后显示名称）",
               kind: d.kind as "audioinput" | "audiooutput",
             })),
-          outputSupported:
-            typeof HTMLMediaElement !== "undefined" &&
-            "setSinkId" in HTMLMediaElement.prototype,
+          outputSupported: canSelectOutput(),
         });
       }
     } catch (error) {

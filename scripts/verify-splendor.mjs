@@ -62,6 +62,7 @@ try {
   await desktop
     .getByRole("button", { name: "跨网络联机", exact: true })
     .click();
+  await desktop.getByRole("tab", { name: "创建房间", exact: true }).click();
   await desktop.getByRole("button", { name: "创建房间", exact: true }).click();
   await roomGame(desktop).waitFor();
   const room = await readRoomId(desktop);
@@ -131,13 +132,13 @@ try {
   await expect(mobile.getByRole("button", { name: /取宝石/ })).toBeVisible();
   await desktop.screenshot({ path: ".tmp/screenshots/splendor-desktop.png" });
   await mobile.screenshot({ path: ".tmp/screenshots/splendor-mobile.png" });
-  await desktop.getByRole("button", { name: "结束游戏", exact: true }).click();
-  await desktop.getByRole("button", { name: "确认结束", exact: true }).click();
+  await desktop.locator('[data-room-action="end"]').click();
+  await desktop.getByRole("dialog").getByRole("button", { name: "结束对局", exact: true }).click();
   await desktop.getByRole("button", { name: "对局记录", exact: true }).click();
   await desktop.locator(".record-row > button").first().click();
   await expect(desktop.locator(".ccbs-card").first()).toBeVisible();
   await expect(
-    desktop.getByRole("button", { name: "结束游戏", exact: true }),
+    desktop.getByRole("button", { name: "结束对局", exact: true }),
   ).toHaveCount(0);
   const ai = await browser.newPage();
   pages.push(ai);

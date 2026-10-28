@@ -1,3 +1,4 @@
+import {unifyRoomControls} from "./upstream-room-controls.mjs";
 import { attachTableRegions } from "./upstream-table-regions.mjs";
 import { attachMotion } from "./upstream-motion.mjs";
 import { attachFeedback } from "./upstream-feedback.mjs";
@@ -384,6 +385,7 @@ for (const [id, code] of selected) {
   } });
   selected.set(id, generate(ast.program.body[0].expression, { comments: false }).code);
 }
+unifyRoomControls(selected);
 attachFeedback(selected);
 attachTableRegions(selected);
 attachGuideTargets(selected);

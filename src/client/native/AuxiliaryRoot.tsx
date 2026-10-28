@@ -1,5 +1,6 @@
+import { bindAuxiliary, useWindowReady } from "./windows";
 import { MotionProvider } from "../motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ChatPanel } from "../ChatPanel";
@@ -30,10 +31,12 @@ export function AuxiliaryRoot() {
     let active = true;
     let unsubscribe: (() => void) | undefined;
     const accept = (next: AuxiliaryFrame) => {
-      if (active)
+      if (active) {
+        setError("");
         setFrame((previous) =>
           !previous || next.revision > previous.revision ? next : previous,
         );
+      }
     };
     void (async () => {
       unsubscribe = await listen<AuxiliaryFrame>("auxiliary-state", (event) =>
@@ -68,7 +71,13 @@ export function AuxiliaryRoot() {
   const close = () => send({ view: auxiliaryView!, type: "close" });
   const onError = (message: string) =>
     send({ view: auxiliaryView!, type: "error", message });
-  const payload = frame?.payload;
+  const payload = frame?.visible ? frame.payload : undefined;
+  const [recordsReady, setRecordsReady] = useState(false);
+  const acceptRecords = useCallback(() => setRecordsReady(true), []);
+  useEffect(() => {
+    if (!frame?.visible) setRecordsReady(false);
+  }, [frame?.visible]);
+
   useEffect(() => {
     if (payload?.view === "settings" || payload?.view === "chat")
       setPreferences(payload.preferences);
@@ -80,6 +89,14 @@ export function AuxiliaryRoot() {
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, [preferences.theme]);
+  useWindowReady(
+    frame,
+    (payload?.view !== "records" || recordsReady || !!error) &&
+      (!(payload?.view === "settings" || payload?.view === "chat") ||
+        preferences.theme === payload.preferences.theme),
+    setError,
+  );
+
   useEffect(() => {
     if (payload?.view !== "actions") return;
     const handle = (event: KeyboardEvent) => {
@@ -110,7 +127,10 @@ export function AuxiliaryRoot() {
   }, [payload?.view === "actions" ? payload.snapshot.kind : null, registry]);
   return (
     <MotionProvider preferences={preferences}>
-      <div className="native-window-root">
+      <div
+        className="native-window-root"
+        data-window-visible={frame?.visible ?? false}
+      >
         {error && <p role="alert">{error}</p>}
         {!payload && !error && <p role="status">正在打开…</p>}
         {payload?.view === "chat" && (
@@ -178,9 +198,7 @@ export function AuxiliaryRoot() {
             onChange={(preferences) =>
               send({ view: "settings", type: "preferences", preferences })
             }
-            onBind={(id, binding) =>
-              send({ view: "settings", type: "binding", id, binding })
-            }
+            onBind={bindAuxiliary}
             onError={onError}
           />
         )}
@@ -206,7 +224,12 @@ export function AuxiliaryRoot() {
           />
         )}
         {payload?.view === "records" && (
-          <Records open onOpenChange={close} onError={onError} />
+          <Records
+            open
+            onOpenChange={close}
+            onError={onError}
+            onReady={acceptRecords}
+          />
         )}
         {payload?.view === "actions" && (
           <GameCommands

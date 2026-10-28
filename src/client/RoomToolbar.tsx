@@ -16,6 +16,7 @@ export function RoomToolbar({
   mobile,
   focused,
   onFocus,
+  onEnd,
   preferences,
   onTheme,
   latency,
@@ -36,6 +37,7 @@ export function RoomToolbar({
   mobile: boolean;
   focused: boolean;
   onFocus: () => void;
+  onEnd?: () => void;
   preferences: Preferences;
   onTheme: (theme: string) => void;
   latency?: number;
@@ -64,6 +66,8 @@ export function RoomToolbar({
       {mobile && <ThemeControl value={preferences.theme} onChange={onTheme} />}
       {mobile && snapshot.canManage && (
         <RoomSetup
+          registry={registry}
+          binding={preferences.bindings["room.setup"] ?? ""}
           snapshot={snapshot}
           onError={onError}
           onApply={(setup) => {
@@ -177,6 +181,14 @@ export function RoomToolbar({
         {!mobile && <small>{snapshot.room}</small>}
       </div>
       <div className="room-primary-actions">
+        {onEnd &&
+          snapshot.canManage &&
+          snapshot.playing &&
+          !snapshot.finished && (
+            <button data-room-action="end" onClick={onEnd}>
+              结束对局
+            </button>
+          )}
         {snapshot.playing && (
           <button aria-pressed={focused} onClick={onFocus}>
             {focused ? "恢复界面" : mobile ? "沉浸牌桌" : "专注模式"}
@@ -184,6 +196,8 @@ export function RoomToolbar({
         )}
         {!mobile && snapshot.canManage && (
           <RoomSetup
+            registry={registry}
+            binding={preferences.bindings["room.setup"] ?? ""}
             snapshot={snapshot}
             onError={onError}
             onApply={(setup) => send({ type: "game", setup })}

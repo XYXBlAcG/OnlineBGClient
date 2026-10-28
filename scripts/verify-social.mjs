@@ -69,6 +69,7 @@ try {
   await choose(host, "真人人数", "3 人");
   await choose(host, "总席位", "3 人");
   await host.getByRole("button", { name: "跨网络联机", exact: true }).click();
+  await host.getByRole("tab", { name: "创建房间", exact: true }).click();
   await host.getByRole("button", { name: "创建房间", exact: true }).click();
   await roomGame(host).waitFor();
   const room = await readRoomId(host);
@@ -319,16 +320,16 @@ try {
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await host.getByRole("button", { name: "结束游戏", exact: true }).click();
-  await host.getByRole("button", { name: "确认结束", exact: true }).click();
+  await host.locator('[data-room-action="end"]').click();
+  await host.getByRole("dialog").getByRole("button", { name: "结束对局", exact: true }).click();
   await choose(host, "房间游戏", "斗地主");
   await expect(roomGame(mobile)).toContainText("斗地主");
   for (const p of [guest, mobile])
     await p.getByRole("button", { name: "准备", exact: true }).click();
   await host.getByRole("button", { name: "开始对局", exact: true }).click();
   await host.getByRole("button", { name: "抢地主", exact: true }).click();
-  await host.getByRole("button", { name: "结束游戏", exact: true }).click();
-  await host.getByRole("button", { name: "确认结束", exact: true }).click();
+  await host.locator('[data-room-action="end"]').click();
+  await host.getByRole("dialog").getByRole("button", { name: "结束对局", exact: true }).click();
   for (const name of ["UNO", "飞行棋", "跳棋", "毒药", "卡坦岛"]) {
     await choose(host, "房间游戏", name);
     for (const p of [guest, mobile])
@@ -359,8 +360,8 @@ try {
     }
     expect(acted).toBe(true);
     await expect(mobile.locator(".original-game")).toBeVisible();
-    await host.getByRole("button", { name: "结束游戏", exact: true }).click();
-    await host.getByRole("button", { name: "确认结束", exact: true }).click();
+    await host.locator('[data-room-action="end"]').click();
+    await host.getByRole("dialog").getByRole("button", { name: "结束对局", exact: true }).click();
   }
   await openRoomSetup(host);
   await choose(host, "下一局游戏", "三国杀");

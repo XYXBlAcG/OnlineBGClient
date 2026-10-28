@@ -13,7 +13,7 @@
 .mobile-shell.mobile-immersive { height:var(--mobile-height,100dvh); overflow:hidden; padding:0; }
 .mobile-immersive > .app-toolbar { display:none; }
 .mobile-shell.mobile-immersive .room-layout { height:auto;flex:1;min-height:0; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); gap:0; }
-.mobile-immersive .game-area > :not(.game-stage) { display:none; }
+.mobile-immersive .game-area > :not(.game-stage,.game-status-row) { display:none; }
 .mobile-immersive .game-stage { height:100%; }
 .mobile-immersive .original-game { margin:0; padding:0; border-radius:0; }
 .mobile-immersive .original-game .button-container,

@@ -1,3 +1,7 @@
+import { UpdateSettings } from "./updates/UpdateSettings";
+import { emitTo } from "@tauri-apps/api/event";
+import { bannerContrast } from "./social/banner-color";
+import { KeyBindingEditor } from "./KeyBindingEditor";
 import { VoiceSettings } from "./voice/VoiceSettings";
 import { isTauri } from "@tauri-apps/api/core";
 import { MediaCacheControls } from "./social/MediaCacheControls";
@@ -38,7 +42,7 @@ export function Settings({
   roomPerformance?: PerformanceSettings;
   mediaSession?: MediaSession;
   onError: (message: string) => void;
-  onBind: (id: string, binding: string) => void;
+  onBind: (id: string, binding: string) => Promise<void>;
 }) {
   const [section, setSection] = useState(initialSection);
   useEffect(() => {
@@ -64,7 +68,20 @@ export function Settings({
     (intent) => {
       if (intent.type === "close") onOpenChange(false);
       if (intent.type === "preferences") onChange(intent.preferences);
-      if (intent.type === "binding") onBind(intent.id, intent.binding);
+      if (intent.type === "binding")
+        void onBind(intent.id, intent.binding)
+          .then(() =>
+            emitTo("aux-settings", "binding-result", {
+              request: intent.request,
+            }),
+          )
+          .catch((error) =>
+            emitTo("aux-settings", "binding-result", {
+              request: intent.request,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          )
+          .catch((error) => onError(String(error)));
       if (intent.type === "error") onError(intent.message);
     },
   );
@@ -84,7 +101,8 @@ export function Settings({
           {[
             "外观",
             "消息与互动",
-            ...(isTauri() ? ["声音与语音"] : []),
+            ...(isTauri() ? ["声音与语音", "软件更新"] : []),
+            "联机",
             "AI 计算",
             "常用语",
             "数据",
@@ -108,6 +126,20 @@ export function Settings({
           )}
           <section hidden={section !== "外观"} className="settings-section">
             <h3>外观</h3>
+            <Switch
+              label="显示首页快速上手"
+              checked={preferences.showQuickStart}
+              onCheckedChange={(showQuickStart) =>
+                onChange({ ...preferences, showQuickStart })
+              }
+            />
+            <Switch
+              label="显示首页连麦设置入口"
+              checked={preferences.showVoiceShortcut}
+              onCheckedChange={(showVoiceShortcut) =>
+                onChange({ ...preferences, showVoiceShortcut })
+              }
+            />
             <ThemeControl
               value={preferences.theme}
               onChange={(theme) => onChange({ ...preferences, theme })}
@@ -140,6 +172,25 @@ export function Settings({
                 onChange({ ...preferences, bannerDisplay })
               }
             />
+            <label className="banner-color-setting">
+              默认横幅文字颜色
+              <input
+                type="color"
+                aria-label="默认横幅文字颜色"
+                value={preferences.bannerColor}
+                onChange={(event) =>
+                  onChange({ ...preferences, bannerColor: event.target.value })
+                }
+              />
+              <strong
+                style={{
+                  color: preferences.bannerColor,
+                  textShadow: `0 1px 2px ${bannerContrast(preferences.bannerColor)}`,
+                }}
+              >
+                好牌！
+              </strong>
+            </label>
             <Switch
               label="回合与结算提示音"
               checked={preferences.turnSound}
@@ -190,6 +241,44 @@ export function Settings({
               }
             />
           </section>
+          {isTauri() && section === "软件更新" && (
+            <UpdateSettings
+              preferences={preferences.updates}
+              onChange={(updates) => onChange({ ...preferences, updates })}
+            />
+          )}
+          <section hidden={section !== "联机"} className="settings-section">
+            <h3>联机</h3>
+            {isTauri() && (
+              <Switch
+                label="自动创建临时公网入口"
+                checked={preferences.network.temporary}
+                onCheckedChange={(temporary) =>
+                  onChange({
+                    ...preferences,
+                    network: { ...preferences.network, temporary },
+                  })
+                }
+              />
+            )}
+            <label className="setting-row">
+              自定义房间服务地址
+              <input
+                aria-label="自定义房间服务地址"
+                value={preferences.network.service}
+                placeholder="使用默认房间服务"
+                onChange={(event) =>
+                  onChange({
+                    ...preferences,
+                    network: {
+                      ...preferences.network,
+                      service: event.target.value,
+                    },
+                  })
+                }
+              />
+            </label>
+          </section>
           <section hidden={section !== "AI 计算"} className="settings-section">
             <h3>AI 计算</h3>
             <label className="setting-row">
@@ -232,6 +321,13 @@ export function Settings({
               </label>
             )}
             <Switch
+              label="显示计算详情"
+              checked={preferences.computeDetails}
+              onCheckedChange={(computeDetails) =>
+                onChange({ ...preferences, computeDetails })
+              }
+            />
+            <Switch
               label="显示 AI 性能测试"
               checked={preferences.benchmarkVisible}
               onCheckedChange={(benchmarkVisible) =>
@@ -272,44 +368,35 @@ export function Settings({
             <p className="muted">
               点击组合键后按下新快捷键。聊天输入时不会触发游戏操作。
             </p>
-            {commands.map((command) => (
-              <div className="setting-row" key={command.id}>
-                <span>{command.title}</span>
-                <button
-                  className="key-binding"
-                  aria-label={`设置快捷键 ${command.title}`}
-                  onKeyDown={(event) => {
-                    if (
-                      ["Control", "Meta", "Shift", "Alt"].includes(event.key) ||
-                      event.isDefaultPrevented() ||
-                      event.nativeEvent.isComposing
-                    )
-                      return;
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const key =
-                      event.key.length === 1
-                        ? event.key.toUpperCase()
-                        : event.key;
-                    onBind(
-                      command.id,
-                      [
-                        ...(event.ctrlKey ? ["Control"] : []),
-                        ...(event.metaKey ? ["Meta"] : []),
-                        ...(event.altKey ? ["Alt"] : []),
-                        ...(event.shiftKey ? ["Shift"] : []),
-                        key,
-                      ].join("+"),
-                    );
-                  }}
-                >
-                  <kbd>{command.binding || "未绑定"}</kbd>
-                </button>
-              </div>
-            ))}
-            <button onClick={() => onChange({ ...preferences, bindings: {} })}>
-              恢复默认快捷键
-            </button>
+            {Object.entries({
+              应用: commands.filter(
+                (command) =>
+                  command.scope === "global" &&
+                  !command.id.startsWith("voice."),
+              ),
+              语音: commands.filter((command) =>
+                command.id.startsWith("voice."),
+              ),
+              当前游戏: commands.filter(
+                (command) => command.scope !== "global",
+              ),
+            })
+              .filter(([, entries]) => entries.length)
+              .map(([title, entries]) => (
+                <section className="shortcut-group" key={title}>
+                  <h4>{title}</h4>
+                  {entries.map((command) => (
+                    <div className="setting-row" key={command.id}>
+                      <span>{command.title}</span>
+                      <KeyBindingEditor
+                        command={command}
+                        commands={commands}
+                        onBind={onBind}
+                      />
+                    </div>
+                  ))}
+                </section>
+              ))}
           </section>
         </div>
       </div>

@@ -1,12 +1,39 @@
+import { canSelectOutput, outputChoice } from "./audio-output";
+import { VoiceEffectPipeline } from "./effect-graph";
+import {
+  voiceEffectSchema,
+  type VoiceEffect,
+} from "../../domain/voice-effects";
 export class MicrophoneProbe {
   private stream: MediaStream | null = null;
   private context: AudioContext | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private generation = 0;
+  private outputId = "default";
+  async output(id: string) {
+    const context = this.context as
+      (AudioContext & { setSinkId?: (id: string) => Promise<void> }) | null;
+    const choice = outputChoice(
+      id,
+      canSelectOutput() && !!context?.setSinkId,
+      this.outputId,
+    );
+    if (choice && context?.setSinkId) {
+      await context.setSinkId(choice === "default" ? "" : choice);
+      this.outputId = id;
+    }
+  }
+  private pipeline: VoiceEffectPipeline | null = null;
+  async effect(effect: VoiceEffect) {
+    await this.pipeline?.set(effect);
+  }
   async start(
     input: string,
     loopback: boolean,
     onLevel: (level: number) => void,
+    effect: VoiceEffect = voiceEffectSchema.parse({}),
+    output = "default",
+    onFailure?: (error: Error) => void,
   ) {
     this.stop();
     const generation = this.generation;
@@ -28,12 +55,20 @@ export class MicrophoneProbe {
       this.stream = stream;
       context = new AudioContext();
       this.context = context;
+      await this.output(output);
+      if (generation !== this.generation) return false;
       const source = context.createMediaStreamSource(stream),
         gain = context.createGain();
       analyser = context.createAnalyser();
       analyser.fftSize = 256;
       gain.gain.value = loopback ? 0.25 : 0;
-      source.connect(analyser);
+      this.pipeline = new VoiceEffectPipeline(context, source, (error) => {
+        this.stop();
+        onFailure?.(error);
+      });
+      await this.pipeline.set(effect);
+      if (generation !== this.generation) return false;
+      this.pipeline.output.connect(analyser);
       analyser.connect(gain);
       gain.connect(context.destination);
       await context.resume();
@@ -57,9 +92,12 @@ export class MicrophoneProbe {
     ++this.generation;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+    this.pipeline?.close();
+    this.pipeline = null;
     this.stream?.getTracks().forEach((track) => track.stop());
     this.stream = null;
     void this.context?.close().catch(() => {});
     this.context = null;
+    this.outputId = "default";
   }
 }

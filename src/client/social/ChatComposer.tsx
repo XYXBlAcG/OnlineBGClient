@@ -1,3 +1,4 @@
+import { withDefaultBannerColor } from "../../domain/banner";
 import * as Popover from "@radix-ui/react-popover";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -132,8 +133,13 @@ export function ChatComposer({
       setText("");
       return;
     }
-    onText(text.trim());
-    setText("");
+    try {
+      onText(withDefaultBannerColor(text.trim(), preferences.bannerColor));
+      setError("");
+      setText("");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
+    }
   };
   const allowed =
     snapshot.bannerPolicy.mode !== "off" &&

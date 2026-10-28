@@ -1,3 +1,4 @@
+import { VoiceEffectControls } from "./VoiceEffectControls";
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { confirmation } from "../confirmation-controller";
@@ -125,6 +126,11 @@ export function VoiceDock() {
           )}
         </>
       )}
+      <VoiceEffectControls
+        compact
+        value={view.effect}
+        onChange={(effect) => send({ type: "effect", effect })}
+      />
       {view.playbackBlocked && (
         <button type="button" onClick={() => send({ type: "playback" })}>
           点击恢复语音播放

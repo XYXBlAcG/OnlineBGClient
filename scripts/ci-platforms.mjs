@@ -11,7 +11,7 @@ export function selectPlatforms(event) {
       platform: "windows",
     },
     {
-      runner: "macos-14",
+      runner: "macos-15",
       name: "macOS-arm64",
       args: "--bundles app",
       platform: "macos",

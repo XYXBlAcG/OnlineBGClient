@@ -1,0 +1,5 @@
+body, body * { -webkit-user-select:none!important; user-select:none!important; }
+body :is(input,textarea,[data-copyable],[role="alert"],[contenteditable="true"],[contenteditable=""]),
+body :is([data-copyable],[role="alert"],[contenteditable="true"],[contenteditable=""]) * { -webkit-user-select:text!important; user-select:text!important; }
+body :is(button,summary,[role="button"],[role="tab"],[role="menuitem"],[role="option"]),
+body :is(button,summary,[role="button"],[role="tab"],[role="menuitem"],[role="option"]) * { -webkit-user-select:none!important; user-select:none!important; }

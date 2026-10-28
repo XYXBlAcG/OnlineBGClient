@@ -18,20 +18,17 @@ import {
 import { winningTiles } from "../../domain/mahjong/hand";
 import { MahjongTile } from "./MahjongTile";
 import { Panel } from "../ui/Controls";
-import { confirmation } from "../confirmation-controller";
 import "./mahjong.css";
 const rules = new SichuanRules(Math.random);
 export function SichuanTable({
   snapshot,
   act,
-  end,
   replay,
   avatar,
   onAutoplay,
 }: {
   snapshot: GameSnapshot;
   act: (action: Action) => void;
-  end: () => void;
   replay: boolean;
   onAutoplay?: (enabled: boolean) => void;
   avatar: Omit<AvatarSurfaceProps, "index">;
@@ -207,19 +204,7 @@ export function SichuanTable({
             )}
           <button onClick={() => setHelp(true)}>牌桌规则</button>
           <button onClick={() => setScores(true)}>结算明细</button>
-          {snapshot.canManage && !replay && (
-            <button
-              onClick={() =>
-                void confirmation
-                  .request("确认结束当前对局？", "结束游戏")
-                  .then((ok) => {
-                    if (ok) end();
-                  })
-              }
-            >
-              结束游戏
-            </button>
-          )}
+
         </div>
       </header>
       <div className="scmj-board">

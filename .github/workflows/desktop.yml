@@ -1,7 +1,6 @@
 name: Desktop packages
 on:
   push:
-    branches: [main, master]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
@@ -11,10 +10,7 @@ on:
         type: choice
         options: [all, windows, macos]
         default: all
-      publish_preview:
-        description: Publish a preview release after verification
-        type: boolean
-        default: false
+
 permissions:
   contents: read
 concurrency:
@@ -46,16 +42,13 @@ jobs:
       - run: npm ci
       - run: npm run upstream:build
       - run: npm run server:build
-      - if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        run: npm test -- --run tests/quick-start.test.tsx tests/map-social-polish.test.tsx tests/voice-ui.test.tsx tests/voice-settings-layout.test.ts tests/focus-presentation.test.tsx tests/dominion.test.ts tests/dominion-ai.test.ts tests/dominion-room.test.ts tests/dominion-renderer.test.tsx tests/game-quick-actions.test.ts tests/mobile-experience.test.tsx tests/landscape-game-structure.test.tsx tests/catan-renderer.test.tsx tests/table-anchors.test.ts tests/table-animation-sampling.test.ts tests/mobile-room-toolbar.test.tsx tests/smoke-contract.test.ts tests/map-view.test.ts tests/smoke-imports.test.ts tests/game-render-cache.test.tsx tests/record-history.test.ts tests/room-polish.test.ts tests/sichuan-mahjong.test.ts tests/sichuan-ai.test.ts tests/avatar.test.ts tests/motion-policy.test.ts tests/motion-controls.test.tsx tests/game-motion.test.ts tests/game-motion-events.test.ts tests/ci-platforms.test.ts tests/native-smoke-runner.test.ts tests/release-assets.test.ts tests/beginner-guide.test.ts tests/trick-guide.test.ts tests/game-expansion.test.ts tests/economic-ai.test.ts tests/commands.test.ts tests/themes.test.ts tests/strategies.test.ts tests/ddz.test.ts tests/ddz-renderer.test.tsx tests/engine.test.ts tests/room-lifecycle.test.ts tests/storage.test.ts tests/replay.test.ts tests/connection.test.ts tests/room-game-switch.test.ts tests/social.test.ts tests/poison.test.ts tests/service-host.test.ts tests/snapshot-sync.test.ts tests/catan.test.ts tests/catan-transactions.test.ts tests/social-preferences.test.ts tests/ai-observation.test.ts tests/browser-compute.test.ts tests/benchmark-preferences.test.ts tests/compute.test.ts tests/audit-recording.test.ts tests/game-surface.test.tsx tests/hero-guide.test.ts tests/chat-read.test.ts tests/archive-upgrade.test.ts tests/sgs-renderer.test.tsx tests/desktop-context-menu.test.ts tests/table-layout.test.ts tests/native-windows.test.ts tests/guide-targets.test.ts tests/upstream.test.ts
-      - if: startsWith(github.ref, 'refs/tags/')
-        run: npm test
+      - run: node scripts/release-version.mjs
+      - run: npm test
       - run: npm run build
       - run: npm run hosting:build
         env:
           GH_TOKEN: ${{ github.token }}
-      - run: npx playwright install chromium
-      - run: npm run verify:smoke
+      - run: npm run verify:expedition-chapter
       - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d
         with:
           toolchain: 1.97.1
@@ -64,36 +57,40 @@ jobs:
           workspaces: src-tauri
           cache-on-failure: true
           cache-workspace-crates: true
-      - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_TOKEN: ${{ github.token }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           args: ${{ matrix.args }}
-      - run: node scripts/verify-smoke-report.mjs
-      - if: runner.os == 'Windows'
-        run: cargo test --release --manifest-path src-tauri/Cargo.toml --features tauri/custom-protocol --lib hosting::tests::background_process_has_no_console
-      - if: ${{ always() }}
+      - if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - run: cargo test --release --manifest-path src-tauri/Cargo.toml --lib updater::tests
+      - if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'macOS'
+        run: codesign --verify --deep --strict src-tauri/target/release/bundle/macos/OnlineBGClient.app
+      - if: startsWith(github.ref, 'refs/tags/v')
+        run: node scripts/verify-update-bundle.mjs
+      - if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'macOS'
+        run: node scripts/build-dmg.mjs
+      - if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: Smoke-diagnostics-${{ matrix.name }}
-          path: |
-            .tmp/smoke/results.json
-          if-no-files-found: ignore
-          retention-days: 7
-      - if: runner.os == 'macOS'
-        run: ditto -c -k --sequesterRsrc --keepParent src-tauri/target/release/bundle/macos/OnlineBGClient.app OnlineBGClient-macOS-arm64.zip
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: OnlineBGClient-${{ matrix.name }}
           path: |
             src-tauri/target/release/bundle/nsis/*.exe
-            OnlineBGClient-macOS-arm64.zip
+            src-tauri/target/release/bundle/nsis/*.sig
+            src-tauri/target/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/release/bundle/macos/*.sig
+            artifacts/release-build/*.dmg
           if-no-files-found: error
           retention-days: 14
+
   release:
     needs: [platforms, package]
-    if: ${{ needs.platforms.outputs.all-platforms == 'true' && (github.event_name == 'push' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch' && inputs.publish_preview && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) }}
+    if: ${{ needs.platforms.outputs.all-platforms == 'true' && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

@@ -148,7 +148,7 @@ export function ChatPanel({
                 session={{ room: snapshot.room, token, endpoint }}
               />
             ) : (
-              <p>
+              <p data-copyable tabIndex={0}>
                 {message.type === "banner" || message.type === "emote"
                   ? "✦ "
                   : ""}

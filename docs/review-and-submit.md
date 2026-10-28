@@ -4,9 +4,9 @@
 
 ## 本地 macOS 审核应用
 
-[当前客户端审核包](expedition.md#手动审核)。退出旧客户端后直接打开，无需解压。审核交付使用 `.app`，不生成 ZIP；应用采用本地临时签名，未公证。公网服务重新启动，手机刷新邀请页面。
+客户端安装见 [软件更新](updating.md)。本机审核保留 `.app`；公开分发使用安装镜像和签名更新资源。
 
-GitHub Release 的附件需要单个文件，不能直接上传 `.app` 目录；线上产物仍以工作流为准，非 ZIP 的分发形式另行确认。
+GitHub Release 的手动安装和自动更新资源见 [软件更新](updating.md)。
 
 ## 审核
 
@@ -25,7 +25,7 @@ git diff --check
 确认工作区内容后暂存，并检查暂存结果：
 
 ```sh
-git add -A
+git add src src-tauri scripts tests docs .github package.json package-lock.json README.md .gitignore .gitattributes
 git diff --cached --stat
 git diff --cached
 ```
@@ -33,12 +33,13 @@ git diff --cached
 提交后通过已配置的 GitHub CLI 别名推送：
 
 ```sh
-git commit -m "Restore complete tables and native auxiliary windows"
-gh push origin main
+git commit -m "Release v0.2.0"
+git tag v0.2.0
+gh push origin main v0.2.0
 gh run list --workflow desktop.yml --limit 3
 ```
 
-推送会触发私有仓库的桌面构建。发布条件与版本来源见 [发布入口](game-ai-release-plan.md)。查看构建与下载产物：
+正式版本通过版本标签触发双平台构建，普通分支提交不发布预览包。发布条件与版本来源见 [发布入口](game-ai-release-plan.md)。查看构建与下载产物：
 
 ```sh
 gh run watch RUN_ID

@@ -11,21 +11,38 @@ const caption = z
   .trim()
   .min(1)
   .refine((value) => Array.from(value).length <= 40, "文字须为 1–40 个字");
+export const bannerColorSchema = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, "颜色须为 #RRGGBB");
+const bannerPaint = {
+  color: bannerColorSchema.optional(),
+  style: z.enum(["gold", "red"]).optional(),
+};
+function parsePaint(args: string[]) {
+  const paint: { color?: string; style?: "gold" | "red" } = {};
+  while (args[0] === "--color" || args[0] === "--style") {
+    if (args[0] === "--color") paint.color = bannerColorSchema.parse(args[1]);
+    else paint.style = z.enum(["gold", "red"]).parse(args[1]);
+    args = args.slice(2);
+  }
+  return { args, paint };
+}
 export const bannerSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.enum(["title", "subtitle", "actionbar"]),
     text: caption,
-    style: z.enum(["gold", "red"]).optional(),
+    ...bannerPaint,
   }),
   z.object({
     kind: z.literal("effect"),
     effect: interactionSchema,
     text: caption,
   }),
-  z.object({ kind: z.literal("announce"), text: caption }),
+  z.object({ kind: z.literal("announce"), text: caption, ...bannerPaint }),
   z.object({
     kind: z.literal("countdown"),
     seconds: z.number().int().min(1).max(10),
+    ...bannerPaint,
     text: caption,
   }),
   z.object({
@@ -96,15 +113,11 @@ export const bannerCommands: readonly ChatCommandDefinition[] = [
     example:
       kind === "title" ? "/title --style red 绝地反击" : `/${kind} 好牌！`,
     parse: (args: string[]) => {
-      let style: "gold" | "red" | undefined;
-      if (args[0] === "--style") {
-        style = z.enum(["gold", "red"]).parse(args[1]);
-        args = args.slice(2);
-      }
+      const parsed = parsePaint(args);
       return bannerSchema.parse({
         kind,
-        text: args.join(" "),
-        ...(style ? { style } : {}),
+        text: parsed.args.join(" "),
+        ...parsed.paint,
       });
     },
   })),
@@ -129,8 +142,14 @@ export const bannerCommands: readonly ChatCommandDefinition[] = [
     permission: "banner",
     label: "房间公告",
     example: "/announce 今晚最后一局",
-    parse: (args) =>
-      bannerSchema.parse({ kind: "announce", text: args.join(" ") }),
+    parse: (args) => {
+      const parsed = parsePaint(args);
+      return bannerSchema.parse({
+        kind: "announce",
+        text: parsed.args.join(" "),
+        ...parsed.paint,
+      });
+    },
   },
   {
     command: "/countdown",
@@ -138,12 +157,15 @@ export const bannerCommands: readonly ChatCommandDefinition[] = [
     permission: "banner",
     label: "同步倒数（仅提醒）",
     example: "/countdown 3 准备开局",
-    parse: (args) =>
-      bannerSchema.parse({
+    parse: (args) => {
+      const parsed = parsePaint(args);
+      return bannerSchema.parse({
         kind: "countdown",
-        seconds: Number(args[0]),
-        text: args.slice(1).join(" ") || "准备",
-      }),
+        seconds: Number(parsed.args[0]),
+        text: parsed.args.slice(1).join(" ") || "准备",
+        ...parsed.paint,
+      });
+    },
   },
   {
     command: "/combo",
@@ -214,7 +236,7 @@ export function parseChatCommand(input: string): ParsedCommand | null {
   } catch (error) {
     if (error instanceof z.ZodError)
       throw new Error(
-        `${entry.example}；文字最多 40 字，倒数 1–10 秒，连击最多 3 个表情`,
+        `${entry.example}；文字最多 40 字，倒数 1–10 秒，连击最多 3 个表情；颜色须为 #RRGGBB`,
       );
     throw error;
   }
@@ -229,4 +251,24 @@ export function rollDice(count: number, sides: number): number[] {
     } while (sample[0] >= limit);
     return (sample[0] % sides) + 1;
   });
+}
+
+export function withDefaultBannerColor(input: string, color: string): string {
+  const parsed = parseChatCommand(input);
+  if (
+    !parsed ||
+    !["title", "subtitle", "actionbar", "announce", "countdown"].includes(
+      parsed.kind,
+    )
+  )
+    return input;
+  if (
+    ("color" in parsed && parsed.color) ||
+    ("style" in parsed && parsed.style)
+  )
+    return input;
+  return input.replace(
+    /^(\s*\/\S+)/u,
+    `$1 --color ${bannerColorSchema.parse(color)}`,
+  );
 }

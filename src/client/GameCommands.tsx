@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Snapshot } from "../domain/protocol";
 import type { Action } from "../domain/types";
 import { Panel } from "./ui/Controls";
-import { CommandRegistry } from "./commands";
+import { CommandRegistry, formatBinding } from "./commands";
 
 export function GameCommands({
   snapshot,
@@ -123,7 +123,10 @@ export function GameCommands({
           onClick={() => setOpen(true)}
           disabled={!snapshot.state || snapshot.finished}
         >
-          游戏操作 <kbd>{bindings[`${snapshot.kind}.actions`] || "F2"}</kbd>
+          游戏操作{" "}
+          <kbd>
+            {formatBinding(bindings[`${snapshot.kind}.actions`] ?? "F2")}
+          </kbd>
         </button>
       )}
       {!detached && (
