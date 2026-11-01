@@ -21,3 +21,5 @@
 本机房间服务使用系统分配的端口。仅联机创建者需要运行组件；离线玩家和浏览器参与者不需要 Node.js。打包时需要固定版本 cloudflared，构建脚本通过 GitHub CLI 获取并校验。运行时 Node.js 从官方源下载并校验，未依赖系统预装 Node.js。
 
 支持目标由组件清单定义，实际平台验证见 [验证](verification.md)。移动平台尚不提供本机公网开房。
+
+局域网调试、代理与故障日志入口见 [联机诊断](platform-network-diagnostics.md)。

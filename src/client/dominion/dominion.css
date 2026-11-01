@@ -452,32 +452,14 @@
 .mobile-shell .dominion-players > div {
   min-width: 116px;
 }
-.mobile-shell .dominion-supply-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: none;
-  grid-auto-rows: 138px;
-  max-height: none;
-  gap: 5px;
-}
-.mobile-shell .dominion-card-text {
-  -webkit-line-clamp: 2;
-  font-size: 10px;
-}
 .mobile-shell .dominion-table .dominion-card-main {
   padding: 7px;
 }
 .mobile-shell .dominion-card-symbol {
   font-size: 24px;
 }
-.mobile-shell .dominion-hand .dominion-card {
-  flex-basis: 92px;
-}
 .mobile-shell .dominion-card.is-small .dominion-card-main {
   min-height: 87px;
-}
-.mobile-shell .dominion-actions button {
-  font-size: 11px;
-  padding: 6px 8px;
 }
 .mobile-shell .dominion-supply-tabs > span {
   font-size: 10px;
@@ -524,20 +506,8 @@
 :root[data-mobile-orientation="landscape"] .mobile-shell .dominion-center {
   min-height: 85px;
 }
-:root[data-mobile-orientation="landscape"] .mobile-shell .dominion-supply-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: auto;
-  max-height: 159px;
-}
 :root[data-mobile-orientation="landscape"] .mobile-shell .dominion-card-symbol {
   display: none;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  .dominion-hand
-  .dominion-card-main {
-  min-height: 54px;
 }
 :root[data-mobile-orientation="landscape"] .mobile-shell .dominion-own-heading {
   margin-bottom: 3px;
@@ -583,13 +553,6 @@
 .mobile-shell .dominion-actions {
   gap: 6px;
 }
-
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  .dominion-supply
-  .dominion-card-text {
-  -webkit-line-clamp: 1;
-}
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
   .dominion-card-heading
@@ -600,17 +563,6 @@
   min-width: 18px;
   height: 18px;
   font-size: 11px;
-}
-
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  .dominion-actions
-  button,
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  .dominion-supply-tabs
-  button {
-  min-height: 34px;
 }
 
 [data-color-scheme="dark"] .dominion-card {

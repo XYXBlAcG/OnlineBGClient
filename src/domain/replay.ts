@@ -1,3 +1,4 @@
+import { partyEventSchema } from "./party/model";
 import { expeditionMapSchema } from "./expedition/adventure-types";
 import { maxRoomSeats } from "./catalogue";
 import { graphwarShotSchema, graphwarInitialSchema } from "./graphwar/types";
@@ -13,6 +14,7 @@ export const replaySchema = z.object({
   format: z.literal(1),
   graphwarInitial: graphwarInitialSchema.optional(),
   expeditionMap: expeditionMapSchema.optional(),
+  expeditionCampaign: z.union([z.literal(1), z.literal(2)]).optional(),
   room: z.string().min(1).max(12),
   config: configSchema,
   rulesVersion: z.string(),
@@ -20,6 +22,8 @@ export const replaySchema = z.object({
   avatars: z.array(avatarSchema).max(maxRoomSeats).optional(),
   seed: z.string().max(150),
   startedAt: z.number().int(),
+  memberIds:z.array(z.string().max(100)).max(maxRoomSeats).optional(),
+  party:z.array(z.object({frame:z.number().int().min(0).max(20000),event:partyEventSchema})).max(10000).optional(),
   social: z
     .array(
       z.union([
@@ -119,6 +123,7 @@ export class Replay {
           {
             expedition: this.record.config.expedition,
             expeditionMap: this.record.expeditionMap,
+            expeditionCampaign: this.record.expeditionCampaign ?? 1,
             expeditionLayout: this.record.expeditionMap ? 2 : 1,
             dominion: this.record.config.dominion,
             mahjong: this.record.config.mahjong,

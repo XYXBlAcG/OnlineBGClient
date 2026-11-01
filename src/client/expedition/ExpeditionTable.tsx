@@ -1,23 +1,22 @@
+import { VoteStatus } from "./VoteStatus";
+import { ballotPhase } from "../../domain/expedition/ballot";
+import { chapters, waystationRecovery } from "../../domain/expedition/chapters";
+import { Inventory } from "./Inventory";
+import { RestSite, Shop } from "./CardNodes";
+import { EnemyIntentStrip } from "./BattleScene";
 import { ExpeditionMap } from "./ExpeditionMap";
 import { useGameCommands } from "../use-game-commands";
 import { useState, useEffect } from "react";
 import type { GameSnapshot } from "../OriginalGame";
 import { AvatarSurface, type AvatarSurfaceProps } from "../AvatarSurface";
-import { Panel } from "../ui/Controls";
 import type { Action } from "../../domain/types";
 import { ExpeditionAdventure } from "../../domain/expedition/adventure";
 import type {
   ExpeditionGameState,
   ExpeditionMove,
 } from "../../domain/expedition/adventure-types";
-import { allCards, ExpeditionRules } from "../../domain/expedition/rules";
-import {
-  cards,
-  heroContent,
-  definition,
-  cardText,
-  effectsText,
-} from "../../domain/expedition/content";
+import { ExpeditionRules } from "../../domain/expedition/rules";
+import { heroContent, effectsText } from "../../domain/expedition/content";
 import {
   potions,
   relics,
@@ -33,6 +32,7 @@ import "./table.css";
 const rules = new ExpeditionAdventure(),
   combat = new ExpeditionRules();
 const phaseNames = {
+  waystation: "层间驿站",
   profession: "选择职业",
   map: "选择路线",
   battle: "共同战斗",
@@ -136,10 +136,16 @@ export function ExpeditionTable({
       : undefined;
   const vote = (choice: string) =>
     send({ type: run.phase === "tie" ? "tie" : "vote", choice });
-  const shownCards = hero ? allCards(hero) : [];
   const choices = moves.filter(
     (c) =>
-      !["card", "potion", "discard-potion", "ping"].includes(c.move.type) &&
+      ![
+        "card",
+        "potion",
+        "discard-potion",
+        "ping",
+        "upgrade",
+        "remove",
+      ].includes(c.move.type) &&
       !(run.phase === "shop" && c.move.type === "buy") &&
       !(
         run.phase === "reward" &&
@@ -238,14 +244,19 @@ export function ExpeditionTable({
       >
         <div>
           <small>
-            秘塔远征 · 第一章 · {Math.max(1, run.floor + 1)} / 12 层
+            秘塔远征 · 第 {run.chapter + 1} 大层 · {chapters[run.chapter].name}{" "}
+            · {Math.max(1, run.floor + 1)} / {run.map.length} 节点
           </small>
           <strong>
             {phaseNames[run.phase]}
             {run.phase === "battle" ? ` · 第 ${run.combat.round} 回合` : ""}
           </strong>
         </div>
-        <span>{hero ? `${hero.energy} 能量 · ${hero.gold} 金币` : "观战"}</span>
+        <span>
+          {hero
+            ? `${hero.energy} 能量 · ${hero.gold} 金币 · ${run.luck[actor]} 幸运筹码`
+            : "观战"}
+        </span>
         <button onClick={() => setInspect(Math.max(0, actor))}>
           牌组与遗物
         </button>
@@ -279,6 +290,26 @@ export function ExpeditionTable({
           ))}
         </div>
       )}
+      {run.phase === "waystation" && (
+        <section className="exp-waystation">
+          <h3>下一大层 · {chapters[run.chapter + 1].name}</h3>
+          <p>{chapters[run.chapter + 1].rule}</p>
+          <div className="exp-station-recovery">
+            {run.combat.heroes.map((member, index) => (
+              <span key={index}>
+                {snapshot.seats[index]?.name ?? member.name} · {member.hp} →{" "}
+                {member.hp +
+                  Math.ceil(
+                    (member.hp > 0 ? member.maxHp - member.hp : member.maxHp) *
+                      waystationRecovery,
+                  )}{" "}
+                ♥
+              </span>
+            ))}
+          </div>
+          <p className="muted">每人选择一项进阶；全员完成后一起出发。</p>
+        </section>
+      )}
       {run.phase === "profession" && (
         <div
           className="exp-professions"
@@ -287,20 +318,18 @@ export function ExpeditionTable({
           {heroContent.map((h, i) => (
             <button
               key={h.name}
-              disabled={!moves.some((c) => c.move.type === "profession")}
+              disabled={
+                !moves.some(
+                  (c) =>
+                    c.move.type === "profession" && c.move.profession === i,
+                )
+              }
               onClick={() => send({ type: "profession", profession: i })}
             >
-              <span>{["⛨", "➶", "⚗"][i]}</span>
+              <span>{h.icon}</span>
               <h2>{h.name}</h2>
               <p>{h.title}</p>
               <small>{h.maxHp} 生命 · 10 张起始牌</small>
-              <p>
-                {i === 0
-                  ? "格挡、力量与反击，承担敌方压力。"
-                  : i === 1
-                    ? "连击、抽牌与标记，寻找击杀窗口。"
-                    : "药剂、持续伤害与恢复，维持团队状态。"}
-              </p>
             </button>
           ))}
           <p className="muted">
@@ -309,11 +338,35 @@ export function ExpeditionTable({
           </p>
         </div>
       )}
-      {run.phase === "map" && (
+      {ballotPhase(run) && (
+        <VoteStatus
+          run={run}
+          names={snapshot.seats.map((seat) => seat.name)}
+          actor={actor}
+          avatars={snapshot.seats.map((seat) => seat.avatar ?? "👤")}
+        />
+      )}
+      {run.lastBallot && !ballotPhase(run) && (
+        <details className="exp-vote-result" key={run.lastBallot.sequence}>
+          <summary>投票结果 · {run.lastBallot.label}</summary>
+          {Object.entries(run.lastBallot.votes).map(([voter, choice]) => (
+            <div key={voter}>
+              {snapshot.seats[Number(voter)]?.name} ·{" "}
+              {run.lastBallot!.options[choice!]}
+              {choice === run.lastBallot!.choice ? " · 最终方案" : ""}
+            </div>
+          ))}
+        </details>
+      )}
+      {(run.phase === "map" ||
+        (run.phase === "tie" && run.votePhase === "map")) && (
         <ExpeditionMap
           run={run}
+          actor={actor}
           available={moves.flatMap((c) =>
-            c.move.type === "vote" ? [c.move.choice] : [],
+            c.move.type === "vote" || c.move.type === "tie"
+              ? [c.move.choice]
+              : [],
           )}
           names={snapshot.seats.map((seat) => seat.name)}
           onVote={vote}
@@ -321,6 +374,10 @@ export function ExpeditionTable({
       )}
       {run.phase === "battle" && (
         <>
+          <EnemyIntentStrip
+            state={run.combat}
+            names={snapshot.seats.map((seat) => seat.name)}
+          />
           <div className="exp-battle" data-guide-target="expedition.scene">
             <BattleScene
               key={`${run.runId}:${run.combat.battleSerial}`}
@@ -330,6 +387,7 @@ export function ExpeditionTable({
               }))}
               state={run.combat}
               actor={actor}
+              names={snapshot.seats.map((seat) => seat.name)}
               onActor={setInspect}
               onTarget={(target) => {
                 if (markMode) {
@@ -496,7 +554,7 @@ export function ExpeditionTable({
             {run.offers[actor]?.map((id, i) => (
               <ExpeditionCard
                 key={id}
-                instance={{ card: id, id: `reward-${i}`, upgraded: false }}
+                instance={{ card: id, id: `reward-${i}`, upgradeLevel: 0 }}
                 disabled={!moves.some((c) => c.move.type === "reward")}
                 onChoose={() => send({ type: "reward", choice: id })}
               />
@@ -504,57 +562,59 @@ export function ExpeditionTable({
           </div>
         </div>
       )}
-      {run.phase === "shop" && (
-        <div className="exp-shop" data-guide-target="expedition.shop">
-          {run.shop[actor]?.map((item) => (
-            <article key={item.id}>
-              {item.kind === "card" ? (
-                <ExpeditionCard
-                  instance={{ id: item.id, card: item.card, upgraded: false }}
-                  disabled={
-                    !moves.some(
-                      (c) => c.move.type === "buy" && c.move.item === item.id,
-                    )
-                  }
-                  onChoose={() => send({ type: "buy", item: item.id })}
-                />
-              ) : (
-                <>
-                  <h3>
-                    {item.kind === "relic"
-                      ? relics[item.relic].name
-                      : potions[item.potion].name}
-                  </h3>
-                  <p>
-                    {item.kind === "relic"
-                      ? relicText(item.relic)
-                      : effectsText(potions[item.potion].effects)}
-                  </p>
-                </>
-              )}
-              <button
-                disabled={
-                  !moves.some(
-                    (c) => c.move.type === "buy" && c.move.item === item.id,
-                  )
-                }
-                onClick={() => send({ type: "buy", item: item.id })}
-              >
-                {item.sold ? "已购买" : `${item.price} 金币 · 购买`}
-              </button>
-            </article>
-          ))}
-        </div>
+      {run.phase === "shop" && hero && (
+        <Shop
+          hero={hero}
+          items={run.shop[actor] ?? []}
+          moves={moves.map((c) => c.move)}
+          send={send}
+        />
       )}
       {run.phase === "event" && (
         <div className="exp-node-content">
           <h2>{storyEvents[run.event!].name}</h2>
           <p>{storyEvents[run.event!].text}</p>
-          {storyEvents[run.event!].choices.map((choice) => (
-            <p key={choice.name}>
-              <strong>{choice.name}</strong> · {eventText(choice.effects)}
-            </p>
-          ))}
+          <div
+            className="exp-event-options"
+            data-guide-target="expedition.choices"
+          >
+            {storyEvents[run.event!].choices.map((choice, index) => (
+              <button
+                key={choice.name}
+                aria-pressed={run.votes[actor] === String(index)}
+                disabled={
+                  !moves.some(
+                    (c) =>
+                      c.move.type === "vote" && c.move.choice === String(index),
+                  )
+                }
+                onClick={() => vote(String(index))}
+              >
+                <strong>{choice.name}</strong>
+                <span>{eventText(choice.effects)}</span>
+              </button>
+            ))}
+            <button
+              disabled={
+                !moves.some(
+                  (c) => c.move.type === "vote" && c.move.choice === "leave",
+                )
+              }
+              onClick={() => vote("leave")}
+            >
+              离开，不作改变
+            </button>
+            {moves.some(
+              (c) => c.move.type === "vote" && c.move.choice === "reroll",
+            ) && (
+              <button
+                aria-pressed={run.votes[actor] === "reroll"}
+                onClick={() => vote("reroll")}
+              >
+                全员同意重选奇遇 · 每人 1 幸运筹码
+              </button>
+            )}
+          </div>
           <p className="muted">选择对全队生效；支出由每人分别承担。</p>
         </div>
       )}
@@ -576,7 +636,7 @@ export function ExpeditionTable({
       {run.phase === "holder" && (
         <h2>把{relics[run.selectedRelic!].name}交给谁？</h2>
       )}
-      {run.phase === "tie" && (
+      {run.phase === "tie" && run.votePhase !== "map" && (
         <h2>
           票数相同，请领队{" "}
           {
@@ -586,49 +646,43 @@ export function ExpeditionTable({
           决定
         </h2>
       )}
-      {["camp", "recovery"].includes(run.phase) && (
-        <div className="exp-node-content">
-          <h2>
-            {run.phase === "camp" ? "休息、升级或移除一张牌" : "选择要整理的牌"}
-          </h2>
-        </div>
+      {["camp", "recovery"].includes(run.phase) && hero && (
+        <RestSite
+          key={`${run.current}:${run.phase}`}
+          hero={hero}
+          moves={moves.filter((c) => c.move.type !== "ping").map((c) => c.move)}
+          send={send}
+          recovery={run.phase === "recovery"}
+        />
       )}
-      {!["battle", "profession", "map", "treasure"].includes(run.phase) && (
-        <div
-          className="exp-node-actions"
-          data-guide-target="expedition.choices"
-        >
-          {choices.map((c, i) => (
-            <button
-              key={i}
-              aria-pressed={
-                "choice" in c.move && run.votes[actor] === c.move.choice
-              }
-              onClick={() => send(c.move)}
-              title={
-                c.move.type === "upgrade" || c.move.type === "remove"
-                  ? cardText(
-                      shownCards.find(
-                        (card) =>
-                          card.id === (c.move as { instance: string }).instance,
-                      )!,
-                    )
-                  : undefined
-              }
-            >
-              {c.move.type === "vote" &&
-              run.phase === "event" &&
-              c.move.choice !== "leave"
-                ? storyEvents[run.event!].choices[Number(c.move.choice)].name
-                : c.move.type === "reward" &&
-                    c.move.choice !== "skip" &&
-                    c.move.choice !== "heal"
-                  ? `获得${cards[c.move.choice as keyof typeof cards].name}`
-                  : c.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {!(run.phase === "tie" && run.votePhase === "map") &&
+        ![
+          "battle",
+          "profession",
+          "map",
+          "treasure",
+          "camp",
+          "recovery",
+          "shop",
+          "event",
+        ].includes(run.phase) && (
+          <div
+            className="exp-node-actions"
+            data-guide-target="expedition.choices"
+          >
+            {choices.map((c, i) => (
+              <button
+                key={i}
+                aria-pressed={
+                  "choice" in c.move && run.votes[actor] === c.move.choice
+                }
+                onClick={() => send(c.move)}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        )}
       {[
         "map",
         "reward",
@@ -653,58 +707,11 @@ export function ExpeditionTable({
           </p>
         </div>
       )}
-      <Panel
-        open={inspect !== null}
-        onOpenChange={(open) => {
-          if (!open) setInspect(null);
-        }}
-        title="远征行装"
-      >
-        {inspect !== null && run.combat.heroes[inspect] && (
-          <>
-            <p className="muted">
-              队友手牌公开；抽牌堆只显示组成，不显示顺序。
-            </p>
-            <h3>
-              {snapshot.seats[inspect]?.name} ·{" "}
-              {run.combat.heroes[inspect].name}
-            </h3>
-            <div>
-              {run.combat.heroes[inspect].relics.map((id) => (
-                <p key={id}>
-                  <strong>
-                    {relics[id].icon} {relics[id].name}
-                  </strong>{" "}
-                  · {relicText(id)}
-                </p>
-              ))}
-            </div>
-            {(["hand", "deck", "discard", "played", "exhaust"] as const).map(
-              (pile) => (
-                <section key={pile}>
-                  <h4>
-                    {
-                      {
-                        hand: "当前手牌",
-                        deck: "抽牌堆组成（顺序隐藏）",
-                        discard: "弃牌堆",
-                        played: "本轮已出",
-                        exhaust: "本场消耗",
-                      }[pile]
-                    }{" "}
-                    · {run.combat.heroes[inspect][pile].length}
-                  </h4>
-                  <div className="exp-inspect-cards">
-                    {run.combat.heroes[inspect][pile].map((card) => (
-                      <ExpeditionCard key={card.id} instance={card} />
-                    ))}
-                  </div>
-                </section>
-              ),
-            )}
-          </>
-        )}
-      </Panel>
+      <Inventory
+        hero={inspect !== null ? run.combat.heroes[inspect] : undefined}
+        name={inspect !== null ? (snapshot.seats[inspect]?.name ?? "") : ""}
+        onClose={() => setInspect(null)}
+      />
     </section>
   );
 }

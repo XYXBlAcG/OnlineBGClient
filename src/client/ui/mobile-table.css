@@ -25,7 +25,7 @@
 .mobile-immersive .original-game[data-game="tq"] > div:has(> .map-viewport) { flex:1; min-height:0; display:flex; flex-direction:column; }
 .mobile-immersive .map-viewport { min-height:0; gap:0; }
 .mobile-immersive .room-sidebar { bottom:calc(60px + env(safe-area-inset-bottom)); max-height:calc(100dvh - 80px - env(safe-area-inset-top)); }
-@media (pointer:coarse) and (orientation:landscape) {
+@media (orientation:landscape) {
   .mobile-shell .playing-room .original-game:is([data-game="fxq"],[data-game="tq"]) .map-tools { display:none; }
   .mobile-shell .playing-room .original-game[data-game="fxq"] > .flex { font-size:11px; margin:0; }
 }

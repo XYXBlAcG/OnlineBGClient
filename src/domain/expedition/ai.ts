@@ -1,13 +1,15 @@
+import { chapters } from "./chapters";
+import { expeditionResources, heatRule } from "./resources";
 import { Strategy, type SearchRequest } from "../strategy";
 import type { Candidate, DecisionCandidate, GameState } from "../types";
 import { ExpeditionRules, allCards, incoming } from "./rules";
-import { cards, definition, type CardId } from "./content";
+import { cards, definition, heroContent, type CardId } from "./content";
 import { relics, potions, storyEvents } from "./world";
 import { mapChoices } from "./map";
 import { shuffled } from "./random";
 const combat = new ExpeditionRules();
 export class ExpeditionStrategy extends Strategy {
-  static readonly version = "expedition-team-1";
+  static readonly version = "expedition-team-2";
   readonly version = ExpeditionStrategy.version;
   budget(request: SearchRequest) {
     return {
@@ -52,6 +54,12 @@ export class ExpeditionStrategy extends Strategy {
                 thorns: 4,
                 regen: 4,
                 cleanse: 2,
+                heat: -1.2,
+                cool: 1,
+                device: 6,
+                focus: 4,
+                echo: 0.8,
+                blessing: 0.6,
               }[e.kind],
           0,
         ) /
@@ -64,11 +72,21 @@ export class ExpeditionStrategy extends Strategy {
     if (move.type === "profession")
       score =
         10 +
-        ((run.combat.heroes.length === 2 && actor === 1 ? 2 : actor % 3) ===
-        move.profession
+        ((run.combat.heroes.length === 2 && actor === 1
+          ? 2
+          : actor % heroContent.length) === move.profession
           ? 5
           : 0);
     if (move.type === "ready" || move.type === "done") score = 0;
+    if (move.type === "advance")
+      score =
+        move.choice === "forge"
+          ? 22
+          : move.choice === "vitality"
+            ? 12 + (hero.maxHp - hero.hp) * 0.3
+            : hero.gold < 70
+              ? 20
+              : 8;
     if (move.type === "card" || move.type === "potion") {
       const next =
         move.type === "card"
@@ -89,7 +107,17 @@ export class ExpeditionStrategy extends Strategy {
         0,
       );
       run.combat.heroes.forEach((h, i) => {
-        const threat = incoming(run.combat, i);
+        const retaliation = h.hand.some((card) =>
+          definition(card).effects.some((effect) => effect.kind === "damage"),
+        )
+          ? Math.max(
+              0,
+              ...run.combat.enemies
+                .filter((enemy) => enemy.hp > 0)
+                .map((enemy) => enemy.thorns),
+            )
+          : 0;
+        const threat = incoming(run.combat, i) + retaliation;
         score +=
           Math.min(
             Math.max(0, threat - h.block),
@@ -125,6 +153,14 @@ export class ExpeditionStrategy extends Strategy {
               thorns: 3,
               regen: 3,
               cleanse: hero.poison + hero.weak + hero.vulnerable,
+              heat: hero.heat >= 5 ? -3 : -0.5,
+              cool: hero.heat > 3 ? 2 : 0,
+              device:
+                Math.max(0, expeditionResources.turret.maximum - hero.turret) /
+                2,
+              focus: hero.focus < expeditionResources.focus.maximum ? 4 : 0,
+              echo: 0.8,
+              blessing: hero.blessing < 10 ? 0.5 : 0,
             }[e.kind],
         0,
       );
@@ -208,28 +244,30 @@ export class ExpeditionStrategy extends Strategy {
         }[node.kind];
       } else if (phase === "event") {
         score =
-          move.choice === "leave"
-            ? 0
-            : storyEvents[run.event!].choices[
-                Number(move.choice)
-              ].effects.reduce(
-                (sum, e) =>
-                  sum +
-                  (e.kind === "gold"
-                    ? e.amount * 0.25
-                    : e.kind === "hurt"
-                      ? -e.amount * 1.5
-                      : e.kind === "heal"
-                        ? Math.min(e.amount, hero.maxHp - hero.hp) * 2
-                        : e.kind === "relic"
-                          ? 30
-                          : e.kind === "card"
-                            ? cardValue(e.card)
-                            : e.kind === "maxHp"
-                              ? e.amount * 3
-                              : 12),
-                0,
-              );
+          move.choice === "reroll"
+            ? 0.5
+            : move.choice === "leave"
+              ? 0
+              : storyEvents[run.event!].choices[
+                  Number(move.choice)
+                ].effects.reduce(
+                  (sum, e) =>
+                    sum +
+                    (e.kind === "gold"
+                      ? e.amount * 0.25
+                      : e.kind === "hurt"
+                        ? -e.amount * 1.5
+                        : e.kind === "heal"
+                          ? Math.min(e.amount, hero.maxHp - hero.hp) * 2
+                          : e.kind === "relic"
+                            ? 30
+                            : e.kind === "card"
+                              ? cardValue(e.card)
+                              : e.kind === "maxHp"
+                                ? e.amount * 3
+                                : 12),
+                  0,
+                );
       } else if (phase === "holder")
         score = 20 - run.combat.heroes[Number(move.choice)].relics.length * 3;
       else if (phase === "treasure")
@@ -286,19 +324,26 @@ export class ExpeditionStrategy extends Strategy {
   position(state: GameState, _actor: number): number {
     if (state.kind !== "expedition") throw new Error("策略游戏不匹配");
     const run = state.view;
-    if (run.phase === "won") return 2000;
-    if (run.phase === "lost") return -2000;
+    if (run.phase === "won") return 10000;
+    if (run.phase === "lost") return -10000;
     return (
-      run.floor * 30 +
+      (chapters
+        .slice(0, run.chapter)
+        .reduce((sum, chapter) => sum + chapter.depth, 0) +
+        run.floor) *
+        30 +
       run.combat.heroes.reduce(
-        (sum, h) =>
+        (sum, h, index) =>
           sum +
           h.hp * 2 +
-          Math.min(
-            h.block,
-            incoming(run.combat, run.combat.heroes.indexOf(h)),
-          ) *
-            1.2 +
+          h.turret * 6 +
+          h.echo * 0.8 +
+          h.focus * 4 +
+          h.blessing * 0.5 -
+          (h.heat >= heatRule.threshold
+            ? (h.heat - heatRule.residual) * 2
+            : 0) +
+          Math.min(h.block, incoming(run.combat, index)) * 1.2 +
           h.strength * 5 +
           h.dexterity * 5,
         0,

@@ -3,12 +3,30 @@ use tauri::menu::{Menu, MenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager};
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum CloseDisposition {
+    Destroy,
+    Hide,
+    Confirm,
+}
+
 #[derive(Default)]
 pub struct Desktop {
     quitting: AtomicBool,
     voice: AtomicBool,
 }
 impl Desktop {
+    pub fn close_disposition(&self, macos: bool, hosting: bool) -> CloseDisposition {
+        if self.quitting() {
+            CloseDisposition::Destroy
+        } else if hosting || self.voice_active() {
+            CloseDisposition::Confirm
+        } else if macos {
+            CloseDisposition::Hide
+        } else {
+            CloseDisposition::Destroy
+        }
+    }
     pub fn prepare_quit(&self) {
         self.quitting.store(true, Ordering::SeqCst);
     }
@@ -24,6 +42,8 @@ impl Desktop {
 }
 
 pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    crate::diagnostics::init(app.handle())?;
+    crate::usage::init(app.handle())?;
     tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?
         .on_permission_request(|webview, kind| {
             use tauri::webview::{PermissionKind, PermissionResponse};
@@ -99,6 +119,14 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+pub fn show_main(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
 pub fn menu(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
     let view = match event.id.as_ref() {
         "app.about" | "about" => Some(crate::windows::AuxiliaryView::About),
@@ -127,10 +155,7 @@ pub fn menu(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
     }
     if let Some(window) = app.get_webview_window("main") {
         match event.id.as_ref() {
-            "show" => {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            "show" | "app.show" => show_main(app),
             "about" | "settings" | "records" => {
                 let _ = window.show();
                 let _ = window.set_focus();
@@ -243,4 +268,43 @@ pub fn open_link(key: String) -> Result<(), String> {
         let _ = child.wait();
     });
     Ok(())
+}
+
+#[cfg(test)]
+mod lifecycle_tests {
+    use super::{CloseDisposition, Desktop};
+    #[test]
+    fn mac_close_keeps_main_window_available_for_dock_reopen() {
+        let desktop = Desktop::default();
+        assert_eq!(
+            desktop.close_disposition(true, false),
+            CloseDisposition::Hide
+        );
+        assert_eq!(
+            desktop.close_disposition(true, true),
+            CloseDisposition::Confirm
+        );
+        desktop.set_voice(true);
+        assert_eq!(
+            desktop.close_disposition(true, false),
+            CloseDisposition::Confirm
+        );
+        desktop.prepare_quit();
+        assert_eq!(
+            desktop.close_disposition(true, true),
+            CloseDisposition::Destroy
+        );
+    }
+    #[test]
+    fn windows_close_retains_exit_and_active_session_confirmation() {
+        let desktop = Desktop::default();
+        assert_eq!(
+            desktop.close_disposition(false, false),
+            CloseDisposition::Destroy
+        );
+        assert_eq!(
+            desktop.close_disposition(false, true),
+            CloseDisposition::Confirm
+        );
+    }
 }

@@ -1,3 +1,4 @@
+import { phonePreviewEnabled } from "./phone-preview";
 import { useEffect, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 
@@ -14,7 +15,10 @@ function useMediaQuery(query: string): boolean {
 
 export function useMobile(): boolean {
   const coarse = useMediaQuery("(pointer: coarse)");
-  return !isTauri() && coarse;
+  return (
+    !isTauri() &&
+    (coarse || phonePreviewEnabled(location.search, window.parent !== window))
+  );
 }
 
 export function useWindowWidth(): number {

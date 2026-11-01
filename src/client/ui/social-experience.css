@@ -164,27 +164,15 @@
   max-width: min(88vw, 1100px);
   font-size: clamp(40px, 10vw, 112px);
   line-height: 1.15;
-  font-weight: 950;
+  font-weight: 700;
   text-wrap: balance;
   overflow-wrap: anywhere;
   color: #ffce37;
-  -webkit-text-stroke: 1px #572600;
-  text-shadow:
-    0 3px 0 #7c3500,
-    0 7px 0 #3b2100,
-    0 10px 24px #0006;
-  background: linear-gradient(#fff2a5, #ffc328 55%, #ff7a18);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 8px #0006;
+  background: #1c1234e6;
 }
 .social-banner[data-preset="red"] strong {
-  background-image: linear-gradient(#fff09d, #ff7940 50%, #e62d24);
-  -webkit-text-stroke-color: #6b1900;
-  text-shadow:
-    0 3px 0 #6b1900,
-    0 7px 0 #361000,
-    0 10px 24px #0006;
+  text-shadow: 0 2px 8px #0006;
 }
 .social-banner strong[data-length="long"] {
   font-size: clamp(30px, 6vw, 70px);
@@ -275,8 +263,19 @@
 .banner-animated[data-style="rain"] .banner-effect-particles span {
   animation-name: banner-rain;
 }
-.game-status-row {display:flex;align-items:center;justify-content:center;flex:0 0 22px;min-height:22px;}
-.game-turn-indicator {position:static;color:var(--accent);font-size:12px;pointer-events:none;}
+.game-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  min-height: 22px;
+}
+.game-turn-indicator {
+  position: static;
+  color: var(--accent);
+  font-size: 12px;
+  pointer-events: none;
+}
 .game-turn-indicator[hidden] {
   display: none;
 }
@@ -374,9 +373,12 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 4px 0;
 }
 .mobile-shell .room-heading {
+  flex: none;
   justify-content: space-between;
   gap: 12px;
 }
@@ -384,14 +386,16 @@
   font-size: 20px;
 }
 .mobile-shell .room-primary-actions {
-  justify-content: flex-end;
-  gap: 10px;
+  justify-content: stretch;
+  gap: 6px;
 }
 .mobile-shell .room-primary-actions > button {
-  min-height: 44px;
-  min-width: 88px;
-  font-size: 14px;
-  padding: 10px 14px;
+  flex: 1 0 auto;
+  white-space: nowrap;
+  min-height: 40px;
+  min-width: 0;
+  font-size: 13px;
+  padding: 6px 10px;
 }
 .mobile-room-menu {
   top: auto;
@@ -497,6 +501,96 @@
   font-size: min(36px, calc(var(--mobile-height) * 0.14));
 }
 
-@media(max-height:540px) and (orientation:landscape){.game-status-row{flex-basis:18px;min-height:18px}}
+@media (max-height: 540px) and (orientation: landscape) {
+  .game-status-row {
+    flex-basis: 18px;
+    min-height: 18px;
+  }
+}
 
-.social-banner[data-custom-color="true"] strong { background:none; color:var(--banner-color); -webkit-text-fill-color:var(--banner-color); -webkit-text-stroke-color:var(--banner-stroke,#252532); text-shadow:0 3px 0 var(--banner-stroke,#252532),0 6px 14px #0009; }
+.social-banner[data-custom-color="true"] strong {
+  background: none;
+  color: var(--banner-color);
+  -webkit-text-fill-color: var(--banner-color);
+  text-shadow: 0 2px 8px #0006;
+}
+.chat-roll {
+  display: grid;
+  gap: 10px;
+  padding: 10px 4px;
+}
+.chat-dice {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 4px;
+}
+.chat-die-stage {
+  perspective: 450px;
+  display: block;
+  width: 42px;
+  height: 42px;
+}
+.chat-die {
+  display: block;
+  position: relative;
+  width: 42px;
+  height: 42px;
+  transform-style: preserve-3d;
+}
+.chat-die-face,
+.chat-die-side,
+.chat-die-top {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 750;
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 3px 5px #0002;
+  backface-visibility: hidden;
+}
+.chat-die-face {
+  transform: translateZ(21px);
+}
+.chat-die-side {
+  transform: rotateY(90deg) translateZ(21px);
+  filter: brightness(0.85);
+}
+.chat-die-top {
+  transform: rotateX(90deg) translateZ(21px);
+  filter: brightness(1.08);
+}
+.chat-roll[data-rolling="true"] .chat-die {
+  animation: chat-die-roll var(--die-duration) cubic-bezier(0.16, 0.7, 0.3, 1)
+    both;
+  animation-delay: var(--die-delay);
+}
+@keyframes chat-die-roll {
+  0% {
+    opacity: 0;
+    transform: translateY(-22px) rotateX(-240deg) rotateY(-360deg) scale(0.55);
+  }
+  38% {
+    opacity: 1;
+    transform: translateY(4px) rotateX(-70deg) rotateY(-100deg) scale(1);
+  }
+  62% {
+    transform: translateY(-8px) rotateX(24deg) rotateY(30deg);
+  }
+  82% {
+    transform: translateY(1px) rotateX(-8deg) rotateY(-12deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+.emoji-settings {
+  display: grid;
+  gap: 10px;
+}

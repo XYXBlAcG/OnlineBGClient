@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>桌游 · 手机预览</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font:
+          14px system-ui,
+          sans-serif;
+        background: light-dark(#f1f3f6, #17191e);
+        color: light-dark(#252a34, #e8ebf0);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        height: 100dvh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+      header {
+        padding: 14px 20px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        background: light-dark(#fff, #23262d);
+        box-shadow: 0 1px 5px #0001;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0 10px 0 0;
+      }
+      input,
+      button,
+      select {
+        font: inherit;
+        color: inherit;
+        background: light-dark(#edf0f4, #343943);
+        border: 0;
+        border-radius: 9px;
+        padding: 9px 11px;
+        min-height: 36px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        filter: brightness(0.94);
+      }
+      :focus-visible {
+        outline: 2px solid #397ff2;
+        outline-offset: 2px;
+      }
+      form {
+        display: flex;
+        gap: 8px;
+        flex: 1 1 380px;
+      }
+      #address {
+        min-width: 150px;
+        flex: 1;
+      }
+      .primary {
+        background: #256de0;
+        color: white;
+      }
+      .tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .tools input {
+        width: 76px;
+      }
+      label {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      #stage {
+        min-height: 0;
+        overflow: auto;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      #space {
+        flex: none;
+        position: relative;
+      }
+      #device {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform-origin: top left;
+        border: 10px solid #292d35;
+        border-radius: 30px;
+        box-shadow: 0 16px 48px #0003;
+        background: white;
+        box-sizing: content-box;
+        overflow: hidden;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        display: block;
+        border: 0;
+        background: white;
+      }
+      footer {
+        padding: 9px 20px;
+        font-size: 12px;
+        color: light-dark(#616a79, #a3adbb);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      #error {
+        color: light-dark(#b42c22, #ff9e8e);
+        margin: 0;
+      }
+      #dimensions {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>手机预览</h1>
+      <form id="navigate">
+        <input
+          id="address"
+          aria-label="游戏或房间链接"
+          placeholder="粘贴游戏或邀请链接"
+          required
+        /><button class="primary">打开</button>
+      </form>
+      <div class="tools">
+        <select id="preset" aria-label="预览设备尺寸">
+          <option value="360,780">紧凑手机</option>
+          <option value="390,844" selected>标准手机</option>
+          <option value="430,932">大屏手机</option>
+          <option value="768,1024">平板</option>
+          <option value="custom">自定义</option>
+        </select>
+        <label
+          >宽<input
+            id="width"
+            type="number"
+            min="240"
+            max="1600"
+            value="390" /></label
+        ><span>×</span
+        ><label
+          >高<input id="height" type="number" min="240" max="1600" value="844"
+        /></label>
+        <button id="rotate" type="button">旋转</button>
+        <select id="scale" aria-label="外框显示比例">
+          <option value="fit">适配窗口</option>
+          <option value="1">实际尺寸</option>
+          <option value="0.75">75%</option>
+          <option value="0.5">50%</option>
+        </select>
+        <button id="reload" type="button">重新载入</button>
+      </div>
+    </header>
+    <main id="stage">
+      <div id="space">
+        <div id="device">
+          <iframe
+            id="game"
+            title="手机尺寸真实游戏界面"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals"
+            allow="clipboard-write; fullscreen"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <span
+        >鼠标操作真实牌桌。仅预览布局；触摸、软键盘、刘海与手机浏览器性能需实机确认。外部网站可能禁止嵌入。</span
+      ><output id="dimensions"></output>
+      <p id="error" role="alert"></p>
+    </footer>
+    <script type="module" src="./phone-preview.mjs"></script>
+  </body>
+</html>

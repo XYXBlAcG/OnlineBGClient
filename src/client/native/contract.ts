@@ -1,3 +1,4 @@
+import type { GameSizing } from "../game-sizing/model";
 import type { MediaSession } from "../social/media";
 import { attachmentSchema } from "../../domain/attachments";
 import { z } from "zod";
@@ -98,6 +99,7 @@ export type AuxiliaryPayload =
       roomPerformance?: Snapshot["config"]["performance"];
       mediaSession?: MediaSession;
       initialSection?: string;
+      sizing?: GameSizing;
     }
   | {
       view: "chat";

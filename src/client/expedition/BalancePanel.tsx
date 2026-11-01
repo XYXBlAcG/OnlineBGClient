@@ -164,7 +164,7 @@ export function BalancePanel({
               <tr key={id}>
                 <th>{cards[id].name}</th>
                 <td>{cards[id].cost}</td>
-                <td>{cardText({ id: "sheet", card: id, upgraded: false })}</td>
+                <td>{cardText({ id: "sheet", card: id, upgradeLevel: 0 })}</td>
               </tr>
             ))}
           </tbody>

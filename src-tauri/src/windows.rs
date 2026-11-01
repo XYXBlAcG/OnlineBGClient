@@ -361,9 +361,19 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
     }
     let hosting = window.state::<std::sync::Arc<crate::hosting::Hosting>>();
     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-        if hosting.running() || window.state::<crate::desktop::Desktop>().voice_active() {
-            api.prevent_close();
-            let _ = window.emit("desktop-command", "close");
+        match window
+            .state::<crate::desktop::Desktop>()
+            .close_disposition(cfg!(target_os = "macos"), hosting.running())
+        {
+            crate::desktop::CloseDisposition::Confirm => {
+                api.prevent_close();
+                let _ = window.emit("desktop-command", "close");
+            }
+            crate::desktop::CloseDisposition::Hide => {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+            crate::desktop::CloseDisposition::Destroy => {}
         }
     }
     if matches!(event, tauri::WindowEvent::Destroyed) {

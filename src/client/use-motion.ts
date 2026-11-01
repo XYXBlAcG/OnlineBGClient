@@ -8,13 +8,13 @@ function subscribe(update: () => void) {
     document.removeEventListener("visibilitychange", update);
   };
 }
-export function useMotion(enabled: boolean): boolean {
+export function useMotion(enabled: boolean, visibility = true): boolean {
   return useSyncExternalStore(
     subscribe,
     () =>
       enabled &&
       !matchMedia("(prefers-reduced-motion: reduce)").matches &&
-      document.visibilityState !== "hidden",
+      (!visibility || document.visibilityState !== "hidden"),
     () => enabled,
   );
 }

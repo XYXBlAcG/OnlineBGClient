@@ -3,7 +3,7 @@ import { maxRoomSeats } from "./catalogue";
 import { z } from "zod";
 import type { Banner, ChatEvent } from "./banner";
 import type { Attachment } from "./attachments";
-export const interactionCatalogue = {
+export const freeInteractionCatalogue = {
   egg: {
     emoji: "🥚",
     name: "鸡蛋",
@@ -145,11 +145,13 @@ export const interactionCatalogue = {
     color: "#ff7bac",
   },
 } as const;
+export const interactionCatalogue = freeInteractionCatalogue;
+export type FreeInteractionKind = keyof typeof freeInteractionCatalogue;
 export type InteractionKind = keyof typeof interactionCatalogue;
 export type InteractionStyle =
   (typeof interactionCatalogue)[InteractionKind]["style"];
 export const interactionSchema = z.enum(
-  Object.keys(interactionCatalogue) as [InteractionKind, ...InteractionKind[]],
+  Object.keys(freeInteractionCatalogue) as [keyof typeof freeInteractionCatalogue, ...(keyof typeof freeInteractionCatalogue)[]],
 );
 export const interactionUnitsSchema = z.object({
   game: z.literal("graphwar"),

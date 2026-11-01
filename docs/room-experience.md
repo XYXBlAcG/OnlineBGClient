@@ -24,3 +24,9 @@
 7. macOS 检查应用、房间、对局、视图、设置与编辑操作菜单，当前不可用操作禁用；点击设置分类打开对应页，复制粘贴正常。快捷键录入中菜单不抢走按键。Windows 检查没有原生应用菜单栏，窗口控制与房间操作正常。
 
 语音与变声的设备及真实通话审核见 [声音与输入](voice-effects-and-input.md)。清理结果见 [废纸篓记录](../artifacts/review/room-experience/cleanup-results.json)。
+
+## macOS 窗口验收
+
+窗口生命周期入口为 [关闭策略](../src-tauri/src/desktop.rs)、[窗口事件](../src-tauri/src/windows.rs) 与 [Dock 重开事件](../src-tauri/src/lib.rs)。
+
+人工检查：关闭主窗口后点击 Dock 图标，主窗口恢复且房间状态不丢失；最小化后点击 Dock 恢复；正在开房或连麦时检查关闭提示；使用退出菜单后确认进程退出。

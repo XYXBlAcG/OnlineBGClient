@@ -1,8 +1,11 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { developmentPorts } from "./src/shared/development";
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  server: { port: 1420, strictPort: true },
+  server: {
+    port: mode === "phone" ? developmentPorts.phone : developmentPorts.desktop,
+    strictPort: true,
+  },
   clearScreen: false,
-});
+}));

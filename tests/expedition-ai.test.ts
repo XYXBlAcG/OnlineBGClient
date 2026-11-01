@@ -30,3 +30,17 @@ describe("远征策略", () => {
       expect(steps).toBeLessThan(1800);
     });
 });
+
+it("切换大层不会让策略进度分倒退，通关评分高于未结束的局面", () => {
+  const rules = new ExpeditionAdventure(),
+    ai = new ExpeditionStrategy();
+  const state = rules.create(2);
+  state.view.phase = "waystation";
+  state.view.floor = state.view.map.length - 1;
+  const before = ai.position(state, 0);
+  state.view.chapter = 1;
+  state.view.floor = -1;
+  expect(ai.position(state, 0)).toBeGreaterThanOrEqual(before);
+  state.view.phase = "won";
+  expect(ai.position(state, 0)).toBeGreaterThan(before);
+});

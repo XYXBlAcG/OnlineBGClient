@@ -1,31 +1,8 @@
-export type Effect = {
-  kind:
-    | "damage"
-    | "block"
-    | "draw"
-    | "poison"
-    | "vulnerable"
-    | "energy"
-    | "heal"
-    | "strength"
-    | "weak"
-    | "dexterity"
-    | "thorns"
-    | "regen"
-    | "cleanse";
-  amount: number;
-  target?: "self" | "selected" | "party";
-  scale?: "block" | "poison" | "played" | "marked";
-};
-export interface CardDefinition {
-  name: string;
-  cost: number;
-  target: "enemy" | "ally" | "self" | "all-enemies";
-  icon: string;
-  effects: readonly Effect[];
-  exhaust?: boolean;
-}
-export const cards = {
+import { expeditionResources, heatRule, resourceEffects } from "./resources";
+import { extraCards } from "./extra-cards";
+import type { Effect, CardDefinition } from "./card-types";
+export type { Effect, CardDefinition } from "./card-types";
+const baseCards = {
   strike: {
     name: "打击",
     cost: 1,
@@ -600,32 +577,61 @@ export const cards = {
     exhaust: true,
   },
 } as const satisfies Record<string, CardDefinition>;
+export const legacyCardIds = new Set<string>(Object.keys(baseCards));
+export const cards = { ...baseCards, ...extraCards };
 export type CardId = keyof typeof cards;
+export const maxUpgradeLevel = 5;
 export interface CardInstance {
   id: string;
   card: CardId;
-  upgraded: boolean;
+  upgradeLevel: number;
 }
 export function definition(instance: CardInstance): CardDefinition {
   const base: CardDefinition = cards[instance.card];
+  const level = instance.upgradeLevel;
   return {
     ...base,
-    name: base.name + (instance.upgraded ? "＋" : ""),
-    effects: base.effects.map((effect) => ({
-      ...effect,
-      amount:
-        effect.amount +
-        (instance.upgraded && effect.kind !== "cleanse"
-          ? effect.kind === "damage" ||
-            effect.kind === "block" ||
-            effect.kind === "heal"
-            ? 3
-            : 1
-          : 0),
-    })),
+    name: base.name + (level ? `＋${level}` : ""),
+    effects: base.effects.map((effect) => {
+      const resource =
+        effect.kind in resourceEffects
+          ? expeditionResources[
+              resourceEffects[effect.kind as keyof typeof resourceEffects]
+            ]
+          : undefined;
+      const gain =
+        effect.kind === "cleanse" || effect.kind === "heat"
+          ? 0
+          : resource
+            ? Math.min(level, Math.max(0, resource.maximum - effect.amount))
+            : effect.kind === "damage" ||
+                effect.kind === "block" ||
+                effect.kind === "heal"
+              ? 3 * level
+              : effect.kind === "energy"
+                ? Math.min(level, 1)
+                : effect.kind === "draw"
+                  ? Math.min(level, 3)
+                  : level;
+      return { ...effect, amount: effect.amount + gain };
+    }),
   };
 }
-export function effectsText(effects: readonly Effect[]): string {
+export function canUpgrade(instance: CardInstance): boolean {
+  if (instance.upgradeLevel >= maxUpgradeLevel) return false;
+  const current = definition(instance);
+  const next = definition({
+    ...instance,
+    upgradeLevel: instance.upgradeLevel + 1,
+  });
+  return current.effects.some(
+    (effect, index) => effect.amount !== next.effects[index].amount,
+  );
+}
+export function effectsText(
+  effects: readonly Effect[],
+  detailed = true,
+): string {
   return effects
     .map((effect) => {
       const n = effect.amount;
@@ -643,7 +649,21 @@ export function effectsText(effects: readonly Effect[]): string {
         thorns: `反伤 +${n}`,
         regen: `再生 +${n}（下轮开始恢复生命并衰减一层）`,
         cleanse: "清除中毒、易伤和虚弱",
+        heat: `获得 ${n} 热量（上限 ${expeditionResources.heat.maximum}）；${expeditionResources.heat.hint}`,
+        cool: `冷却 ${n} 热量`,
+        device: `架设炮台 +${n}（上限 ${expeditionResources.turret.maximum}）；每轮行动结束时攻击生命最低的敌人`,
+        focus: `蓄能 ${n}（上限 ${expeditionResources.focus.maximum}）；下一轮获得等量额外能量后清空`,
+        echo: `积累 ${n} 回响（上限 ${expeditionResources.echo.maximum}）；下一轮开始时攻击生命最低的敌人后清空`,
+        blessing: `获得 ${n} 祝福（上限 ${expeditionResources.blessing.maximum}）；每层将 1 点溢出治疗转化为格挡并消耗`,
       }[effect.kind];
+      const compact = {
+        heat: `热量 +${n}（≥${heatRule.threshold} 时回合末自伤）`,
+        cool: `冷却 ${n} 热量`,
+        device: `炮台 +${n}（上限 ${expeditionResources.turret.maximum}，回合末攻击）`,
+        focus: `下轮能量 +${n}（上限 ${expeditionResources.focus.maximum}）`,
+        echo: `回响 +${n}（下轮攻击后清空）`,
+        blessing: `祝福 +${n}（溢出治疗转为格挡）`,
+      };
       const scope =
         effect.target === "party"
           ? "全队："
@@ -652,7 +672,9 @@ export function effectsText(effects: readonly Effect[]): string {
             : "";
       return (
         scope +
-        text +
+        (!detailed && effect.kind in compact
+          ? compact[effect.kind as keyof typeof compact]
+          : text) +
         (effect.scale === "block"
           ? "，追加自身当前格挡等量伤害"
           : effect.scale === "poison"
@@ -661,16 +683,20 @@ export function effectsText(effects: readonly Effect[]): string {
               ? "，本回合每张已打出且未消耗的牌（含本牌）追加 2 伤害"
               : effect.scale === "marked"
                 ? "，目标易伤时追加 6 伤害"
-                : "")
+                : effect.scale === "heat"
+                  ? "，追加自身热量两倍伤害"
+                  : effect.scale === "turret"
+                    ? "，追加炮台数值两倍伤害"
+                    : "")
       );
     })
     .join("；");
 }
-export function cardText(instance: CardInstance): string {
+export function cardText(instance: CardInstance, detailed = true): string {
   const card = definition(instance);
   return (
-    effectsText(card.effects) +
-    (card.exhaust ? "。消耗：本场战斗不再抽到。" : "。")
+    effectsText(card.effects, detailed) +
+    (card.exhaust && detailed ? "。消耗：本场战斗不再抽到。" : "。")
   );
 }
 export const heroContent = [
@@ -736,6 +762,78 @@ export const heroContent = [
       "alchemy_corrode",
     ] as CardId[],
   },
+  {
+    name: "机巧师",
+    title: "炮台与过热",
+    maxHp: 43,
+    icon: "⚙",
+    deck: [
+      "machine_bolt",
+      "machine_bolt",
+      "machine_bolt",
+      "machine_plate",
+      "machine_plate",
+      "machine_plate",
+      "machine_turret",
+      "machine_vent",
+      "machine_overload",
+      "strike",
+    ] as CardId[],
+    rewards: [
+      "machine_sentry",
+      "machine_coolant",
+      "machine_salvo",
+      "machine_repair",
+    ] as CardId[],
+  },
+  {
+    name: "星象师",
+    title: "蓄能与延迟回响",
+    maxHp: 40,
+    icon: "✦",
+    deck: [
+      "star_ray",
+      "star_ray",
+      "star_ray",
+      "star_veil",
+      "star_veil",
+      "star_veil",
+      "star_echo",
+      "star_chart",
+      "star_eclipse",
+      "defend",
+    ] as CardId[],
+    rewards: [
+      "star_comet",
+      "star_reserve",
+      "star_orbit",
+      "star_moon",
+    ] as CardId[],
+  },
+  {
+    name: "祈愿师",
+    title: "祝福与溢出庇护",
+    maxHp: 45,
+    icon: "✚",
+    deck: [
+      "prayer_light",
+      "prayer_light",
+      "prayer_light",
+      "prayer_guard",
+      "prayer_guard",
+      "prayer_guard",
+      "prayer_mend",
+      "prayer_bless",
+      "prayer_beam",
+      "defend",
+    ] as CardId[],
+    rewards: [
+      "prayer_grace",
+      "prayer_smite",
+      "prayer_clean",
+      "prayer_renew",
+    ] as CardId[],
+  },
 ];
 export const cardPools: CardId[][] = [
   [
@@ -756,12 +854,15 @@ export const cardPools: CardId[][] = [
     ...Object.keys(cards).filter((id) => id.startsWith("ranger_")),
   ] as CardId[],
   Object.keys(cards).filter((id) => id.startsWith("alchemy_")) as CardId[],
+  Object.keys(cards).filter((id) => id.startsWith("machine_")) as CardId[],
+  Object.keys(cards).filter((id) => id.startsWith("star_")) as CardId[],
+  Object.keys(cards).filter((id) => id.startsWith("prayer_")) as CardId[],
 ];
 export const commonCards = (Object.keys(cards) as CardId[]).filter(
   (id) => !cardPools.some((pool) => pool.includes(id)),
 );
 export interface Intent {
-  kind: "attack" | "block" | "strength";
+  kind: "attack" | "block" | "strength" | "poison" | "weak" | "heal" | "thorns";
   amount: number;
   target: number | "all";
   hits?: number;

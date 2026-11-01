@@ -1,3 +1,5 @@
+import { effectTexture } from "./art";
+import { Emoji, emojiUrl } from "./Emoji";
 import { createPortal } from "react-dom";
 import { effectClip } from "./effect-viewport";
 import { useEffect, useRef, useState } from "react";
@@ -60,7 +62,7 @@ function Particle({
       end.x - start.x,
       end.y - start.y,
       enhanced ? 16 : 10,
-      event.units ? (enhanced ? 1.8 : 1.4) : 1,
+      (event.units ? (enhanced ? 1.8 : 1.4) : 1),
       enhanced,
     );
     element.style.setProperty("--effect-color", effect.color);
@@ -89,7 +91,7 @@ function Particle({
           a.x + a.width / 2 - b.x - b.width / 2,
           a.y + a.height / 2 - b.y - b.height / 2,
           enhanced ? 16 : 10,
-          event.units ? (enhanced ? 1.8 : 1.4) : 1,
+          (event.units ? (enhanced ? 1.8 : 1.4) : 1),
           enhanced,
           frames,
         );
@@ -121,7 +123,21 @@ function Particle({
       const fragment = document.createElement("span");
       fragment.dataset.fragment = event.id;
       fragment.className = `interaction-fragment effect-${effect.style}`;
-      fragment.textContent = effect.particles;
+      const icon = emojiUrl(effect.particles);
+      if (enhanced && index % 2 === 0) {
+        fragment.className += " interaction-texture";
+        fragment.style.maskImage = `url(${effectTexture(effect.style)})`;
+        fragment.style.backgroundColor = effect.color;
+      } else if (icon) {
+        const image = document.createElement("img");
+        image.className = "shared-emoji";
+        image.src = icon;
+        image.alt = effect.particles;
+        image.onerror = () => {
+          fragment.textContent = effect.particles;
+        };
+        fragment.append(image);
+      } else fragment.textContent = effect.particles;
       fragment.style.left = `${end.x}px`;
       fragment.style.top = `${end.y}px`;
       element.parentElement?.appendChild(fragment);
@@ -151,7 +167,7 @@ function Particle({
       data-effect-style={interactionCatalogue[event.kind].style}
       aria-hidden="true"
     >
-      {interactionCatalogue[event.kind].emoji}
+      <Emoji text={interactionCatalogue[event.kind].emoji} />
     </div>
   );
 }

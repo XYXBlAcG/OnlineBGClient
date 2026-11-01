@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ExpeditionState, Target } from "./types";
-import type { CardId } from "./content";
+import { heroContent, type CardId } from "./content";
+import { chapters } from "./chapters";
 import type { RelicId, StoryEventId, PotionId } from "./world";
 export const expeditionOptionsSchema = z.object({
   difficulty: z.enum(["story", "standard", "challenge"]).default("standard"),
@@ -18,7 +19,11 @@ const targetSchema = z.object({
 export const expeditionMoveSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("profession"),
-    profession: z.number().int().min(0).max(2),
+    profession: z
+      .number()
+      .int()
+      .min(0)
+      .max(heroContent.length - 1),
   }),
   z.object({ type: z.literal("vote"), choice: z.string().min(1).max(40) }),
   z.object({ type: z.literal("tie"), choice: z.string().min(1).max(40) }),
@@ -35,6 +40,11 @@ export const expeditionMoveSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("remove"), instance: z.string().max(40) }),
   z.object({ type: z.literal("rest") }),
   z.object({ type: z.literal("done") }),
+  z.object({ type: z.literal("reroll") }),
+  z.object({
+    type: z.literal("advance"),
+    choice: z.enum(["vitality", "forge", "supplies"]),
+  }),
   z.object({
     type: z.literal("potion"),
     index: z.number().int().min(0).max(2),
@@ -59,8 +69,16 @@ export const expeditionMapSchema = z
       .array(
         z.object({
           id: z.string().min(1).max(40),
-          floor: z.number().int().min(0).max(11),
-          lane: z.number().int().min(0).max(5),
+          floor: z
+            .number()
+            .int()
+            .min(0)
+            .max(Math.max(...chapters.map((chapter) => chapter.depth)) - 1),
+          lane: z
+            .number()
+            .int()
+            .min(0)
+            .max(Math.max(...chapters.map((chapter) => chapter.width)) - 1),
           kind: z.enum([
             "battle",
             "elite",
@@ -70,13 +88,16 @@ export const expeditionMapSchema = z
             "camp",
             "treasure",
           ]),
-          next: z.array(z.string().max(40)).max(6),
+          next: z
+            .array(z.string().max(40))
+            .max(Math.max(...chapters.map((chapter) => chapter.width))),
         }),
       )
       .min(1)
-      .max(6),
+      .max(Math.max(...chapters.map((chapter) => chapter.width))),
   )
-  .length(12);
+  .min(12)
+  .max(Math.max(...chapters.map((chapter) => chapter.depth)));
 export type MapNode = z.infer<typeof expeditionMapSchema>[number][number];
 export type ShopItem = { id: string; price: number; sold: boolean } & (
   | { kind: "card"; card: CardId }
@@ -86,10 +107,17 @@ export type ShopItem = { id: string; price: number; sold: boolean } & (
 export interface ExpeditionRun {
   rulesVersion: 1;
   contentVersion: 1;
+  campaignVersion: 1 | 2;
+  chapter: number;
+  history: { chapter: number; path: string[] }[];
+  luck: number[];
+  rerolls: number[];
+  eventRerolls: number;
   runId: string;
   seed: string;
   difficulty: ExpeditionOptions["difficulty"];
   phase:
+    | "waystation"
     | "profession"
     | "map"
     | "battle"
@@ -110,6 +138,14 @@ export interface ExpeditionRun {
   path: string[];
   professions: Partial<Record<number, number>>;
   votes: Partial<Record<number, string>>;
+  lastBallot?: {
+    sequence: number;
+    phase: ExpeditionRun["votePhase"];
+    choice: string;
+    label: string;
+    votes: Partial<Record<number, string>>;
+    options: Record<string, string>;
+  };
   tieChoices: string[];
   votePhase: "map" | "event" | "treasure" | "holder";
   nodeReady: boolean[];

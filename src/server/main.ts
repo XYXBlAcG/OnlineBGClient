@@ -1,10 +1,12 @@
+import { applyCors } from "./cors";
+import { lanAddresses } from "./lan-addresses";
 import { VoiceAuthority, LiveKitMedia } from "./voice";
 import { VoiceHttp } from "./voice-http";
 import { attachmentSchema } from "../domain/attachments";
 import { AttachmentStore } from "./attachments";
 import { MediaHttp } from "./media-http";
 import { SnapshotStream } from "../domain/sync";
-import { availableParallelism } from "node:os";
+import { availableParallelism, networkInterfaces } from "node:os";
 import { ComputePool, SearchCoordinator } from "../domain/compute";
 import { computeThreads } from "../domain/performance";
 import { mkdirSync } from "node:fs";
@@ -49,16 +51,14 @@ const voiceSweep = setInterval(() => {
 voiceSweep.unref();
 const dataRoot = resolve(process.env.DATA_ROOT || ".data");
 mkdirSync(dataRoot, { recursive: true });
-const media = new MediaHttp(
-  gateway,
-  new AttachmentStore(resolve(dataRoot, "attachments")),
-);
+const media = new MediaHttp(gateway,new AttachmentStore(resolve(dataRoot,"attachments")));
 const mediaCleanup = setInterval(() => {
   void media.store
     .prune(new Set(gateway.rooms.keys()))
     .catch((error) => console.error("图片缓存清理失败", error));
 }, 60000);
 mediaCleanup.unref();
+
 const store = new RoomStore(resolve(dataRoot, "rooms.sqlite"));
 for (const [id, archive] of store.loadRuns()) gateway.runs.set(id, archive);
 for (const room of store.load()) {
@@ -74,29 +74,8 @@ const mime: Record<string, string> = {
   ".png": "image/png",
   ".json": "application/json",
 };
-const desktopOrigins = new Set([
-  "tauri://localhost",
-  "http://tauri.localhost",
-  "https://tauri.localhost",
-  "http://localhost:1420",
-  "http://127.0.0.1:1420",
-]);
 const server = createServer(async (request, response) => {
-  const origin = request.headers.origin;
-  if (origin && desktopOrigins.has(origin)) {
-    response.setHeader("Access-Control-Allow-Origin", origin);
-    response.setHeader("Vary", "Origin");
-    response.setHeader(
-      "Access-Control-Allow-Headers",
-      "Authorization, Content-Type",
-    );
-    response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  }
-  if (request.method === "OPTIONS") {
-    response.writeHead(origin && desktopOrigins.has(origin) ? 204 : 403);
-    response.end();
-    return;
-  }
+  if (applyCors(request, response)) return;
   if (request.url === "/health") {
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(
@@ -214,7 +193,8 @@ const publish = (
     if (session.room !== roomId) continue;
     if (
       room.host?.token !== session.token &&
-      !room.seats.some((seat) => seat.token === session.token)
+      !room.seats.some((seat) => seat.token === session.token) &&
+      !room.spectators.some((member) => member.token === session.token)
     ) {
       send(socket, {
         type: "error",
@@ -302,6 +282,13 @@ sockets.on("connection", (socket) => {
               send(other, result.response);
           return;
         }
+        if (input.type === "party" && result.response?.type === "interaction") {
+          for (const [other, session] of sessions)
+            if (session.room === result.session.room)
+              send(other, result.response);
+          publish(result.session.room);
+          return;
+        }
         if (input.type === "snapshot") {
           const room = gateway.rooms.get(result.session.room)!;
           send(
@@ -387,7 +374,8 @@ setInterval(() => {
     }
   }
   for (const room of gateway.rooms.values()) {
-    if (room.commitIfDue() || room.resolveIfDue()) publish(room.id);
+    const gameChanged = room.commitIfDue() || room.resolveIfDue();
+    if (room.tickParty() || gameChanged) publish(room.id);
     if (pending.has(room.id)) continue;
     const request = room.aiRequest();
     if (!request || failed.get(room.id) === request.version) continue;
@@ -435,6 +423,6 @@ server.on("close", () => {
 const port = Number(process.env.PORT || 8787);
 server.listen(port, process.env.HOST || "127.0.0.1", () =>
   console.log(
-    `ROOM_READY ${JSON.stringify({ port: (server.address() as import("node:net").AddressInfo).port })}`,
+    `ROOM_READY ${JSON.stringify({ port: (server.address() as import("node:net").AddressInfo).port, addresses: lanAddresses((server.address() as import("node:net").AddressInfo).port, networkInterfaces()) })}`,
   ),
 );

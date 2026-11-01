@@ -1,0 +1,394 @@
+.mobile-shell .room-navigation {
+  margin: 0;
+  gap: 6px;
+}
+.mobile-shell .room-navigation .segmented {
+  padding: 3px;
+}
+.mobile-shell .room-navigation .segmented button {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.mobile-shell .game-status-row {
+  min-height: 22px;
+  padding: 0 4px;
+}
+.mobile-shell .original-game {
+  min-width: 0;
+}
+.mobile-shell
+  .original-game:is(
+    [data-game="uno"],
+    [data-game="ddz"],
+    [data-game="sgs"],
+    [data-game="dy"]
+  )
+  button:not(.game-avatar, .card-detail-button, .hero-detail-button) {
+  touch-action: manipulation;
+}
+.mobile-shell .original-game[data-game="uno"] [data-table-region="players"] {
+  min-height: 0;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mobile-shell .original-game[data-game="uno"] .uno-list {
+  overflow-x: auto;
+  padding-block: 12px;
+}
+.mobile-shell .original-game[data-game="ddz"] .ddz-poker-list {
+  overflow-x: auto;
+  padding-block: 12px;
+}
+.mobile-shell .original-game[data-game="sgs"] {
+  container-type: inline-size;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hero {
+  width: 104px;
+  min-width: 104px;
+  height: 154px;
+  flex: none;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hero > div:nth-child(2) {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hero-head {
+  width: 100%;
+  font-size: 28px;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-card {
+  width: 82px;
+  height: 116px;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-card-list {
+  height: 142px;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-card > div:nth-child(2) {
+  font-size: 13px;
+  line-height: 1.4;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-public-panel {
+  overflow: auto;
+  min-height: 160px;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hand-panel {
+  flex: none;
+  gap: 8px;
+  overflow-x: auto;
+  padding-block: 8px;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hand-panel > .mr-2 {
+  margin-right: 4px;
+}
+.mobile-shell
+  .original-game:is([data-game="fxq"], [data-game="tq"])
+  .map-viewport {
+  min-height: 280px;
+  flex: 1;
+}
+.mobile-shell
+  .original-game:is([data-game="fxq"], [data-game="tq"])
+  .map-tools
+  button {
+  min-height: 36px;
+}
+.mobile-shell .original-game[data-game="ktd"] .catan-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+.mobile-shell .original-game[data-game="ktd"] .catan-actions button {
+  min-height: 40px;
+  font-size: 13px;
+}
+.mobile-shell .original-game[data-game="ktd"] .catan-hand-panel > .mb-1 {
+  width: 100%;
+  font-size: 13px;
+}
+.mobile-shell .original-game[data-game="ccbs"] {
+  --ccbs-scale: 0.85;
+}
+.mobile-shell .original-game[data-game="ccbs"] .table-collection {
+  max-height: none;
+}
+.mobile-shell .original-game[data-game="dy"] .poison-pots {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 180px;
+}
+.mobile-shell .original-game[data-game="graphwar"] .gw-toolbar {
+  font-size: 13px;
+}
+.mobile-shell .original-game[data-game="graphwar"] .gw-input-row input {
+  font-size: 16px;
+  min-height: 44px;
+}
+.mobile-shell .original-game[data-game="dominion"] .dominion-supply-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 185px;
+}
+.mobile-shell .original-game[data-game="dominion"] .dominion-card-text {
+  font-size: 12px;
+  -webkit-line-clamp: 4;
+}
+.mobile-shell
+  .original-game[data-game="dominion"]
+  .dominion-hand
+  .dominion-card {
+  flex-basis: 118px;
+}
+.mobile-shell .original-game[data-game="dominion"] .dominion-actions button {
+  font-size: 13px;
+  min-height: 40px;
+}
+.mobile-shell
+  .original-game[data-game="expedition"]
+  .exp-table-controls
+  button {
+  font-size: 13px;
+  min-height: 40px;
+}
+.mobile-shell .original-game[data-game="expedition"] .exp-table-hand .exp-card {
+  flex-basis: 140px;
+}
+.mobile-shell .original-game[data-game="scmj"] {
+  --mobile-mahjong-tile: 38px;
+}
+.mobile-shell .original-game[data-game="scmj"] .scmj-hand {
+  justify-content: flex-start;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding: 8px;
+  padding: 14px 8px 8px;
+  min-height: 88px;
+}
+.mobile-shell .original-game[data-game="scmj"] button.scmj-tile {
+  width: var(--mobile-mahjong-tile);
+  scroll-snap-align: start;
+}
+.mobile-shell .original-game[data-game="scmj"] .scmj-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--surface);
+  padding: 6px;
+}
+.mobile-shell .original-game[data-game="scmj"] .scmj-actions button {
+  min-height: 42px;
+  font-size: 14px;
+}
+.mobile-shell .original-game[data-game="scmj"] .scmj-footer {
+  font-size: 12px;
+}
+@media (orientation: portrait) {
+  .mobile-shell .original-game[data-game="scmj"] .scmj-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto minmax(130px, 1fr) auto;
+    grid-template-areas: "west north east" "center center center" "own own own";
+    padding: 6px;
+    gap: 8px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-seat:not(.scmj-south) {
+    justify-content: flex-start;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-hidden-hand {
+    display: none;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-player {
+    font-size: 12px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-seat small {
+    font-size: 11px;
+  }
+  .mobile-shell
+    .original-game[data-game="scmj"]
+    .scmj-seat:not(.scmj-south)
+    .scmj-river {
+    max-height: 96px;
+    overflow: auto;
+    align-content: flex-start;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-river > span {
+    width: 27px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-meld > span {
+    width: 23px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-center {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 10px;
+    font-size: 13px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-center > strong {
+    flex-basis: 100%;
+    font-size: 15px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-last {
+    width: 44px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-wall {
+    display: none;
+  }
+}
+@media (orientation: landscape) {
+  .mobile-shell
+    .original-game:is([data-game="fxq"], [data-game="tq"])
+    .map-viewport {
+    min-height: 0;
+  }
+  .mobile-shell .original-game[data-game="dominion"] .dominion-supply-grid {
+    grid-template-columns: repeat(5, minmax(132px, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: 160px;
+    max-height: none;
+    overflow: auto;
+  }
+  .mobile-shell .original-game[data-game="dominion"] .dominion-card-symbol {
+    display: block;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-own {
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-river > span {
+    width: 26px;
+  }
+  .mobile-shell .original-game[data-game="sgs"] .sgs-public-panel {
+    min-height: 100px;
+  }
+}
+.mobile-shell .original-game[data-game="sgs"] .hero-detail-button {
+  position: static;
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  margin-top: 3px;
+  padding: 4px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--field);
+}
+.mobile-shell .original-game[data-game="sgs"] .hero-detail-button::after {
+  content: "技能";
+  margin-left: 4px;
+}
+.mobile-shell .original-game[data-game="sgs"] .card-detail-button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+}
+
+.mobile-shell .original-game[data-game="ccbs"] .table-public {
+  overflow-x: auto;
+}
+.mobile-shell .original-game[data-game="ccbs"] .table-public > div {
+  min-width: max-content;
+}
+.mobile-shell .original-game[data-game="ccbs"] .ccbs-circle {
+  min-width: 38px;
+  min-height: 38px;
+}
+.mobile-shell .original-game[data-game="scmj"] .scmj-heading {
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.mobile-shell .original-game[data-game="scmj"] .scmj-heading button {
+  font-size: 13px;
+  min-height: 38px;
+}
+
+.mobile-shell .room-heading > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-shell .room-heading > small {
+  flex: none;
+}
+.mobile-shell .scmj-hidden-hand {
+  display: none;
+}
+.mobile-shell .scmj-player strong {
+  overflow-wrap: anywhere;
+}
+@media (orientation: landscape) {
+  .mobile-shell .original-game[data-game="scmj"] .scmj-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: "west north east" "center center center" "own own own";
+    padding: 4px 8px;
+    gap: 4px;
+    overflow: auto;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-north {
+    max-width: none;
+    justify-self: stretch;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-seat {
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 3px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-player {
+    flex-direction: row;
+    gap: 6px;
+    font-size: 12px;
+    text-align: left;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-player .game-avatar {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-seat small {
+    font-size: 11px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-seat .scmj-river {
+    max-height: 56px;
+    overflow: auto;
+    align-content: flex-start;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-center {
+    grid-area: center;
+    max-width: 100%;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-center .scmj-wall {
+    display: none;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-own {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    grid-template-areas: "south actions" "hand hand" "footer footer";
+    gap: 3px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-south {
+    grid-area: south;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-actions {
+    grid-area: actions;
+    position: static;
+    align-self: start;
+    flex-wrap: wrap;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-actions button {
+    white-space: nowrap;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-hand {
+    grid-area: hand;
+    min-height: 78px;
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-footer {
+    grid-area: footer;
+    font-size: 11px;
+  }
+}

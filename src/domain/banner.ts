@@ -1,6 +1,6 @@
 import { maxRoomSeats } from "./catalogue";
 import { z } from "zod";
-import { interactionCatalogue, interactionSchema } from "./social";
+import { freeInteractionCatalogue, interactionSchema } from "./social";
 export const bannerPolicySchema = z.object({
   mode: z.enum(["host", "selected", "all", "off"]),
   members: z.array(z.string().min(1).max(100)).max(maxRoomSeats),
@@ -61,11 +61,11 @@ export function bannerLifetime(banner: Banner): number {
       : bannerDuration;
 }
 const effect = (input: string) => {
-  const entry = Object.entries(interactionCatalogue).find(([key, value]) =>
+  const entry = Object.entries(freeInteractionCatalogue).find(([key, value]) =>
     [key, value.emoji, value.name].includes(input),
   );
   if (!entry) throw new Error("请选择支持的表情，如 /effect 🤣");
-  return entry[0] as keyof typeof interactionCatalogue;
+  return entry[0] as keyof typeof freeInteractionCatalogue;
 };
 const narrativeSchema = z.object({
   kind: z.literal("emote"),
@@ -132,7 +132,7 @@ export const bannerCommands: readonly ChatCommandDefinition[] = [
       return {
         kind: "effect",
         effect: kind,
-        text: interactionCatalogue[kind].name,
+        text: freeInteractionCatalogue[kind].name,
       };
     },
   },

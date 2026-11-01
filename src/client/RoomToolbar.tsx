@@ -1,5 +1,8 @@
+import { PartyRuntime } from "./party/PartyRuntime";
+import { RoomParty } from "./RoomParty";
 import { roomSurface } from "./room-surface";
-import { useState } from "react";
+import { useReducer } from "react";
+import { roomSurfaceTransition } from "./party/navigation";
 import type { Command, Snapshot } from "../domain/protocol";
 import { gameCatalogue } from "../domain/catalogue";
 import { RoomSetup } from "./RoomSetup";
@@ -50,7 +53,8 @@ export function RoomToolbar({
       | Omit<Extract<Command, { type: "tempo" }>, "token">
       | Omit<Extract<Command, { type: "banner-policy" }>, "token">
       | Omit<Extract<Command, { type: "game" }>, "token">
-      | Omit<Extract<Command, { type: "ai-run" }>, "token">,
+      | Omit<Extract<Command, { type: "ai-run" }>, "token">
+      | Omit<Extract<Command, { type: "party" }>, "token">,
   ) => void;
   onError: (message: string) => void;
   act: (action: Action) => void;
@@ -60,7 +64,17 @@ export function RoomToolbar({
   guideShown: boolean;
   onGuide: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [surface, dispatch] = useReducer(roomSurfaceTransition, null);
+  const open = surface === "menu";
+  const setOpen = (value: boolean) =>
+    dispatch(value ? { type: "open", surface: "menu" } : { type: "close" });
+  const observer =
+    snapshot.party.enabled &&
+    (snapshot.finished ||
+      (snapshot.playing &&
+        snapshot.party.observers.includes(
+          snapshot.partyActor ?? snapshot.actor,
+        )));
   const controls = (
     <>
       {mobile && <ThemeControl value={preferences.theme} onChange={onTheme} />}
@@ -151,108 +165,145 @@ export function RoomToolbar({
     </>
   );
   return (
-    <div
-      className="room-toolbar"
-      hidden={focused}
-      role="region"
-      aria-label={roomSurface.region}
-      data-room-id={snapshot.room}
-    >
-      <div className="room-heading">
-        <strong aria-label={roomSurface.game}>
-          {gameCatalogue[snapshot.kind].name}
-        </strong>
-        <small>
-          {snapshot.seats.filter((seat) => seat.name).length}/
-          {snapshot.seats.length} 人
-          {latency !== undefined && network && (
-            <>
-              {" "}
-              ·{" "}
-              <output
-                className="network-latency"
-                aria-label={roomSurface.latency}
-              >
-                {latency} ms
-              </output>
-            </>
-          )}
-        </small>
-        {!mobile && <small>{snapshot.room}</small>}
-      </div>
-      <div className="room-primary-actions">
-        {onEnd &&
-          snapshot.canManage &&
-          snapshot.playing &&
-          !snapshot.finished && (
-            <button data-room-action="end" onClick={onEnd}>
-              结束对局
-            </button>
-          )}
-        {snapshot.playing && (
-          <button aria-pressed={focused} onClick={onFocus}>
-            {focused ? "恢复界面" : mobile ? "沉浸牌桌" : "专注模式"}
-          </button>
-        )}
-        {!mobile && snapshot.canManage && (
-          <RoomSetup
-            registry={registry}
-            binding={preferences.bindings["room.setup"] ?? ""}
-            snapshot={snapshot}
-            onError={onError}
-            onApply={(setup) => send({ type: "game", setup })}
-          />
-        )}
-        {!mobile &&
-          snapshot.canManage &&
-          snapshot.state &&
-          snapshot.config.ai.length > 0 && (
+    <>
+      <PartyRuntime
+        snapshot={snapshot}
+        preferences={preferences}
+        mobile={mobile}
+      />
+      <RoomParty
+        open={surface === "party"}
+        onOpenChange={(value) =>
+          dispatch(
+            value ? { type: "open", surface: "party" } : { type: "close" },
+          )
+        }
+        interactionsEnabled={preferences.interactions}
+        snapshot={snapshot}
+        observer={observer}
+        onAction={(id, action) => {
+          if (action.type === "buy" || action.type === "buy-plugin")
+            dispatch({ type: "sent" });
+          send({ type: "party", id, action });
+        }}
+      />
+      <div
+        className="room-toolbar"
+        hidden={focused}
+        role="region"
+        aria-label={roomSurface.region}
+        data-room-id={snapshot.room}
+      >
+        <div className="room-heading">
+          <strong aria-label={roomSurface.game}>
+            {gameCatalogue[snapshot.kind].name}
+          </strong>
+          <small>
+            {snapshot.seats.filter((seat) => seat.name).length}/
+            {snapshot.seats.length} 人
+            {latency !== undefined && network && (
+              <>
+                {" "}
+                ·{" "}
+                <output
+                  className="network-latency"
+                  aria-label={roomSurface.latency}
+                >
+                  {latency} ms
+                </output>
+              </>
+            )}
+          </small>
+          {!mobile && <small>{snapshot.room}</small>}
+        </div>
+        <div className="room-primary-actions">
+          {(snapshot.canManage || snapshot.party.enabled) && (
             <button
-              onClick={() =>
-                send({ type: "ai-run", enabled: snapshot.aiPaused })
-              }
+              data-room-action="party"
+              onClick={() => dispatch({ type: "open", surface: "party" })}
             >
-              {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
+              {observer
+                ? snapshot.finished
+                  ? "颁奖"
+                  : "旁观互动"
+                : "房间派对"}
             </button>
           )}
-        {snapshot.actor >= 0 && (
-          <GameCommands
-            showTrigger={!mobile}
-            snapshot={snapshot}
-            act={act}
-            registry={registry}
-            bindings={preferences.bindings}
-            pending={pending}
-          />
-        )}{" "}
-        {network && (
-          <>
-            {!mobile && (
-              <button onClick={invite}>
-                {inviteCopied ? "已复制邀请" : "复制邀请"}
+          {onEnd &&
+            snapshot.canManage &&
+            snapshot.playing &&
+            !snapshot.finished && (
+              <button data-room-action="end" onClick={onEnd}>
+                结束对局
               </button>
             )}
-            <button onClick={onInvite}>{mobile ? "邀请" : "邀请二维码"}</button>
-          </>
-        )}
-        <button aria-expanded={open} onClick={() => setOpen(true)}>
-          房间菜单
-        </button>
-      </div>
-
-      <Panel
-        className={
-          mobile ? "room-menu-panel mobile-room-menu" : "room-menu-panel"
-        }
-        open={open}
-        onOpenChange={setOpen}
-        title="房间菜单"
-      >
-        <div className="room-menu-controls">
-          {controls}
-          <small className="muted">房间 · {snapshot.room}</small>
+          {snapshot.playing && (
+            <button aria-pressed={focused} onClick={onFocus}>
+              {focused ? "恢复界面" : mobile ? "沉浸牌桌" : "专注模式"}
+            </button>
+          )}
+          {!mobile && snapshot.canManage && (
+            <RoomSetup
+              registry={registry}
+              binding={preferences.bindings["room.setup"] ?? ""}
+              snapshot={snapshot}
+              onError={onError}
+              onApply={(setup) => send({ type: "game", setup })}
+            />
+          )}
+          {!mobile &&
+            snapshot.canManage &&
+            snapshot.state &&
+            snapshot.config.ai.length > 0 && (
+              <button
+                onClick={() =>
+                  send({ type: "ai-run", enabled: snapshot.aiPaused })
+                }
+              >
+                {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
+              </button>
+            )}
+          {snapshot.actor >= 0 && (
+            <GameCommands
+              showTrigger={!mobile}
+              snapshot={snapshot}
+              act={act}
+              registry={registry}
+              bindings={preferences.bindings}
+              pending={pending}
+            />
+          )}{" "}
+          {network && (
+            <>
+              {!mobile && (
+                <button onClick={invite}>
+                  {inviteCopied ? "已复制邀请" : "复制邀请"}
+                </button>
+              )}
+              <button onClick={onInvite}>
+                {mobile ? "邀请" : "邀请二维码"}
+              </button>
+            </>
+          )}
+          <button aria-expanded={open} onClick={() => setOpen(true)}>
+            房间菜单
+          </button>
         </div>
-      </Panel>
-    </div>
+
+        <Panel
+          className={
+            mobile ? "room-menu-panel mobile-room-menu" : "room-menu-panel"
+          }
+          open={open}
+          onOpenChange={setOpen}
+          title="房间菜单"
+        >
+          <div className="room-menu-controls">
+            {controls}
+            <small className="muted">房间 · {snapshot.room}</small>
+          </div>
+        </Panel>
+      </div>
+    </>
   );
 }

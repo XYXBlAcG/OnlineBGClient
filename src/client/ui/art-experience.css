@@ -1,0 +1,141 @@
+.exp-sprite {
+  display: block;
+  height: 100%;
+  margin: auto;
+  background-repeat: no-repeat;
+  background-size: 400% 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 7px 3px #17243228);
+}
+:root[data-game-motion="enhanced"] .exp-sprite {
+  animation: exp-sprite-idle 1.1s steps(4) infinite;
+}
+@keyframes exp-sprite-idle {
+  to {
+    background-position-x: 133.333333%;
+  }
+}
+.exp-figure {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.exp-figure::before {
+  content: "";
+  position: absolute;
+  inset: auto 16% -1px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #27374d24, transparent 70%);
+}
+.game-motion-back {
+  background-size: 100% 100%;
+  background-position: center;
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px #ffffff90;
+}
+.game-motion-back > * {
+  visibility: hidden;
+}
+.game-motion-flipper {
+  filter: drop-shadow(0 8px 7px #19283f38);
+}
+.game-motion-front::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    #ffffff88 48%,
+    transparent 66%
+  );
+  pointer-events: none;
+  opacity: 0;
+  animation: card-sheen 600ms ease-out;
+}
+@keyframes card-sheen {
+  25% {
+    opacity: 0.5;
+    transform: translateX(-70%);
+  }
+  80% {
+    opacity: 0.25;
+    transform: translateX(70%);
+  }
+}
+.interaction-texture {
+  display: block;
+  width: 46px;
+  height: 46px;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+:root[data-game-motion="enhanced"] .expedition-table .exp-intent {
+  box-shadow: 0 2px 12px #334b7110;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+:root[data-game-motion="enhanced"]
+  .expedition-table
+  .exp-unit.is-targeted
+  .exp-intent {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 5px 18px #3478e51c;
+}
+.exp-crystal {
+  display: block;
+  height: 90%;
+  aspect-ratio: 1;
+  background-color: #73bfe9;
+  background-size: cover;
+  background-blend-mode: soft-light;
+  clip-path: polygon(50% 0, 80% 25%, 100% 60%, 60% 100%, 20% 90%, 0 42%);
+}
+.exp-crystal::after {
+  content: "";
+  display: block;
+  height: 100%;
+  background:
+    linear-gradient(63deg, transparent 35%, #ffffff60 36%, transparent 65%),
+    linear-gradient(132deg, transparent 40%, #6473d6a0 41%);
+}
+:root[data-game-motion="enhanced"] .exp-crystal {
+  animation: exp-crystal-float 2.8s ease-in-out infinite alternate;
+}
+@keyframes exp-crystal-float {
+  to {
+    transform: translateY(-5px) rotate(5deg);
+    filter: brightness(1.13);
+  }
+}
+.exp-route-node b:has(.exp-route-chest) {
+  border: 0;
+  background: transparent;
+}
+.exp-route-chest {
+  display: block;
+  width: 30px;
+  height: 30px;
+  background: url(/art/chest.png) 100% 0 / 300% 100%;
+  image-rendering: pixelated;
+}
+:root[data-game-motion="enhanced"]
+  .exp-route-node[data-available="true"]
+  .exp-route-chest {
+  animation: exp-chest-open 700ms steps(2) both;
+}
+@keyframes exp-chest-open {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: 100%;
+  }
+}

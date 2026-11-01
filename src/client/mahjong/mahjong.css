@@ -446,8 +446,8 @@
     padding: 4px 12px;
   }
   .scmj-actions button {
-    min-height: 30px !important;
-    padding: 5px 10px !important;
+    min-height: 30px;
+    padding: 5px 10px;
   }
 
   .mobile-shell .game-area:has(.scmj-table) {

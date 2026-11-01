@@ -184,7 +184,11 @@ it("retains the game library across mode changes and creates with settings-owned
     onJoin: () => {},
     preferences: {
       ...defaultPreferences,
-      network: { temporary: false, service: "https://rooms.example.test" },
+      network: {
+        ...defaultPreferences.network,
+        temporary: false,
+        service: "https://rooms.example.test",
+      },
     },
     onPreferencesChange: () => {},
   };
@@ -222,6 +226,7 @@ it("retains the game library across mode changes and creates with settings-owned
     "我",
     "network",
     "https://rooms.example.test",
+    false,
     false,
     false,
   );

@@ -8,7 +8,7 @@ import {
 } from "../../domain/attachments";
 import type { Snapshot } from "../../domain/protocol";
 import { bannerCommands } from "../../domain/banner";
-import { interactionCatalogue } from "../../domain/social";
+import { freeInteractionCatalogue } from "../../domain/social";
 import { phraseGroups } from "../../domain/phrases";
 import { PhraseMenu } from "../PhraseMenu";
 import type { Preferences } from "../preferences";
@@ -24,10 +24,10 @@ export function ChatComposer({
   onBannerDisplay,
   onImageQuality,
 }: {
-  snapshot: Snapshot;
+  snapshot?: Snapshot;
   preferences: Preferences;
-  onText: (text: string) => void;
-  onImage?: (image: Attachment) => void;
+  onText: (text: string) => void | Promise<void>;
+  onImage?: (image: Attachment) => void | Promise<void>;
   session?: MediaSession;
   onBannerDisplay?: (enabled: boolean) => void;
   onImageQuality?: (quality: ImageQuality) => void;
@@ -36,7 +36,9 @@ export function ChatComposer({
     [help, setHelp] = useState(false);
   const [prepared, setPrepared] = useState<File | null>(null),
     [preview, setPreview] = useState("");
-  const [phase, setPhase] = useState<"idle" | "compress" | "upload">("idle"),
+  const [phase, setPhase] = useState<"idle" | "compress" | "upload" | "send">(
+      "idle",
+    ),
     [progress, setProgress] = useState(0),
     [error, setError] = useState("");
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -108,7 +110,7 @@ export function ChatComposer({
       try {
         const image = await uploadImage(session, prepared, controller.signal);
         if (!controller.signal.aborted) {
-          onImage(image);
+          await onImage(image);
           setPrepared(null);
           original.current = undefined;
         }
@@ -128,20 +130,26 @@ export function ChatComposer({
       return;
     }
     if (!text.trim()) return;
-    if (text.trim() === "/help") {
+    if (snapshot && text.trim() === "/help") {
       setHelp(true);
       setText("");
       return;
     }
     try {
-      onText(withDefaultBannerColor(text.trim(), preferences.bannerColor));
+      setPhase("send");
+      await onText(
+        withDefaultBannerColor(text.trim(), preferences.bannerColor),
+      );
       setError("");
       setText("");
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setPhase("idle");
     }
   };
   const allowed =
+    !!snapshot &&
     snapshot.bannerPolicy.mode !== "off" &&
     (snapshot.canManage ||
       snapshot.bannerPolicy.mode === "all" ||
@@ -163,8 +171,18 @@ export function ChatComposer({
               sideOffset={8}
             >
               <PhraseMenu
-                groups={phraseGroups(snapshot.kind, preferences.phraseGroups)}
-                onSend={onText}
+                groups={
+                  snapshot
+                    ? phraseGroups(snapshot.kind, preferences.phraseGroups)
+                    : preferences.phraseGroups
+                }
+                onSend={(value) => {
+                  void Promise.resolve(onText(value)).catch((error) =>
+                    setError(
+                      error instanceof Error ? error.message : String(error),
+                    ),
+                  );
+                }}
               />
             </Popover.Content>
           </Popover.Portal>
@@ -191,9 +209,11 @@ export function ChatComposer({
             />
           </>
         )}
-        <button type="button" onClick={() => setHelp(true)}>
-          指令
-        </button>
+        {snapshot && (
+          <button type="button" onClick={() => setHelp(true)}>
+            指令
+          </button>
+        )}
         {onBannerDisplay && (
           <Popover.Root>
             <Popover.Trigger asChild>
@@ -234,7 +254,7 @@ export function ChatComposer({
           </Select>
         </label>
       )}
-      {(phase !== "idle" || prepared) && (
+      {((phase !== "idle" && phase !== "send") || prepared) && (
         <div className="chat-upload-preview">
           {preview && <img src={preview} alt="待发送图片" />}
           <span role="status">
@@ -266,7 +286,7 @@ export function ChatComposer({
           {error}
         </p>
       )}
-      {text.startsWith("/") && !prepared && (
+      {snapshot && text.startsWith("/") && !prepared && (
         <div className="chat-command-hints">
           {!allowed &&
             bannerCommands.find(
@@ -316,7 +336,7 @@ export function ChatComposer({
           type="submit"
           disabled={phase !== "idle" || (!prepared && !text.trim())}
         >
-          发送
+          {phase === "send" ? "发送中…" : "发送"}
         </button>
       </form>
       <Panel open={help} onOpenChange={setHelp} title="聊天指令">
@@ -336,7 +356,7 @@ export function ChatComposer({
           ))}
           <h3>全屏表情</h3>
           <div className="effect-picker">
-            {Object.entries(interactionCatalogue).map(([key, effect]) => (
+            {Object.entries(freeInteractionCatalogue).map(([key, effect]) => (
               <button
                 type="button"
                 key={key}

@@ -4,6 +4,10 @@ import { catanMoveSchema, type CatanView } from "./catan-actions";
 type State = { kind: "ktd"; view: CatanView };
 type Position = [number[], number];
 export const catanResourceNames = ["木材", "砖块", "羊毛", "谷物", "矿石"];
+export function catanVictoryPoints(view:CatanView,actor:number):number {
+ const player=view.playerData[actor];
+ return player.houses.length+player.houses.filter(id=>id&1).length+player.cards[4]+(view.bankData.longestRoadPos===actor+1?2:0)+(view.bankData.maxRobberCountPos===actor+1?2:0);
+}
 export class CatanRules {
   readonly original;
   readonly maps;

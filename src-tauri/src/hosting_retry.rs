@@ -1,6 +1,9 @@
 pub struct StartupRetry;
 impl StartupRetry {
     pub const ATTEMPTS: usize = 3;
+    pub fn use_proxy(attempt: usize, configured: bool) -> bool {
+        configured && attempt > 1
+    }
     pub fn run<T>(
         mut active: impl FnMut() -> Result<(), String>,
         mut prepare: impl FnMut(usize) -> Result<T, String>,
@@ -12,6 +15,7 @@ impl StartupRetry {
             match prepare(attempt) {
                 Ok(value) => return Ok(value),
                 Err(error) => {
+                    log::warn!(target:"onlinebg::hosting", "attempt={attempt} failed: {error}");
                     active()?;
                     if attempt == Self::ATTEMPTS {
                         return Err(format!("公网入口创建失败，已尝试 {} 次。请重新点击“一键创建公网房间”。原因：{error}", Self::ATTEMPTS));
@@ -27,6 +31,15 @@ mod tests {
     use super::*;
     use std::cell::Cell;
 
+    #[test]
+    fn proxy_follows_a_failed_direct_attempt() {
+        assert!(!StartupRetry::use_proxy(1, true));
+        assert!(StartupRetry::use_proxy(2, true));
+        assert!(StartupRetry::use_proxy(3, true));
+        for attempt in 1..=3 {
+            assert!(!StartupRetry::use_proxy(attempt, false));
+        }
+    }
     #[test]
     fn returns_success_on_first_or_later_attempt() {
         let calls = Cell::new(0);

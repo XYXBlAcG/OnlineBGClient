@@ -68,7 +68,7 @@ button, input, select, textarea { font: inherit; }
 .tempo-control output { position: absolute; right: 0; color: var(--accent); font-weight: 600; }
 .invite-entry { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
 .room-layout { width:100%; margin: 0 auto; padding: 10px; height: calc(100dvh - 58px); display: grid; grid-template-columns: minmax(0,1fr) clamp(260px,var(--chat-width,280px),min(520px,45vw)); gap: 10px; }
-.room-layout.chat-hidden { grid-template-columns: 1fr; }
+.room-layout.chat-hidden { grid-template-columns: minmax(0,1fr) minmax(0,0px); column-gap:0; }
 .game-area { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
 .room-toolbar { display: flex; justify-content: space-between; align-items: center; min-height: 48px; gap: 10px; flex-wrap: wrap; }
 .room-toolbar > div { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -192,7 +192,6 @@ kbd { font-size: 11px; font-family: inherit; color: var(--muted); }
 .mobile-shell .game-area { min-width:0; flex:1; }
 .mobile-shell .chat-panel { min-height:0;position:fixed;inset:auto 0 0;height:min(75dvh,620px);z-index:20;border-radius:20px 20px 0 0;box-shadow:0 -10px 40px #0003;padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
 .mobile-shell .original-game { overflow-x:auto;overscroll-behavior-x:contain; }
-.mobile-shell .original-game .sgs-hero { min-width:70px; }
 .mobile-shell .room-toolbar { align-items:flex-start; }
 .mobile-shell .room-toolbar>div { gap:6px; }
 .mobile-shell .seat-row { flex-wrap:wrap; }
@@ -219,7 +218,7 @@ kbd { font-size: 11px; font-family: inherit; color: var(--muted); }
 .mobile-shell .dictionary .terms-grid { grid-template-columns:1fr; }
 .ui-panel a,.ui-popover a { color:var(--accent); }
 
-:root { --layer-effects:20;--layer-chat:10;--layer-notice:80;--layer-dialog-overlay:50;--layer-dialog:60;--layer-menu:70; }
+:root { --layer-effects:20;--layer-party:75;--layer-chat:10;--layer-notice:80;--layer-dialog-overlay:50;--layer-dialog:60;--layer-menu:70; }
 .original-game { position:relative;isolation:isolate; }
 .chat-panel { z-index:var(--layer-chat);min-width:0;isolation:isolate; }
 .mobile-shell .chat-panel { z-index:var(--layer-chat); }
@@ -316,7 +315,7 @@ kbd { font-size: 11px; font-family: inherit; color: var(--muted); }
 .sidebar-divider { position:absolute;left:-10px;top:0;bottom:0;width:10px;cursor:col-resize;touch-action:none;z-index:1; }
 .sidebar-divider::after { content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;background:var(--line);border-radius:2px; }
 .sidebar-divider:hover::after,.sidebar-divider:focus-visible::after { background:var(--accent); }
-.room-layout.sidebar-open { grid-template-columns:minmax(0,1fr) clamp(280px,var(--chat-width),min(520px,calc(100vw - 740px))); }
+.room-layout.sidebar-open { grid-template-columns:minmax(0,1fr) minmax(0,clamp(280px,var(--chat-width),min(520px,calc(100vw - 740px)))); }
 .map-viewport { display:flex; flex-direction:column; min-height:180px; flex:1; gap:4px; }
 .map-tools { display:flex; justify-content:center; align-items:center; gap:6px; flex:none; color:var(--text); }
 .map-tools button { border:0; border-radius:8px; background:var(--field); color:var(--text); padding:5px 8px; min-height:30px; cursor:pointer; }
@@ -465,3 +464,13 @@ kbd { font-size: 11px; font-family: inherit; color: var(--muted); }
 .release-notes ul {padding-left:20px;line-height:1.8;}
 .update-notes {white-space:pre-line;line-height:1.6;}
 .settings-section progress {width:100%;accent-color:var(--accent);}
+
+:root[data-motion="true"] .app-shell:not(.mobile-shell) .room-layout { transition:grid-template-columns 200ms cubic-bezier(.2,.7,.2,1), column-gap 200ms ease; }
+.room-layout.chat-hidden .room-sidebar { overflow:clip; }
+.usage-totals { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0; }
+.usage-totals article { display:grid;gap:8px;padding:16px;background:var(--canvas);border-radius:12px; }
+.usage-totals strong { font-size:20px;font-variant-numeric:tabular-nums; }
+.usage-settings table { width:100%;border-collapse:collapse;text-align:left; }
+.usage-settings :is(th,td) { padding:10px 6px; }
+
+.sidebar-divider[data-placement="track"] {position:relative;inset:auto;width:8px;display:block;align-self:stretch;grid-column:2;grid-row:1;}

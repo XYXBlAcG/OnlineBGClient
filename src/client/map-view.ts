@@ -60,3 +60,7 @@ export function fitMapZoom(
     Math.min(view.width / content.width, view.height / content.height),
   );
 }
+
+export function mapDisplayScale(renderedWidth: number, layoutWidth: number) {
+  return renderedWidth > 0 && layoutWidth > 0 ? renderedWidth / layoutWidth : 1;
+}

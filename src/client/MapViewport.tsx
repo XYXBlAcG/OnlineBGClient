@@ -1,6 +1,7 @@
 import { createUseGesture, dragAction, pinchAction } from "@use-gesture/react";
 import {
   mapZoom,
+  mapDisplayScale,
   fitMapZoom,
   zoomScroll,
   resizeScroll,
@@ -35,6 +36,7 @@ export function MapViewport({
   initialZoom,
   fitWidthOnMount = false,
   focusLabel = "当前士兵",
+  onMoveModeChange,
 }: {
   children: ReactElement<HTMLAttributes<HTMLDivElement>>;
   focusTarget?: string;
@@ -43,11 +45,13 @@ export function MapViewport({
   initialZoom?: number;
   fitWidthOnMount?: boolean;
   focusLabel?: string;
+  onMoveModeChange?: (moving:boolean)=>void;
 }) {
   const [zoom, setZoom] = useState(initialZoom ?? (focusTarget ? 1.6 : 1));
   const [moving, setMoving] = useState(false);
   const [focusRequest, setFocusRequest] = useState(focusTarget ? 1 : 0);
   const viewport = useRef<HTMLDivElement>(null);
+  useLayoutEffect(()=>{onMoveModeChange?.(moving);},[moving,onMoveModeChange]);
   const anchor = useRef<MapAnchor>();
   const bounds = useRef<MapViewBounds>();
   useLayoutEffect(() => {
@@ -93,8 +97,12 @@ export function MapViewport({
         )
           return memo;
         const start = memo || [box.scrollLeft, box.scrollTop];
-        box.scrollLeft = start[0] - x;
-        box.scrollTop = start[1] - y;
+        const scale = mapDisplayScale(
+          box.getBoundingClientRect().width,
+          box.offsetWidth,
+        );
+        box.scrollLeft = start[0] - x / scale;
+        box.scrollTop = start[1] - y / scale;
         return start;
       },
       onPinch: ({ event, offset: [scale], origin: [x, y], memo }) => {
@@ -102,11 +110,12 @@ export function MapViewport({
         const box = viewport.current;
         if (!box) return memo;
         const bounds = box.getBoundingClientRect();
+        const scaleRatio = mapDisplayScale(bounds.width, box.offsetWidth);
         const start = memo || {
           left: box.scrollLeft,
           top: box.scrollTop,
-          x: x - bounds.left,
-          y: y - bounds.top,
+          x: (x - bounds.left) / scaleRatio,
+          y: (y - bounds.top) / scaleRatio,
           zoom,
         };
         anchor.current = start;
@@ -144,19 +153,16 @@ export function MapViewport({
     const frame = requestAnimationFrame(() => {
       const target = box.querySelector(focusTarget)?.getBoundingClientRect(),
         bounds = box.getBoundingClientRect();
+      const scale = mapDisplayScale(bounds.width, box.offsetWidth);
       if (target)
         box.scrollTo({
           left:
             box.scrollLeft +
-            target.left +
-            target.width / 2 -
-            bounds.left -
+            (target.left + target.width / 2 - bounds.left) / scale -
             box.clientWidth / 2,
           top:
             box.scrollTop +
-            target.top +
-            target.height / 2 -
-            bounds.top -
+            (target.top + target.height / 2 - bounds.top) / scale -
             box.clientHeight / 2,
         });
     });

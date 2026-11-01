@@ -72,7 +72,7 @@ it("completes reproducible trials with actual counters and bounded actions", () 
 it("uses exact vulnerable rounding and counts only absorbed block", () => {
   let state = rules.create("numbers");
   state.heroes[0].hand = [
-    { id: "protect-test", card: "protect", upgraded: false },
+    { id: "protect-test", card: "protect", upgradeLevel: 0 },
   ];
   state = rules.apply(state, {
     type: "play",
@@ -91,7 +91,7 @@ it("accounts for every restored health point including post-battle recovery", ()
   state.heroes[1].hp = 0;
   state.metrics.healthLost = 42;
   state.enemies.forEach((e) => (e.hp = 1));
-  state.heroes[0].hand = [{ id: "sweep-test", card: "sweep", upgraded: false }];
+  state.heroes[0].hand = [{ id: "sweep-test", card: "sweep", upgradeLevel: 0 }];
   state = rules.apply(state, {
     type: "play",
     actor: 0,
@@ -126,7 +126,7 @@ it("反伤同时消灭最后敌人和最后英雄时判负，不复活全队", (
   const hero = state.heroes[0];
   hero.hp = 1;
   hero.energy = 3;
-  hero.hand = [{ id: "last", card: "strike", upgraded: false }];
+  hero.hand = [{ id: "last", card: "strike", upgradeLevel: 0 }];
   state.enemies = state.enemies.slice(0, 1);
   state.enemies[0].hp = 1;
   state.enemies[0].thorns = 2;

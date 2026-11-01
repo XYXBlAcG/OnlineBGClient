@@ -1,3 +1,8 @@
+import { migrateExpedition } from "./expedition/migration";
+import { partyResults, partySignals } from "./party/facts";
+import type { PartyEvent } from "./party/model";
+import { PartyLedger, partyItems, observerSeats, type PartyAction, type PartyContext, type PartyState } from "./party";
+import { v4 as randomId } from "uuid";
 import { heroContent } from "./expedition/content";
 import {
   parseChatCommand,
@@ -43,6 +48,7 @@ export class Room {
   readonly seed: string;
   host: { id: string; name: string; token: string; online: boolean } | null =
     null;
+  readonly spectators:{id:string;name:string;avatar:string;token:string;online:boolean}[]=[];
   private projection = new Map<
     number,
     {
@@ -69,6 +75,7 @@ export class Room {
   private bannerTimes = new Map<string, number>();
   private chatEventTimes = new Map<string, number>();
   private messages: ChatMessage[] = [];
+  private party = new PartyLedger();
   private decisions: Decision[] = [];
   private summaries: DecisionSummary[] = [];
   private accepted = new Set<string>();
@@ -85,11 +92,13 @@ export class Room {
   constructor(
     readonly id: string,
     config: z.input<typeof configSchema>,
-    seed: string = crypto.randomUUID(),
+    seed: string = randomId(),
   ) {
     this.seed = seed;
     this.config = configSchema.parse(config);
     this.seats = Room.createSeats(this.config);
+    this.party.execute(-1,"initial-plugins",{type:"plugins",packs:this.config.plugins},this.partyContext(),true);
+    this.party.execute(-1,"initial-policy",{type:"policy",policy:this.config.party},this.partyContext(),true);
   }
 
   private static createSeats(config: RoomConfig): Seat[] {
@@ -114,21 +123,22 @@ export class Room {
     if (this.host || this.seats.some((seat) => seat.token))
       throw new Error("房间已存在身份");
     this.host = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       name,
-      token: crypto.randomUUID(),
+      token: randomId(),
       online: true,
     };
     return this.host.token;
   }
   canManage(token: string): boolean {
-    return this.identity(token) <= 0;
+    const actor=this.identity(token);
+    return actor===0||actor===-1;
   }
   claim(name: string, token?: string, avatar = "😊"): string {
     if (token) {
       const wasPaused = this.paused;
       const actor = this.identity(token);
-      const seat = actor < 0 ? this.host! : this.seats[actor];
+      const seat = this.member(token);
       seat.online = true;
       if (wasPaused && !this.paused) this.updateResolution();
       return token;
@@ -141,13 +151,24 @@ export class Room {
     if (!seat) throw new Error("真人席位已满");
     seat.avatar = avatarSchema.parse(avatar);
     seat.name = name;
-    seat.id = crypto.randomUUID();
-    seat.token = crypto.randomUUID();
+    seat.id = randomId();
+    seat.token = randomId();
     seat.online = true;
     seat.ready = this.seats[0] === seat;
+    this.party.sync(this.partyContext());
     return seat.token;
   }
 
+  watch(name:string,avatar="😊"):string {
+    if(this.spectators.length>=24)throw Error("旁观席已满");
+    const member={id:randomId(),name,avatar:avatarSchema.parse(avatar),token:randomId(),online:true};
+    this.spectators.push(member);this.party.sync(this.partyContext());
+    return member.token;
+  }
+  member(token:string){
+    const actor=this.identity(token);
+    return actor===-1?this.host!:actor<-1?this.spectators[-actor-2]:this.seats[actor];
+  }
   setAvatar(token: string, avatar: string): void {
     const actor = this.identity(token);
     if (actor < 0) throw new Error("服务身份没有玩家头像");
@@ -156,7 +177,7 @@ export class Room {
 
   disconnect(token: string): void {
     const actor = this.identity(token);
-    (actor < 0 ? this.host! : this.seats[actor]).online = false;
+    this.member(token).online = false;
   }
 
   start(token: string): void {
@@ -201,6 +222,7 @@ export class Room {
         rulesVersion: gameCatalogue[this.config.kind].version,
         names: this.seats.map((seat) => seat.name),
         avatars: this.seats.map(seatAvatar),
+        memberIds:this.seats.map((s,i)=>s.id??`ai:${i}`),
         seed: `${this.seed}:round:${this.version}`,
         startedAt: Date.now(),
         ...(this.state.kind === "graphwar"
@@ -213,7 +235,7 @@ export class Room {
             }
           : {}),
         ...(this.state.kind === "expedition"
-          ? { expeditionMap: structuredClone(this.state.view.map) }
+          ? { expeditionMap: structuredClone(this.state.view.map), expeditionCampaign: this.state.view.campaignVersion }
           : {}),
         events: [],
       };
@@ -248,6 +270,8 @@ export class Room {
 
   end(token: string, discardResume = false): void {
     if (!this.canManage(token)) throw new Error("只有房主可以结束对局");
+    this.party.cancel();
+    this.recordParty();
     this.ended = true;
     if (discardResume) this.pendingResume = null;
     this.queued = null;
@@ -285,7 +309,7 @@ export class Room {
       seats[index] = { ...seat, ready: index === 0 };
     });
     if (this.replay) this.records = [...this.records, this.replay].slice(-20);
-    Object.assign(this.config, next);
+    Object.assign(this.config, next,{party:this.party.export().policy,plugins:this.party.export().plugins});
     this.seats.splice(0, this.seats.length, ...seats);
     this.bannerPolicy = {
       ...this.bannerPolicy,
@@ -294,6 +318,7 @@ export class Room {
       ),
     };
     this.state = null;
+    this.party.cancel();
     this.pendingResume = null;
     this.computation = null;
     this.aiPaused = false;
@@ -337,6 +362,7 @@ export class Room {
       this.engine.actionWindow(next, action)
     )
       this.simultaneousSince = this.version + 1;
+    this.party.trigger(partySignals(this.state,next,actor,action,this.engine),this.partyContext(),this.version+1);
     this.state = next;
     this.queued = null;
     this.lastMoveAt = Date.now();
@@ -367,7 +393,7 @@ export class Room {
       return;
     }
     const actor = this.identity(token);
-    const member = actor < 0 ? this.host! : this.seats[actor];
+    const member = this.member(token);
     const permission = bannerCommands.find(
       (command) => command.kind === banner.kind,
     )!.permission;
@@ -434,7 +460,7 @@ export class Room {
     const actor = this.identity(token);
     const key = `${token}:chat:${id}`;
     if (this.accepted.has(key)) return;
-    const member = actor < 0 ? this.host! : this.seats[actor];
+    const member = this.member(token);
     const sender = member.id!;
     this.messageTotals[sender] = (this.messageTotals[sender] || 0) + 1;
     const message: ChatMessage = {
@@ -474,6 +500,40 @@ export class Room {
     if (this.accepted.size > 2048)
       this.accepted.delete(this.accepted.values().next().value!);
   }
+  private partyContext(): PartyContext {
+    return {
+      players:[...this.seats.map((s,i)=>({id:s.id??`ai:${i}`,name:s.name,human:!!s.token})),...this.spectators.map(s=>({id:s.id,name:s.name,human:true}))],
+      observers:[...(this.ended?[]:observerSeats(this.state,this.seats.length)),...this.spectators.map((_,i)=>this.seats.length+i)],
+      round:this.replay?.seed??"lobby",
+      playing:!!this.state&&!this.ended&&!this.engine.finished(this.state),
+      finished:!!this.state&&!this.ended&&this.engine.finished(this.state),
+      state:this.state,
+      ...partyResults(this.state,this.seats.map((seat,i)=>({id:seat.id??`ai:${i}`,name:seat.name})),this.engine),
+    };
+  }
+  partyAction(token:string,id:string,action:PartyAction,now=Date.now()): PartyEvent | undefined {
+    const event=this.party.execute(this.partyActor(token),id,action,this.partyContext(),this.canManage(token),now);
+    if(event && this.state?.kind==="graphwar") {
+      const view=this.state.view;
+      const from=view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.from && s.hp>0 && s.id===view.currentSoldier)
+        ?? view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.from && s.hp>0)
+        ?? view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.from);
+      const target=view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.target && s.hp>0) ?? view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.target);
+      if(from && target)event.units={game:"graphwar",from:from.id,target:target.id};
+    }
+    this.config.party=this.party.export().policy;
+    this.config.plugins=this.party.export().plugins;
+    this.recordParty();
+    return event;
+  }
+  partyActor(token:string):number {const actor=this.identity(token);return actor<-1?this.seats.length-actor-2:actor;}
+  tickParty(now=Date.now()):boolean { const changed=this.party.sync(this.partyContext(),now);if(changed)this.recordParty();return changed; }
+  private recordParty():void {
+    if(!this.replay)return;
+    const current=this.party.export().events,history=this.replay.party??=[];
+    for(const event of current){const saved=history.find(e=>e.event.id===event.id);if(saved)saved.event=event;else history.push({frame:this.replay.events.length,event});}
+    this.replay.party=history.filter(saved=>saved.event.time<=Date.now()||current.some(e=>e.id===saved.event.id));
+  }
   interact(
     token: string,
     id: string,
@@ -481,6 +541,7 @@ export class Room {
     kind: InteractionKind,
     units?: InteractionUnits,
   ): InteractionEvent | undefined {
+    if (kind in partyItems) throw new Error("请从房间派对购买道具");
     const from = this.identity(token);
     if (from < 0) throw new Error("服务身份不参与牌桌互动");
     if (
@@ -553,6 +614,7 @@ export class Room {
   acceptDecision(decision: AiResult, version: number): boolean {
     if (!this.state || this.ended || this.paused || version !== this.version)
       return false;
+    const previous=this.state;
     const oldWindow = this.engine.actionWindow(this.state, decision.chosen);
     this.state = this.engine.apply(
       this.state,
@@ -560,6 +622,7 @@ export class Room {
       decision.chosen,
       `${this.seed}:move:${this.version}`,
     );
+    this.party.trigger(partySignals(previous,this.state,decision.actor,decision.chosen,this.engine),this.partyContext(),this.version+1);
     this.version++;
     if (oldWindow !== this.engine.actionWindow(this.state, decision.chosen))
       this.simultaneousSince = this.version;
@@ -605,10 +668,12 @@ export class Room {
       return false;
     if (this.engine.actors(this.state).length && now < this.resolutionAt)
       return false;
+    const previous=this.state;
     this.state = this.engine.resolve(
       this.state,
       `${this.seed}:resolve:${this.version}`,
     );
+    this.party.trigger(partySignals(previous,this.state,-1,undefined,this.engine),this.partyContext(),this.version+1);
     this.version++;
     this.replay!.events.push({
       type: "resolution",
@@ -633,7 +698,7 @@ export class Room {
       projected.paused !== paused
     ) {
       const state =
-        (actor >= 0 ||
+        (actor >= 0 || actor<-1 ||
           (["tq", "scmj"].includes(this.config.kind) && !this.config.humans)) &&
         this.state &&
         !this.ended
@@ -672,6 +737,7 @@ export class Room {
       actor,
       canManage: this.canManage(token),
       playing: !!this.state && !finished,
+      playId: this.replay ? `${this.id}:${this.replay.startedAt}` : undefined,
       host: this.host
         ? { id: this.host.id, name: this.host.name, online: this.host.online }
         : null,
@@ -689,6 +755,9 @@ export class Room {
       computation: this.computation,
       aiPaused: this.aiPaused,
       bannerPolicy: this.bannerPolicy,
+      party: this.party.snapshot(this.partyContext()),
+      partyActor:this.partyActor(token),
+      spectators:this.spectators.map(({token:_token,...member})=>member),
       chat: this.messages,
       chatSequence: this.messageSequence,
       chatTotals: this.messageTotals,
@@ -803,6 +872,8 @@ export class Room {
 
   identity(token: string): number {
     if (this.host?.token === token) return -1;
+    const spectator=this.spectators.findIndex(s=>s.token===token);
+    if(spectator>=0)return -spectator-2;
     const actor = this.seats.findIndex((seat) => seat.token === token);
     if (actor < 0) throw new Error("房间身份无效");
     return actor;
@@ -829,6 +900,7 @@ export class Room {
   }
   leave(token: string): void {
     const actor = this.identity(token);
+    if(actor<-1){this.spectators.splice(-actor-2,1);return;}
     if (actor <= 0) throw new Error("房主需要关闭房间");
     if (this.state && !this.ended && !this.engine.finished(this.state))
       throw new Error("请先结束对局再离开");
@@ -893,6 +965,7 @@ export class Room {
       seed: this.seed,
       config: this.config,
       seats: this.seats,
+      spectators:this.spectators,
       host: this.host,
       version: this.version,
       roundVersion: this.roundVersion,
@@ -904,6 +977,7 @@ export class Room {
       messageSequence: this.messageSequence,
       messageTotals: this.messageTotals,
       bannerPolicy: this.bannerPolicy,
+      party: this.party.export(),
       bannerTimes: Object.fromEntries(this.bannerTimes),
       chatEventTimes: Object.fromEntries(this.chatEventTimes),
       messages: this.messages,
@@ -918,7 +992,7 @@ export class Room {
     if (archive.messageSequence === undefined) {
       archive = structuredClone(archive);
       archive.seats.forEach((seat) => {
-        if (seat.token && !seat.id) seat.id = crypto.randomUUID();
+        if (seat.token && !seat.id) seat.id = randomId();
       });
       archive.messages = archive.messages.map((message, index) => ({
         id: message.id,
@@ -938,7 +1012,9 @@ export class Room {
       room.seats.length,
       ...archive.seats.map((seat) => ({ ...seat, online: !!seat.difficulty })),
     );
+    room.spectators.push(...(archive.spectators??[]).map(s=>({...s,online:false})));
     room.host = archive.host ? { ...archive.host, online: false } : null;
+    room.party = new PartyLedger(archive.party);
     room.version = archive.version;
     room.roundVersion = archive.roundVersion;
     room.ended = archive.ended;
@@ -966,6 +1042,8 @@ export class Room {
           : replay.frame(replay.record.events.length);
     }
     room.pendingResume = archive.pendingResume ?? null;
+    if (room.state?.kind === "expedition") migrateExpedition(room.state.view);
+    if (room.pendingResume?.kind === "expedition") migrateExpedition(room.pendingResume.view);
     if (room.pendingResume) room.state = null;
     room.lastMoveAt = Date.now();
     room.updateResolution();
@@ -1002,6 +1080,8 @@ export class Room {
   }
 
   private updateResolution(): void {
+    this.party.sync(this.partyContext());
+    this.recordParty();
     this.resolutionAt =
       this.state && this.engine.needsResolution(this.state)
         ? Date.now() +
@@ -1012,6 +1092,8 @@ export class Room {
 }
 
 export interface RoomArchive {
+  spectators?:Room["spectators"];
+  party?: PartyState;
   format: 1;
   pendingResume?: import("./types").GameState;
   checkpoint?: { version: number; state: import("./types").GameState };

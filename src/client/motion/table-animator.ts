@@ -1,3 +1,5 @@
+import { cardBackArt } from "../art";
+import { effectGesture } from "./effect-gesture";
 import { TableAnchors } from "./table-anchors";
 import type { GameMotionEvent } from "../game-motion-events";
 import type { GameHighlight } from "../game-motion";
@@ -222,10 +224,23 @@ export class TableAnimator {
           if (before.key) consumed.add(before.key);
           const dx = b.x - a.x,
             dy = b.y - a.y;
+          const figure = before.node.querySelector("[data-motion-figure]");
+          if (figure?.isConnected && !event.card)
+            this.animate(
+              figure,
+              effectGesture(event.kind, dx),
+              travel + 180,
+              delay,
+            );
           this.animate(
             moving,
             [
-              { transform: "translate(0,0) scale(1)", opacity: 1 },
+              { transform: "translate(0,0) scale(1)", opacity: 0.8 },
+              {
+                transform: `translate(${-Math.sign(dx) * 8}px,-8px) rotate(${-Math.sign(dx) * 7}deg) scale(1.04)`,
+                opacity: 1,
+                offset: 0.16,
+              },
               {
                 transform: `translate(${dx * 0.5}px,${dy * 0.5 - 28}px) scale(${event.card ? 0.65 : 1.8})`,
                 opacity: 1,
@@ -242,6 +257,26 @@ export class TableAnimator {
             () => this.release(moving),
             () => {},
           );
+          const victim = after.node.querySelector("[data-motion-figure]");
+          if (
+            event.kind === "damage" &&
+            victim?.isConnected &&
+            victim !== figure
+          )
+            this.animate(
+              victim,
+              [
+                { transform: "none", opacity: 1 },
+                {
+                  transform: `translateX(${Math.sign(dx) * 6}px) rotate(${Math.sign(dx) * 3}deg)`,
+                  opacity: 0.65,
+                  offset: 0.3,
+                },
+                { transform: "none", opacity: 1 },
+              ],
+              260,
+              delay + travel - 50,
+            );
           const impact = this.shell(
             after.bounds,
             undefined,
@@ -450,6 +485,7 @@ export class TableAnimator {
           const backFace = document.createElement("div"),
             frontFace = document.createElement("div");
           backFace.className = "game-motion-face game-motion-back";
+          backFace.style.backgroundImage = `url(${cardBackArt})`;
           frontFace.className = "game-motion-face game-motion-front";
           if (back instanceof HTMLElement) {
             const copy = back.cloneNode(true) as HTMLElement;
@@ -468,7 +504,7 @@ export class TableAnimator {
           shell.append(flipper);
           this.animate(
             flipper,
-            [{ transform: "rotateY(0deg)" }, { transform: "rotateY(180deg)" }],
+            [{ transform: "rotateY(0deg) rotateZ(-5deg) scale(.94)" }, {offset:.55,transform:"rotateY(99deg) rotateZ(3deg) scale(1.05)"}, { transform: "rotateY(180deg) rotateZ(0deg) scale(1)" }],
             tableTiming.flip,
             tableTiming.travel + index * tableTiming.stagger,
           ).finished.then(

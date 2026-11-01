@@ -16,7 +16,7 @@ fn smoke_progress(phase: String, state: tauri::State<Arc<SmokeReport>>) -> Resul
 #[tauri::command]
 fn check_native(
     app: tauri::AppHandle,
-    view: hullqin_companion_lib::windows::AuxiliaryView,
+    view: onlinebg_client_lib::windows::AuxiliaryView,
 ) -> Result<(), String> {
     let child = app
         .get_webview_window(view.label())
@@ -34,7 +34,7 @@ fn check_native(
 #[tauri::command]
 fn complete_auxiliary(
     app: tauri::AppHandle,
-    view: hullqin_companion_lib::windows::AuxiliaryView,
+    view: onlinebg_client_lib::windows::AuxiliaryView,
 ) -> Result<(), String> {
     app.get_webview_window("main")
         .ok_or("主窗口未建立")?
@@ -70,9 +70,9 @@ fn main() {
             Ok(())
         })
         .manage(std::sync::Arc::new(
-            hullqin_companion_lib::hosting::Hosting::default(),
+            onlinebg_client_lib::hosting::Hosting::default(),
         ))
-        .manage(hullqin_companion_lib::windows::Windows::default())
+        .manage(onlinebg_client_lib::windows::Windows::default())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -84,19 +84,19 @@ fn main() {
                 )
                 .build(),
         )
-        .on_window_event(hullqin_companion_lib::windows::window_event)
+        .on_window_event(onlinebg_client_lib::windows::window_event)
         .invoke_handler(tauri::generate_handler![
             report,
             smoke_progress,
             resize_main,
             check_native,
             complete_auxiliary,
-            hullqin_companion_lib::cache::cache_usage,
-            hullqin_companion_lib::hosting::clear_cache,
-            hullqin_companion_lib::windows::present_auxiliary,
-            hullqin_companion_lib::windows::close_auxiliary,
-            hullqin_companion_lib::windows::auxiliary_state,
-            hullqin_companion_lib::windows::auxiliary_intent
+            onlinebg_client_lib::cache::cache_usage,
+            onlinebg_client_lib::hosting::clear_cache,
+            onlinebg_client_lib::windows::present_auxiliary,
+            onlinebg_client_lib::windows::close_auxiliary,
+            onlinebg_client_lib::windows::auxiliary_state,
+            onlinebg_client_lib::windows::auxiliary_intent
         ])
         .on_page_load(|window, event| {
             if matches!(event.event(), tauri::webview::PageLoadEvent::Finished) {

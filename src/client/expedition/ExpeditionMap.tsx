@@ -1,29 +1,83 @@
+import "./world-art.css";
+import { useState } from "react";
+import { mapChoices } from "../../domain/expedition/map";
+import { ballotOption, routeLabel } from "../../domain/expedition/ballot";
+import { NodeSymbol } from "./NodeSymbol";
 import type { ExpeditionRun } from "../../domain/expedition/adventure-types";
-import { nodeNames, nodeIcons } from "../../domain/expedition/map";
+import { nodeNames } from "../../domain/expedition/map";
 import { MapViewport } from "../MapViewport";
 import { routeLayout } from "./map-layout";
 export function ExpeditionMap({
   run,
+  actor = -1,
   available,
   names,
   onVote,
 }: {
   run: ExpeditionRun;
+  actor?: number;
   available: string[];
   names: string[];
   onVote: (id: string) => void;
 }) {
+  const [selected, select] = useState<string | null>(null);
   const nodes = run.map.flat();
+  const options = mapChoices(run).filter(
+    (node) => run.phase !== "tie" || run.tieChoices.includes(node.id),
+  );
+  const chosen = options.find((node) => node.id === selected);
+  const leader = Math.max(0, run.floor) % run.combat.heroes.length;
+
   const layout = routeLayout(run.map);
   const { points } = layout;
   return (
-    <div className="exp-route" data-guide-target="expedition.map">
+    <div
+      className={`exp-route exp-biome-${run.chapter ?? 0}`}
+      data-guide-target="expedition.map"
+    >
+      <aside className="exp-route-choice">
+        <strong>
+          {run.phase === "tie"
+            ? `平票 · 由${names[leader] || `玩家 ${leader + 1}`}领队裁决`
+            : "选择路线并确认投票"}
+        </strong>
+        <div className="exp-route-options">
+          {options.map((node) => {
+            const option = ballotOption(run, "map", node.id);
+            return (
+              <button
+                key={node.id}
+                aria-pressed={selected === node.id}
+                onClick={() => select(node.id)}
+              >
+                <NodeSymbol kind={node.kind} />
+                <span>
+                  <strong>{option.label}</strong>
+                  <small>{option.detail}</small>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {chosen && (
+          <p>
+            {routeLabel(run.map, chosen)}
+            {run.votes[actor] === chosen.id ? " · 已投给此路线" : ""}
+          </p>
+        )}
+        {chosen && available.includes(chosen.id) && (
+          <button className="primary" onClick={() => onVote(chosen.id)}>
+            {run.phase === "tie" ? "确认前往" : "确认投票"} ·{" "}
+            {routeLabel(run.map, chosen)}
+          </button>
+        )}
+      </aside>
       <MapViewport
         naturalSize={layout}
         initialZoom={0.85}
         fitWidthOnMount
         focusLabel="当前位置"
-        focusTarget={`[data-route-node="${run.current ?? run.map[0][0].id}"]`}
+        focusTarget={`[data-route-node="${chosen?.id ?? run.current ?? run.map[0][0].id}"]`}
       >
         <div className="exp-route-canvas">
           <svg
@@ -81,13 +135,19 @@ export function ExpeditionMap({
                   data-current={node.id === run.current}
                   data-available={available.includes(node.id)}
                   data-visited={run.path.includes(node.id)}
-                  disabled={!available.includes(node.id)}
-                  onClick={() => onVote(node.id)}
-                  aria-label={`第 ${node.floor + 1} 层，${nodeNames[node.kind]}${voters.length ? `，${voters.join("、")}已投票` : ""}`}
+                  data-preview={selected === node.id}
+                  disabled={!options.some((option) => option.id === node.id)}
+                  onClick={() => select(node.id)}
+                  aria-label={` ${routeLabel(run.map, node)}${voters.length ? `，${voters.join("、")}已投票` : ""}`}
                 >
-                  <b>{nodeIcons[node.kind]}</b>
+                  <NodeSymbol kind={node.kind} />
                   <span>{nodeNames[node.kind]}</span>
-                  {voters.length > 0 && <small>{voters.join("、")}</small>}
+                  {voters.length > 0 && (
+                    <small>
+                      {voters.length} 票
+                      {run.votes[actor] === node.id ? " · 我的选择" : ""}
+                    </small>
+                  )}
                 </button>
               );
             })}
@@ -95,7 +155,7 @@ export function ExpeditionMap({
         </div>
       </MapViewport>
       <small className="muted">
-        高亮节点可以前往 · 先投票，再由全队确认路线
+        地图图标与上方候选对应 · 全员投票后按多数决定，平票由领队裁决
       </small>
     </div>
   );

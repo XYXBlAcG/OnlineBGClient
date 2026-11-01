@@ -13,7 +13,7 @@ import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import { mahjongOptionsSchema } from "../domain/mahjong/types";
 import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
-import { Select, Slider } from "./ui/Controls";
+import { Select, Slider, Switch } from "./ui/Controls";
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { gameCatalogue, gameKinds, type GameKind } from "../domain/catalogue";
@@ -46,10 +46,12 @@ export function Lobby({
     service: string,
     temporary: boolean,
     hostOnly: boolean,
+    lan?: boolean,
   ) => void;
-  onJoin: (name: string, invitation: string) => void;
+  onJoin: (name: string, invitation: string, spectator?:boolean) => void;
 }) {
   const [kind, setKind] = useState<GameKind>("uno");
+  const [spectator,setSpectator]=useState(false);
   const [networkPage, setNetworkPage] = useState<"join" | "create">("join");
   const [mode, setMode] = useState<"local" | "network">(
     initialRoom ? "network" : "local",
@@ -82,6 +84,8 @@ export function Lobby({
     initialRoom ? invitationLink(initialRoom, service) : "",
   );
   const [hostOnly, setHostOnly] = useState(false);
+  const [lan, setLan] = useState(false);
+  const localDebug = isTauri() && preferences.network.showLanDebug && lan;
   const temporary = isTauri() && preferences.network.temporary;
   const game = gameCatalogue[kind];
   const displayAi = balanceSeats({ kind, humans, ai }).ai;
@@ -139,6 +143,7 @@ export function Lobby({
             "全部",
             "收藏",
             "最近",
+            ...(isTauri() ? ["经营"] : []),
             ...new Set(gameKinds.map((key) => gameCatalogue[key].category)),
           ].map((value) => (
             <button
@@ -257,6 +262,7 @@ export function Lobby({
         <div className="lobby-body" data-scene-size="form" data-scene-enter>
           {mode === "network" && !creating && (
             <div className="invite-entry">
+              <Switch label="只旁观，不占游戏席位" checked={spectator} onCheckedChange={setSpectator}/>
               <input
                 aria-label="邀请链接"
                 placeholder="粘贴邀请链接"
@@ -265,7 +271,7 @@ export function Lobby({
               />
               <button
                 disabled={busy || !name.trim() || !invitation.trim()}
-                onClick={() => onJoin(name, invitation)}
+                onClick={() => onJoin(name, invitation,spectator)}
               >
                 加入 / 恢复房间
               </button>
@@ -300,6 +306,18 @@ export function Lobby({
                   />
                 </label>
               )}
+              {mode === "network" &&
+                isTauri() &&
+                preferences.network.showLanDebug && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={lan}
+                      onChange={(event) => setLan(event.target.checked)}
+                    />
+                    局域网调试（同一 Wi-Fi，无需公网入口）
+                  </label>
+                )}
               <div className="setting-row">
                 <span>真人玩家</span>
                 <Select
@@ -544,14 +562,17 @@ export function Lobby({
                     endpoint,
                     temporary,
                     mode === "network" && hostOnly,
+                    mode === "network" && localDebug,
                   )
                 }
               >
                 {busy
                   ? "正在准备房间…"
-                  : mode === "network" && temporary
-                    ? "一键创建公网房间"
-                    : "创建房间"}
+                  : mode === "network" && localDebug
+                    ? "创建局域网调试房间"
+                    : mode === "network" && temporary
+                      ? "一键创建公网房间"
+                      : "创建房间"}
               </button>
             </>
           )}

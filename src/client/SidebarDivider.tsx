@@ -3,8 +3,10 @@ import { sidebarBounds } from "./sidebar-layout";
 export function SidebarDivider({
   width,
   onChange,
+  placement = "edge",
 }: {
   width: number;
+  placement?: "edge" | "track";
   onChange: (width: number) => void;
 }) {
   const drag = useRef<{ x: number; width: number } | null>(null);
@@ -21,6 +23,7 @@ export function SidebarDivider({
       aria-valuenow={width}
       tabIndex={0}
       className="sidebar-divider"
+      data-placement={placement}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         event.currentTarget.focus();

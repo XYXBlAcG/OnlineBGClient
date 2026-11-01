@@ -1,8 +1,8 @@
+import { extraCreatures, type Creature } from "./extra-creatures";
 import {
   cards,
   effectsText,
   type Effect,
-  type EnemyDefinition,
   type CardId,
 } from "./content";
 export interface RelicDefinition {
@@ -180,10 +180,7 @@ export const potions = {
   { name: string; target: "ally" | "enemy" | "self"; effects: Effect[] }
 >;
 export type PotionId = keyof typeof potions;
-interface Creature extends EnemyDefinition {
-  rank: "normal" | "elite" | "boss";
-}
-export const creatures = {
+const baseCreatures = {
   sentinel: {
     name: "铁壳守卫",
     hp: 28,
@@ -325,6 +322,8 @@ export const creatures = {
     ],
   },
 } as const satisfies Record<string, Creature>;
+export const legacyCreatureIds = new Set<string>(Object.keys(baseCreatures));
+export const creatures = { ...baseCreatures, ...extraCreatures };
 export type CreatureId = keyof typeof creatures;
 export type EventEffect =
   | {

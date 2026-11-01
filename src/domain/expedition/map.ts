@@ -1,3 +1,4 @@
+import { chapters } from "./chapters";
 import {
   expeditionDifficulties,
   type ExpeditionRun,
@@ -5,9 +6,15 @@ import {
   type NodeKind,
 } from "./adventure-types";
 import { shuffled } from "./random";
-import { creatures, type CreatureId } from "./world";
+import { creatures, legacyCreatureIds, type CreatureId } from "./world";
+import type { Creature } from "./extra-creatures";
 import type { EncounterDefinition } from "./content";
-export function generateMap(seed: string, layout: 1 | 2 = 2): MapNode[][] {
+export function generateMap(
+  seed: string,
+  layout: 1 | 2 = 2,
+  chapter = 0,
+): MapNode[][] {
+  const theme = chapters[chapter];
   const kinds: NodeKind[][] = [
     ["battle"],
     ["battle", "event", "shop"],
@@ -22,26 +29,33 @@ export function generateMap(seed: string, layout: 1 | 2 = 2): MapNode[][] {
     ["camp"],
     ["boss"],
   ];
+  if (chapter > 0) {
+    kinds.splice(9, 0, ["battle", "elite", "event"], ["camp"]);
+  }
   const widths = kinds.map((_, floor) =>
-    layout === 1
-      ? 3
-      : floor === 11
-        ? 1
-        : shuffled(
-            floor === 0 ? [2, 3] : [2, 3, 4, 5, 6],
-            `${seed}:width:${floor}`,
-          )[0],
+    chapter > 0 && floor === 6
+      ? theme.width
+      : layout === 1
+        ? 3
+        : floor === kinds.length - 1
+          ? 1
+          : shuffled(
+              floor === 0
+                ? [2, 3]
+                : Array.from({ length: theme.width - 1 }, (_, i) => i + 2),
+              `${seed}:width:${floor}`,
+            )[0],
   );
   const map: MapNode[][] = kinds.map((choices, floor) =>
     Array.from({ length: widths[floor] }, (_, lane) => ({
-      id: `f${floor}-${lane}`,
+      id: `${chapter ? `c${chapter}-` : ""}f${floor}-${lane}`,
       floor,
       lane,
       kind: shuffled(choices, `${seed}:map:${floor}:${lane}`)[0],
       next: [],
     })),
   );
-  for (let floor = 0; floor < 11; floor++) {
+  for (let floor = 0; floor < kinds.length - 1; floor++) {
     const layer = map[floor],
       next = map[floor + 1];
     for (const node of layer) {
@@ -91,22 +105,57 @@ export function encounterFor(
   const rank =
     node.kind === "boss" ? "boss" : node.kind === "elite" ? "elite" : "normal";
   const pool = (Object.keys(creatures) as CreatureId[]).filter(
-    (id) => creatures[id].rank === rank,
+    (id) =>
+      creatures[id].rank === rank &&
+      (run.campaignVersion === 1
+        ? legacyCreatureIds.has(id)
+        : ((creatures[id] as Creature).biome ?? "ruins") ===
+          chapters[run.chapter].biome),
   );
   const players = run.combat.heroes.length,
     count =
       rank === "boss"
-        ? Math.min(2, players)
+        ? run.campaignVersion === 1
+          ? Math.min(2, players)
+          : 1 + Math.ceil((players - 1) / 2)
         : Math.min(3, Math.ceil(players * 0.65));
   const choices = shuffled(pool, `${run.seed}:${node.id}:creatures`);
   const difficulty = expeditionDifficulties[run.difficulty].multiplier;
   const enemies = Array.from({ length: count }, (_, index) => {
-    const base = creatures[choices[index % choices.length]],
-      partyHp = 0.2 + (0.8 * players) / count;
+    const guardPool = (Object.keys(creatures) as CreatureId[]).filter(
+      (id) =>
+        creatures[id].rank === "normal" &&
+        ((creatures[id] as Creature).biome ?? "ruins") ===
+          chapters[run.chapter].biome,
+    );
+    const base =
+        creatures[
+          rank === "boss" && run.campaignVersion === 2 && index > 0
+            ? shuffled(guardPool, `${run.seed}:${node.id}:guards`)[
+                (index - 1) % guardPool.length
+              ]
+            : choices[index % choices.length]
+        ],
+      partyHp =
+        run.campaignVersion === 2 && rank === "boss"
+          ? index === 0
+            ? 0.6 + 0.4 * players
+            : 0.7 + 0.3 * players
+          : 0.2 + (0.8 * players) / count;
+    const budget =
+      run.campaignVersion === 2
+        ? chapters[run.chapter]
+        : { health: 1, attack: 1 };
     return {
       name: base.name,
       icon: base.icon,
-      hp: Math.round(base.hp * partyHp * (1 + node.floor * 0.045) * difficulty),
+      hp: Math.round(
+        base.hp *
+          partyHp *
+          (1 + node.floor * 0.045) *
+          difficulty *
+          budget.health,
+      ),
       pattern: base.pattern.map((intent, step) => ({
         ...intent,
         amount: Math.max(
@@ -114,7 +163,7 @@ export function encounterFor(
           Math.round(
             intent.amount *
               (intent.kind === "attack"
-                ? difficulty * (1 + node.floor * 0.025)
+                ? difficulty * (1 + node.floor * 0.025) * budget.attack
                 : 1),
           ),
         ),
@@ -131,7 +180,7 @@ export function encounterFor(
         ? enemies[0].name
         : rank === "elite"
           ? "精英 · " + enemies[0].name
-          : `第 ${node.floor + 1} 层 · 遗迹交锋`,
+          : `第 ${node.floor + 1} 节点 · ${chapters[run.chapter].name}`,
     subtitle:
       rank === "boss"
         ? "章末决战"

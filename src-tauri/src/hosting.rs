@@ -1,3 +1,4 @@
+use crate::network_proxy::{self, EdgeRelay, HttpProxy};
 use command_group::{CommandGroup, GroupChild};
 use flate2::read::GzDecoder;
 use serde::Deserialize;
@@ -28,11 +29,15 @@ impl Drop for Process {
 }
 struct Session {
     _tunnel: Process,
+    _relay: Option<EdgeRelay>,
+    _api: Option<crate::quick_api::QuickApi>,
     url: String,
 }
 struct LocalService {
     _server: Process,
     endpoint: String,
+    lan: bool,
+    addresses: Vec<String>,
     resources: PathBuf,
     cache: PathBuf,
     tunnel_sha: String,
@@ -59,7 +64,7 @@ struct Runtime {
 
 impl Hosting {
     pub fn running(&self) -> bool {
-        self.starting.load(Ordering::SeqCst) || self.session.lock().unwrap().is_some()
+        self.starting.load(Ordering::SeqCst) || self.service.lock().unwrap().is_some()
     }
     pub fn stop(&self) {
         self.generation.fetch_add(1, Ordering::SeqCst);
@@ -80,7 +85,7 @@ impl Hosting {
             return Err("公网服务正在启动，请稍后清理".into());
         }
         let result = (|| {
-            if runtime && self.session.lock().unwrap().is_some() {
+            if runtime && self.service.lock().unwrap().is_some() {
                 return Err("请先关闭公网房间，再清理联机组件".into());
             }
             if runtime {
@@ -100,7 +105,16 @@ impl Hosting {
         }
         Ok(())
     }
-    fn start(&self, app: &tauri::AppHandle) -> Result<String, String> {
+    fn start(
+        &self,
+        app: &tauri::AppHandle,
+        proxy: Option<String>,
+        lan: bool,
+    ) -> Result<String, String> {
+        if lan {
+            return self.start_lan(app);
+        }
+        let proxy = proxy.as_deref().map(HttpProxy::parse).transpose()?;
         if let Some(session) = self.session.lock().unwrap().as_ref() {
             return Ok(session.url.clone());
         }
@@ -118,12 +132,53 @@ impl Hosting {
                         crate::hosting_retry::StartupRetry::ATTEMPTS
                     ),
                 );
-                self.prepare(app, generation, attempt)
+                let route =
+                    if crate::hosting_retry::StartupRetry::use_proxy(attempt, proxy.is_some()) {
+                        proxy.as_ref()
+                    } else {
+                        None
+                    };
+                log::info!(target:"onlinebg::hosting", "attempt={attempt} route={}", if route.is_some() { "proxy" } else { "direct" });
+                self.prepare(app, generation, attempt, route)
             },
         );
+        if let Err(error) = &result {
+            log::error!(target:"onlinebg::hosting", "{error}");
+        }
         if result.is_err() {
             self.service.lock().unwrap().take();
         }
+        self.starting.store(false, Ordering::SeqCst);
+        result
+    }
+    fn start_lan(&self, app: &tauri::AppHandle) -> Result<String, String> {
+        if self.starting.swap(true, Ordering::SeqCst) {
+            return Err("房间正在准备".into());
+        }
+        let generation = self.generation.load(Ordering::SeqCst);
+        let result = (|| {
+            let mut service = self.service.lock().unwrap();
+            if let Some(local) = service.as_ref() {
+                if !local.lan {
+                    return Err("请先关闭当前公网房间，再启动局域网调试".into());
+                }
+                return local
+                    .addresses
+                    .first()
+                    .cloned()
+                    .ok_or("未找到局域网地址".into());
+            }
+            let local = self.start_service(app, generation, true, true, None)?;
+            let address = local
+                .addresses
+                .first()
+                .cloned()
+                .ok_or("未找到可用的局域网 IPv4 地址，请先连接 Wi-Fi 或有线网络")?;
+            log::info!(target:"onlinebg::hosting", "LAN ready: {}", local.addresses.join(", "));
+            *service = Some(local);
+            let _ = app.emit("hosting-status", format!("局域网调试服务已准备：{address}"));
+            Ok(address)
+        })();
         self.starting.store(false, Ordering::SeqCst);
         result
     }
@@ -142,7 +197,7 @@ impl Hosting {
             match service.as_ref() {
                 Some(local) => abandon_at(&local.endpoint, run, token),
                 None => {
-                    let temporary = self.start_service(app, generation, false)?;
+                    let temporary = self.start_service(app, generation, false, false, None)?;
                     abandon_at(&temporary.endpoint, run, token)
                 }
             }
@@ -155,6 +210,8 @@ impl Hosting {
         app: &tauri::AppHandle,
         generation: u64,
         interactive: bool,
+        lan: bool,
+        proxy: Option<&HttpProxy>,
     ) -> Result<LocalService, String> {
         let resources = match std::env::var_os("COMPANION_HOST_RESOURCES") {
             Some(path) => PathBuf::from(path),
@@ -178,10 +235,7 @@ impl Hosting {
         if runtime.platform != std::env::consts::OS || runtime.arch != std::env::consts::ARCH {
             return Err("该平台的联机组件尚未配置".into());
         }
-        let client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(180))
-            .build()
-            .map_err(|e| e.to_string())?;
+        let client = network_proxy::client(proxy, Duration::from_secs(60))?;
         let extension = if cfg!(windows) { ".exe" } else { "" };
         let node = cache.join(format!("node-{}{extension}", &runtime.node.sha256[..16]));
         if !node.exists() {
@@ -249,7 +303,7 @@ impl Hosting {
             .arg(resources.join("main.mjs"))
             .env("DATA_ROOT", data)
             .env("PORT", "0")
-            .env("HOST", "127.0.0.1")
+            .env("HOST", if lan { "0.0.0.0" } else { "127.0.0.1" })
             .env("STATIC_ROOT", resources.join("web"));
         if interactive {
             match crate::voice::load() {
@@ -267,7 +321,7 @@ impl Hosting {
         }
         let (mut server, lines) = spawn(command)?;
         let deadline = Instant::now() + Duration::from_secs(30);
-        let port = loop {
+        let (port, addresses) = loop {
             self.active(generation)?;
             if let Some(code) = server.0.try_wait().map_err(|e| e.to_string())? {
                 return Err(format!("房间服务退出：{code}"));
@@ -279,13 +333,18 @@ impl Hosting {
                 if let Some(value) = line.strip_prefix("ROOM_READY ") {
                     let json: serde_json::Value =
                         serde_json::from_str(value).map_err(|e| e.to_string())?;
-                    break json["port"].as_u64().ok_or("房间端口无效")?;
+                    let port = json["port"].as_u64().ok_or("房间端口无效")?;
+                    let addresses: Vec<String> = serde_json::from_value(json["addresses"].clone())
+                        .map_err(|e| e.to_string())?;
+                    break (port, addresses);
                 }
             }
         };
         Ok(LocalService {
             _server: server,
             endpoint: format!("http://127.0.0.1:{port}"),
+            lan,
+            addresses,
             resources,
             cache,
             tunnel_sha: runtime.cloudflared.sha256,
@@ -296,12 +355,16 @@ impl Hosting {
         app: &tauri::AppHandle,
         generation: u64,
         attempt: usize,
+        proxy: Option<&HttpProxy>,
     ) -> Result<String, String> {
         let mut service = self.service.lock().unwrap();
         if service.is_none() {
-            *service = Some(self.start_service(app, generation, true)?);
+            *service = Some(self.start_service(app, generation, true, false, proxy)?);
         }
         let local = service.as_ref().unwrap();
+        if local.lan {
+            return Err("请先关闭当前局域网房间，再启动公网服务".into());
+        }
         let resources = &local.resources;
         let cache = &local.cache;
         let extension = if cfg!(windows) { ".exe" } else { "" };
@@ -331,6 +394,14 @@ impl Hosting {
                 crate::hosting_retry::StartupRetry::ATTEMPTS
             ),
         );
+        let relay = proxy.map(EdgeRelay::start).transpose()?;
+        let api = proxy.map(crate::quick_api::QuickApi::start).transpose()?;
+        if proxy.is_some() {
+            let _ = app.emit(
+                "hosting-status",
+                format!("直连未成功，正在通过代理建立公网入口（{attempt}/3）"),
+            );
+        }
         let mut command = Command::new(tunnel);
         command.args([
             "tunnel",
@@ -340,18 +411,49 @@ impl Hosting {
             "http2",
             "--no-autoupdate",
         ]);
+        for key in [
+            "HTTP_PROXY",
+            "HTTPS_PROXY",
+            "ALL_PROXY",
+            "http_proxy",
+            "https_proxy",
+            "all_proxy",
+        ] {
+            command.env_remove(key);
+        }
+        command.env("NO_PROXY", "localhost,127.0.0.1,::1");
+        if let Some(proxy) = proxy {
+            command
+                .env("HTTP_PROXY", &proxy.url)
+                .env("HTTPS_PROXY", &proxy.url);
+        }
+        if let Some(api) = &api {
+            command.args(["--quick-service", &api.endpoint]);
+        }
+        if let Some(relay) = &relay {
+            for address in &relay.addresses {
+                command.args(["--edge", address]);
+            }
+            command.arg("--no-prechecks");
+        }
         let (mut tunnel, lines) = spawn(command)?;
-        let deadline = Instant::now() + Duration::from_secs(90);
+        let deadline = Instant::now() + Duration::from_secs(35);
         let mut url = String::new();
+        let mut last_error = String::new();
         loop {
             self.active(generation)?;
             if let Some(code) = tunnel.0.try_wait().map_err(|e| e.to_string())? {
                 return Err(format!("公网入口启动失败：{code}"));
             }
             if Instant::now() > deadline {
-                return Err("公网入口连接超时，请稍后再试".into());
+                return Err(format!(
+                    "公网入口连接超时：{last_error}。请在设置中查看软件日志"
+                ));
             }
             if let Ok(line) = lines.recv_timeout(Duration::from_millis(200)) {
+                if line.contains("ERR") || line.contains("error=") {
+                    last_error = crate::diagnostics::redact(&line);
+                }
                 for word in line.split_whitespace() {
                     if word.starts_with("https://") && word.ends_with(".trycloudflare.com") {
                         url = word.into();
@@ -362,21 +464,18 @@ impl Hosting {
                 }
             }
         }
-        let probe = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(8))
-            .build()
-            .map_err(|e| e.to_string())?;
+        let probe = network_proxy::client(proxy, Duration::from_secs(4))?;
         let mut ready = false;
-        for _ in 0..12 {
+        for _ in 0..3 {
             self.active(generation)?;
             if let Some(code) = tunnel.0.try_wait().map_err(|e| e.to_string())? {
                 return Err(format!("公网入口启动失败：{code}"));
             }
-            if probe
-                .get(format!("{url}/health"))
-                .send()
-                .is_ok_and(|r| r.status().is_success())
-            {
+            if probe.get(format!("{url}/health")).send().is_ok_and(|r| {
+                r.status().is_success()
+                    && r.json::<serde_json::Value>()
+                        .is_ok_and(|value| value["ready"] == true)
+            }) {
                 ready = true;
                 break;
             }
@@ -389,6 +488,8 @@ impl Hosting {
         self.active(generation)?;
         *session = Some(Session {
             _tunnel: tunnel,
+            _relay: relay,
+            _api: api,
             url: url.clone(),
         });
         let _ = app.emit("hosting-status", "公网房间已准备");
@@ -398,6 +499,7 @@ impl Hosting {
 
 fn abandon_at(endpoint: &str, run: String, token: String) -> Result<(), String> {
     let client = reqwest::blocking::Client::builder()
+        .no_proxy()
         .timeout(Duration::from_secs(12))
         .build()
         .map_err(|e| e.to_string())?;
@@ -444,6 +546,7 @@ fn executable(path: &Path) -> Result<(), String> {
     Ok(())
 }
 fn spawn(mut command: Command) -> Result<(Process, mpsc::Receiver<String>), String> {
+    let program = command.get_program().to_string_lossy().into_owned();
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
     let mut group = command.group();
     #[cfg(windows)]
@@ -457,8 +560,10 @@ fn spawn(mut command: Command) -> Result<(Process, mpsc::Receiver<String>), Stri
         Box::new(stderr) as Box<dyn Read + Send>,
     ] {
         let sender = sender.clone();
+        let program = program.clone();
         std::thread::spawn(move || {
             for line in BufReader::new(pipe).lines().map_while(Result::ok) {
+                log::info!(target:"onlinebg::process", "{program}: {line}");
                 let _ = sender.send(line);
             }
         });
@@ -470,12 +575,31 @@ fn spawn(mut command: Command) -> Result<(Process, mpsc::Receiver<String>), Stri
 pub async fn start_host(
     app: tauri::AppHandle,
     state: tauri::State<'_, Arc<Hosting>>,
+    proxy: Option<String>,
+    lan: Option<bool>,
 ) -> Result<String, String> {
     let hosting = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || hosting.start(&app))
+    tauri::async_runtime::spawn_blocking(move || hosting.start(&app, proxy, lan.unwrap_or(false)))
         .await
         .map_err(|e| e.to_string())?
 }
+#[tauri::command]
+pub fn host_endpoint(
+    window: tauri::WebviewWindow,
+    state: tauri::State<'_, Arc<Hosting>>,
+) -> Result<String, String> {
+    if window.label() != "main" {
+        return Err("该窗口不能读取房间服务".into());
+    }
+    state
+        .service
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|service| service.endpoint.clone())
+        .ok_or("房间服务尚未启动".into())
+}
+
 #[tauri::command]
 pub fn stop_host(state: tauri::State<'_, Arc<Hosting>>) {
     state.stop();
@@ -507,4 +631,25 @@ mod tests {
             .success());
         assert!(output.iter().any(|line| line.trim() == "0"));
     }
+}
+
+#[tauri::command]
+pub fn hosting_info(
+    window: tauri::WebviewWindow,
+    state: tauri::State<'_, Arc<Hosting>>,
+) -> Result<serde_json::Value, String> {
+    if window.label() != "main" {
+        return Err("该窗口不能读取本机服务".into());
+    }
+    let public = state
+        .session
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|session| session.url.clone());
+    let service = state.service.lock().unwrap();
+    let local = service.as_ref().ok_or("本机服务尚未启动")?;
+    Ok(
+        serde_json::json!({"endpoint":local.endpoint,"invitation":public.clone().or_else(||local.addresses.first().cloned()).unwrap_or_else(||local.endpoint.clone()),"public":public.is_some()}),
+    )
 }

@@ -1,7 +1,15 @@
+import {
+  expeditionResources,
+  initialResources,
+  heatRule,
+  enemyThornsRule,
+  resourceEffects,
+} from "./resources";
 import { relics, potions, type RelicId, type RelicDefinition } from "./world";
 import { shuffled } from "./random";
 import {
   cards,
+  canUpgrade,
   definition,
   heroContent,
   encounters,
@@ -40,20 +48,25 @@ export function damageAmount(
       (source.weak > 0 ? 0.75 : 1),
   );
 }
+export function intentTargets(
+  state: ExpeditionState,
+  target: number | "all",
+): number[] {
+  return target === "all"
+    ? state.heroes.flatMap((hero, index) => (hero.hp > 0 ? [index] : []))
+    : [
+        state.heroes[target % state.heroes.length].hp > 0
+          ? target % state.heroes.length
+          : state.heroes.findIndex((hero) => hero.hp > 0),
+      ].filter((index) => index >= 0);
+}
 export function attackPlan(
   state: ExpeditionState,
   enemy: Enemy,
 ): { actor: number; amount: number; hits: number }[] {
   if (enemy.hp <= 0 || enemy.intent.kind !== "attack") return [];
   const intent = enemy.intent;
-  const targets =
-    intent.target === "all"
-      ? state.heroes.flatMap((h, i) => (h.hp > 0 ? [i] : []))
-      : [
-          state.heroes[intent.target % state.heroes.length].hp > 0
-            ? intent.target % state.heroes.length
-            : state.heroes.findIndex((h) => h.hp > 0),
-        ];
+  const targets = intentTargets(state, intent.target);
   return targets
     .filter((actor) => actor >= 0)
     .map((actor) => ({
@@ -105,6 +118,7 @@ export class ExpeditionRules {
     state.heroes = professions.map((profession) => {
       const h = heroContent[profession];
       return {
+        ...initialResources(),
         profession,
         gold: 0,
         relics: [],
@@ -126,7 +140,7 @@ export class ExpeditionRules {
         deck: h.deck.map((card) => ({
           id: `c${state.nextId++}`,
           card,
-          upgraded: false,
+          upgradeLevel: 0,
         })),
         discard: [],
         played: [],
@@ -191,6 +205,7 @@ export class ExpeditionRules {
       hero.dexterity = 0;
       hero.thorns = 0;
       hero.regen = 0;
+      Object.assign(hero, initialResources());
       hero.relicUses = {};
       hero.vulnerable = 0;
       hero.energy = 3;
@@ -245,7 +260,7 @@ export class ExpeditionRules {
               },
             ]
           : []),
-        ...(allCards(hero).some((c) => c.card === "strike" && !c.upgraded)
+        ...(allCards(hero).some((c) => c.card === "strike" && canUpgrade(c))
           ? [
               {
                 type: "reward" as const,
@@ -347,9 +362,13 @@ export class ExpeditionRules {
                 ? fighter.poison * 2
                 : effect.scale === "played"
                   ? hero.played.length * 2
-                  : effect.scale === "marked" && fighter.vulnerable > 0
-                    ? 6
-                    : 0),
+                  : effect.scale === "heat"
+                    ? hero.heat * 2
+                    : effect.scale === "turret"
+                      ? hero.turret * 2
+                      : effect.scale === "marked" && fighter.vulnerable > 0
+                        ? 6
+                        : 0),
           hero,
           fighter,
         ),
@@ -381,6 +400,19 @@ export class ExpeditionRules {
     if (effect.kind === "heal") {
       const gain = Math.min(fighter.maxHp - fighter.hp, effect.amount);
       fighter.hp += gain;
+      if (target.side === "hero") {
+        const recipient = state.heroes[target.index];
+        const overflow = Math.min(effect.amount - gain, recipient.blessing);
+        recipient.block += overflow;
+        recipient.blessing -= overflow;
+        if (overflow > 0)
+          state.visuals.push({
+            kind: "block",
+            target,
+            amount: overflow,
+            source: actor,
+          });
+      }
       state.metrics.healed += gain;
       state.visuals.push({ kind: "heal", target, amount: gain, source: actor });
     }
@@ -415,6 +447,25 @@ export class ExpeditionRules {
         source: actor,
       });
     }
+    if (target.side === "hero") {
+      const recipient = state.heroes[target.index];
+      if (effect.kind === "cool")
+        recipient.heat = Math.max(0, recipient.heat - effect.amount);
+      if (effect.kind in resourceEffects) {
+        const resource =
+          resourceEffects[effect.kind as keyof typeof resourceEffects];
+        recipient[resource] = Math.min(
+          expeditionResources[resource].maximum,
+          recipient[resource] + effect.amount,
+        );
+        state.visuals.push({
+          kind: "status",
+          target,
+          amount: effect.amount,
+          source: actor,
+        });
+      }
+    }
     if (effect.kind === "cleanse") {
       fighter.poison = 0;
       fighter.vulnerable = 0;
@@ -435,9 +486,19 @@ export class ExpeditionRules {
               h.hp > 0 ? [{ side: "hero" as const, index }] : [],
             )
           : effect.target === "self" ||
-              (["draw", "energy", "strength", "dexterity", "thorns"].includes(
-                effect.kind,
-              ) &&
+              ([
+                "draw",
+                "energy",
+                "strength",
+                "dexterity",
+                "thorns",
+                "heat",
+                "cool",
+                "device",
+                "focus",
+                "echo",
+                "blessing",
+              ].includes(effect.kind) &&
                 targets[0]?.side === "enemy")
             ? [{ side: "hero", index: actor }]
             : targets;
@@ -482,7 +543,12 @@ export class ExpeditionRules {
     index: number,
     target?: Target,
   ): ExpeditionState {
-    if (state.phase !== "combat" || state.heroes[actor]?.ready)
+    if (
+      state.phase !== "combat" ||
+      !state.heroes[actor] ||
+      state.heroes[actor].hp <= 0 ||
+      state.heroes[actor].ready
+    )
       throw new Error("当前不能使用药水");
     const id = state.heroes[actor].potions[index];
     if (!id) throw new Error("药水不存在");
@@ -506,7 +572,7 @@ export class ExpeditionRules {
     next.heroes[actor].potions.splice(index, 1);
     this.effects(next, actor, potion.effects, [aim]);
     this.log(next, `${next.heroes[actor].name}使用${potion.name}`);
-    this.victory(next);
+    this.settleActions(next);
     return next;
   }
   private finishTurn(state: ExpeditionState) {
@@ -539,7 +605,7 @@ export class ExpeditionRules {
     this.log(state, `${state.scenario[state.encounter].name}胜利`);
     state.heroes.forEach((hero) => {
       if (hero.hp === 0) {
-        hero.hp = Math.ceil(hero.maxHp / 4);
+        hero.hp = Math.ceil(hero.maxHp * (state.revivalFraction ?? 0.25));
         state.metrics.healed += hero.hp;
       }
     });
@@ -555,10 +621,49 @@ export class ExpeditionRules {
       );
     return true;
   }
+  private settleActions(state: ExpeditionState) {
+    if (
+      !this.victory(state) &&
+      state.heroes.every((hero) => hero.ready || hero.hp <= 0)
+    )
+      this.enemiesAct(state);
+  }
+  private resourceAttack(
+    state: ExpeditionState,
+    actor: number,
+    amount: number,
+  ) {
+    const living = state.enemies.flatMap((enemy, index) =>
+      enemy.hp > 0 ? [{ enemy, index }] : [],
+    );
+    const target = living.sort((a, b) => a.enemy.hp - b.enemy.hp)[0];
+    if (!target) return;
+    this.effects(
+      state,
+      actor,
+      [{ kind: "damage", amount }],
+      [{ side: "enemy", index: target.index }],
+    );
+  }
   private enemiesAct(state: ExpeditionState) {
+    state.heroes.forEach((hero, actor) => {
+      if (hero.hp <= 0) return;
+      if (hero.turret > 0) this.resourceAttack(state, actor, hero.turret);
+      if (hero.heat >= heatRule.threshold)
+        this.hit(
+          state,
+          { side: "hero", index: actor },
+          hero.heat - heatRule.residual,
+          undefined,
+          true,
+        );
+      hero.heat = Math.max(0, hero.heat - heatRule.cooling);
+    });
+    if (this.victory(state)) return;
     for (const enemy of state.enemies) {
       if (enemy.hp <= 0) continue;
       enemy.block = 0;
+      enemy.thorns = Math.max(0, enemy.thorns - enemyThornsRule.decay);
       if (enemy.poison) {
         this.hit(
           state,
@@ -573,6 +678,22 @@ export class ExpeditionRules {
       const intent = enemy.intent;
       if (intent.kind === "block") enemy.block += intent.amount;
       if (intent.kind === "strength") enemy.strength += intent.amount;
+      if (intent.kind === "thorns")
+        enemy.thorns = Math.min(
+          enemyThornsRule.maximum,
+          enemy.thorns + intent.amount,
+        );
+      if (intent.kind === "heal")
+        state.enemies
+          .filter((member) => member.hp > 0)
+          .forEach(
+            (member) =>
+              (member.hp = Math.min(member.maxHp, member.hp + intent.amount)),
+          );
+      if (intent.kind === "poison" || intent.kind === "weak")
+        for (const target of intentTargets(state, intent.target))
+          state.heroes[target][intent.kind] +=
+            intent.amount + Number(intent.kind === "weak");
       for (const attack of attackPlan(state, enemy))
         for (
           let hit = 0;
@@ -612,8 +733,13 @@ export class ExpeditionRules {
       hero.hand = [];
       hero.played = [];
       hero.block = 0;
-      hero.energy = 3;
+      hero.energy = 3 + hero.focus;
+      hero.focus = 0;
       hero.ready = hero.hp <= 0;
+      if (hero.hp > 0 && hero.echo > 0) {
+        this.resourceAttack(state, actor, hero.echo);
+        hero.echo = 0;
+      }
       hero.vulnerable = Math.max(0, hero.vulnerable - 1);
       hero.weak = Math.max(0, hero.weak - 1);
       if (hero.hp > 0 && hero.regen > 0) {
@@ -645,6 +771,7 @@ export class ExpeditionRules {
       this.log(state, "队伍全部倒地，冒险结束");
       return;
     }
+    if (this.victory(state)) return;
     state.heroes.forEach((hero) => (hero.ready = hero.hp <= 0));
     state.enemies.forEach((enemy, index) => {
       enemy.vulnerable = Math.max(0, enemy.vulnerable - 1);
@@ -696,17 +823,16 @@ export class ExpeditionRules {
         "card",
         card.effects.some((e) => e.kind === "damage") ? "attack" : "skill",
       );
-      this.victory(next);
     }
     if (action.type === "ready" || action.type === "unready") {
       hero.ready = action.type === "ready";
       this.log(next, `${hero.name}${hero.ready ? "结束行动" : "取消结束"}`);
-      if (next.heroes.every((h) => h.ready || h.hp <= 0)) this.enemiesAct(next);
     }
     if (action.type === "reward") {
       this.reward(next, action.actor, action.reward);
       next.rewards[action.actor] = action.reward;
     }
+    if (next.phase === "combat") this.settleActions(next);
     return next;
   }
   private reward(state: ExpeditionState, actor: number, reward: Reward) {
@@ -715,7 +841,7 @@ export class ExpeditionRules {
       hero.discard.push({
         id: `c${state.nextId++}`,
         card: reward.card,
-        upgraded: false,
+        upgradeLevel: 0,
       });
       this.log(state, `${hero.name}获得${cards[reward.card].name}`);
     }
@@ -727,10 +853,13 @@ export class ExpeditionRules {
     }
     if (reward.kind === "upgrade") {
       const card = allCards(hero).find(
-        (c) => c.card === "strike" && !c.upgraded,
+        (c) => c.card === "strike" && canUpgrade(c),
       )!;
-      card.upgraded = true;
-      this.log(state, `${hero.name}升级打击：6 → 9 伤害`);
+      card.upgradeLevel++;
+      this.log(
+        state,
+        `${hero.name}强化${definition(card).name}：${definition(card).effects[0].amount} 伤害`,
+      );
     }
     if (reward.kind === "skip") this.log(state, `${hero.name}跳过奖励`);
   }

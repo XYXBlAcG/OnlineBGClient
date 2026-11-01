@@ -1,4 +1,4 @@
-import { bannerContrast } from "./banner-color";
+import { Emoji } from "../Emoji";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { bannerLifetime } from "../../domain/banner";
@@ -132,7 +132,6 @@ export function BannerLayer({
           ...("color" in banner && banner.color
             ? {
                 "--banner-color": banner.color,
-                "--banner-stroke": bannerContrast(banner.color),
               }
             : {}),
         } as React.CSSProperties
@@ -144,7 +143,7 @@ export function BannerLayer({
       {effect ? (
         <>
           <div key={comboIndex} className="banner-effect-main">
-            {effect.emoji}
+            <Emoji text={effect.emoji} />
           </div>
           <div
             key={`particles:${comboIndex}`}
@@ -156,7 +155,9 @@ export function BannerLayer({
                 key={index}
                 style={{ "--particle-index": index } as React.CSSProperties}
               >
-                {index % 3 === 0 ? effect.emoji : effect.particles}
+                <Emoji
+                  text={index % 3 === 0 ? effect.emoji : effect.particles}
+                />
               </span>
             ))}
           </div>

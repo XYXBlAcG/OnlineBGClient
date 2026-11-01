@@ -1,3 +1,4 @@
+import type { HeroResources } from "./resources";
 import type { RelicId, PotionId } from "./world";
 import type {
   CardId,
@@ -17,7 +18,7 @@ export interface Fighter {
   thorns: number;
   regen: number;
 }
-export interface Hero extends Fighter {
+export interface Hero extends Fighter, HeroResources {
   profession: number;
   gold: number;
   relics: RelicId[];
@@ -71,6 +72,7 @@ export interface ExpeditionState {
   phase: "setup" | "combat" | "reward" | "won" | "lost";
   scenario: EncounterDefinition[];
   battleSerial: number;
+  revivalFraction?: number;
   heroes: Hero[];
   enemies: Enemy[];
   nextId: number;

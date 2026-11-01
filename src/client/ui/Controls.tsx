@@ -95,7 +95,9 @@ export function Slider({
   max,
   step,
   "aria-label": label,
+  disabled = false,
 }: {
+  disabled?: boolean;
   value: number;
   onValueChange: (value: number) => void;
   min: number;
@@ -106,6 +108,7 @@ export function Slider({
   return (
     <SliderPrimitive.Root
       className="ui-slider"
+      disabled={disabled}
       value={[value]}
       onValueChange={(values) => onValueChange(values[0])}
       min={min}
@@ -150,7 +153,9 @@ export function Panel({
   className = "",
   scope,
   initialFocus,
+  overlayClassName = "",
 }: {
+  overlayClassName?: string;
   initialFocus?: React.RefObject<HTMLElement>;
   className?: string;
   scope?: string;
@@ -174,7 +179,7 @@ export function Panel({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
           data-motion-scope="ui"
-          className="ui-overlay"
+          className={`ui-overlay ${overlayClassName}`}
         />
         <DialogPrimitive.Content
           data-motion-scope="ui"

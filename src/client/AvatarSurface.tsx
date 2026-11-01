@@ -1,9 +1,10 @@
+import { Emoji } from "./Emoji";
 import { MotionControls, type MotionPreferences } from "./MotionControls";
 import { AvatarPicker } from "./AvatarPicker";
 import { seatAvatar } from "../domain/avatar";
 import * as Popover from "@radix-ui/react-popover";
 import type { Snapshot } from "../domain/protocol";
-import { interactionCatalogue, type InteractionKind } from "../domain/social";
+import { freeInteractionCatalogue, type FreeInteractionKind } from "../domain/social";
 import {
   defaultPhraseGroups,
   phraseGroups,
@@ -28,7 +29,7 @@ export interface AvatarSurfaceProps {
   onPhrase?: (text: string) => void;
   onInteract?: (
     target: number,
-    kind: InteractionKind,
+    kind: FreeInteractionKind,
     units?: import("../domain/social").InteractionUnits,
   ) => void;
 }
@@ -66,7 +67,9 @@ export function AvatarSurface({
         (!onChoose && (index === snapshot.actor ? !onPhrase : !onInteract))
       }
     >
-      <span className="game-avatar-face">{seatAvatar(seat)}</span>
+      <span className="game-avatar-face">
+        <Emoji text={seatAvatar(seat)} />
+      </span>
       {showName && <span className="game-avatar-name">{seat.name}</span>}
       {children}
     </button>
@@ -107,13 +110,13 @@ export function AvatarSurface({
             )}
             {index !== snapshot.actor && onInteract && (
               <div className="avatar-interactions">
-                {Object.entries(interactionCatalogue).map(([kind, effect]) => (
+                {Object.entries(freeInteractionCatalogue).map(([kind, effect]) => (
                   <Popover.Close asChild key={kind}>
                     <button
                       aria-label={`送出${effect.name}`}
-                      onClick={() => onInteract(index, kind as InteractionKind)}
+                      onClick={() => onInteract(index, kind as FreeInteractionKind)}
                     >
-                      {effect.emoji}
+                      <Emoji text={effect.emoji} />
                     </button>
                   </Popover.Close>
                 ))}

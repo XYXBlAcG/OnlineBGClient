@@ -1,3 +1,4 @@
+import { expeditionItemArt } from "./item-art";
 import {
   definition,
   cardText,
@@ -14,14 +15,32 @@ export function ExpeditionCard({
   instance,
   selected,
   disabled,
+  unavailable,
   onChoose,
 }: {
   instance: CardInstance;
   selected?: boolean;
   disabled?: boolean;
+  unavailable?: boolean;
   onChoose?: () => void;
 }) {
   const card = definition(instance);
+  const body = (
+    <>
+      <span className="exp-card-top">
+        <b className="exp-cost">{card.cost}</b>
+        <strong>{card.name}</strong>
+      </span>
+      <span className="exp-card-art" aria-hidden="true">
+        <img draggable={false} alt="" src={expeditionItemArt(card.effects)} />
+      </span>
+      <span className="exp-card-text">{cardText(instance, false)}</span>
+      <span className="exp-card-bottom">
+        {targets[card.target]}
+        <i>{card.exhaust ? "消耗" : ""}</i>
+      </span>
+    </>
+  );
   return (
     <DetailSurface
       title={card.name}
@@ -42,6 +61,7 @@ export function ExpeditionCard({
       {(detail) => (
         <article
           className={`exp-card ${selected ? "is-selected" : ""}`}
+          data-unavailable={unavailable || disabled || undefined}
           data-card-type={
             card.effects.some((e) => e.kind === "damage") ? "attack" : "skill"
           }
@@ -49,28 +69,22 @@ export function ExpeditionCard({
           data-guide-id={instance.id}
           data-motion-key={`expedition-card-${instance.id}`}
           data-card-instance={instance.id}
+          data-upgrade-level={instance.upgradeLevel}
         >
-          <button
-            data-control="custom"
-            className="exp-card-main"
-            aria-label={`选择${card.name}`}
-            aria-pressed={selected ?? false}
-            disabled={disabled}
-            onClick={onChoose}
-          >
-            <span className="exp-card-top">
-              <b className="exp-cost">{card.cost}</b>
-              <strong>{card.name}</strong>
-            </span>
-            <span className="exp-card-art" aria-hidden="true">
-              {card.icon}
-            </span>
-            <span className="exp-card-text">{cardText(instance)}</span>
-            <span className="exp-card-bottom">
-              {targets[card.target]}
-              <i>{card.exhaust ? "消耗" : ""}</i>
-            </span>
-          </button>
+          {onChoose ? (
+            <button
+              data-control="custom"
+              className="exp-card-main"
+              aria-label={`选择${card.name}`}
+              aria-pressed={selected ?? false}
+              disabled={disabled}
+              onClick={onChoose}
+            >
+              {body}
+            </button>
+          ) : (
+            <div className="exp-card-main">{body}</div>
+          )}
           {detail}
         </article>
       )}

@@ -1,3 +1,4 @@
+import { v4 as randomId } from "uuid";
 import { commandSchema, type Command, type Response } from "./protocol";
 import { Room, type RoomArchive } from "./room";
 
@@ -87,7 +88,7 @@ export class Gateway {
     if (command.type === "restore-local")
       throw new Error("该命令仅用于本地存档");
     if (command.type === "create") {
-      const room = new Room(crypto.randomUUID().slice(0, 8), command.config);
+      const room = new Room(randomId().slice(0, 8), command.config);
       const token =
         command.hostOnly || !room.config.humans
           ? room.createHost(command.name)
@@ -101,7 +102,7 @@ export class Gateway {
     if (command.type === "join") {
       const room = this.rooms.get(command.room);
       if (!room) throw new Error("房间不存在");
-      const token = room.claim(command.name, command.token, command.avatar);
+      const token = command.spectator&&!command.token?room.watch(command.name,command.avatar):room.claim(command.name, command.token, command.avatar);
       return {
         session: { room: room.id, token },
         response: { type: "session", room: room.id, token },
@@ -119,6 +120,10 @@ export class Gateway {
       const replay = room.snapshot(command.token).replay;
       this.rooms.delete(room.id);
       return { session, response: { type: "closed", replay } };
+    }
+    if (command.type === "party") {
+      room.partyAction(command.token,command.id,command.action);
+      return {session,response:{type:"ack",id:command.id}};
     }
     if (command.type === "interaction") {
       const event = room.interact(

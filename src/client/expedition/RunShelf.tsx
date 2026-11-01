@@ -51,7 +51,8 @@ export function RunShelf({
                 disabled={busy || pending.current.has(link.id)}
                 onClick={() => onRestore(link)}
               >
-                第 {Math.max(1, link.floor + 1)} 层 · {link.names.join("、")}
+                第 {(link.chapter ?? 0) + 1} 大层 · 节点{" "}
+                {Math.max(1, link.floor + 1)} · {link.names.join("、")}
                 <small>
                   {link.endpoint ? "联机存档" : "本地存档"} ·{" "}
                   {new Date(link.updated).toLocaleString()}

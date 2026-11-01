@@ -1,3 +1,5 @@
+import { startEmojiClient } from "./emoji/client";
+import { installDiagnostics } from "./diagnostics";
 import { listen } from "@tauri-apps/api/event";
 import { isTauri } from "@tauri-apps/api/core";
 import { installSelectionPolicy, selectAll } from "./selection-policy";
@@ -19,12 +21,16 @@ export function MotionProvider({
   children: React.ReactNode;
 }) {
   useEffect(() => {
+    const stopEmoji = startEmojiClient();
     const dispose = installSelectionPolicy(document);
+    const diagnostics = installDiagnostics();
     const native = isTauri()
       ? listen("edit-select-all", () => selectAll(document))
       : null;
     return () => {
+      stopEmoji();
       dispose();
+      diagnostics();
       if (native) void native.then((stop) => stop()).catch(console.error);
     };
   }, []);

@@ -1,4 +1,4 @@
-use hullqin_companion_lib::{
+use onlinebg_client_lib::{
     hosting::{self, Hosting},
     windows,
 };
@@ -58,7 +58,7 @@ fn main() {
             windows::close_auxiliary,
             windows::auxiliary_state,
             windows::auxiliary_intent,
-            hullqin_companion_lib::cache::cache_usage
+            onlinebg_client_lib::cache::cache_usage
         ])
         .on_page_load(|window, event| {
             if matches!(event.event(), tauri::webview::PageLoadEvent::Finished) {

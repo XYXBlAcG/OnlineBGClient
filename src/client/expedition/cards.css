@@ -1,0 +1,142 @@
+.exp-card {
+  --exp-paper: #fffdf7;
+  --exp-card-foreground: #242a35;
+  --exp-card-secondary: #465062;
+  --exp-card-edge: #aab2be;
+}
+[data-color-scheme="dark"] .exp-card {
+  --exp-paper: #303644;
+  --exp-card-foreground: #f1f3f8;
+  --exp-card-secondary: #c0c8d7;
+  --exp-card-edge: #798397;
+}
+.exp-card {
+  --card-tint: var(--exp-blue);
+  position: relative;
+  border-radius: 12px;
+  background: var(--exp-paper);
+  color: var(--exp-card-foreground);
+  height: var(--exp-card-height);
+  box-shadow: 0 2px 10px #0002;
+  transition: transform 150ms;
+}
+.exp-card[data-card-type="attack"] {
+  --card-tint: var(--exp-ink);
+}
+.exp-card-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  border: 1px solid var(--exp-card-edge);
+  border-top: 2px solid var(--card-tint);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--exp-card-foreground);
+  text-align: left;
+  cursor: pointer;
+  gap: 6px;
+}
+.exp-card-main:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.exp-card.is-selected {
+  transform: translateY(-5px);
+  box-shadow:
+    0 0 0 2px var(--exp-ink),
+    0 9px 20px #0003;
+}
+.exp-card-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 8px;
+}
+.exp-card-top strong {
+  font-size: 12px;
+}
+.exp-cost {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  height: 21px;
+  width: 21px;
+  flex: none;
+  background: var(--field);
+  color: var(--exp-ink);
+  font-size: 12px;
+}
+.exp-card-art {
+  color: var(--card-tint);
+  font-size: 32px;
+  text-align: center;
+  line-height: 1;
+}
+.exp-card-text {
+  font-size: 12px;
+  line-height: 1.65;
+  font-weight: 450;
+  color: var(--exp-card-foreground);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.exp-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--exp-card-secondary);
+  font-size: 9px;
+  padding-right: 15px;
+}
+.exp-card-bottom i {
+  font-style: normal;
+  color: var(--exp-ink);
+}
+.exp-card .card-detail-button {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  padding: 0 !important;
+  width: 21px;
+  height: 21px;
+  min-height: 21px !important;
+  min-width: 21px;
+  border: 0;
+  background: transparent !important;
+  color: var(--exp-card-secondary);
+  font-size: 12px;
+}
+.exp-card[data-unavailable] .exp-card-top strong {
+  text-decoration: underline dotted var(--exp-card-secondary);
+  text-underline-offset: 4px;
+}
+.exp-card[data-unavailable] {
+  box-shadow: none;
+}
+.exp-card .exp-card-art {
+  align-self: stretch;
+  border-radius: 8px;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--card-tint) 12%, transparent),
+    transparent 75%
+  );
+  padding: 6px;
+}
+.exp-card-art svg {
+  width: 100%;
+  max-height: 56px;
+}
+:is(.exp-service-cards, .exp-inspect-cards, .exp-table-hand) {
+  background: #e8edf2;
+  border-radius: 14px;
+  padding: 10px;
+}
+[data-color-scheme="dark"]
+  :is(.exp-service-cards, .exp-inspect-cards, .exp-table-hand) {
+  background: #191e28;
+}

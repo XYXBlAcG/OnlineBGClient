@@ -1,3 +1,4 @@
+import { useGameScale } from "./game-sizing/GameSizing";
 import { ExpeditionTable } from "./expedition/ExpeditionTable";
 import { DominionTable } from "./dominion/DominionTable";
 import { GraphwarTable } from "./graphwar/GraphwarTable";
@@ -73,12 +74,14 @@ export const OriginalGame = memo(function OriginalGame({
   restart?: () => void;
   onInteract?: (
     target: number,
-    kind: import("../domain/social").InteractionKind,
+    kind: import("../domain/social").FreeInteractionKind,
     units?: import("../domain/social").InteractionUnits,
   ) => void;
 }) {
+  replay ||= snapshot.actor<0;
   const { game: gameMotion } = usePresentation();
   const surface = useRef<HTMLDivElement>(null);
+  const elementScale = useGameScale(surface, snapshot.kind);
   const runtime = useMemo(() => new UpstreamRuntime(), []);
   const view = useMemo(
     () =>
@@ -169,7 +172,7 @@ export const OriginalGame = memo(function OriginalGame({
       : null;
   const events = runtime.load(5982).Z;
   const room = {
-    position: snapshot.actor + 1,
+    position: Math.max(0,snapshot.actor + 1),
     owner: replay ? 0 : snapshot.canManage ? snapshot.actor + 1 : 1,
     playerList: snapshot.seats.map((seat) => ({
       name: seat.name,
@@ -186,6 +189,8 @@ export const OriginalGame = memo(function OriginalGame({
     <div
       ref={surface}
       className="original-game"
+      style={{ zoom: elementScale }}
+      data-element-scale={elementScale}
       data-motion-scope="game"
       data-game-motion={animationActive ? gameMotion : "reduced"}
       data-game={snapshot.kind}

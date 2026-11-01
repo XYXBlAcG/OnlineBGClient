@@ -73,7 +73,7 @@ export class DdzRules {
   project(view: DdzView, actor: number): DdzView {
     const result = structuredClone(view);
     const visible = new Set([
-      ...view.playerCardLists[actor + 1],
+      ...(actor>=0?view.playerCardLists[actor + 1]:[]),
       ...view.playedCardList,
       ...(view.state !== 0 ? view.holeCardList : []),
     ]);

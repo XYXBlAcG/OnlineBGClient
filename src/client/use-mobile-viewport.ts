@@ -1,8 +1,13 @@
+import { phonePreviewEnabled } from "./phone-preview";
 import { useLayoutEffect } from "react";
 import { mobileViewport } from "./mobile-viewport";
 export function useMobileViewport(enabled: boolean): void {
   useLayoutEffect(() => {
     if (!enabled) return;
+    const preview = phonePreviewEnabled(
+      location.search,
+      window.parent !== window,
+    );
     const root = document.documentElement;
     const viewport = window.visualViewport;
     let frame = 0;
@@ -11,14 +16,20 @@ export function useMobileViewport(enabled: boolean): void {
     const update = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        if (lastWidth !== innerWidth || innerHeight > layoutHeight - 120)
+        if (
+          preview ||
+          lastWidth !== innerWidth ||
+          innerHeight > layoutHeight - 120
+        )
           layoutHeight = innerHeight;
         lastWidth = innerWidth;
-        const orientation = screen.orientation?.type?.startsWith("landscape")
-          ? "landscape"
-          : screen.orientation?.type?.startsWith("portrait")
-            ? "portrait"
-            : undefined;
+        const orientation = preview
+          ? undefined
+          : screen.orientation?.type?.startsWith("landscape")
+            ? "landscape"
+            : screen.orientation?.type?.startsWith("portrait")
+              ? "portrait"
+              : undefined;
         const value = mobileViewport({
           width: innerWidth,
           height: layoutHeight,

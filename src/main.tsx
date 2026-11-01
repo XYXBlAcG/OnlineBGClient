@@ -1,3 +1,10 @@
+import { useUsageContext } from "./client/usage/context";
+import "./client/ui/art-experience.css";
+import { AnimatedSidebar } from "./client/AnimatedSidebar";
+import { v4 as randomId } from "uuid";
+import { recordClientLog } from "./client/diagnostics";
+import { startHosting } from "./client/start-hosting";
+import { GameSizeProvider } from "./client/game-sizing/GameSizing";
 import { UpdaterController } from "./client/updates/UpdaterController";
 import { RoomOperation } from "./client/room-operation";
 import { SceneSurface } from "./client/SceneSurface";
@@ -39,7 +46,7 @@ import { ComputeStatus } from "./client/ComputeStatus";
 import { SidebarDivider } from "./client/SidebarDivider";
 import { sidebarBounds, sidebarBreakpoint } from "./client/sidebar-layout";
 import { ChatPanel } from "./client/ChatPanel";
-import type { InteractionEvent, InteractionKind } from "./domain/social";
+import type { InteractionEvent, FreeInteractionKind } from "./domain/social";
 import { installContextMenuPolicy } from "./client/desktop-context-menu";
 import { applyTheme } from "./client/themes";
 import { Panel } from "./client/ui/Controls";
@@ -81,6 +88,9 @@ import "./styles.css";
 import "./client/ui/experience.css";
 import "./client/ui/social-experience.css";
 import "./client/ui/mobile-landscape.css";
+import "./client/ui/platform-controls.css";
+import "./client/ui/mobile-usability.css";
+
 
 const emptyInteractions: InteractionEvent[] = [];
 const invited = new URLSearchParams(location.search);
@@ -149,6 +159,10 @@ function App() {
   const quitting = useRef(false);
   const [closeIntent, setCloseIntent] = useState<"close" | "quit" | null>(null);
   const [service, setService] = useState(initialService);
+  const invitationEndpoint = useRef("");
+  const lanHosting = useRef(false);
+  useEffect(() => { if (status) recordClientLog("connection", status); }, [status]);
+  useEffect(() => { if (notice) recordClientLog("notice", notice); }, [notice]);
   const [tokens, setTokens] = useState<string[]>([]);
   const [tab, setTab] = useState<"game" | "audit" | "rules">("game");
   const [heroGuides] = useState(() => new HeroGuides().all());
@@ -239,6 +253,7 @@ function App() {
   preferencesRef.current = preferences;
   const [store] = useState(() => new ClientStore());
   const [recordsOpen, setRecordsOpen] = useState(false);
+  useUsageContext(snapshot, mode === "local" || status === "已连接", recordsOpen);
   const [hasLocalSave, setHasLocalSave] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -348,7 +363,7 @@ function App() {
       connection.current?.send({
         type: "chat",
         token: session.current.token,
-        id: crypto.randomUUID(),
+        id: randomId(),
         text,
       });
   }, []);
@@ -357,7 +372,7 @@ function App() {
       connection.current?.send({
         type: "chat-image",
         token: session.current.token,
-        id: crypto.randomUUID(),
+        id: randomId(),
         attachment,
       });
   }, []);
@@ -401,12 +416,12 @@ function App() {
       if (response.diagnostic) setComputeFailure(response.diagnostic);
     }
     if (response.type === "session") {
-      if (hosting.current) setNotice("公网房间已就绪，可以邀请朋友加入");
+      if (hosting.current) setNotice("房间服务已就绪，可以邀请朋友加入");
       session.current = { token: response.token, room: response.room };
       if (hosting.current)
         localStorage.setItem(
           "onlinebg.hosted-room",
-          JSON.stringify(session.current),
+          JSON.stringify({ ...session.current, lan: lanHosting.current }),
         );
       setTokens(response.localTokens || []);
     }
@@ -435,15 +450,17 @@ function App() {
                 ? connection.current.endpoint
                 : null,
             hosted: hosting.current,
+            lan: lanHosting.current,
             updated: Date.now(),
             names: response.snapshot.seats.map((s) => s.name),
             floor: run.floor,
+            chapter: run.chapter,
           });
       }
       if (connection.current instanceof NetworkConnection) {
         localStorage.setItem(
           "onlinebg.last-room",
-          invitationLink(response.snapshot.room, connection.current.endpoint),
+          invitationLink(response.snapshot.room, invitationEndpoint.current || connection.current.endpoint),
         );
       }
     }
@@ -458,13 +475,13 @@ function App() {
   const interact = useCallback(
     (
       target: number,
-      kind: InteractionKind,
+      kind: FreeInteractionKind,
       units?: import("./domain/social").InteractionUnits,
     ) =>
       connection.current?.send({
         type: "interaction",
         token: session.current!.token,
-        id: crypto.randomUUID(),
+        id: randomId(),
         target,
         kind,
         units,
@@ -503,11 +520,15 @@ function App() {
     endpoint: string,
     temporary: boolean,
     hostOnly: boolean,
+    lan = false,
   ) => {
     if (!operation.begin("create")) return;
+    invitationEndpoint.current = "";
+    lanHosting.current = lan;
     const generation = ++launch.current;
     setBusy(true);
     try {
+    config={...config,party:{...config.party,enabled:preferences.party.autoEnable},plugins:[]};
       connection.current?.close();
       setNotice("");
       localStorage.setItem("player-name", name);
@@ -530,9 +551,11 @@ function App() {
           avatar: preferences.avatar,
         });
       } else {
-        if (temporary) {
-          setStatus("正在准备公网房间");
-          endpoint = await invoke<string>("start_host");
+        if (temporary || lan) {
+          setStatus(lan ? "正在准备局域网房间" : "正在准备公网房间");
+          const prepared = await startHosting(preferences.network, lan);
+          endpoint = prepared.endpoint;
+          invitationEndpoint.current = prepared.invitation;
           if (generation !== launch.current) return;
           hosting.current = true;
         }
@@ -563,7 +586,9 @@ function App() {
       if (generation === launch.current) setBusy(false);
     }
   };
-  const join = (name: string, invitation: string) => {
+  const join = (name: string, invitation: string,spectator=false) => {
+    invitationEndpoint.current = "";
+    lanHosting.current = false;
     launch.current++;
     try {
       const { room, service: endpoint } = parseInvitation(invitation);
@@ -573,7 +598,7 @@ function App() {
       setService(endpoint);
       connection.current = new NetworkConnection(
         endpoint,
-        { type: "join", room, name, avatar: preferences.avatar },
+        { type: "join", room, name, avatar: preferences.avatar,spectator },
         receive,
         setStatus,
       );
@@ -601,8 +626,11 @@ function App() {
     const generation = ++launch.current;
     setBusy(true);
     try {
-      const identity = JSON.parse(saved) as { room: string; token: string };
-      const endpoint = await invoke<string>("start_host");
+      const identity = JSON.parse(saved) as { room: string; token: string; lan?: boolean };
+      const prepared = await startHosting(preferences.network, identity.lan);
+      lanHosting.current = !!identity.lan;
+      const endpoint = prepared.endpoint;
+      invitationEndpoint.current = prepared.invitation;
       if (generation !== launch.current) return;
       hosting.current = true;
       setMode("network");
@@ -613,7 +641,8 @@ function App() {
         endpoint,
         {
           type: "join",
-          ...identity,
+          room: identity.room,
+          token: identity.token,
           name: localStorage.getItem("player-name") || "我",
         },
         receive,
@@ -635,9 +664,10 @@ function App() {
       setTab("game");
       setMode(link.endpoint ? "network" : "local");
       if (link.endpoint) {
-        const endpoint = link.hosted
-          ? await invoke<string>("start_host")
-          : link.endpoint;
+        const prepared = link.hosted ? await startHosting(preferences.network, link.lan) : null;
+        const endpoint = prepared?.endpoint ?? link.endpoint;
+        invitationEndpoint.current = prepared?.invitation ?? "";
+        lanHosting.current = !!link.lan;
         if (generation !== launch.current) return;
         hosting.current = link.hosted;
         setService(endpoint);
@@ -720,7 +750,7 @@ function App() {
         connection.current!.send({
           type: "action",
           token: session.current.token,
-          id: crypto.randomUUID(),
+          id: randomId(),
           version: snapshot.version,
           action,
         });
@@ -774,7 +804,7 @@ function App() {
     return () => clearTimeout(timer);
   }, [inviteCopied]);
   const invitationUrl = () =>
-    snapshot ? invitationLink(snapshot.room, service) : service;
+    snapshot ? invitationLink(snapshot.room, invitationEndpoint.current || service) : service;
   const invite = async () => {
     const url = new URL(invitationUrl());
     try {
@@ -1176,7 +1206,7 @@ function App() {
     setPreferences(next);
   };
   return (
-    <MotionProvider preferences={preferences}>
+    <GameSizeProvider profiles={preferences.gameSizes}><MotionProvider preferences={preferences}>
       <UpdaterController
         preferences={preferences.updates}
         busy={
@@ -1806,7 +1836,7 @@ function App() {
                   </section>
                 )}
               </section>
-              <aside className="room-sidebar" hidden={!sidebarVisible}>
+              <AnimatedSidebar open={sidebarVisible} animated={preferences.motion} mobile={mobile}>
                 {!mobile && (
                   <SidebarDivider
                     width={sidebarWidth}
@@ -1889,7 +1919,7 @@ function App() {
                   }
                   onText={sendChat}
                 />
-              </aside>
+              </AnimatedSidebar>
             </main>
           )}
         </SceneSurface>
@@ -1921,7 +1951,7 @@ function App() {
           />
         )}
       </div>
-    </MotionProvider>
+    </MotionProvider></GameSizeProvider>
   );
 }
 

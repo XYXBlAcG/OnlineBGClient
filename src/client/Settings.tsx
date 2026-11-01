@@ -1,3 +1,9 @@
+import { UsageSettings } from "./usage/UsageSettings";
+import { PartySettings } from "./party/PartySettings";
+import { EmojiSettings } from "./emoji/EmojiSettings";
+import { DiagnosticsSettings } from "./DiagnosticsSettings";
+import { useGameSizing, type GameSizing } from "./game-sizing/GameSizing";
+import { GameSizeSettings } from "./game-sizing/GameSizeSettings";
 import { UpdateSettings } from "./updates/UpdateSettings";
 import { emitTo } from "@tauri-apps/api/event";
 import { bannerContrast } from "./social/banner-color";
@@ -31,7 +37,9 @@ export function Settings({
   roomPerformance,
   mediaSession,
   initialSection = "外观",
+  sizing: suppliedSizing,
 }: {
+  sizing?: GameSizing;
   initialSection?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -44,6 +52,8 @@ export function Settings({
   onError: (message: string) => void;
   onBind: (id: string, binding: string) => Promise<void>;
 }) {
+  const localSizing = useGameSizing();
+  const sizing = suppliedSizing ?? localSizing;
   const [section, setSection] = useState(initialSection);
   useEffect(() => {
     if (open) setSection(initialSection);
@@ -64,6 +74,7 @@ export function Settings({
       roomPerformance,
       mediaSession,
       initialSection,
+      sizing,
     },
     (intent) => {
       if (intent.type === "close") onOpenChange(false);
@@ -100,8 +111,11 @@ export function Settings({
         <nav className="settings-nav" aria-label="设置分组">
           {[
             "外观",
+            "游戏显示",
             "消息与互动",
-            ...(isTauri() ? ["声音与语音", "软件更新"] : []),
+            ...(isTauri()
+              ? ["声音与语音", "软件更新", "软件日志", "使用统计"]
+              : []),
             "联机",
             "AI 计算",
             "常用语",
@@ -118,10 +132,18 @@ export function Settings({
           ))}
         </nav>
         <div className="settings-body">
+          {section === "使用统计" && isTauri() && <UsageSettings />}
           {section === "声音与语音" && isTauri() && (
             <VoiceSettings
               value={preferences.voice}
               onChange={(voice) => onChange({ ...preferences, voice })}
+            />
+          )}
+          {section === "游戏显示" && (
+            <GameSizeSettings
+              preferences={preferences}
+              info={sizing}
+              onChange={onChange}
             />
           )}
           <section hidden={section !== "外观"} className="settings-section">
@@ -148,6 +170,7 @@ export function Settings({
               preferences={preferences}
               onChange={(motion) => onChange({ ...preferences, ...motion })}
             />
+            <EmojiSettings proxy={preferences.network.proxyUrl} />
             <AvatarPicker
               value={preferences.avatar}
               onChange={(avatar) => onChange({ ...preferences, avatar })}
@@ -165,6 +188,7 @@ export function Settings({
             className="settings-section"
           >
             <h3>消息与互动</h3>
+            <PartySettings preferences={preferences} onChange={onChange} />
             <Switch
               label="本机显示横幅与全屏表情"
               checked={preferences.bannerDisplay}
@@ -247,6 +271,7 @@ export function Settings({
               onChange={(updates) => onChange({ ...preferences, updates })}
             />
           )}
+          {isTauri() && section === "软件日志" && <DiagnosticsSettings />}
           <section hidden={section !== "联机"} className="settings-section">
             <h3>联机</h3>
             {isTauri() && (
@@ -260,6 +285,47 @@ export function Settings({
                   })
                 }
               />
+            )}
+            {isTauri() && (
+              <>
+                <Switch
+                  label="直连失败后尝试代理开房"
+                  checked={preferences.network.proxyFallback}
+                  onCheckedChange={(proxyFallback) =>
+                    onChange({
+                      ...preferences,
+                      network: { ...preferences.network, proxyFallback },
+                    })
+                  }
+                />
+                <label className="setting-row">
+                  HTTP 代理地址
+                  <input
+                    aria-label="公网开房代理地址"
+                    value={preferences.network.proxyUrl}
+                    placeholder="http://127.0.0.1:7897"
+                    onChange={(event) =>
+                      onChange({
+                        ...preferences,
+                        network: {
+                          ...preferences.network,
+                          proxyUrl: event.target.value,
+                        },
+                      })
+                    }
+                  />
+                </label>
+                <Switch
+                  label="显示局域网调试开房"
+                  checked={preferences.network.showLanDebug}
+                  onCheckedChange={(showLanDebug) =>
+                    onChange({
+                      ...preferences,
+                      network: { ...preferences.network, showLanDebug },
+                    })
+                  }
+                />
+              </>
             )}
             <label className="setting-row">
               自定义房间服务地址

@@ -1,0 +1,127 @@
+{
+  "heroes": [
+    "knight_m",
+    "elf_m",
+    "wizzard_m",
+    "dwarf_m",
+    "wizzard_f",
+    "angel",
+    "dwarf_f",
+    "doc",
+    "elf_f",
+    "knight_f",
+    "lizard_m",
+    "lizard_f"
+  ],
+  "monsters": [
+    "goblin",
+    "orc_warrior",
+    "orc_shaman",
+    "ogre",
+    "big_zombie"
+  ],
+  "animations": {
+    "knight_m": [
+      "knight_m_idle_anim_f0.png",
+      "knight_m_idle_anim_f1.png",
+      "knight_m_idle_anim_f2.png",
+      "knight_m_idle_anim_f3.png"
+    ],
+    "elf_m": [
+      "elf_m_idle_anim_f0.png",
+      "elf_m_idle_anim_f1.png",
+      "elf_m_idle_anim_f2.png",
+      "elf_m_idle_anim_f3.png"
+    ],
+    "wizzard_m": [
+      "wizzard_m_idle_anim_f0.png",
+      "wizzard_m_idle_anim_f1.png",
+      "wizzard_m_idle_anim_f2.png",
+      "wizzard_m_idle_anim_f3.png"
+    ],
+    "dwarf_m": [
+      "dwarf_m_idle_anim_f0.png",
+      "dwarf_m_idle_anim_f1.png",
+      "dwarf_m_idle_anim_f2.png",
+      "dwarf_m_idle_anim_f3.png"
+    ],
+    "wizzard_f": [
+      "wizzard_f_idle_anim_f0.png",
+      "wizzard_f_idle_anim_f1.png",
+      "wizzard_f_idle_anim_f2.png",
+      "wizzard_f_idle_anim_f3.png"
+    ],
+    "angel": [
+      "angel_idle_anim_f0.png",
+      "angel_idle_anim_f1.png",
+      "angel_idle_anim_f2.png",
+      "angel_idle_anim_f3.png"
+    ],
+    "dwarf_f": [
+      "dwarf_f_idle_anim_f0.png",
+      "dwarf_f_idle_anim_f1.png",
+      "dwarf_f_idle_anim_f2.png",
+      "dwarf_f_idle_anim_f3.png"
+    ],
+    "doc": [
+      "doc_idle_anim_f0.png",
+      "doc_idle_anim_f1.png",
+      "doc_idle_anim_f2.png",
+      "doc_idle_anim_f3.png"
+    ],
+    "elf_f": [
+      "elf_f_idle_anim_f0.png",
+      "elf_f_idle_anim_f1.png",
+      "elf_f_idle_anim_f2.png",
+      "elf_f_idle_anim_f3.png"
+    ],
+    "knight_f": [
+      "knight_f_idle_anim_f0.png",
+      "knight_f_idle_anim_f1.png",
+      "knight_f_idle_anim_f2.png",
+      "knight_f_idle_anim_f3.png"
+    ],
+    "lizard_m": [
+      "lizard_m_idle_anim_f0.png",
+      "lizard_m_idle_anim_f1.png",
+      "lizard_m_idle_anim_f2.png",
+      "lizard_m_idle_anim_f3.png"
+    ],
+    "lizard_f": [
+      "lizard_f_idle_anim_f0.png",
+      "lizard_f_idle_anim_f1.png",
+      "lizard_f_idle_anim_f2.png",
+      "lizard_f_idle_anim_f3.png"
+    ],
+    "goblin": [
+      "goblin_idle_anim_f0.png",
+      "goblin_idle_anim_f1.png",
+      "goblin_idle_anim_f2.png",
+      "goblin_idle_anim_f3.png"
+    ],
+    "orc_warrior": [
+      "orc_warrior_idle_anim_f0.png",
+      "orc_warrior_idle_anim_f1.png",
+      "orc_warrior_idle_anim_f2.png",
+      "orc_warrior_idle_anim_f3.png"
+    ],
+    "orc_shaman": [
+      "orc_shaman_idle_anim_f0.png",
+      "orc_shaman_idle_anim_f1.png",
+      "orc_shaman_idle_anim_f2.png",
+      "orc_shaman_idle_anim_f3.png"
+    ],
+    "ogre": [
+      "ogre_idle_anim_f0.png",
+      "ogre_idle_anim_f1.png",
+      "ogre_idle_anim_f2.png",
+      "ogre_idle_anim_f3.png"
+    ],
+    "big_zombie": [
+      "big_zombie_idle_anim_f0.png",
+      "big_zombie_idle_anim_f1.png",
+      "big_zombie_idle_anim_f2.png",
+      "big_zombie_idle_anim_f3.png"
+    ]
+  }
+}

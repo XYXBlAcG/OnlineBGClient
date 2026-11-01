@@ -40,8 +40,8 @@ it("营地升级、移除、休息互斥且全员完成才离开", () => {
   const id = allCards(state.view.combat.heroes[0])[0].id;
   state = apply(state, 0, { type: "upgrade", instance: id });
   expect(
-    allCards(state.view.combat.heroes[0]).find((c) => c.id === id)?.upgraded,
-  ).toBe(true);
+    allCards(state.view.combat.heroes[0]).find((c) => c.id === id)?.upgradeLevel,
+  ).toBe(1);
   expect(state.view.phase).toBe("camp");
   expect(() => apply(state, 0, { type: "rest" })).toThrow();
   state = apply(state, 1, { type: "rest" });
@@ -66,12 +66,12 @@ it("共享遗物先票选再分配，仅有持有人获得；平票由轮值领�
     state.view.combat.heroes.filter((h) => h.relics.includes(a)),
   ).toHaveLength(1);
 });
-it("全部 66 张卡牌及升级版通过同一个执行器产生有限数值且守恒实例", () => {
+it("全部卡牌在六个强化等级及升级版通过同一个执行器产生有限数值且守恒实例", () => {
   const combat = new ExpeditionRules();
   for (const card of Object.keys(cards) as CardId[])
-    for (const upgraded of [false, true]) {
+    for (const upgradeLevel of [0, 1, 2, 3, 4, 5]) {
       let state = combat.create("all-effects", [0, 1, 2]);
-      state.heroes[0].hand = [{ id: "test-card", card, upgraded }];
+      state.heroes[0].hand = [{ id: "test-card", card, upgradeLevel }];
       state.heroes[0].energy = 10;
       const action = combat
         .candidates(state, 0)

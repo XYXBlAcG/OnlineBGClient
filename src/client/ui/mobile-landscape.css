@@ -63,16 +63,21 @@
   .playing-room
   .room-heading {
   justify-content: flex-start;
+  flex: 1;
+  min-width: 0;
 }
 :root[data-mobile-orientation="landscape"] .mobile-shell .room-primary-actions {
-  gap: 6px;
+  gap: 4px;
+  flex: none;
   flex-wrap: nowrap;
 }
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
   .room-primary-actions
   > button {
-  min-width: 64px;
+  flex: 0 0 auto;
+  min-width: max-content;
+  white-space: nowrap;
   padding: 6px 10px;
 }
 :root[data-mobile-orientation="landscape"]
@@ -503,79 +508,6 @@
   .mobile-shell
   .original-game[data-game="scmj"] {
   padding: 0;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-board {
-  grid-template-columns: 120px minmax(0, 1fr) 120px;
-  grid-template-rows: minmax(0, 1fr) auto;
-  grid-template-areas: "west north east" "own own own";
-  padding: 4px;
-  gap: 4px;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-own {
-  display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
-  grid-template-areas: "south actions" "south hand" "footer footer";
-  gap: 2px;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-south {
-  grid-area: south;
-  flex-direction: column;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-actions {
-  grid-area: actions;
-  gap: 4px;
-  min-height: 36px;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-hand {
-  grid-area: hand;
-  min-height: 54px;
-  overflow-x: auto;
-  justify-content: flex-start;
-  padding-top: 8px;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-footer {
-  grid-area: footer;
-  min-height: 18px;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-seat:not(.scmj-south)
-  .scmj-river {
-  max-height: 100%;
-  min-height: 0;
-  overflow: auto;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-tile {
-  flex-shrink: 0;
-  min-width: 30px;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  [data-game="scmj"]
-  .scmj-seat:not(.scmj-south) {
-  min-height: 0;
 }
 :root[data-mobile-orientation="landscape"]
   .mobile-shell

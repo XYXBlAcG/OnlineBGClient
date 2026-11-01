@@ -1,3 +1,4 @@
+import { partyPreferencesSchema } from "./party/policy";
 import { updatePreferencesSchema } from "./updates/model";
 import { bannerColorSchema } from "../domain/banner";
 import { voicePreferencesSchema } from "../domain/voice";
@@ -9,18 +10,23 @@ import { themes } from "./themes";
 import { gameKinds } from "../domain/catalogue";
 
 export const preferencesSchema = z.object({
+  party: partyPreferencesSchema.default(partyPreferencesSchema.parse({})),
   updates: updatePreferencesSchema.default(updatePreferencesSchema.parse({})),
   network: z
     .object({
       temporary: z.boolean().default(true),
+      showLanDebug: z.boolean().default(false),
+      proxyFallback: z.boolean().default(true),
+      proxyUrl: z.string().default("http://127.0.0.1:7897"),
       service: z.string().default(""),
     })
-    .default({ temporary: true, service: "" }),
+    .default({ temporary: true, service: "", showLanDebug: false, proxyFallback: true, proxyUrl: "http://127.0.0.1:7897" }),
   showQuickStart: z.boolean().default(true),
   showVoiceShortcut: z.boolean().default(true),
   computeDetails: z.boolean().default(false),
   quickStartOpen: z.boolean().default(true),
   voice: voicePreferencesSchema.default(voicePreferencesSchema.parse({})),
+  gameSizes: z.record(z.string(), z.number().finite().min(0.5).max(3)).default({}),
   theme: z.string().default("system"),
   motion: z.boolean().default(true),
   enhancedGameMotion: z.boolean().default(false),

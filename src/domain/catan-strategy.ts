@@ -1,5 +1,5 @@
 import { EconomicStrategy } from "./economic-strategy";
-import { CatanRules } from "./catan";
+import { CatanRules,catanVictoryPoints } from "./catan";
 import type { CatanView } from "./catan-actions";
 import type { SearchRequest } from "./strategy";
 import type { Candidate, DecisionCandidate, GameState } from "./types";
@@ -40,12 +40,7 @@ export class CatanStrategy extends EconomicStrategy {
       this.rules.maps.sI(view.mapId, view.mapProp),
       actor,
     ) as boolean[];
-    const vp =
-      player.houses.length +
-      player.houses.filter((id) => id & 1).length +
-      player.cards[4] +
-      (view.bankData.longestRoadPos === actor + 1 ? 2 : 0) +
-      (view.bankData.maxRobberCountPos === actor + 1 ? 2 : 0);
+    const vp=catanVictoryPoints(view,actor);
     const goalCosts =
       player.houses.length >= 5
         ? [

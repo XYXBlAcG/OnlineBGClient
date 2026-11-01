@@ -1,0 +1,106 @@
+.exp-pixel-figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 0 #151c2933);
+}
+.exp-scene {
+  isolation: isolate;
+  background: linear-gradient(180deg, #23303b0d, #80776512);
+  border-radius: 18px;
+}
+.exp-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    url("/art/expedition/wall_mid.png"), url("/art/expedition/floor_1.png");
+  background-repeat: repeat-x, repeat;
+  background-size:
+    48px 48px,
+    48px 48px;
+  image-rendering: pixelated;
+  opacity: 0.17;
+  mask-image: linear-gradient(180deg, #000, #0009);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.exp-scene::after {
+  content: "";
+  position: absolute;
+  inset: 45px 6px 24px;
+  background-image:
+    url("/art/expedition/column.png"), url("/art/expedition/column.png");
+  background-repeat: no-repeat;
+  background-position:
+    left center,
+    right center;
+  background-size: 40px auto;
+  image-rendering: pixelated;
+  opacity: 0.35;
+  z-index: -1;
+  pointer-events: none;
+}
+.exp-card-art img {
+  width: 36px;
+  height: 48px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 0 #1c273125);
+}
+.exp-route .exp-route-canvas {
+  background-image:
+    linear-gradient(#edf2f5dd, #edf2f5e8), url("/art/expedition/floor_3.png");
+  background-size:
+    auto,
+    48px 48px;
+}
+[data-color-scheme="dark"] .exp-route .exp-route-canvas {
+  background-image:
+    linear-gradient(#17212bd9, #17212be6), url("/art/expedition/floor_3.png");
+}
+.exp-biome-1 .exp-route-canvas {
+  background-image:
+    linear-gradient(#e4f0e0dc, #e8efe8e8), url("/art/expedition/floor_5.png");
+}
+[data-color-scheme="dark"] .exp-biome-1 .exp-route-canvas {
+  background-image:
+    linear-gradient(#172b26db, #1a2925e8), url("/art/expedition/floor_5.png");
+}
+[data-motion="false"] .exp-pixel-figure {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .exp-pixel-figure {
+    animation: none;
+  }
+}
+
+.exp-biome-2 .exp-route-canvas {
+  background-image:
+    linear-gradient(#f2e6dbdc, #efe7e0ed), url("/art/expedition/floor_3.png");
+}
+[data-color-scheme="dark"] .exp-biome-2 .exp-route-canvas {
+  background-image:
+    linear-gradient(#32251fdb, #2a2420e8), url("/art/expedition/floor_3.png");
+}
+.exp-inventory-relics img {
+  width: 28px;
+  height: 36px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.exp-service-item-art {
+  width: 34px;
+  height: 44px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}

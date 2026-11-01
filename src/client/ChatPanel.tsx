@@ -1,7 +1,7 @@
+import { ChatMessageView } from "./social/ChatMessageView";
 import { VoiceDock } from "./voice/VoiceControls";
 import type { ImageQuality, Attachment } from "../domain/attachments";
 import { ChatComposer } from "./social/ChatComposer";
-import { ChatImage } from "./social/ChatImage";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Snapshot } from "../domain/protocol";
 import type { Preferences } from "./preferences";
@@ -123,39 +123,15 @@ export function ChatPanel({
         }}
       >
         {snapshot.chat.map((message) => (
-          <div
-            key={message.sequence}
-            data-content={message.type}
-            className={`chat-message ${message.sender === ownId ? "own-message" : ""}`}
-          >
-            <div className="chat-message-meta">
-              <small>{message.name}</small>
-              <time
-                dateTime={new Date(message.time).toISOString()}
-                title={new Date(message.time).toLocaleString()}
-              >
-                {new Date(message.time).toLocaleTimeString([], {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </time>
-            </div>
-            {message.type === "image" && token ? (
-              <ChatImage
-                image={message.attachment}
-                session={{ room: snapshot.room, token, endpoint }}
-              />
-            ) : (
-              <p data-copyable tabIndex={0}>
-                {message.type === "banner" || message.type === "emote"
-                  ? "✦ "
-                  : ""}
-                {message.text}
-              </p>
-            )}
-          </div>
+          <ChatMessageView
+            key={message.id}
+            message={message}
+            ownId={ownId}
+            serverTime={snapshot.serverTime}
+            session={
+              token ? { room: snapshot.room, token, endpoint } : undefined
+            }
+          />
         ))}
       </div>
       {!atBottom && unread > 0 && (

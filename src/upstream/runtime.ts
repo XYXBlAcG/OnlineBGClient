@@ -95,7 +95,7 @@ export class UpstreamRuntime {
     const module = { exports };
     this.cache.set(id, exports);
     const factory = (factories as Record<number, Factory>)[id];
-    if (!factory) throw new Error(`Missing Hullqin module ${id}`);
+    if (!factory) throw new Error(`Missing game module ${id}`);
     factory(module, exports, this.require);
     let result = module.exports;
     if (id === 4595) {

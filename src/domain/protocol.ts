@@ -1,3 +1,5 @@
+import { roomPluginsSchema } from "./workshop/model";
+import { partyPolicySchema, partyActionSchema, type PartySnapshot } from "./party";
 import { expeditionOptionsSchema } from "./expedition/adventure-types";
 import { dominionOptionsSchema } from "./dominion/types";
 import { balanceSeats } from "./room-balance";
@@ -48,6 +50,8 @@ export const configSchema = z
     team: z.boolean(),
     training: z.boolean(),
     auditEnabled: z.boolean().default(false),
+    plugins:roomPluginsSchema.default([]),
+    party: partyPolicySchema.default(partyPolicySchema.parse({})),
     expedition: expeditionOptionsSchema.default(
       expeditionOptionsSchema.parse({}),
     ),
@@ -90,6 +94,7 @@ export const seatConfigSchema = z.discriminatedUnion("type", [
 ]);
 export type SeatConfig = z.infer<typeof seatConfigSchema>;
 export const commandSchema = z.discriminatedUnion("type", [
+  z.object({type:z.literal("party"),token:z.string(),id:z.string().min(1).max(100),action:partyActionSchema}),
   z.object({
     type: z.literal("abandon-run"),
     run: z.string().min(1).max(100),
@@ -110,6 +115,7 @@ export const commandSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("join"),
+    spectator: z.boolean().optional(),
     room: roomIdSchema,
     name: z.string().trim().min(1).max(24),
     avatar: avatarSchema.optional(),
@@ -213,7 +219,7 @@ export interface DecisionSummary {
   simulations: number;
   version: number;
 }
-export const protocolVersion = 16;
+export const protocolVersion = 19;
 export interface Snapshot {
   resumeRoles?: { profession: string; name: string }[];
   serverTime: number;
@@ -226,6 +232,7 @@ export interface Snapshot {
   actor: number;
   canManage: boolean;
   playing: boolean;
+  playId?: string;
   host: { id: string; name: string; online: boolean } | null;
   seats: {
     id: string;
@@ -241,6 +248,9 @@ export interface Snapshot {
   computation: AiComputation | null;
   aiPaused: boolean;
   bannerPolicy: BannerPolicy;
+  party: PartySnapshot;
+  partyActor?: number;
+  spectators?: {id:string;name:string;avatar:string;online:boolean}[];
   chat: ChatMessage[];
   chatSequence: number;
   chatTotals: Record<string, number>;

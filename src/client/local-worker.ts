@@ -213,7 +213,7 @@ setInterval(() => {
     const room = gateway.rooms.get(session.room)!;
     try {
       const changed = room.commitIfDue() || room.resolveIfDue();
-      if (changed) await publish();
+      if (room.tickParty() || changed) await publish();
       if (pending) return;
       const request = room.aiRequest();
       if (!request || request.version === failedVersion) return;

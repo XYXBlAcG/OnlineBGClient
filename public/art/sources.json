@@ -1,0 +1,1321 @@
+[
+  {
+    "file": "spark_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/spark_01.png",
+    "sha256": "221d18d92335cf0ed0b38a5008d566fcb412afc7ab097c58b0c385c1936cb393",
+    "license": "CC0-1.0",
+    "originalSha256": "ca5e7eac772d5af176f0d45be34f416908859bf28697c31f3ec7f34609919f53"
+  },
+  {
+    "file": "star_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/star_01.png",
+    "sha256": "4152d1b94a1944bc806445b4e32a17aa338dbf2fbb4539761d89fc09edd6fbfc",
+    "license": "CC0-1.0",
+    "originalSha256": "4cd179dbc319bfbe13a685abc6f3f4e8e668f4e1aff828bd86baddf0d20c72a7"
+  },
+  {
+    "file": "smoke_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/smoke_01.png",
+    "sha256": "20eb8ea20e373ec49870f99f28e87abd3635dad853fad79f8bf1b0a695df22ad",
+    "license": "CC0-1.0",
+    "originalSha256": "89df665bb2e9a021edad2a9077d2651c44e6c6cd28f3fd38f800c41a5febd2a2"
+  },
+  {
+    "file": "light_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/light_01.png",
+    "sha256": "2ffa7dda9094e32ababe793abe4438816a0d023a261844b7254e3c4ed9801538",
+    "license": "CC0-1.0",
+    "originalSha256": "e15db5a8ccea012f4df82689f1a829bdaac04fd8a3066a723f157e0b01ffbf0a"
+  },
+  {
+    "file": "fire_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/fire_01.png",
+    "sha256": "accddcdd08e9ebc2948c910372fc7a4c021249b86ad2e72441a277458d396804",
+    "license": "CC0-1.0",
+    "originalSha256": "258f4fcbf20b20afe137fc4688ef24d6467a3e71b412c3dc9b400cd2c0ed3ce3"
+  },
+  {
+    "file": "circle_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/circle_01.png",
+    "sha256": "906bc671439ba77c9e3cf085277f74e7d1fd59e7c6edc30b64d5bde43682256b",
+    "license": "CC0-1.0",
+    "originalSha256": "10e757a4b46893fc7d53f24eb09767b3cb3183d33d9bf2fded0c06beb45c2de0"
+  },
+  {
+    "file": "card-back.png",
+    "source": "https://kenney.nl/assets/boardgame-pack",
+    "repository": "BrandonCook7/Blackjack",
+    "revision": "b4ff839e00f8e071a861333ab5ba5674ee562912",
+    "path": "Blackjack/graphics/Cards/cardBack_blue2.png",
+    "sha256": "614da407c01c5a8ddf6ace09bf394ebe533944cfeb0a573df3cd03eccb0cb17d",
+    "license": "CC0-1.0"
+  },
+  {
+    "file": "guardian.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "license": "CC0-1.0",
+    "frames": [
+      {
+        "file": "guardian.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f0.png",
+        "originalSha256": "cb03007dca8349a9e28f3da1bff73166c2e15a12dbf1d29fd885606d7fe2d3a5",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "guardian.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f1.png",
+        "originalSha256": "3be482c9fe4e9ed112fa48425a1d1bce41fe3db19f01a21e2d71ab95afbcf903",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "guardian.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f2.png",
+        "originalSha256": "0b4ba985bd11bed1c417acea85ff3f2a87d46eeaf2cc16ea21da240c0e9f115e",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "guardian.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f3.png",
+        "originalSha256": "ec86f8ab32ff8d6fe81fc4f8b0b31b51727507f95abec5d1452c77a45ea92fbd",
+        "license": "CC0-1.0"
+      }
+    ],
+    "sha256": "c7c2aaf2338e4ed8d90d8e3f26b25af43f31bf35487b3027c902e025c708443d",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "ranger.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "license": "CC0-1.0",
+    "frames": [
+      {
+        "file": "ranger.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f0.png",
+        "originalSha256": "c6e75df2208a9c1645a771781c66f02bad6e10d6ddab9a7f9d3b1321830df16c",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "ranger.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f1.png",
+        "originalSha256": "5fdfdc01045783d8ce1944ebd09c46460cc25cbb07f013a1d9647d65e2c9b730",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "ranger.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f2.png",
+        "originalSha256": "29515309bc2f927306364c6890f8470b1c735715ba115ec11d9311c074626c06",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "ranger.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f3.png",
+        "originalSha256": "5b2454cd13b2b42c905b87b2c58878fcd4c7816809993620e5e109a58432bb7d",
+        "license": "CC0-1.0"
+      }
+    ],
+    "sha256": "f49096e90b0d88600ea1f97bb5214e7d3b4d928ac42d70068a582c73c1d71851",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "alchemist.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "license": "CC0-1.0",
+    "frames": [
+      {
+        "file": "alchemist.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f0.png",
+        "originalSha256": "893efb1bc4d3ce127865bdbb799bb668b15e1418b8e2068a382b0aadf4017d80",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "alchemist.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f1.png",
+        "originalSha256": "7175a45aa136b0e62087d971accd2e9e6d259ca682d650b792e86f4cff36a867",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "alchemist.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f2.png",
+        "originalSha256": "9f342a3333ba442ab5926820593178efbfa1a2a6428fe9a8bc24b31561afef76",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "alchemist.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f3.png",
+        "originalSha256": "3550d8b557c3e22b4bf7d61b355915e07d47c5cdf97234ca208b799d0e9fc7ec",
+        "license": "CC0-1.0"
+      }
+    ],
+    "sha256": "ff2b85df05fd0ded74b8d0cbd983877eaee357b0bacb75db38bff82275240f14",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "sentinel.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "license": "CC0-1.0",
+    "frames": [
+      {
+        "file": "sentinel.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/masked_orc_idle_anim_f0.png",
+        "originalSha256": "d7e01fb6c468be6b39bfcdaad489ba63dd9133d680bf0afa103a928d2874d168",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "sentinel.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/masked_orc_idle_anim_f1.png",
+        "originalSha256": "9c2864ca36faee6834f8408513c9f2078cb0dfbb52c7b9ceda0596d4a8392b4d",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "sentinel.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/masked_orc_idle_anim_f2.png",
+        "originalSha256": "bc1212e19fe8008796b63d17b5a007e71345a5e57ed41d4b9c7bd390d92a542c",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "sentinel.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/masked_orc_idle_anim_f3.png",
+        "originalSha256": "ab2623968feeebcdc39a7f3b330d416c0608b3678a45a471a0451f027810028d",
+        "license": "CC0-1.0"
+      }
+    ],
+    "sha256": "2dd65b54120dff606a6eedecc1a4a4b5e6ea2e3fb0a5488b90e34808a3dff9bf",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "beast.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "license": "CC0-1.0",
+    "frames": [
+      {
+        "file": "beast.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f0.png",
+        "originalSha256": "9700edcd1ccde34594a8b3f53304c99e7d627a63835e4133c9679ace04646ce3",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "beast.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f1.png",
+        "originalSha256": "5a71b9ac1d9a3077bb0e346496ec3cc1ca9c8be9c3fb1d7562154c31d5b7b686",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "beast.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f2.png",
+        "originalSha256": "d34dc993857a6a63931dd277576e567a3c5ae03f89d870b34b9c39903a3ee380",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "beast.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f3.png",
+        "originalSha256": "5a71b9ac1d9a3077bb0e346496ec3cc1ca9c8be9c3fb1d7562154c31d5b7b686",
+        "license": "CC0-1.0"
+      }
+    ],
+    "sha256": "43a11ce91319a089a1189770e8d081d68d6829fdc85cdaa087f8ee7d07fd773d",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "warden.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "license": "CC0-1.0",
+    "frames": [
+      {
+        "file": "warden.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/big_demon_idle_anim_f0.png",
+        "originalSha256": "d02abfd145917ac647e99b3182762ff3ab966543b7b132ae9191f063d416b4f2",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "warden.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/big_demon_idle_anim_f1.png",
+        "originalSha256": "0fe52d3153879d7a3b78a2267797d7073ec86bfe50ad0681599a5f5924826b71",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "warden.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/big_demon_idle_anim_f2.png",
+        "originalSha256": "e382dbbb89e176099c1911a4bd5a1617cde4a47c2634f7a533395f528210a4b8",
+        "license": "CC0-1.0"
+      },
+      {
+        "file": "warden.png",
+        "source": "https://0x72.itch.io/dungeontileset-ii",
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/big_demon_idle_anim_f3.png",
+        "originalSha256": "f81f267dccd0ab95cdca5afdc6a7238cef57ab297ae604c27d9765320722d1ff",
+        "license": "CC0-1.0"
+      }
+    ],
+    "sha256": "cfcdb8a92154a97607d48227a9f3fd428be0aa79d13b566079be2a51323bfaee",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "chest.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "license": "CC0-1.0",
+    "frames": [
+      {
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/chest_full_open_anim_f0.png",
+        "sha256": "5b79317a3c5914d3dfcbd7592d3b763a7db060fff5496f06eda7261b258f4d96"
+      },
+      {
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/chest_full_open_anim_f1.png",
+        "sha256": "4d27214a698c8c03dfb43d81e7e0d304bdbf3d8510092411be687a4e5d1907b4"
+      },
+      {
+        "repository": "marceloferreira357/bun-crawler-client",
+        "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+        "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/chest_full_open_anim_f2.png",
+        "sha256": "51ad0e4442c7ca40847db28c73cfa42a3a51ffcdb088d0289cad947c904aaf09"
+      }
+    ],
+    "sha256": "f98987326a7814640261039f104cbf1f4d9f090535c9683a6f867015bcd60bc3",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/angel_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/angel_idle_anim_f0.png",
+    "sha256": "fcce8f39ce6baa5a8d44f7553db91712a14f74dfda2a8208ebe96a4cc636ed5f",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/angel_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/angel_idle_anim_f1.png",
+    "sha256": "7c8cd85c7c07ee93abc8d11eed5a74ad8c30383305336e882a323bcf22c037c3",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/angel_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/angel_idle_anim_f2.png",
+    "sha256": "ce698adbde8dc89dab45044080e084ba88393bf1beec6376886fca77e98da090",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/angel_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/angel_idle_anim_f3.png",
+    "sha256": "12d6e20523d33f8a908bcb8a5ea009e97afaebb435e4919f9b735722e23f35fe",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/big_zombie_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/big_zombie_idle_anim_f0.png",
+    "sha256": "cfa24e832f4dd2c205af5a01470d1f1d046346138f43e8340ff740eff15d954c",
+    "license": "CC0-1.0",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "expedition/big_zombie_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/big_zombie_idle_anim_f1.png",
+    "sha256": "99d93b35357d4aade819c58bea3e05b97a50b26e6df07c551aaa6bf3851148a7",
+    "license": "CC0-1.0",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "expedition/big_zombie_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/big_zombie_idle_anim_f2.png",
+    "sha256": "f8b32237e0a99268df151b64c69fffcd33c73c56b9f60c9a4e30fd6b011b5dd0",
+    "license": "CC0-1.0",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "expedition/big_zombie_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/big_zombie_idle_anim_f3.png",
+    "sha256": "c8f4940471233a6aea302c1c4330084d238a78136a16f1415935971f620cee77",
+    "license": "CC0-1.0",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "expedition/chest_full_open_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/chest_full_open_anim_f0.png",
+    "sha256": "5b79317a3c5914d3dfcbd7592d3b763a7db060fff5496f06eda7261b258f4d96",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/coin_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/coin_anim_f0.png",
+    "sha256": "4e9fe8bdf7224f4eba0fcf65729ea1f46bd8f4cffb3a2a250187e221e87d49cf",
+    "license": "CC0-1.0",
+    "width": 6,
+    "height": 7
+  },
+  {
+    "file": "expedition/column.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/column.png",
+    "sha256": "3fb915b96de71b6d939f434124d9c3c27831c54458a5daa5df3f447dd34c8e0e",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 48
+  },
+  {
+    "file": "expedition/doc_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/doc_idle_anim_f0.png",
+    "sha256": "011c57aa63ed87bb93282b6e848d4b8b341c6486293398d9d4e56f99e2923d3a",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/doc_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/doc_idle_anim_f1.png",
+    "sha256": "66b4d13c113c460f6a88d693183ed5447f1b2caa1f2db0f60e5e0de6336d9c22",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/doc_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/doc_idle_anim_f2.png",
+    "sha256": "50d9f873fbc05ab8f0a67b1b649019e6bd5714374b38d4b6bbaff4c57acc9b55",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/doc_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/doc_idle_anim_f3.png",
+    "sha256": "0c70717a7fbe6e9bdc0e9b523eabcf2624586d311642b29c8bec59f7fcb62173",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/dwarf_f_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_idle_anim_f0.png",
+    "sha256": "2851735ee67c0b16298d21a296b575235d2e9fbf178154b3bd07a1d15ce940fb",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/dwarf_f_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_idle_anim_f1.png",
+    "sha256": "9b0dcadebb5d4304f2207ebe809a42688559b3861af7da69e41e0aa5281dbc67",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/dwarf_f_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_idle_anim_f2.png",
+    "sha256": "d96330d7322e9935f0f60fdcec180f9e7dd4038889b82787a6c4bd77a2a7ba9c",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/dwarf_f_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_idle_anim_f3.png",
+    "sha256": "b93aa98a8ef2c361dd974695c3f2f9e0767514b0d6cf2bedae2e3fe0390c2515",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/dwarf_m_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_idle_anim_f0.png",
+    "sha256": "726c1dc703449dbdad57b8d7de9505eca6a350e202dca3e7d6366e04227d31e5",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/dwarf_m_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_idle_anim_f1.png",
+    "sha256": "6c1c1b4b6bbcba13a85fecca2e691fde26cb977c936ee419914b0e3ff2a61bc7",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/dwarf_m_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_idle_anim_f2.png",
+    "sha256": "9d2cc63960fa1ca44aef751a11e8ff1145ad09aa935bc62387655152c9d92ffd",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/dwarf_m_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_idle_anim_f3.png",
+    "sha256": "1bbe8b9a230a96f241b2b6e72f6b0c7ff1212ee7eb5ae8306e1759ca5cd37d29",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/elf_f_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_f_idle_anim_f0.png",
+    "sha256": "02baa213a02e19d20db5d161c61df934e6485aee2e460e185f352f63bd8e8ee2",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/elf_f_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_f_idle_anim_f1.png",
+    "sha256": "4a1eaa63b9edfaa9c51fdd37280b27c6661ec55cb3e966d84887ab875f12d789",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/elf_f_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_f_idle_anim_f2.png",
+    "sha256": "a923963f0ef14508f6de2b7a3004f51814cf4ab4e824ff3b4882c69862250d1b",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/elf_f_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_f_idle_anim_f3.png",
+    "sha256": "93941c1c64478fee9387c268588ca1ead3b0c1b2d4c3bc2b3156ff7d2b56a0f0",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/elf_m_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f0.png",
+    "sha256": "c6e75df2208a9c1645a771781c66f02bad6e10d6ddab9a7f9d3b1321830df16c",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/elf_m_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f1.png",
+    "sha256": "5fdfdc01045783d8ce1944ebd09c46460cc25cbb07f013a1d9647d65e2c9b730",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/elf_m_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f2.png",
+    "sha256": "29515309bc2f927306364c6890f8470b1c735715ba115ec11d9311c074626c06",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/elf_m_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f3.png",
+    "sha256": "5b2454cd13b2b42c905b87b2c58878fcd4c7816809993620e5e109a58432bb7d",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/flask_blue.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/flask_blue.png",
+    "sha256": "5553696b11ed10c9ef8bebd28f4d53015f12b4f4cb00d3b766b6f6752ca849a1",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/flask_green.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/flask_green.png",
+    "sha256": "4e546e6a59de5523fa602c814aef061a7146af2758a0357c8c78a9318ecd2be6",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/flask_red.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/flask_red.png",
+    "sha256": "21b97aa860dbbfb94e01b50ac4e618b517ed12ec919dc654b871fd3edd2ca561",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/flask_yellow.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/flask_yellow.png",
+    "sha256": "0b7ba55ba97e9da160424cf71a3ed4e787741599c9f7f3c7237150617f63c31c",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/floor_1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/floor_1.png",
+    "sha256": "c3bb5fc5345452ec79a332ac9113c9cdf78b0473238b734bf5f4cc0839fb2e3e",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/floor_3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/floor_3.png",
+    "sha256": "2722a440e4fc3d9af1dffead6e061aa22d0c61c591baa6f3ed2742de26e465ce",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/floor_5.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/floor_5.png",
+    "sha256": "1507108b4bebdf2c416b1294303d9d1510f21257166b1e96aa66a0eae4dcaafb",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/goblin_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f0.png",
+    "sha256": "9700edcd1ccde34594a8b3f53304c99e7d627a63835e4133c9679ace04646ce3",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/goblin_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f1.png",
+    "sha256": "5a71b9ac1d9a3077bb0e346496ec3cc1ca9c8be9c3fb1d7562154c31d5b7b686",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/goblin_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f2.png",
+    "sha256": "d34dc993857a6a63931dd277576e567a3c5ae03f89d870b34b9c39903a3ee380",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/goblin_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f3.png",
+    "sha256": "5a71b9ac1d9a3077bb0e346496ec3cc1ca9c8be9c3fb1d7562154c31d5b7b686",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/knight_f_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_f_idle_anim_f0.png",
+    "sha256": "5e2ab34ee5891dd9a29226c5180e011835ae0f91af75b5baae1fd1cc6f69e369",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/knight_f_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_f_idle_anim_f1.png",
+    "sha256": "e2761f68ab094cdff2da1ae9c7e44ef64ca5f07249729b6e07dc01353aa9fab0",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/knight_f_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_f_idle_anim_f2.png",
+    "sha256": "1904af226b55caa09019ea14ac106c9ca82abd24580298fbf33b0b32a9e914b3",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/knight_f_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_f_idle_anim_f3.png",
+    "sha256": "a6ec907d7599b2004cb5398000fe7c3556f00143fe78ed3ee63e859706f3782d",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/knight_m_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f0.png",
+    "sha256": "cb03007dca8349a9e28f3da1bff73166c2e15a12dbf1d29fd885606d7fe2d3a5",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/knight_m_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f1.png",
+    "sha256": "3be482c9fe4e9ed112fa48425a1d1bce41fe3db19f01a21e2d71ab95afbcf903",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/knight_m_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f2.png",
+    "sha256": "0b4ba985bd11bed1c417acea85ff3f2a87d46eeaf2cc16ea21da240c0e9f115e",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/knight_m_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f3.png",
+    "sha256": "ec86f8ab32ff8d6fe81fc4f8b0b31b51727507f95abec5d1452c77a45ea92fbd",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/lizard_f_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/lizard_f_idle_anim_f0.png",
+    "sha256": "80d36369aef9c9fe6c5f2b4cb5f51ee680b253bb20eab48e42766cf2ef2e7588",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/lizard_f_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/lizard_f_idle_anim_f1.png",
+    "sha256": "412c9e637302dfab50a2f9b945f1b6d5101c494f0d21dfffd46dbc66839a0013",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/lizard_f_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/lizard_f_idle_anim_f2.png",
+    "sha256": "f1d55cf47fb6edd08561fadd7007f71a1a5c02993d44996ea08966b6af85ba1a",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/lizard_f_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/lizard_f_idle_anim_f3.png",
+    "sha256": "1ca20691b2774f39df08e991baaaa6d37d6c4915547ef807350a8981907cfdca",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/lizard_m_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/lizard_m_idle_anim_f0.png",
+    "sha256": "dd8ac3b3ad871a8b7deae7ec454acec6b42add767169262e88280bd7f304ec36",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/lizard_m_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/lizard_m_idle_anim_f1.png",
+    "sha256": "ad00edafd3899c32dea918ef26cb25fcd625ed3ad75fa440bdf14dbbfd795e14",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/lizard_m_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/lizard_m_idle_anim_f2.png",
+    "sha256": "9da09f3d3984b7d70b99e78d58104428f5cc88c3e9b4e5ad88e72ac6e8625fe6",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/lizard_m_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/lizard_m_idle_anim_f3.png",
+    "sha256": "25f3b8779deedab86cd6cd65f3427833bef50a3dd31aba0639f020cbe1002274",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/ogre_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/ogre_idle_anim_f0.png",
+    "sha256": "de35e6fe827711e401d568ebee296316869a0d7e3ed15d4f1aa6e0dddb171d10",
+    "license": "CC0-1.0",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "expedition/ogre_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/ogre_idle_anim_f1.png",
+    "sha256": "bd8076419666398c118d8a94cd7b96aca486637236a7c81bcb6e181bc80c9ad7",
+    "license": "CC0-1.0",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "expedition/ogre_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/ogre_idle_anim_f2.png",
+    "sha256": "b7c6c71a214283b6301ce8123a79d7aa752fa1afdf9e22e28b6add22730741c1",
+    "license": "CC0-1.0",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "expedition/ogre_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/ogre_idle_anim_f3.png",
+    "sha256": "a2636e5c45c6aa0492986e0936b50692a4306b1d6f89d99237e98f09b031e68e",
+    "license": "CC0-1.0",
+    "width": 32,
+    "height": 36
+  },
+  {
+    "file": "expedition/orc_shaman_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_idle_anim_f0.png",
+    "sha256": "5a88c4a10dafd2928d12955ca5479dc7c996962488c284861efee36841cd00ad",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/orc_shaman_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_idle_anim_f1.png",
+    "sha256": "04887009adc5c0635a7cff57aff23bde2e4fb42fe857970edad2591276cdc713",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/orc_shaman_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_idle_anim_f2.png",
+    "sha256": "877ae1e6dd0894de60a57a394f7bff6a7e532e94d99f33d02cb5ebc196300354",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/orc_shaman_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_idle_anim_f3.png",
+    "sha256": "73ac2d785d6f7e65450a51d7ff8c94dd2bb93a7b4a6f59009efb9aaa38844072",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/orc_warrior_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_idle_anim_f0.png",
+    "sha256": "dee2faf03cc0eac61d3848ef87af6e2f2d4128c67c6d882d953a5b24cda1a533",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/orc_warrior_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_idle_anim_f1.png",
+    "sha256": "1858dfec149d3669e6c3bd145a2a74ecf79fdf7e001e3e53fb34eb263e4456f6",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/orc_warrior_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_idle_anim_f2.png",
+    "sha256": "5ffe707b5f00f9e7637d63530a8e54b3a6d7fe6c0fe5a5ba62011cd39de59b41",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/orc_warrior_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_idle_anim_f3.png",
+    "sha256": "df7cd5fbfbff5cf26f15adce4a05a0916f9102dca3fb11b3475391c5bf363294",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 23
+  },
+  {
+    "file": "expedition/wall_banner_blue.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wall_banner_blue.png",
+    "sha256": "052f5954f9da77544f4523bff65c4ca47c70f64524903414517dd1faee53023c",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/wall_banner_red.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wall_banner_red.png",
+    "sha256": "b2354b5a5b9f5c6ec78833e7b1f1bc0e1ff1a0bd85d2a598ec2dd4e3abbc92ae",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/wall_mid.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wall_mid.png",
+    "sha256": "c70ac4cf5e7370cb1f9dee536882de26a0ec87295a1c962d77514ceda91d11f1",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/wall_top_mid.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wall_top_mid.png",
+    "sha256": "0709e46c7c159445bda8f7eb05f9fd0c786a432b6065a3bba4df15c69a7c6eef",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "file": "expedition/weapon_big_hammer.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/weapon_big_hammer.png",
+    "sha256": "73f163d067cafb1b0d1dc382138d17612312b696cdbb1510b686dac83ca20ae8",
+    "license": "CC0-1.0",
+    "width": 10,
+    "height": 37
+  },
+  {
+    "file": "expedition/weapon_bow.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/weapon_bow.png",
+    "sha256": "a4ef5deeef26691c20d11a1a6bbc2ac87556992f21b377e325562bfe28cade3c",
+    "license": "CC0-1.0",
+    "width": 14,
+    "height": 26
+  },
+  {
+    "file": "expedition/weapon_green_magic_staff.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/weapon_green_magic_staff.png",
+    "sha256": "fae3b619a467262ed3511c2456558e99d7c41235805ae56ccb5649c72c8aa565",
+    "license": "CC0-1.0",
+    "width": 8,
+    "height": 30
+  },
+  {
+    "file": "expedition/weapon_regular_sword.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/weapon_regular_sword.png",
+    "sha256": "3f06a67c06a00d261096c828af577749cd88eb4a6ae23743667d5d5351006b22",
+    "license": "CC0-1.0",
+    "width": 10,
+    "height": 21
+  },
+  {
+    "file": "expedition/wizzard_f_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_idle_anim_f0.png",
+    "sha256": "1b48c5f190164fa136ec0716a990c4b17be167a9fb381d7003fd03f5a40f5865",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/wizzard_f_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_idle_anim_f1.png",
+    "sha256": "65144f67dac0c0ef9037ef75cb7e8e33cf9eb3bf952d44e8d7015ef9c9264598",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/wizzard_f_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_idle_anim_f2.png",
+    "sha256": "c07e7c8290c6f7bce1ed9043b750237e2a3e319607c85fe0ef61c6d49ed3ea38",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/wizzard_f_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_idle_anim_f3.png",
+    "sha256": "17aecc1f790a66459a595d5274b8d72371a83814675c7c5a27a6a8d4e739849b",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/wizzard_m_idle_anim_f0.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f0.png",
+    "sha256": "893efb1bc4d3ce127865bdbb799bb668b15e1418b8e2068a382b0aadf4017d80",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/wizzard_m_idle_anim_f1.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f1.png",
+    "sha256": "7175a45aa136b0e62087d971accd2e9e6d259ca682d650b792e86f4cff36a867",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/wizzard_m_idle_anim_f2.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f2.png",
+    "sha256": "9f342a3333ba442ab5926820593178efbfa1a2a6428fe9a8bc24b31561afef76",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  },
+  {
+    "file": "expedition/wizzard_m_idle_anim_f3.png",
+    "source": "https://0x72.itch.io/dungeontileset-ii",
+    "repository": "marceloferreira357/bun-crawler-client",
+    "revision": "2a00fd56341cb2278bc66350d5f71f4abfadef32",
+    "path": "public/sprites/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f3.png",
+    "sha256": "3550d8b557c3e22b4bf7d61b355915e07d47c5cdf97234ca208b799d0e9fc7ec",
+    "license": "CC0-1.0",
+    "width": 16,
+    "height": 28
+  }
+]

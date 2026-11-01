@@ -1,3 +1,5 @@
+import {workshopPackSchema,workshopVersionCompare,type WorkshopInstallation,type WorkshopPack} from "../domain/workshop/model";
+import { v4 as randomId } from "uuid";
 import { attachmentLimits, type Attachment } from "../domain/attachments";
 import { openDB, type DBSchema } from "idb";
 import type { RoomArchive } from "../domain/room";
@@ -14,9 +16,11 @@ export interface RunLink {
   room: string;
   endpoint: string | null;
   hosted: boolean;
+  lan?: boolean;
   updated: number;
   names: string[];
   floor: number;
+  chapter?: number;
 }
 interface CachedImage {
   bytes: Blob;
@@ -41,9 +45,10 @@ export function subscribeRecords(callback: () => void): () => void {
 function publishHistory() {
   historyChanges.dispatchEvent(new Event("change"));
   if (typeof window !== "undefined")
-    localStorage.setItem(historyRevision, crypto.randomUUID());
+    localStorage.setItem(historyRevision, randomId());
 }
 interface ClientDatabase extends DBSchema {
+  plugins:{key:string;value:WorkshopInstallation};
   recordSettings: { key: string; value: boolean };
   recordSeen: { key: string; value: boolean };
   stickers: { key: string; value: CachedImage };
@@ -63,8 +68,9 @@ interface ClientDatabase extends DBSchema {
 }
 export class ClientStore {
   private observed = new Set<string>();
-  private database = openDB<ClientDatabase>("onlinebg-client", 5, {
+  private database = openDB<ClientDatabase>("onlinebg-client", 6, {
     upgrade(database) {
+      if(!database.objectStoreNames.contains("plugins"))database.createObjectStore("plugins");
       if (!database.objectStoreNames.contains("runs"))
         database.createObjectStore("runs");
       if (!database.objectStoreNames.contains("runLinks"))
@@ -81,6 +87,17 @@ export class ClientStore {
         database.createObjectStore("records");
     },
   });
+  async plugins():Promise<WorkshopInstallation[]>{return (await this.database).getAll("plugins");}
+  async installPlugin(input:WorkshopPack):Promise<void>{
+    const pack=workshopPackSchema.parse(input),db=await this.database,tx=db.transaction("plugins","readwrite"),previous=await tx.store.get(pack.id);
+    if(previous&&workshopVersionCompare(pack.version,previous.pack.version)<0)throw Error("不能用旧版覆盖已安装插件");
+    await tx.store.put({pack,enabled:previous?.enabled??true,installedAt:Date.now()},pack.id);await tx.done;
+  }
+  async enablePlugin(id:string,enabled:boolean):Promise<void>{
+    const db=await this.database,tx=db.transaction("plugins","readwrite"),item=await tx.store.get(id);
+    if(!item)throw Error("插件未安装");await tx.store.put({...item,enabled},id);await tx.done;
+  }
+  async removePlugin(id:string):Promise<void>{await (await this.database).delete("plugins",id);}
   async saveImage(room: string, image: Attachment, bytes: Blob): Promise<void> {
     const database = await this.database;
     const transaction = database.transaction("attachments", "readwrite");

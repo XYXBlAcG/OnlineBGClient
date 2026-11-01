@@ -1,0 +1,71 @@
+.shared-emoji {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  object-fit: contain;
+  flex: none;
+  user-select: none;
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  padding: 0;
+  margin: 0;
+  border: 1.5px solid var(--muted);
+  border-radius: 5px;
+  background: var(--field);
+  display: inline-grid;
+  place-content: center;
+  vertical-align: middle;
+  cursor: pointer;
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  input[type="checkbox"]::after {
+  content: "";
+  width: 8px;
+  height: 5px;
+  border: solid var(--accent-text);
+  border-width: 0 0 2px 2px;
+  transform: translateY(-1px) rotate(-45deg) scale(0);
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  input[type="checkbox"]:checked::after {
+  transform: translateY(-1px) rotate(-45deg) scale(1);
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  input[type="checkbox"]:indeterminate::after {
+  width: 8px;
+  height: 0;
+  border: 0;
+  border-bottom: 2px solid var(--text);
+  transform: none;
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  input[type="checkbox"]:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.application-logs {
+  width: 100%;
+  min-height: 280px;
+  resize: vertical;
+  font:
+    12px/1.6 ui-monospace,
+    monospace;
+  white-space: pre;
+}

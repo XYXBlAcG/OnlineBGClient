@@ -16,18 +16,36 @@ pub struct VoiceConfigView {
     has_secret: bool,
 }
 fn entry() -> Result<keyring::Entry, String> {
-    keyring::Entry::new("cn.hullqin.companion", "livekit-host")
+    keyring::Entry::new(crate::identity::APP_ID.as_str(), "livekit-host")
         .map_err(|_| "无法访问系统凭据存储".into())
 }
-pub fn load() -> Result<Option<VoiceConfig>, String> {
-    match entry()?.get_password() {
-        Ok(value) => serde_json::from_str(&value)
-            .map(Some)
-            .map_err(|_| "语音配置损坏，请重新保存".into()),
-        Err(keyring::Error::NoEntry) => Ok(None),
+fn load_migrating(
+    current: &keyring::Entry,
+    old: &keyring::Entry,
+) -> Result<Option<VoiceConfig>, String> {
+    match current.get_password() {
+        Ok(value) => serde_json::from_str(&value).map_err(|_| "语音配置损坏，请重新保存".into()),
+        Err(keyring::Error::NoEntry) => match old.get_password() {
+            Ok(value) => {
+                let config: VoiceConfig =
+                    serde_json::from_str(&value).map_err(|_| "已有语音配置损坏")?;
+                current
+                    .set_password(&value)
+                    .map_err(|_| "无法保存迁移后的语音凭据")?;
+                Ok(Some(config))
+            }
+            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(_) => Err("无法读取已有语音凭据，请检查系统凭据存储权限".into()),
+        },
         Err(_) => Err("无法读取语音凭据，请检查系统凭据存储权限".into()),
     }
 }
+pub fn load() -> Result<Option<VoiceConfig>, String> {
+    let old = keyring::Entry::new(crate::identity::LEGACY_ID, "livekit-host")
+        .map_err(|_| "无法访问已有语音凭据")?;
+    load_migrating(&entry()?, &old)
+}
+
 #[tauri::command]
 pub fn voice_config(window: WebviewWindow) -> Result<VoiceConfigView, String> {
     if window.label() != "main" && window.label() != "aux-settings" {
@@ -50,10 +68,9 @@ pub fn voice_save_config(
         return Err("该窗口不能修改语音配置".into());
     }
     if clear {
-        return match entry()?.delete_credential() {
-            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
-            Err(_) => Err("清除语音凭据失败".into()),
-        };
+        return entry()?
+            .set_password("null")
+            .map_err(|_| "清除语音凭据失败".into());
     }
     let url = reqwest::Url::parse(config.url.trim()).map_err(|_| "语音地址格式无效")?;
     if url.scheme() != "wss"
@@ -134,4 +151,33 @@ pub fn voice_active(
     }
     app.state::<crate::desktop::Desktop>().set_voice(active);
     Ok(())
+}
+#[cfg(test)]
+mod migration_tests {
+    use super::*;
+    #[test]
+    fn migrates_credentials_without_overwrite_or_resurrection_after_clear() {
+        let current =
+            keyring::Entry::new_with_credential(Box::<keyring::mock::MockCredential>::default());
+        let old =
+            keyring::Entry::new_with_credential(Box::<keyring::mock::MockCredential>::default());
+        let original =
+            r#"{"url":"wss://voice.example","apiKey":"old-key","secret":"fixture-secret-12345"}"#;
+        old.set_password(original).unwrap();
+        assert_eq!(
+            load_migrating(&current, &old).unwrap().unwrap().api_key,
+            "old-key"
+        );
+        assert_eq!(old.get_password().unwrap(), original);
+        let newer =
+            r#"{"url":"wss://new.example","apiKey":"new-key","secret":"new-fixture-secret-12345"}"#;
+        current.set_password(newer).unwrap();
+        assert_eq!(
+            load_migrating(&current, &old).unwrap().unwrap().api_key,
+            "new-key"
+        );
+        current.set_password("null").unwrap();
+        assert!(load_migrating(&current, &old).unwrap().is_none());
+        assert_eq!(old.get_password().unwrap(), original);
+    }
 }

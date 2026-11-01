@@ -53,6 +53,31 @@ it("requires both signed platforms and produces a stable deterministic updater m
     expect(result.assets.map((path) => basename(path))).not.toContain(
       expect.stringContaining(".zip"),
     );
+    const { createHash } = await import("node:crypto");
+    const pack = Buffer.from("optional emoji fixture");
+    await writeFile(join(root, "apple-emoji-v1.tar.gz"), pack);
+    await writeFile(
+      join(root, "emoji-pack.json"),
+      JSON.stringify({
+        format: 1,
+        bytes: pack.length,
+        sha256: createHash("sha256").update(pack).digest("hex"),
+        url: "https://github.com/owner/repo/releases/download/v0.2.0/apple-emoji-v1.tar.gz",
+      }),
+    );
+    const withEmoji = await prepareRelease(
+      root,
+      output,
+      "0.2.0",
+      "v0.2.0",
+      "owner/repo",
+    );
+    expect(withEmoji.assets.map((path) => basename(path))).toContain(
+      "emoji-pack.json",
+    );
+    expect(
+      JSON.parse(await readFile(join(output, "latest.json"), "utf8")).platforms,
+    ).toEqual(manifest.platforms);
     const first = await readFile(join(output, "latest.json"), "utf8");
     await prepareRelease(root, output, "0.2.0", "v0.2.0", "owner/repo");
     expect(await readFile(join(output, "latest.json"), "utf8")).toBe(first);

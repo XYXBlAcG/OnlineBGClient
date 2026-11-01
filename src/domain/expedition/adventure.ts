@@ -1,3 +1,6 @@
+import { ballotOption, ballotResult, routeLabel } from "./ballot";
+import { chapters, advancementChoices, waystationRecovery } from "./chapters";
+import { cardServices, campRecovery } from "./card-services";
 import type { Rules } from "../plugin";
 import type { Action, Candidate } from "../types";
 import type { GameOptions } from "../game-options";
@@ -7,6 +10,8 @@ import {
   heroContent,
   cardPools,
   commonCards,
+  legacyCardIds,
+  canUpgrade,
   definition,
   type CardId,
   type CardInstance,
@@ -30,9 +35,6 @@ import {
 import { generateMap, mapChoices, encounterFor, nodeNames } from "./map";
 import { shuffled } from "./random";
 const combat = new ExpeditionRules();
-const upgradable = (card: CardInstance) =>
-  !card.upgraded &&
-  definition(card).effects.some((effect) => effect.kind !== "cleanse");
 export class ExpeditionAdventure implements Rules<"expedition"> {
   constructor(private readonly random: () => number = () => 0.5) {}
   create(
@@ -45,6 +47,12 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       config = expeditionOptionsSchema.parse(options?.expedition ?? {});
     const view: ExpeditionRun = {
       rulesVersion: 1,
+      campaignVersion: options?.expeditionCampaign ?? 2,
+      chapter: 0,
+      history: [],
+      luck: Array(players).fill(options?.expeditionCampaign === 1 ? 0 : 1),
+      rerolls: Array(players).fill(0),
+      eventRerolls: 0,
       contentVersion: 1,
       runId: `exp-${Math.floor(this.random() * 2 ** 48).toString(36)}-${Math.floor(this.random() * 2 ** 48).toString(36)}`,
       seed,
@@ -115,14 +123,22 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     const add = (move: ExpeditionMove, label: string) =>
       moves.push({ move, label });
     if (run.phase === "profession" && run.professions[actor] === undefined)
-      heroContent.forEach((h, profession) =>
-        add({ type: "profession", profession }, `选择${h.name} · ${h.title}`),
-      );
+      heroContent
+        .slice(0, run.campaignVersion === 1 ? 3 : heroContent.length)
+        .forEach((h, profession) =>
+          add({ type: "profession", profession }, `选择${h.name} · ${h.title}`),
+        );
+    if (run.phase === "waystation" && !run.nodeReady[actor])
+      for (const choice of Object.keys(
+        advancementChoices,
+      ) as (keyof typeof advancementChoices)[])
+        if (choice !== "forge" || allCards(hero).some(canUpgrade))
+          add({ type: "advance", choice }, advancementChoices[choice]);
     if (run.phase === "map")
       mapChoices(run).forEach((node) =>
         add(
           { type: "vote", choice: node.id },
-          `投票前往${nodeNames[node.kind]} · 第 ${node.floor + 1} 层`,
+          `投票前往${routeLabel(run.map, node)}`,
         ),
       );
     if (
@@ -130,16 +146,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       actor === Math.max(0, run.floor) % run.combat.heroes.length
     )
       run.tieChoices.forEach((choice) => {
-        const label =
-          run.votePhase === "map"
-            ? nodeNames[run.map.flat().find((node) => node.id === choice)!.kind]
-            : run.votePhase === "event"
-              ? choice === "leave"
-                ? "离开"
-                : storyEvents[run.event!].choices[Number(choice)].name
-              : run.votePhase === "treasure"
-                ? relics[choice as RelicId].name
-                : run.combat.heroes[Number(choice)].name;
+        const label = ballotOption(run, run.votePhase, choice).label;
         add({ type: "tie", choice }, `领队决定：${label}`);
       });
     if (run.phase === "battle") {
@@ -210,6 +217,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       if (hero.hp < hero.maxHp)
         add({ type: "reward", choice: "heal" }, "恢复 8 生命");
       add({ type: "reward", choice: "skip" }, "跳过奖励");
+      if (run.luck[actor] > 0)
+        add({ type: "reroll" }, "重选战利品 · 1 幸运筹码");
     }
     if (run.phase === "shop" && !run.nodeReady[actor]) {
       for (const item of run.shop[actor])
@@ -224,28 +233,28 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
             `购买${item.kind === "card" ? cards[item.card].name : item.kind === "relic" ? relics[item.relic].name : potions[item.potion].name} · ${item.price} 金币`,
           );
       if (
-        hero.gold >= 35 &&
+        hero.gold >= cardServices.removalPrice &&
         !run.shopRemoved[actor] &&
-        allCards(hero).length > 5
+        allCards(hero).length > cardServices.minimumDeckSize
       )
         for (const card of allCards(hero))
           add(
             { type: "remove", instance: card.id },
-            `移除${definition(card).name} · 35 金币`,
+            `移除${definition(card).name} · ${cardServices.removalPrice} 金币`,
           );
       add({ type: "done" }, "离开商店");
     }
     if (run.phase === "camp" && !run.nodeReady[actor]) {
-      add({ type: "rest" }, `休息：恢复 ${Math.ceil(hero.maxHp * 0.35)} 生命`);
+      add({ type: "rest" }, `休息：恢复 ${campRecovery(hero)} 生命`);
       allCards(hero)
-        .filter(upgradable)
+        .filter(canUpgrade)
         .forEach((card) =>
           add(
             { type: "upgrade", instance: card.id },
             `升级${definition(card).name}`,
           ),
         );
-      if (allCards(hero).length > 5)
+      if (allCards(hero).length > cardServices.minimumDeckSize)
         allCards(hero).forEach((card) =>
           add(
             { type: "remove", instance: card.id },
@@ -264,19 +273,27 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           add({ type: "vote", choice: String(index) }, choice.name);
       });
       add({ type: "vote", choice: "leave" }, "离开，不作改变");
+      if (run.luck.every((amount) => amount > 0))
+        add(
+          { type: "vote", choice: "reroll" },
+          "全员同意重选奇遇 · 每人 1 幸运筹码",
+        );
     }
     if (run.phase === "recovery" && !run.nodeReady[actor]) {
       const next = run.pending[actor][0];
       if (next?.kind === "upgrade")
         allCards(hero)
-          .filter(upgradable)
+          .filter(canUpgrade)
           .forEach((card) =>
             add(
               { type: "upgrade", instance: card.id },
               `升级${definition(card).name}`,
             ),
           );
-      if (next?.kind === "remove" && allCards(hero).length > 5)
+      if (
+        next?.kind === "remove" &&
+        allCards(hero).length > cardServices.minimumDeckSize
+      )
         allCards(hero).forEach((card) =>
           add(
             { type: "remove", instance: card.id },
@@ -320,6 +337,38 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       move = action.move,
       hero = run.combat.heroes[actor];
     run.sequence++;
+    if (move.type === "advance") {
+      if (move.choice === "vitality") hero.maxHp += 4;
+      if (move.choice === "supplies") hero.gold += 60;
+      if (move.choice === "forge")
+        run.pending[actor] = [{ kind: "upgrade", left: 2 }];
+      run.nodeReady[actor] = true;
+      if (run.nodeReady.every(Boolean)) {
+        run.history.push({ chapter: run.chapter, path: [...run.path] });
+        run.chapter++;
+        run.luck = run.luck.map((amount) => Math.min(2, amount + 1));
+        run.map = generateMap(
+          `${run.seed}:chapter:${run.chapter}`,
+          2,
+          run.chapter,
+        );
+        run.current = null;
+        run.floor = -1;
+        run.path = [];
+        run.votes = {};
+        run.combat.heroes.forEach((member, index) => {
+          const recovered = Math.ceil(
+            (member.hp > 0 ? member.maxHp - member.hp : member.maxHp) *
+              waystationRecovery,
+          );
+          this.heal(run, index, recovered);
+        });
+        run.phase = run.pending.some((pending) => pending.length)
+          ? "recovery"
+          : "map";
+        run.nodeReady = run.pending.map((pending) => !pending.length);
+      }
+    }
     if (move.type === "profession") {
       run.professions[actor] = move.profession;
       if (Object.keys(run.professions).length === run.combat.heroes.length) {
@@ -345,9 +394,12 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.votes[actor] = move.choice;
       if (Object.keys(run.votes).length === run.combat.heroes.length) {
         const counts = new Map<string, number>();
-        Object.values(run.votes).forEach((v) =>
-          counts.set(v!, 1 + (counts.get(v!) ?? 0)),
-        );
+        const ballots = Object.values(run.votes);
+        const counted =
+          run.phase === "event" && !ballots.every((v) => v === "reroll")
+            ? ballots.filter((v) => v !== "reroll")
+            : ballots;
+        counted.forEach((v) => counts.set(v!, 1 + (counts.get(v!) ?? 0)));
         const max = Math.max(...counts.values()),
           choices = [...counts]
             .filter(([, count]) => count === max)
@@ -356,10 +408,18 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           run.votePhase = run.phase as ExpeditionRun["votePhase"];
           run.phase = "tie";
           run.tieChoices = choices;
-        } else this.decide(run, choices[0]);
+        } else {
+          run.lastBallot = ballotResult(
+            run,
+            run.phase as ExpeditionRun["votePhase"],
+            choices[0],
+          );
+          this.decide(run, choices[0]);
+        }
       }
     }
     if (move.type === "tie") {
+      run.lastBallot = ballotResult(run, run.votePhase, move.choice);
       run.phase = run.votePhase;
       this.decide(run, move.choice);
     }
@@ -395,6 +455,13 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       });
     }
     if (move.type === "discard-potion") hero.potions.splice(move.index, 1);
+    if (move.type === "reroll") {
+      run.luck[actor]--;
+      run.offers[actor] = shuffled(
+        this.pool(run, actor).filter((id) => !run.offers[actor].includes(id)),
+        `${run.seed}:rewards:${run.current}:${actor}:reroll:${++run.rerolls[actor]}`,
+      ).slice(0, 3);
+    }
     if (move.type === "reward") {
       if (move.choice === "heal") this.heal(run, actor, 8);
       else if (move.choice !== "skip")
@@ -411,13 +478,13 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       if (item.kind === "potion") hero.potions.push(item.potion);
     }
     if (move.type === "rest") {
-      this.heal(run, actor, Math.ceil(hero.maxHp * 0.35));
+      this.heal(run, actor, campRecovery(hero));
       run.nodeReady[actor] = true;
       this.nodeDone(run);
     }
     if (move.type === "upgrade" || move.type === "remove") {
       const card = allCards(hero).find((card) => card.id === move.instance)!;
-      if (move.type === "upgrade") card.upgraded = true;
+      if (move.type === "upgrade") card.upgradeLevel++;
       else {
         for (const pile of [
           hero.hand,
@@ -430,7 +497,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           if (index >= 0) pile.splice(index, 1);
         }
         if (run.phase === "shop") {
-          hero.gold -= 35;
+          hero.gold -= cardServices.removalPrice;
           run.shopRemoved[actor] = true;
         }
       }
@@ -458,14 +525,14 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     run.combat.heroes[actor].discard.push({
       id: `c${run.combat.nextId++}`,
       card,
-      upgraded: false,
+      upgradeLevel: 0,
     });
   }
   private pool(run: ExpeditionRun, actor: number) {
     return [
       ...cardPools[run.combat.heroes[actor].profession],
       ...commonCards.filter((id) => !["strike", "defend"].includes(id)),
-    ];
+    ].filter((id) => run.campaignVersion === 2 || legacyCardIds.has(id));
   }
   private afterCombat(run: ExpeditionRun) {
     if (run.combat.phase === "lost") {
@@ -476,8 +543,10 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     if (
       run.map.flat().find((node) => node.id === run.current)!.kind === "boss"
     ) {
-      run.phase = "won";
-      return;
+      if (run.campaignVersion === 1 || run.chapter === chapters.length - 1) {
+        run.phase = "won";
+        return;
+      }
     }
     run.phase = "reward";
     run.nodeReady.fill(false);
@@ -502,7 +571,16 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
   }
   private nodeDone(run: ExpeditionRun) {
     if (!run.nodeReady.every(Boolean)) return;
-    if (run.phase === "reward" && run.rewardElite) {
+    if (
+      run.phase === "reward" &&
+      run.map.flat().find((node) => node.id === run.current)?.kind === "boss" &&
+      run.campaignVersion === 2 &&
+      run.chapter < chapters.length - 1
+    ) {
+      run.phase = "waystation";
+      run.nodeReady.fill(false);
+      run.pending = run.combat.heroes.map(() => []);
+    } else if (run.phase === "reward" && run.rewardElite) {
       run.rewardElite = false;
       this.treasure(run);
     } else {
@@ -536,6 +614,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.marks = [];
       if (["battle", "elite", "boss"].includes(node.kind)) {
         run.combat = combat.begin(run.combat, encounterFor(run, node));
+        run.combat.revivalFraction =
+          node.kind === "boss" && run.campaignVersion === 2 ? 0 : 0.25;
         run.phase = "battle";
         run.rewardElite = node.kind === "elite";
       }
@@ -590,6 +670,16 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         });
       }
     } else if (run.phase === "event") {
+      if (choice === "reroll") {
+        run.luck = run.luck.map((amount) => amount - 1);
+        run.event = shuffled(
+          (Object.keys(storyEvents) as StoryEventId[]).filter(
+            (id) => id !== run.event,
+          ),
+          `${run.seed}:event:${run.current}:reroll:${++run.eventRerolls}`,
+        )[0];
+        return;
+      }
       if (choice !== "leave") {
         const event = storyEvents[run.event!];
         const effects = event.choices[Number(choice)].effects;

@@ -9,20 +9,20 @@ import {
 } from "../src/domain/expedition/world";
 const rules = new ExpeditionAdventure();
 it("defines the complete chapter content without duplicate identifiers", () => {
-  expect(Object.keys(cards)).toHaveLength(66);
-  expect(heroContent).toHaveLength(3);
+  expect(Object.keys(cards)).toHaveLength(168);
+  expect(heroContent).toHaveLength(6);
   expect(Object.keys(relics)).toHaveLength(18);
   expect(Object.keys(potions)).toHaveLength(8);
   expect(Object.keys(storyEvents)).toHaveLength(10);
   expect(
     Object.values(creatures).filter((e) => e.rank === "normal"),
-  ).toHaveLength(8);
+  ).toHaveLength(18);
   expect(
     Object.values(creatures).filter((e) => e.rank === "elite"),
-  ).toHaveLength(3);
+  ).toHaveLength(6);
   expect(
     Object.values(creatures).filter((e) => e.rank === "boss"),
-  ).toHaveLength(2);
+  ).toHaveLength(6);
 });
 it("creates seeded branching routes for 1 to 4 heroes with reachable recovery nodes", () => {
   for (let count = 1; count <= 4; count++) {

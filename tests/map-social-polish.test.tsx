@@ -42,8 +42,8 @@ it("derives flight and fragment timing from one impact clock", () => {
 it("keeps dense seeded maps and vote-sized nodes inside their canvas without overlapping peers", async () => {
   const { routeLayout } = await import("../src/client/expedition/map-layout");
   const { generateMap } = await import("../src/domain/expedition/map");
-  for (let seed = 1; seed <= 32; seed++) {
-    const run = { map: generateMap(String(seed)) };
+  for (let chapter = 0; chapter < 3; chapter++) for (let seed = 1; seed <= 32; seed++) {
+    const run = { map: generateMap(String(seed), 2, chapter) };
     const layout = routeLayout(run.map);
     for (const floor of run.map) {
       const points = floor.map((node) => layout.points.get(node.id)!);

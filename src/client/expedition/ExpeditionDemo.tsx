@@ -281,7 +281,7 @@ export function ExpeditionDemo() {
                                   ? definition({
                                       id: "reward",
                                       card: action.reward.card,
-                                      upgraded: false,
+                                      upgradeLevel: 0,
                                     }).name
                                   : action.reward.kind === "upgrade"
                                     ? "升级一张打击"
@@ -293,7 +293,7 @@ export function ExpeditionDemo() {
                                     {cardText({
                                       id: "reward",
                                       card: action.reward.card,
-                                      upgraded: false,
+                                      upgradeLevel: 0,
                                     })}
                                   </small>
                                 )}

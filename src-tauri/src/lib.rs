@@ -1,13 +1,28 @@
 #[cfg(not(mobile))]
 pub mod cache;
 #[cfg(not(mobile))]
+#[cfg(not(mobile))]
 mod desktop;
+#[cfg(not(mobile))]
+mod diagnostics;
+#[cfg(not(mobile))]
+mod emoji;
 #[cfg(not(mobile))]
 pub mod hosting;
 #[cfg(not(mobile))]
 mod hosting_retry;
 #[cfg(not(mobile))]
+mod identity;
+#[cfg(not(mobile))]
+mod network_proxy;
+#[cfg(not(mobile))]
+mod quick_api;
+#[cfg(not(mobile))]
 mod updater;
+#[cfg(not(mobile))]
+mod usage;
+#[cfg(not(mobile))]
+mod usage_model;
 #[cfg(not(mobile))]
 pub mod voice;
 #[cfg(not(mobile))]
@@ -15,6 +30,8 @@ pub mod windows;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(not(mobile))]
+    identity::prepare().expect("无法迁移已有数据，请先退出旧版客户端后重试；旧数据保持不变");
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -22,7 +39,12 @@ pub fn run() {
     #[cfg(not(mobile))]
     let builder = builder
         .manage(std::sync::Arc::new(hosting::Hosting::default()))
+        .manage(std::sync::Arc::new(emoji::Downloads::default()))
+        .register_uri_scheme_protocol("emoji", |_context, request| {
+            emoji::resource(request.uri().path())
+        })
         .manage(desktop::Desktop::default())
+        .manage(usage::Usage::default())
         .manage(windows::Windows::default())
         .manage(updater::Updates::default())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -38,11 +60,24 @@ pub fn run() {
         .setup(desktop::setup)
         .on_menu_event(desktop::menu)
         .invoke_handler(tauri::generate_handler![
+            usage::usage_snapshot,
+            usage::usage_context,
+            usage::usage_enabled,
+            usage::usage_reset,
+            emoji::emoji_status,
+            emoji::emoji_install,
+            emoji::emoji_enabled,
+            emoji::emoji_remove,
+            emoji::emoji_cancel,
             voice::voice_config,
             voice::voice_save_config,
             voice::voice_request,
             voice::voice_active,
+            diagnostics::record_log,
+            diagnostics::application_logs,
             hosting::start_host,
+            hosting::host_endpoint,
+            hosting::hosting_info,
             hosting::abandon_hosted_run,
             hosting::stop_host,
             hosting::clear_cache,
@@ -73,6 +108,10 @@ pub fn run() {
             {
                 use tauri::{Emitter, Manager};
                 let hosting = app.state::<std::sync::Arc<hosting::Hosting>>();
+                #[cfg(target_os = "macos")]
+                if matches!(event, tauri::RunEvent::Reopen { .. }) {
+                    desktop::show_main(app);
+                }
                 if let tauri::RunEvent::ExitRequested { api, .. } = &event {
                     if (hosting.running() || app.state::<desktop::Desktop>().voice_active())
                         && !app.state::<desktop::Desktop>().quitting()
@@ -85,6 +124,7 @@ pub fn run() {
                     }
                 }
                 if matches!(event, tauri::RunEvent::Exit) {
+                    usage::stop(app);
                     hosting.stop();
                 }
             }

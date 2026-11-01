@@ -1,0 +1,434 @@
+.party-panel {
+  width: min(760px, calc(100vw - 24px));
+}
+.party-heading,
+.party-market > header,
+.party-activity > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.party-wealth {
+  display: grid;
+  gap: 7px;
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--primary, #2670dd) 12%, transparent),
+    transparent
+  );
+  padding: 16px;
+  border-radius: 18px;
+}
+.party-wealth small,
+.party-shop button > span:not(.party-item-icon),
+.party-market small,
+.party-activity small {
+  color: var(--muted, #707989);
+}
+.party-wealth progress,
+.party-activity progress {
+  width: 100%;
+  height: 7px;
+  accent-color: #d89e37;
+}
+.party-policy[open],
+.party-panel [data-state="open"] {
+  margin-block: 12px;
+}
+.party-policy > label,
+.party-settings > label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.party-settings {
+  border: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.party-settings legend {
+  padding: 16px 0;
+  font-weight: 650;
+}
+.party-categories {
+  display: flex;
+  gap: 6px;
+  position: sticky;
+  top: 0;
+  background: var(--surface, #fff);
+  z-index: 1;
+  padding: 10px 0;
+}
+.party-categories button {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+.party-categories button[aria-pressed="true"] {
+  background: #276dde;
+  color: white;
+}
+.party-shop {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.party-shop button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr auto;
+  text-align: left;
+  align-content: start;
+  gap: 8px;
+  padding: 14px;
+  min-height: 180px;
+  white-space: normal;
+}
+.party-shop button > span:not(.party-item-icon) {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.party-shop button:disabled {
+  opacity: 0.6;
+}
+.party-shop .party-item-icon {
+  font-size: 34px;
+  line-height: 1.3;
+}
+.party-target {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block: 14px;
+  gap: 12px;
+}
+.party-market,
+.party-activity {
+  display: grid;
+  gap: 12px;
+  margin-block: 14px;
+  padding: 16px;
+  background: var(--surface, #fff);
+  box-shadow: 0 3px 20px #0000000a;
+  border-radius: 20px;
+}
+.party-market-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.party-market-choices > span {
+  padding: 7px 10px;
+  background: var(--field, #f1f3f6);
+  border-radius: 12px;
+  font-size: 13px;
+}
+.party-bet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.party-bet-controls input {
+  min-width: 70px;
+  max-width: 120px;
+  padding: 10px;
+  border-radius: 10px;
+}
+.party-bet-controls button,
+.party-bet-controls [role="combobox"] {
+  min-height: 42px;
+}
+.party-coin-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+.party-coin-grid button {
+  font-size: 28px;
+  min-height: 44px;
+}
+.party-boss-button {
+  font-size: 32px;
+  min-height: 100px;
+  background: linear-gradient(145deg, #513d7b, #a64d7b);
+  color: white;
+}
+.party-scoreboard,
+.party-receipts {
+  display: grid;
+  gap: 8px;
+  margin-block: 14px;
+}
+.party-scoreboard > div,
+.party-receipts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.party-stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--layer-party, 75);
+  isolation: isolate;
+  overflow: hidden;
+}
+.party-canvas {
+  isolation: isolate;
+  z-index: 0;
+  position: absolute;
+  inset: 0;
+}
+.party-canvas canvas {
+  width: 100%;
+  height: 100%;
+}
+.party-captions {
+  z-index: 1;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  inset: auto 5% 76px;
+  gap: 12px;
+}
+.party-caption {
+  color: var(--party-color);
+  text-align: center;
+
+  width: min(90vw, 900px);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.party-caption strong {
+  display: block;
+  font-weight: 700;
+  font-size: clamp(28px, 5.2vw, 88px);
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 8px #0006;
+}
+.party-finale {
+  transform: scale(1.04);
+  transition: transform 0.2s;
+}
+.party-stage-control {
+  z-index: 2;
+  position: absolute;
+  bottom: 14px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+  max-width: calc(100vw - 32px);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.party-stage-control button {
+  padding: 8px 12px !important;
+  background: #232334cc;
+  color: #fff;
+  backdrop-filter: blur(14px);
+  min-height: 32px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.party-stage-control small {
+  background: #232334cc;
+  color: white;
+  padding: 6px;
+  border-radius: 8px;
+  max-width: min(75vw, 500px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.party-stage-reduced .party-captions {
+  inset: auto 10% 70px;
+}
+.party-stage-reduced .party-caption {
+  animation: none;
+}
+.party-stage-reduced .party-caption strong {
+  font-size: 20px;
+}
+.party-stage-reduced .party-caption small {
+  color: white;
+}
+@media (max-width: 600px) {
+  .party-shop {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .party-shop button {
+    min-height: 165px;
+  }
+  .party-categories {
+    gap: 3px;
+  }
+  .party-categories button {
+    padding: 10px 5px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .party-caption {
+    animation: none;
+  }
+}
+
+.party-observer,
+.party-awards {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--field, #f1f3f6);
+}
+
+.party-stage[data-active="false"] {
+  visibility: hidden;
+}
+.party-stage[data-paused="true"] * {
+  animation-play-state: paused !important;
+}
+.party-stage-folded .party-canvas {
+  visibility: hidden;
+}
+.party-caption .party-title {
+  color: #fff;
+  font-size: clamp(26px, 5vw, 64px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.party-taunt {
+  margin: 0;
+  max-width: min(80vw, 680px);
+  padding: 12px 20px;
+  border-radius: 18px;
+  background: #1c1234e6;
+  color: #fff;
+  font-size: clamp(14px, 2vw, 24px);
+  font-weight: 650;
+  line-height: 1.55;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-shadow: none;
+}
+.party-shop-card[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 15%, var(--field));
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.party-send-bar {
+  position: sticky;
+  bottom: -24px;
+  background: var(--surface);
+  padding: 16px 0;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 -12px 16px var(--surface);
+  z-index: 2;
+}
+.party-selection-summary {
+  display: grid;
+  gap: 6px;
+}
+.party-selection-summary > span,
+.party-selection-summary > small {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.party-send-bar label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.party-send-bar .primary {
+  min-height: 44px;
+}
+.party-title {
+  padding: 10px 20px;
+  border-radius: 16px;
+  background: #1c1234e6;
+  -webkit-text-fill-color: currentColor;
+}
+
+.party-cinematic {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.party-cinematic
+  :is(
+    [data-scene],
+    [data-deal],
+    [data-spin],
+    [data-wheel],
+    [data-pulse],
+    [data-expand],
+    [data-bolt],
+    [data-draw],
+    [data-grow],
+    [data-petal],
+    [data-sway],
+    [data-ride],
+    [data-train],
+    [data-launch],
+    [data-fall],
+    [data-rise],
+    [data-drip],
+    [data-smoke],
+    [data-pinball],
+    [data-curtain-left],
+    [data-curtain-right],
+    [data-bomb],
+    [data-wave],
+    [data-swim],
+    [data-cards]
+  ) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.party-cinematic [data-grow] {
+  transform-origin: center bottom;
+}
+.party-cinematic [data-drip] {
+  transform-origin: center top;
+}
+
+.party-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 42%, #0d193d80, #020713e0);
+}
+
+.party-cinematic [data-hand] {
+  transform-box: view-box;
+  transform-origin: 500px 330px;
+}
+
+.party-cinematic [data-scene] {
+  transform-box: view-box;
+  transform-origin: 500px 330px;
+}

@@ -1,5 +1,6 @@
 # 文档索引
 
+
 - [第一次使用：开房、加入、手机与连麦](getting-started.md)
 - [项目运行](../README.md)
 - [架构与实现入口](architecture.md)
@@ -37,13 +38,15 @@
 - [领土 Dominion：规则、AI 与手动审核](dominion.md)
 
 - [秘塔远征：合作卡牌肉鸽待审核方案](cooperative-roguelike-plan.md)
-- [秘塔远征：首章、联机、AI、存档与审核](expedition.md)
+- [秘塔远征：主题地图、联机、AI、存档与审核](expedition.md)
+- [秘塔远征：多层世界、职业与随机机制扩展](expedition-depth-plan.md)
 - [秘塔远征：独立战斗样板](expedition-demo.md)
 - [变声、输出设备、快捷键与横幅审核](voice-effects-and-input.md)
 - [客户端连麦：配置、实现与人工验收](client-voice.md)
 - [客户端连麦：技术、界面与验收方案](client-voice-plan.md)
 
 - [专注牌桌、远征路线与动效审核](expedition-experience.md)
+- [秘塔远征显示、卡牌服务与自建服务方案](expedition-presentation-plan.md)
 
 - [大厅、存档维护、快捷键与平台菜单审核](room-experience.md)
 
@@ -52,3 +55,23 @@
 - [创建／开始反馈、回合状态与原生窗口审核](action-feedback-and-windows.md)
 
 - [软件更新、签名与正式发布](updating.md)
+
+- [游戏元素大小与本机显示适配](game-display.md)
+
+- [电脑端手机网页预览](phone-preview.md)
+
+- [跨平台外观、局域网调试、代理与日志](platform-network-diagnostics.md)
+
+- [Apple 风格表情资源](emoji.md)
+- [各游戏手机牌桌审核](mobile-usability.md)
+
+- [房间派对、彩蛋币与旁观席](room-party.md)
+
+- [应用身份与数据迁移](identity.md)
+- [游戏美术与动效](game-art.md)
+
+- [房间派对扩展与后续插件边界](party-expansion-plan.md)
+
+- [插件模型与包工具（界面未开放）](workshop.md)
+
+- [本机使用统计](usage.md)

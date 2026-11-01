@@ -1,3 +1,5 @@
+import { ReplayParty } from "./party/ReplayParty";
+import { PartyLedger } from "../domain/party";
 import { ReplayBanners } from "./social/ReplayBanners";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
@@ -42,9 +44,10 @@ export function Records({
   } | null>(null);
   const replayWorker = useRef<Worker | null>(null);
   const wantedFrame = useRef(0);
-  const frameCount = selected ? selected.events.length + 1 : 0;
+  const frameCount = selected ? Math.max(selected.events.length+1,...(selected.party??[]).map(({frame,event})=>frame+Math.ceil((event.time-(event.createdAt??event.time)+event.duration)/1000)+1)) : 0;
   const [step, setStep] = useState(0);
-  wantedFrame.current = step;
+  const gameStep=selected?Math.min(step,selected.events.length):0;
+  wantedFrame.current = gameStep;
   const [actor, setActor] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -96,9 +99,9 @@ export function Records({
   useEffect(() => {
     if (selected && replayWorker.current) {
       setLoading(true);
-      replayWorker.current.postMessage({ index: step });
+      replayWorker.current.postMessage({ index: gameStep });
     }
-  }, [step]);
+  }, [gameStep]);
   useEffect(() => {
     if (!selected || loading || !playing || frameCount < 2) return;
     if (step >= frameCount - 1) {
@@ -113,7 +116,7 @@ export function Records({
   }, [selected, loading, playing, frameCount, step, speed]);
   if (detached) return null;
   const preview: Snapshot | null =
-    selected && frame && frame.index === step
+    selected && frame && frame.index === gameStep
       ? {
           serverTime: Date.now(),
           apiVersion: protocolVersion,
@@ -139,6 +142,7 @@ export function Records({
           computation: null,
           aiPaused: false,
           bannerPolicy: { mode: "off", members: [] },
+          party: new PartyLedger().snapshot({players:[],observers:[],round:"replay",playing:false,finished:false}),
           chat: [],
           chatSequence: 0,
           chatTotals: {},
@@ -295,6 +299,7 @@ export function Records({
             />
           </div>
           {!loading && <ReplayBanners record={selected} step={step} />}
+          {preview&&<ReplayParty record={selected} step={step} playing={playing&&!loading} speed={speed} preview={preview}/>}
           {loading ? (
             <p>正在重放…</p>
           ) : (

@@ -1,0 +1,61 @@
+.workshop {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.workshop-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.workshop-tools input {
+  flex: 1;
+  min-width: 120px;
+}
+.workshop-import {
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--field);
+  white-space: nowrap;
+}
+.workshop-import input {
+  display: none;
+}
+.workshop-catalogue {
+  display: grid;
+  gap: 16px;
+}
+.workshop-catalogue article {
+  background: var(--field);
+  padding: 16px;
+  border-radius: 18px;
+  display: grid;
+  gap: 12px;
+}
+.workshop-catalogue article header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.workshop-catalogue h4,
+.workshop-catalogue p {
+  margin: 0;
+}
+.workshop-catalogue small {
+  color: var(--muted);
+}
+.workshop-cover {
+  font-size: 40px;
+}
+.workshop-effects,
+.workshop-catalogue footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.party-stage-preview {
+  z-index: 150;
+}

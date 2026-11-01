@@ -1,3 +1,4 @@
+import { Emoji } from "./Emoji";
 import { useEffect, useState } from "react";
 import { avatarPresets, avatarSchema } from "../domain/avatar";
 export function AvatarPicker({
@@ -14,7 +15,7 @@ export function AvatarPicker({
     <section className="avatar-picker" aria-label="玩家头像">
       <div className="avatar-picker-input">
         <span className="avatar-preview" aria-hidden="true">
-          {value}
+          <Emoji text={value} />
         </span>
         <label>
           自定义头像
@@ -49,7 +50,7 @@ export function AvatarPicker({
             aria-pressed={value === avatar}
             onClick={() => onChange(avatar)}
           >
-            {avatar}
+            <Emoji text={avatar} />
           </button>
         ))}
       </div>

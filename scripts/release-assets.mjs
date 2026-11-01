@@ -74,6 +74,36 @@ export async function prepareRelease(input, output, version, tag, repo) {
       };
     }
   }
+  const emojiManifest = paths.find(
+    (path) => basename(path) === "emoji-pack.json",
+  );
+  if (emojiManifest) {
+    const manifest = JSON.parse(await readFile(emojiManifest, "utf8"));
+    const filename = "apple-emoji-v1.tar.gz";
+    const source = unique(filename, "可选表情包");
+    const bytes = await readFile(source);
+    if (
+      manifest.format !== 1 ||
+      manifest.bytes !== bytes.length ||
+      manifest.sha256 !== createHash("sha256").update(bytes).digest("hex") ||
+      manifest.url !==
+        `https://github.com/${repo}/releases/download/${tag}/${filename}`
+    )
+      throw Error("可选表情包清单不匹配");
+    for (const [file, name] of [
+      [source, filename],
+      [emojiManifest, "emoji-pack.json"],
+    ]) {
+      const target = join(out, name);
+      await copyFile(file, target);
+      assets.push(target);
+      checks.push(
+        `${createHash("sha256")
+          .update(await readFile(file))
+          .digest("hex")}  ${name}`,
+      );
+    }
+  }
   const latest = join(out, "latest.json");
   await writeFile(
     latest,

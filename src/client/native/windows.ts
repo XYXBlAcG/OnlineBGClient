@@ -1,3 +1,4 @@
+import { v4 as randomId } from "uuid";
 import { useEffect, useRef } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -86,7 +87,7 @@ export async function bindAuxiliary(
   id: string,
   binding: string,
 ): Promise<void> {
-  const request = crypto.randomUUID();
+  const request = randomId();
   return new Promise<void>((resolve, reject) => {
     let dispose: (() => void) | undefined;
     let finished = false;
