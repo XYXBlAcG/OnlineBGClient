@@ -34,3 +34,5 @@ HTTP 代理用于入口申请、隧道连接和公网健康探测。cloudflared 
 非界面验证：[控件](../tests/platform-controls.test.tsx)、[地址](../tests/lan-addresses.test.ts)、[HTTP 身份](../tests/lan-identities.test.ts)、[开房桥接](../tests/hosting-client.test.ts)。原生代理、日志与重试的定向测试位于对应实现模块。
 
 日志查看、导出与清空的唯一入口：[设置界面](../src/client/DiagnosticsSettings.tsx)、[原生日志服务](../src-tauri/src/diagnostics.rs)。清空只涉及当前及轮转日志；临时文件测试覆盖清空后继续写入。
+
+公网注册和健康验证分别记录；健康验证的请求、状态与响应检查见 [探测服务](../src-tauri/src/hosting_probe.rs)。已注册入口复用原隧道完成验证，最终错误保留失败阶段与原因。

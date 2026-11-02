@@ -176,6 +176,12 @@ pub async fn updater_check(
             .updater_builder()
             .timeout(Duration::from_secs(30))
             .restart_after_install(true);
+        #[cfg(windows)]
+        {
+            builder = builder.installer_arg(install_directory_arg(
+                &std::env::current_exe().map_err(|e| e.to_string())?,
+            )?);
+        }
         builder = if let Some(proxy) = proxy {
             builder.proxy(proxy)
         } else {
@@ -277,6 +283,8 @@ pub fn updater_authorize(
 pub struct Receipt {
     from: String,
     to: String,
+    #[serde(default)]
+    executable: Option<std::path::PathBuf>,
 }
 fn receipt_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
     let root = app.path().app_data_dir().map_err(|e| e.to_string())?;
@@ -302,11 +310,13 @@ pub async fn updater_install(
         pending.update.clone().ok_or("没有可安装的更新")?
     };
     let receipt = receipt_path(&app).map_err(|error| state.fail(&app, error))?;
+    log::info!(target:"onlinebg::updater", "install from={} target={} executable={:?}",update.current_version,update.version,std::env::current_exe());
     fs::write(
         &receipt,
         serde_json::to_vec(&Receipt {
             from: update.current_version.clone(),
             to: update.version.clone(),
+            executable: Some(std::env::current_exe().map_err(|e| e.to_string())?),
         })
         .map_err(|e| e.to_string())?,
     )
@@ -334,6 +344,9 @@ pub async fn updater_install(
 pub struct Completed {
     installed: bool,
     version: String,
+    target: String,
+    executable: std::path::PathBuf,
+    expected_executable: Option<std::path::PathBuf>,
 }
 fn completed(current: &str, target: &str) -> Result<bool, String> {
     let current = semver::Version::parse(current).map_err(|e| e.to_string())?;
@@ -356,12 +369,55 @@ pub fn updater_completion(
     let version = app.package_info().version.to_string();
     let installed = completed(&version, &receipt.to)?;
     fs::remove_file(path).map_err(|e| e.to_string())?;
-    Ok(Some(Completed { installed, version }))
+    let executable = std::env::current_exe().map_err(|e| e.to_string())?;
+    log::info!(target:"onlinebg::updater", "completion installed={installed} version={version} target={} executable={:?} expected={:?}",receipt.to,executable,receipt.executable);
+    Ok(Some(Completed {
+        installed,
+        version,
+        target: receipt.to,
+        executable,
+        expected_executable: receipt.executable,
+    }))
+}
+#[cfg(any(windows, test))]
+fn install_directory_arg(executable: &std::path::Path) -> Result<std::ffi::OsString, String> {
+    let directory = executable
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .ok_or("无法确定当前安装目录")?;
+    let mut argument = std::ffi::OsString::from("/D=");
+    argument.push(directory);
+    Ok(argument)
 }
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[test]
+    fn installer_targets_the_running_directory_without_quoting_or_splitting_spaces() {
+        let directory = std::env::temp_dir().join("自定义 游戏目录");
+        let exe = directory.join("onlinebg-client.exe");
+        let mut expected = std::ffi::OsString::from("/D=");
+        expected.push(&directory);
+        assert_eq!(install_directory_arg(&exe).unwrap(), expected);
+        assert!(install_directory_arg(std::path::Path::new("app.exe")).is_err());
+    }
+    #[test]
+    fn receipts_without_executable_still_report_the_real_running_version() {
+        let receipt: Receipt = serde_json::from_str(r#"{"from":"0.2.0","to":"0.2.3"}"#).unwrap();
+        assert!(receipt.executable.is_none());
+        assert!(!completed("0.2.0", &receipt.to).unwrap());
+        assert!(completed("0.2.3", &receipt.to).unwrap());
+    }
+    #[cfg(windows)]
+    #[test]
+    fn windows_install_path_preserves_drive_unicode_and_spaces() {
+        let executable = std::path::Path::new(r"D:\桌游 游戏\onlinebg-client.exe");
+        assert_eq!(
+            install_directory_arg(executable).unwrap(),
+            std::ffi::OsString::from(r"/D=D:\桌游 游戏")
+        );
+    }
     fn verification_updater(public: String) -> tauri_plugin_updater::Updater {
         let mut context = tauri::test::mock_context(tauri::test::noop_assets());
         context

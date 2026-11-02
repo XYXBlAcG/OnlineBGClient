@@ -40,3 +40,11 @@
 版本比较、占用与许可策略、官方签名验证及构建检查属于非界面证据；真实跨版本安装、系统权限和重启提示由用户手动验收，不自动运行安装器。
 
 应用标识变更及旧数据审核见 [身份与迁移](identity.md)。可选表情属于独立附件，入口见 [表情资源](emoji.md)。
+
+## Windows 安装位置
+
+安装与更新沿用现有安装目录，桌面和开始菜单快捷方式指向实际安装的程序。不自动删除其他安装副本；存档、设置与语音凭据不属于安装器清理范围。若已经同时安装在两个位置，手动安装时确认目标目录，之后使用该目录的快捷方式。
+
+目录选择与快捷方式的唯一实现：[NSIS 模板](../src-tauri/windows-install.nsi)。模板来自 [Tauri CLI 2.12.1](https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.12.1/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi)，CLI 版本固定于 [依赖](../package.json)，[模板许可](../src-tauri/windows-install.LICENSE)。发布者身份位于 [桌面配置](../src-tauri/tauri.conf.json)。
+
+人工审核：在带空格、中文的 D 盘目录分别测试从 0.2.0 和当前版升级，更新后从桌面及开始菜单启动，检查实际程序位置、存档、设置、连麦配置；已有其他安装副本应保持存在。

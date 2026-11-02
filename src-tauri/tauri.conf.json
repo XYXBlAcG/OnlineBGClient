@@ -40,7 +40,14 @@
       "entitlements": "Entitlements.plist",
       "signingIdentity": "-"
     },
-    "createUpdaterArtifacts": true
+    "createUpdaterArtifacts": true,
+    "publisher": "XYXBlAcG",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "template": "windows-install.nsi"
+      }
+    }
   },
   "plugins": {
     "updater": {

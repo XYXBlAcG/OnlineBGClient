@@ -1,7 +1,7 @@
 {
   "name": "online-bg-client",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -66,7 +66,7 @@
     "@babel/parser": "^7.28.0",
     "@babel/traverse": "^7.28.0",
     "@playwright/test": "^1.63.0",
-    "@tauri-apps/cli": "^2.0.0",
+    "@tauri-apps/cli": "2.12.1",
     "@types/node": "^24.0.0",
     "@types/qrcode": "^1.5.6",
     "@types/rbush": "4.0.0",

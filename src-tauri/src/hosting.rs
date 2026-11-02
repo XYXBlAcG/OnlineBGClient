@@ -139,7 +139,7 @@ impl Hosting {
                         None
                     };
                 log::info!(target:"onlinebg::hosting", "attempt={attempt} route={}", if route.is_some() { "proxy" } else { "direct" });
-                self.prepare(app, generation, attempt, route)
+                self.prepare(app, generation, attempt, route, proxy.as_ref())
             },
         );
         if let Err(error) = &result {
@@ -356,6 +356,7 @@ impl Hosting {
         generation: u64,
         attempt: usize,
         proxy: Option<&HttpProxy>,
+        fallback: Option<&HttpProxy>,
     ) -> Result<String, String> {
         let mut service = self.service.lock().unwrap();
         if service.is_none() {
@@ -464,26 +465,24 @@ impl Hosting {
                 }
             }
         }
-        let probe = network_proxy::client(proxy, Duration::from_secs(4))?;
-        let mut ready = false;
-        for _ in 0..3 {
+        let mut routes = vec![(
+            "direct",
+            network_proxy::client(None, Duration::from_secs(4))?,
+        )];
+        if let Some(proxy) = fallback {
+            routes.push((
+                "proxy",
+                network_proxy::client(Some(proxy), Duration::from_secs(4))?,
+            ));
+        }
+        let _ = app.emit("hosting-status", "隧道已建立，正在验证公网访问");
+        crate::hosting_probe::wait_ready(&url, &routes, Duration::from_secs(30), || {
             self.active(generation)?;
             if let Some(code) = tunnel.0.try_wait().map_err(|e| e.to_string())? {
                 return Err(format!("公网入口启动失败：{code}"));
             }
-            if probe.get(format!("{url}/health")).send().is_ok_and(|r| {
-                r.status().is_success()
-                    && r.json::<serde_json::Value>()
-                        .is_ok_and(|value| value["ready"] == true)
-            }) {
-                ready = true;
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(500));
-        }
-        if !ready {
-            return Err("公网入口尚未可达，请稍后重试".into());
-        }
+            Ok(())
+        })?;
         let mut session = self.session.lock().unwrap();
         self.active(generation)?;
         *session = Some(Session {

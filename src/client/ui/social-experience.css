@@ -593,4 +593,39 @@
 .emoji-settings {
   display: grid;
   gap: 10px;
+  min-width: 0;
+  align-content: start;
+}
+.emoji-settings > :is(p, h3, small) {
+  margin: 0;
+}
+.emoji-settings > .ui-switch-label {
+  width: 100%;
+  margin: 0;
+}
+.emoji-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.emoji-actions button {
+  width: auto;
+  max-width: 100%;
+  white-space: normal;
+}
+.emoji-download-progress {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+.emoji-download-progress progress {
+  width: 100%;
+  min-width: 0;
+  height: 8px;
+  accent-color: var(--accent);
+}
+.emoji-download-progress .emoji-actions {
+  grid-column: 1 / -1;
 }

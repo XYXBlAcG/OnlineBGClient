@@ -22,15 +22,19 @@ export function UpdaterController({
   useEffect(() => {
     if (!isTauri() || completion.current) return;
     completion.current = true;
-    void invoke<{ installed: boolean; version: string } | null>(
-      "updater_completion",
-    )
+    void invoke<{
+      installed: boolean;
+      version: string;
+      target: string;
+      executable: string;
+      expected_executable: string | null;
+    } | null>("updater_completion")
       .then((result) => {
         if (result)
           return message(
             result.installed
               ? `已更新到 ${result.version}，可以继续使用。`
-              : `上次更新未完成，当前版本仍为 ${result.version}。`,
+              : `当前打开的是 ${result.version}，目标版本为 ${result.target}。\n程序位置：${result.executable}\n请检查桌面快捷方式是否指向旧安装。`,
             {
               title: result.installed ? "更新完成" : "更新未完成",
               kind: result.installed ? "info" : "warning",

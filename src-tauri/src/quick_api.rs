@@ -53,7 +53,7 @@ impl QuickApi {
                                         if request.method() != hyper::Method::POST || request.uri().path() != "/tunnel" { return Err("不支持的入口申请".to_string()); }
                                         let agent = request.headers().get(hyper::header::USER_AGENT).cloned().unwrap_or_else(|| hyper::header::HeaderValue::from_static("cloudflared"));
                                         let body = Limited::new(request.into_body(), 16384).collect().await.map_err(|e| e.to_string())?.to_bytes();
-                                        let response = client.post(target).header("Content-Type", "application/json").header("User-Agent", agent).body(body).send().await.map_err(|e| e.to_string())?;
+                                        let response = client.post(target).header("Content-Type", "application/json").header("User-Agent", agent).body(body).send().await.map_err(|e| format!("{e:?}"))?;
                                         let status = response.status();
                                         let body = response.bytes().await.map_err(|e| e.to_string())?;
                                         Response::builder().status(status).header("Content-Type", "application/json").body(Full::new(body)).map_err(|e| e.to_string())

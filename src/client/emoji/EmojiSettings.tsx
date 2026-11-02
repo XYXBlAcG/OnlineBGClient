@@ -21,7 +21,7 @@ export function EmojiSettings({ proxy }: { proxy: string }) {
     }
   };
   return (
-    <section className="emoji-settings">
+    <section className="settings-section emoji-settings">
       <h3>表情外观</h3>
       {status.installed ? (
         <>
@@ -32,12 +32,14 @@ export function EmojiSettings({ proxy }: { proxy: string }) {
               void run("emoji_enabled", { enabled })
             }
           />
-          <button
-            disabled={status.phase === "downloading"}
-            onClick={() => void run("emoji_remove")}
-          >
-            删除已下载的表情包
-          </button>
+          <div className="emoji-actions">
+            <button
+              disabled={status.phase === "downloading"}
+              onClick={() => void run("emoji_remove")}
+            >
+              删除已下载的表情包
+            </button>
+          </div>
         </>
       ) : (
         <p className="muted">
@@ -51,23 +53,28 @@ export function EmojiSettings({ proxy }: { proxy: string }) {
       />
       {useProxy && <small className="muted">{proxy} · 在联机设置中修改</small>}
       {status.phase === "downloading" ? (
-        <>
+        <div className="emoji-download-progress" role="status">
           <progress
             aria-label="表情包下载进度"
             value={status.progress}
             max={1}
           />
           <span>{Math.round(status.progress * 100)}%</span>
-          <button onClick={() => void run("emoji_cancel")}>取消下载</button>
-        </>
+          <div className="emoji-actions">
+            <button onClick={() => void run("emoji_cancel")}>取消下载</button>
+          </div>
+        </div>
       ) : (
-        <button
-          onClick={() =>
-            void run("emoji_install", { proxy: useProxy ? proxy : null })
-          }
-        >
-          {status.installed ? "重新下载表情包" : "下载并启用 Apple 表情"}
-        </button>
+        <div className="emoji-actions">
+          <button
+            className="primary-button"
+            onClick={() =>
+              void run("emoji_install", { proxy: useProxy ? proxy : null })
+            }
+          >
+            {status.installed ? "重新下载表情包" : "下载并启用 Apple 表情"}
+          </button>
+        </div>
       )}
       {(error || status.error) && (
         <p role="status">{error || status.error}，当前继续使用可用表情。</p>

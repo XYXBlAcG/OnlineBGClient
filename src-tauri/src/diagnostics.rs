@@ -124,6 +124,7 @@ pub fn init(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     log::set_boxed_logger(Box::new(logger))?;
     log::set_max_level(log::LevelFilter::Info);
     app.manage(LogState(writer));
+    log::info!(target:"onlinebg::app", "executable={:?}",std::env::current_exe());
     log::info!(target:"onlinebg::app", "OnlineBGClient {} {} {}", app.package_info().version, std::env::consts::OS, std::env::consts::ARCH);
     Ok(())
 }

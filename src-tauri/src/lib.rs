@@ -10,6 +10,8 @@ mod emoji;
 #[cfg(not(mobile))]
 pub mod hosting;
 #[cfg(not(mobile))]
+mod hosting_probe;
+#[cfg(not(mobile))]
 mod hosting_retry;
 #[cfg(not(mobile))]
 mod identity;
