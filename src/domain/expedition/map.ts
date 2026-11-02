@@ -42,7 +42,7 @@ export function generateMap(
           : shuffled(
               floor === 0
                 ? [2, 3]
-                : Array.from({ length: theme.width - 1 }, (_, i) => i + 2),
+                : Array.from({ length: theme.width - 2 }, (_, i) => i + 3),
               `${seed}:width:${floor}`,
             )[0],
   );
@@ -71,7 +71,7 @@ export function generateMap(
                   Math.abs((a.lane + 0.5) / next.length - position) -
                   Math.abs((b.lane + 0.5) / next.length - position),
               )
-              .slice(0, shuffled([1, 2], `${seed}:edges:${node.id}`)[0])
+              .slice(0, shuffled([1, 2, 2, 3], `${seed}:edges:${node.id}`)[0])
               .map((to) => to.id);
     }
     if (layout === 2)

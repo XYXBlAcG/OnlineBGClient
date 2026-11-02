@@ -299,9 +299,9 @@ pub async fn emoji_install(
                 builder = builder.proxy(reqwest::Proxy::all(url).map_err(|e| e.to_string())?);
             }
             let client = builder.build().map_err(|e| e.to_string())?;
-            let response=client.get("https://github.com/XYXBlAcG/OnlineBGClient/releases/latest/download/emoji-pack.json").send().map_err(|e|e.to_string())?;
+            let response=client.get("https://github.com/XYXBlAcG/OnlineBGClient/releases/download/v0.2.1/emoji-pack.json").send().map_err(|e|e.to_string())?;
             if response.status() == reqwest::StatusCode::NOT_FOUND {
-                return Err("当前 Release 尚未提供可选表情包，发布后可重新下载".into());
+                return Err("表情资源暂时不可用，请稍后重试".into());
             }
             let manifest: Manifest = response
                 .error_for_status()

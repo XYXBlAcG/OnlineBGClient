@@ -70,19 +70,11 @@ jobs:
       - if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: cargo check --manifest-path src-tauri/Cargo.toml
       - run: cargo test --release --manifest-path src-tauri/Cargo.toml --lib updater::tests
+      - run: cargo test --release --manifest-path src-tauri/Cargo.toml --lib diagnostics::tests
       - if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'macOS'
         run: codesign --verify --deep --strict src-tauri/target/release/bundle/macos/OnlineBGClient.app
       - if: startsWith(github.ref, 'refs/tags/v')
         run: node scripts/verify-update-bundle.mjs
-      - if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'macOS'
-        run: node scripts/build-dmg.mjs
-      - if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'macOS'
-        run: node scripts/build-emoji-pack.mjs
-      - if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'macOS'
-        run: cargo test --release --manifest-path src-tauri/Cargo.toml --lib emoji::real_pack_test
-        env:
-          EMOJI_PACK_TEST_PATH: ${{ github.workspace }}/artifacts/emoji-pack/apple-emoji-v1.tar.gz
-
       - if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -92,8 +84,6 @@ jobs:
             src-tauri/target/release/bundle/nsis/*.sig
             src-tauri/target/release/bundle/macos/*.app.tar.gz
             src-tauri/target/release/bundle/macos/*.sig
-            artifacts/release-build/*.dmg
-            artifacts/emoji-pack/*
           if-no-files-found: error
           retention-days: 14
 

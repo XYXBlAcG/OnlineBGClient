@@ -6,6 +6,7 @@ import { ExpeditionMap } from "../src/client/expedition/ExpeditionMap";
 it("renders actual graph edges, an independently sized zoom surface, votes and a current-position control", () => {
   const state = new ExpeditionAdventure().create(2),
     run = state.view;
+  run.phase = "map";
   run.votes[0] = run.map[0][0].id;
   const html = renderToStaticMarkup(
     <ExpeditionMap
@@ -16,10 +17,18 @@ it("renders actual graph edges, an independently sized zoom surface, votes and a
     />,
   );
   expect(html).toContain("当前位置");
+  expect(html).toContain("exp-vote-status");
+  expect(html.indexOf("exp-vote-status")).toBeLessThan(
+    html.indexOf("map-viewport"),
+  );
   expect(html).not.toContain("当前士兵");
   expect(html).toContain("min-width:0");
   expect(html).toContain("甲已投票");
-  expect((html.match(/<path /g) || []).length).toBe(
-    run.map.flat().reduce((sum, n) => sum + n.next.length, 0),
-  );
+  expect(
+    (
+      html
+        .match(/<g class="exp-route-links"[^>]*>(.*?)<\/g>/)?.[1]
+        .match(/<path /g) || []
+    ).length,
+  ).toBe(run.map.flat().reduce((sum, n) => sum + n.next.length, 0));
 });

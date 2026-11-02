@@ -53,25 +53,7 @@
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 0 #1c273125);
 }
-.exp-route .exp-route-canvas {
-  background-image:
-    linear-gradient(#edf2f5dd, #edf2f5e8), url("/art/expedition/floor_3.png");
-  background-size:
-    auto,
-    48px 48px;
-}
-[data-color-scheme="dark"] .exp-route .exp-route-canvas {
-  background-image:
-    linear-gradient(#17212bd9, #17212be6), url("/art/expedition/floor_3.png");
-}
-.exp-biome-1 .exp-route-canvas {
-  background-image:
-    linear-gradient(#e4f0e0dc, #e8efe8e8), url("/art/expedition/floor_5.png");
-}
-[data-color-scheme="dark"] .exp-biome-1 .exp-route-canvas {
-  background-image:
-    linear-gradient(#172b26db, #1a2925e8), url("/art/expedition/floor_5.png");
-}
+.exp-route .exp-route-canvas {background:var(--board-surface);}
 [data-motion="false"] .exp-pixel-figure {
   animation: none;
 }
@@ -81,14 +63,6 @@
   }
 }
 
-.exp-biome-2 .exp-route-canvas {
-  background-image:
-    linear-gradient(#f2e6dbdc, #efe7e0ed), url("/art/expedition/floor_3.png");
-}
-[data-color-scheme="dark"] .exp-biome-2 .exp-route-canvas {
-  background-image:
-    linear-gradient(#32251fdb, #2a2420e8), url("/art/expedition/floor_3.png");
-}
 .exp-inventory-relics img {
   width: 28px;
   height: 36px;

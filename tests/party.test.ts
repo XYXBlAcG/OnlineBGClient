@@ -48,7 +48,7 @@ it("房主开启派对，积分扣除幂等，雨伞反弹一次且不改变游�
     ),
   ).toBeUndefined();
   expect(room.snapshot(tokens[0]).party.balances[room.seats[0].id!].coins).toBe(
-    85,
+    15,
   );
   expect(
     room.snapshot(tokens[0]).party.balances[room.seats[1].id!].shield,
@@ -93,7 +93,7 @@ it("已离场者可助威和支持，仍在场者不能冒充旁观者，禁止�
     ),
   ).toMatchObject({ item: "cheer", target: room.seats[2].id });
   expect(room.snapshot(tokens[0]).party.balances[room.seats[0].id!].coins).toBe(
-    100,
+    30,
   );
 });
 it("自然结束发放一次参与奖励，重载不重复发币，手动结束不发币", () => {
@@ -102,11 +102,11 @@ it("自然结束发放一次参与奖励，重载不重复发币，手动结束�
   if (room.state!.kind !== "scmj") throw Error();
   room.state!.view.phase = "finished";
   expect(room.snapshot(tokens[0]).party.balances[room.seats[0].id!].coins).toBe(
-    100,
+    30,
   );
   room.tickParty();
   const a = room.snapshot(tokens[0]).party.balances[room.seats[0].id!].coins;
-  expect(a).toBe(160);
+  expect(a).toBe(90);
   expect(room.snapshot(tokens[0]).party.balances[room.seats[0].id!].coins).toBe(
     a,
   );
@@ -124,7 +124,7 @@ it("自然结束发放一次参与奖励，重载不重复发币，手动结束�
   expect(
     other.room.snapshot(other.tokens[0]).party.balances[other.room.seats[0].id!]
       .coins,
-  ).toBe(100);
+  ).toBe(30);
 });
 it("未开启时不允许消费，关闭后余额保留且不能透支", () => {
   const { room, tokens } = table();
@@ -136,7 +136,7 @@ it("未开启时不允许消费，关闭后余额保留且不能透支", () => {
     }),
   ).toThrow("未开启");
   room.partyAction(tokens[0], "enable", { type: "enabled", enabled: true });
-  for (let i = 0; i < 6; i++)
+  for (let i = 0; i < 2; i++)
     room.partyAction(
       tokens[0],
       `buy${i}`,
@@ -154,7 +154,7 @@ it("未开启时不允许消费，关闭后余额保留且不能透支", () => {
   room.partyAction(tokens[0], "disable", { type: "enabled", enabled: false });
   room.partyAction(tokens[0], "reenable", { type: "enabled", enabled: true });
   expect(room.snapshot(tokens[0]).party.balances[room.seats[0].id!].coins).toBe(
-    10,
+    0,
   );
 });
 it("付费道具不能从免费互动接口绕过扣币", () => {
@@ -224,11 +224,11 @@ it("本局颁奖在下一局结算一次，跨局保留余额并清除反弹伞�
   ).toThrow("已经颁奖");
   room.start(tokens[0]);
   const party = room.snapshot(tokens[0]).party;
-  expect(party.balances[room.seats[0].id!].coins).toBe(170);
+  expect(party.balances[room.seats[0].id!].coins).toBe(100);
   expect(party.awards).toEqual({});
   expect(party.support).toEqual({});
   expect(room.snapshot(tokens[0]).party.balances[room.seats[0].id!].coins).toBe(
-    170,
+    100,
   );
 });
 it("Graphwar 派对特效锚定地图士兵，而不是底部玩家按钮", () => {

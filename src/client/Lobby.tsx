@@ -1,6 +1,8 @@
 import { useSceneTransition } from "./scene-transition";
 import { usePresentation } from "./motion";
-import { GameIcon } from "./GameIcon";
+import { GameLibrary } from "./lobby/GameLibrary";
+import { GameCover } from "./lobby/GameCover";
+import "./lobby/lobby.css";
 import { ExpeditionOptionsControl } from "./expedition/ExpeditionOptionsControl";
 import { expeditionOptionsSchema } from "../domain/expedition/adventure-types";
 import { DominionOptionsControl } from "./dominion/DominionOptionsControl";
@@ -13,10 +15,10 @@ import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import { mahjongOptionsSchema } from "../domain/mahjong/types";
 import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
-import { Select, Slider, Switch } from "./ui/Controls";
+import { Button, Select, Slider, Switch } from "./ui/Controls";
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
-import { gameCatalogue, gameKinds, type GameKind } from "../domain/catalogue";
+import { gameCatalogue, type GameKind } from "../domain/catalogue";
 import { configSchema, type RoomConfig } from "../domain/protocol";
 import type { Difficulty } from "../domain/types";
 
@@ -48,10 +50,10 @@ export function Lobby({
     hostOnly: boolean,
     lan?: boolean,
   ) => void;
-  onJoin: (name: string, invitation: string, spectator?:boolean) => void;
+  onJoin: (name: string, invitation: string, spectator?: boolean) => void;
 }) {
   const [kind, setKind] = useState<GameKind>("uno");
-  const [spectator,setSpectator]=useState(false);
+  const [spectator, setSpectator] = useState(false);
   const [networkPage, setNetworkPage] = useState<"join" | "create">("join");
   const [mode, setMode] = useState<"local" | "network">(
     initialRoom ? "network" : "local",
@@ -77,8 +79,6 @@ export function Lobby({
   const [catanTrades, setCatanTrades] = useState(true);
   const [team, setTeam] = useState(false);
 
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("全部");
   const endpoint = preferences.network.service || service;
   const [invitation, setInvitation] = useState(
     initialRoom ? invitationLink(initialRoom, service) : "",
@@ -125,89 +125,33 @@ export function Lobby({
       className="lobby-shell"
       data-entry={creating ? "create" : "join"}
     >
-      <section className="game-library" hidden={!creating} data-scene-enter>
-        <div className="library-heading">
-          <div>
-            <h1>一起玩一局</h1>
-            <p>选个游戏，叫上朋友</p>
-          </div>
-          <input
-            aria-label="搜索游戏"
-            placeholder="搜索游戏"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </div>
-        <div className="category-tabs">
-          {[
-            "全部",
-            "收藏",
-            "最近",
-            ...(isTauri() ? ["经营"] : []),
-            ...new Set(gameKinds.map((key) => gameCatalogue[key].category)),
-          ].map((value) => (
-            <button
-              key={value}
-              className={category === value ? "active" : ""}
-              onClick={() => setCategory(value)}
-            >
-              {value}
-            </button>
-          ))}
-        </div>
-        <div className="game-picker">
-          {gameKinds
-            .filter(
-              (key) =>
-                (category === "全部" ||
-                  gameCatalogue[key].category === category ||
-                  (category === "收藏" &&
-                    preferences.favorites.includes(key)) ||
-                  (category === "最近" &&
-                    preferences.recentGames.includes(key))) &&
-                gameCatalogue[key].name
-                  .toLowerCase()
-                  .includes(query.toLowerCase()),
-            )
-            .map((key) => (
-              <div
-                key={key}
-                className={`game-card ${kind === key ? "active" : ""}`}
-              >
-                <button
-                  className="game-card-main"
-                  onClick={() => changeGame(key)}
-                  aria-pressed={kind === key}
-                >
-                  <GameIcon kind={key} />
-                  <strong>{gameCatalogue[key].name}</strong>
-                  <span>{gameCatalogue[key].description}</span>
-                  <small>
-                    {gameCatalogue[key].minPlayers}–
-                    {gameCatalogue[key].maxPlayers} 人
-                  </small>
-                </button>
-                <button
-                  className="game-favorite"
-                  aria-label={`${preferences.favorites.includes(key) ? "取消收藏" : "收藏"}${gameCatalogue[key].name}`}
-                  aria-pressed={preferences.favorites.includes(key)}
-                  onClick={() =>
-                    onPreferencesChange({
-                      ...preferences,
-                      favorites: preferences.favorites.includes(key)
-                        ? preferences.favorites.filter((value) => value !== key)
-                        : [...preferences.favorites, key],
-                    })
-                  }
-                >
-                  {preferences.favorites.includes(key) ? "★" : "☆"}
-                </button>
-              </div>
-            ))}
-        </div>
-      </section>
+      <GameLibrary
+        selected={kind}
+        disabled={busy || !creating}
+        favorites={preferences.favorites}
+        recent={preferences.recentGames}
+        onSelect={changeGame}
+        onFavorite={(key) =>
+          onPreferencesChange({
+            ...preferences,
+            favorites: preferences.favorites.includes(key)
+              ? preferences.favorites.filter((value) => value !== key)
+              : [...preferences.favorites, key],
+          })
+        }
+      />
       <section className="room-setup" data-scene-layout="setup">
-        <h2>{creating ? game.name : "加入朋友的房间"}</h2>
+        <div className="club-setup-heading">
+          {creating && <GameCover kind={kind} />}
+          <div>
+            <h2>{creating ? game.name : "加入朋友的房间"}</h2>
+            <p>
+              {creating
+                ? `${game.minPlayers}–${game.maxPlayers} 人`
+                : "粘贴邀请链接"}
+            </p>
+          </div>
+        </div>
         <div className="segmented">
           <button
             className={mode === "local" ? "active" : ""}
@@ -255,26 +199,36 @@ export function Lobby({
             onChange={(event) => setName(event.target.value)}
           />
         </label>
-        <AvatarPicker
-          value={preferences.avatar}
-          onChange={(avatar) => onPreferencesChange({ ...preferences, avatar })}
-        />
+        <details className="lobby-options club-avatar">
+          <summary>我的头像 · {preferences.avatar}</summary>
+          <AvatarPicker
+            value={preferences.avatar}
+            onChange={(avatar) =>
+              onPreferencesChange({ ...preferences, avatar })
+            }
+          />
+        </details>
         <div className="lobby-body" data-scene-size="form" data-scene-enter>
           {mode === "network" && !creating && (
             <div className="invite-entry">
-              <Switch label="只旁观，不占游戏席位" checked={spectator} onCheckedChange={setSpectator}/>
+              <Switch
+                label="只旁观，不占游戏席位"
+                checked={spectator}
+                onCheckedChange={setSpectator}
+              />
               <input
                 aria-label="邀请链接"
                 placeholder="粘贴邀请链接"
                 value={invitation}
                 onChange={(event) => setInvitation(event.target.value)}
               />
-              <button
+              <Button
+                variant="primary"
                 disabled={busy || !name.trim() || !invitation.trim()}
-                onClick={() => onJoin(name, invitation,spectator)}
+                onClick={() => onJoin(name, invitation, spectator)}
               >
                 加入 / 恢复房间
-              </button>
+              </Button>
             </div>
           )}
           {creating && (
@@ -384,38 +338,48 @@ export function Lobby({
                   )}
                 </Select>
               </div>
-              {kind === "graphwar" && (
-                <>
-                  <GraphwarOptionsControl
-                    value={graphwar}
-                    onChange={setGraphwar}
-                  />
-                  {total * graphwar.soldiers > 36 &&
-                    graphwar.size === "standard" && (
-                      <button
-                        onClick={() =>
-                          setGraphwar({ ...graphwar, size: "large" })
-                        }
-                      >
-                        兵力较多，切换大型地图
-                      </button>
-                    )}
-                </>
-              )}
-              {kind === "expedition" && (
-                <ExpeditionOptionsControl
-                  value={expedition}
-                  onChange={setExpedition}
-                />
-              )}
-              {kind === "dominion" && (
-                <DominionOptionsControl
-                  value={dominion}
-                  onChange={setDominion}
-                />
-              )}
-              {kind === "scmj" && (
-                <MahjongOptionsControl value={mahjong} onChange={setMahjong} />
+              {["graphwar", "expedition", "dominion", "scmj"].includes(
+                kind,
+              ) && (
+                <details className="lobby-options">
+                  <summary>玩法选项</summary>
+                  {kind === "graphwar" && (
+                    <>
+                      <GraphwarOptionsControl
+                        value={graphwar}
+                        onChange={setGraphwar}
+                      />
+                      {total * graphwar.soldiers > 36 &&
+                        graphwar.size === "standard" && (
+                          <button
+                            onClick={() =>
+                              setGraphwar({ ...graphwar, size: "large" })
+                            }
+                          >
+                            兵力较多，切换大型地图
+                          </button>
+                        )}
+                    </>
+                  )}
+                  {kind === "expedition" && (
+                    <ExpeditionOptionsControl
+                      value={expedition}
+                      onChange={setExpedition}
+                    />
+                  )}
+                  {kind === "dominion" && (
+                    <DominionOptionsControl
+                      value={dominion}
+                      onChange={setDominion}
+                    />
+                  )}
+                  {kind === "scmj" && (
+                    <MahjongOptionsControl
+                      value={mahjong}
+                      onChange={setMahjong}
+                    />
+                  )}
+                </details>
               )}
               <div className="setting-row">
                 <span>总席位</span>
@@ -454,67 +418,74 @@ export function Lobby({
               {!game.ai && (
                 <p className="muted">{humans} 名真人 · AI 尚未接入</p>
               )}
-              <div className="ai-settings">
-                {displayAi.map((entry, index) => (
-                  <div className="ai-setting" key={index}>
-                    <span className="ai-badge">
-                      {entry.balance ? "平衡补位" : `AI ${index + 1}`}
-                    </span>
-                    <input
-                      aria-label={`AI ${index + 1} 名称`}
-                      placeholder={
-                        kind === "sgs" ? "自动使用武将名" : "自动生成名称"
-                      }
-                      value={entry.name}
-                      maxLength={24}
-                      onChange={(event) =>
-                        setAi(
-                          displayAi.map((value, id) =>
-                            id === index
-                              ? { ...value, name: event.target.value }
-                              : value,
-                          ),
-                        )
-                      }
-                    />
-                    <Select
-                      aria-label={`AI ${index + 1} 难度`}
-                      value={entry.difficulty}
-                      onValueChange={(difficulty) =>
-                        setAi(
-                          displayAi.map((value, id) =>
-                            id === index
-                              ? {
-                                  ...value,
-                                  difficulty: difficulty as Difficulty,
-                                }
-                              : value,
-                          ),
-                        )
-                      }
-                    >
-                      {Object.entries(difficultyNames).map(([value, label]) => (
-                        <option value={value} key={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                ))}
-              </div>
               {!!displayAi.length && (
-                <label className="tempo-control">
-                  AI 动作间隔{" "}
-                  <output>{(aiDelayMs / 1000).toFixed(1)} 秒</output>
-                  <Slider
-                    aria-label="AI 动作间隔"
-                    min={0}
-                    max={5000}
-                    step={250}
-                    value={aiDelayMs}
-                    onValueChange={setDelay}
-                  />
-                </label>
+                <details className="lobby-options">
+                  <summary>AI 玩家 · {displayAi.length} 位</summary>
+                  <div className="ai-settings">
+                    {displayAi.map((entry, index) => (
+                      <div className="ai-setting" key={index}>
+                        <span className="ai-badge">
+                          {entry.balance ? "平衡补位" : `AI ${index + 1}`}
+                        </span>
+                        <input
+                          aria-label={`AI ${index + 1} 名称`}
+                          placeholder={
+                            kind === "sgs" ? "自动使用武将名" : "自动生成名称"
+                          }
+                          value={entry.name}
+                          maxLength={24}
+                          onChange={(event) =>
+                            setAi(
+                              displayAi.map((value, id) =>
+                                id === index
+                                  ? { ...value, name: event.target.value }
+                                  : value,
+                              ),
+                            )
+                          }
+                        />
+                        <Select
+                          aria-label={`AI ${index + 1} 难度`}
+                          value={entry.difficulty}
+                          onValueChange={(difficulty) =>
+                            setAi(
+                              displayAi.map((value, id) =>
+                                id === index
+                                  ? {
+                                      ...value,
+                                      difficulty: difficulty as Difficulty,
+                                    }
+                                  : value,
+                              ),
+                            )
+                          }
+                        >
+                          {Object.entries(difficultyNames).map(
+                            ([value, label]) => (
+                              <option value={value} key={value}>
+                                {label}
+                              </option>
+                            ),
+                          )}
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                  {!!displayAi.length && (
+                    <label className="tempo-control">
+                      AI 动作间隔{" "}
+                      <output>{(aiDelayMs / 1000).toFixed(1)} 秒</output>
+                      <Slider
+                        aria-label="AI 动作间隔"
+                        min={0}
+                        max={5000}
+                        step={250}
+                        value={aiDelayMs}
+                        onValueChange={setDelay}
+                      />
+                    </label>
+                  )}
+                </details>
               )}
               {kind === "ktd" && !!ai.length && (
                 <label className="checkbox">
@@ -536,8 +507,15 @@ export function Lobby({
                   组队模式
                 </label>
               )}
-              <button
-                className={`primary-button ${busy ? "operation-working" : ""}`}
+              <p className="club-seat-summary">
+                {humans} 名真人 · {displayAi.length} 名 AI
+                {displayAi.some((entry) => entry.balance)
+                  ? " · 已平衡两队"
+                  : ""}
+              </p>
+              <Button
+                variant="primary"
+                className={busy ? "operation-working" : ""}
                 aria-busy={busy}
                 disabled={busy || !name.trim() || total < game.minPlayers}
                 onClick={() =>
@@ -573,7 +551,7 @@ export function Lobby({
                     : mode === "network" && temporary
                       ? "一键创建公网房间"
                       : "创建房间"}
-              </button>
+              </Button>
             </>
           )}
         </div>

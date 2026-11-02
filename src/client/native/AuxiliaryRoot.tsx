@@ -2,7 +2,7 @@ import "../ui/platform-controls.css";
 import { GameSizeProvider } from "../game-sizing/GameSizing";
 import { bindAuxiliary, useWindowReady } from "./windows";
 import { MotionProvider } from "../motion";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ChatPanel } from "../ChatPanel";
@@ -12,9 +12,7 @@ import { Settings } from "../Settings";
 import { About } from "../About";
 import { Invite } from "../Invite";
 import { Records } from "../Records";
-import { GameCommands } from "../GameCommands";
 import { ComputeDiagnostics } from "../ComputeDiagnostics";
-import { CommandRegistry } from "../commands";
 import { loadPreferences } from "../preferences";
 import { applyTheme } from "../themes";
 import { installContextMenuPolicy } from "../desktop-context-menu";
@@ -28,7 +26,6 @@ export function AuxiliaryRoot() {
   const [frame, setFrame] = useState<AuxiliaryFrame>();
   const [preferences, setPreferences] = useState(loadPreferences);
   const [error, setError] = useState("");
-  const registry = useMemo(() => new CommandRegistry(), []);
   useEffect(() => {
     let active = true;
     let unsubscribe: (() => void) | undefined;
@@ -99,34 +96,6 @@ export function AuxiliaryRoot() {
     setError,
   );
 
-  useEffect(() => {
-    if (payload?.view !== "actions") return;
-    const handle = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        send({ view: "actions", type: "close" });
-        return;
-      }
-      const element = event.target as HTMLElement;
-      if (
-        registry.dispatch(
-          {
-            key: event.key,
-            ctrlKey: event.ctrlKey,
-            metaKey: event.metaKey,
-            altKey: event.altKey,
-            shiftKey: event.shiftKey,
-            repeat: event.repeat,
-            isComposing: event.isComposing,
-            editing: element.matches("input,textarea,[contenteditable=true]"),
-          },
-          payload.snapshot.kind,
-        )
-      )
-        event.preventDefault();
-    };
-    window.addEventListener("keydown", handle);
-    return () => window.removeEventListener("keydown", handle);
-  }, [payload?.view === "actions" ? payload.snapshot.kind : null, registry]);
   return (
     <GameSizeProvider profiles={preferences.gameSizes}>
       <MotionProvider preferences={preferences}>
@@ -233,17 +202,6 @@ export function AuxiliaryRoot() {
               onOpenChange={close}
               onError={onError}
               onReady={acceptRecords}
-            />
-          )}
-          {payload?.view === "actions" && (
-            <GameCommands
-              snapshot={payload.snapshot}
-              bindings={payload.bindings}
-              pending={payload.pending}
-              registry={registry}
-              act={(action) =>
-                send({ view: "actions", type: "action", action })
-              }
             />
           )}
           {payload?.view === "diagnostics" && (

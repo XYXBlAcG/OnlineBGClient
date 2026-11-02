@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { mkdtemp, mkdir, writeFile, readFile, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, basename } from "node:path";
 import { prepareRelease } from "../scripts/release-assets.mjs";
@@ -18,9 +18,6 @@ it("requires both signed platforms and produces a stable deterministic updater m
     await expect(
       prepareRelease(root, output, "0.2.0", "v0.2.0", "owner/repo"),
     ).rejects.toThrow("macOS");
-    const dmg = Buffer.alloc(1024);
-    dmg.write("koly", 512);
-    await writeFile(mac, dmg);
     await writeFile(update, Buffer.from([31, 139, 1, 2]));
     await expect(
       prepareRelease(root, output, "0.2.0", "v0.2.0", "owner/repo"),
@@ -53,6 +50,8 @@ it("requires both signed platforms and produces a stable deterministic updater m
     expect(result.assets.map((path) => basename(path))).not.toContain(
       expect.stringContaining(".zip"),
     );
+    expect(result.assets.some((path) => path.endsWith(".dmg"))).toBe(false);
+    await writeFile(mac, "unused disk image");
     const { createHash } = await import("node:crypto");
     const pack = Buffer.from("optional emoji fixture");
     await writeFile(join(root, "apple-emoji-v1.tar.gz"), pack);
@@ -72,7 +71,7 @@ it("requires both signed platforms and produces a stable deterministic updater m
       "v0.2.0",
       "owner/repo",
     );
-    expect(withEmoji.assets.map((path) => basename(path))).toContain(
+    expect(withEmoji.assets.map((path) => basename(path))).not.toContain(
       "emoji-pack.json",
     );
     expect(

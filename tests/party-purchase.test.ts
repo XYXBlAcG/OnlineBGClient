@@ -37,9 +37,9 @@ it("浏览选择只生成草稿，不发射或扣币；确认动作才消费一�
     false,
   )!;
   expect(selected.action).toMatchObject({ type: "buy", target: "table" });
-  expect(selected.duration).toBe(10000);
+  expect(selected.duration).toBe(6000);
   expect(room.snapshot(a).party.events).toHaveLength(0);
-  expect(room.snapshot(a).party.balances[snapshot.seats[0].id].coins).toBe(100);
+  expect(room.snapshot(a).party.balances[snapshot.seats[0].id].coins).toBe(30);
   const individual = preparePartyPurchase(
     { type: "builtin", item: "cometEgg" },
     snapshot,
@@ -52,5 +52,5 @@ it("浏览选择只生成草稿，不发射或扣币；确认动作才消费一�
   room.partyAction(a, "confirm", selected.action);
   room.partyAction(a, "confirm", selected.action);
   expect(room.snapshot(a).party.events).toHaveLength(1);
-  expect(room.snapshot(a).party.balances[snapshot.seats[0].id].coins).toBe(90);
+  expect(room.snapshot(a).party.balances[snapshot.seats[0].id].coins).toBe(20);
 });

@@ -18,12 +18,13 @@ it("validates auxiliary intents before the main window changes game or settings 
     }).success,
   ).toBe(true);
   expect(
-    auxiliaryIntentSchema.parse({
+    auxiliaryIntentSchema.safeParse({
       view: "actions",
       type: "action",
       action: { type: "tq-move", route: [0, 1] },
-    }),
-  ).toMatchObject({ action: { type: "tq-move", route: [0, 1] } });
+    }).success,
+  ).toBe(false);
+  expect(auxiliaryViews).not.toContain("actions");
   expect(
     auxiliaryIntentSchema.safeParse({
       view: "settings",

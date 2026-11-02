@@ -154,79 +154,84 @@ export function ExpeditionTable({
       ),
   );
   const hand = hero?.hand ?? [];
-  useGameCommands([
-    ...Array.from({ length: 9 }, (_, slot) => ({
-      id: `expedition.hand-${slot + 1}`,
-      title: `选择第 ${slot + 1} 张手牌`,
-      scope: "expedition",
-      binding: String(slot + 1),
-      enabled: () =>
-        run.phase === "battle" &&
-        !!hand[slot] &&
-        moves.some(
-          (c) => c.move.type === "card" && c.move.instance === hand[slot].id,
-        ),
-      run: () => {
-        const card = hand[slot];
-        setSelected(card.id);
-        const target = moves.find(
-          (c) => c.move.type === "card" && c.move.instance === card.id,
-        );
-        setHover(
-          target && "target" in target.move
-            ? (target.move.target ?? null)
-            : null,
-        );
-      },
-    })),
-    ...[-1, 1].map((direction) => ({
-      id: `expedition.target-${direction}`,
-      title: direction < 0 ? "上一个目标" : "下一个目标",
-      scope: "expedition",
-      binding: direction < 0 ? "ArrowUp" : "ArrowDown",
-      enabled: () => !pending && targetActions.length > 0,
-      run: () => {
-        const targets = targetActions.flatMap((c) =>
-            "target" in c.move && c.move.target ? [c.move.target] : [],
-          ),
-          index = targets.findIndex(
-            (t) => t.side === hover?.side && t.index === hover.index,
-          );
-        setHover(
-          targets[(index + direction + targets.length) % targets.length],
-        );
-      },
-    })),
-    {
-      id: "expedition.confirm-card",
-      title: "确认出牌或使用药水",
-      scope: "expedition",
-      binding: "Enter",
-      enabled: () => !pending && cardActions.length > 0,
-      run: () => {
-        const action =
-          direct ??
-          targetActions.find(
-            (c) =>
-              "target" in c.move &&
-              c.move.target?.side === hover?.side &&
-              c.move.target?.index === hover?.index,
-          );
-        if (action) send(action.move);
-      },
-    },
-    {
-      id: "expedition.cancel-card",
-      title: "取消选牌",
-      scope: "expedition",
-      binding: "Escape",
-      enabled: () => !!selected,
-      run: () => {
-        setSelected(null);
-        setHover(null);
-      },
-    },
-  ]);
+  useGameCommands(
+    run.phase === "battle"
+      ? [
+          ...Array.from({ length: 9 }, (_, slot) => ({
+            id: `expedition.hand-${slot + 1}`,
+            title: `选择第 ${slot + 1} 张手牌`,
+            scope: "expedition",
+            binding: String(slot + 1),
+            enabled: () =>
+              run.phase === "battle" &&
+              !!hand[slot] &&
+              moves.some(
+                (c) =>
+                  c.move.type === "card" && c.move.instance === hand[slot].id,
+              ),
+            run: () => {
+              const card = hand[slot];
+              setSelected(card.id);
+              const target = moves.find(
+                (c) => c.move.type === "card" && c.move.instance === card.id,
+              );
+              setHover(
+                target && "target" in target.move
+                  ? (target.move.target ?? null)
+                  : null,
+              );
+            },
+          })),
+          ...[-1, 1].map((direction) => ({
+            id: `expedition.target-${direction}`,
+            title: direction < 0 ? "上一个目标" : "下一个目标",
+            scope: "expedition",
+            binding: direction < 0 ? "ArrowUp" : "ArrowDown",
+            enabled: () => !pending && targetActions.length > 0,
+            run: () => {
+              const targets = targetActions.flatMap((c) =>
+                  "target" in c.move && c.move.target ? [c.move.target] : [],
+                ),
+                index = targets.findIndex(
+                  (t) => t.side === hover?.side && t.index === hover.index,
+                );
+              setHover(
+                targets[(index + direction + targets.length) % targets.length],
+              );
+            },
+          })),
+          {
+            id: "expedition.confirm-card",
+            title: "确认出牌或使用药水",
+            scope: "expedition",
+            binding: "Enter",
+            enabled: () => !pending && cardActions.length > 0,
+            run: () => {
+              const action =
+                direct ??
+                targetActions.find(
+                  (c) =>
+                    "target" in c.move &&
+                    c.move.target?.side === hover?.side &&
+                    c.move.target?.index === hover?.index,
+                );
+              if (action) send(action.move);
+            },
+          },
+          {
+            id: "expedition.cancel-card",
+            title: "取消选牌",
+            scope: "expedition",
+            binding: "Escape",
+            enabled: () => !!selected,
+            run: () => {
+              setSelected(null);
+              setHover(null);
+            },
+          },
+        ]
+      : [],
+  );
   const waiting = run.combat.heroes.filter(
     (_, i) => run.nodeReady[i] || run.votes[i] !== undefined,
   ).length;
@@ -243,20 +248,26 @@ export function ExpeditionTable({
         data-motion-zone="expedition.status"
       >
         <div>
-          <small>
-            秘塔远征 · 第 {run.chapter + 1} 大层 · {chapters[run.chapter].name}{" "}
-            · {Math.max(1, run.floor + 1)} / {run.map.length} 节点
+          <small
+            title={`第 ${run.chapter + 1} 大层 / 第 ${Math.max(1, run.floor + 1)} 站，共 ${run.map.length} 站`}
+          >
+            {chapters[run.chapter].name} 第 {Math.max(1, run.floor + 1)} 站
           </small>
           <strong>
             {phaseNames[run.phase]}
             {run.phase === "battle" ? ` · 第 ${run.combat.round} 回合` : ""}
           </strong>
         </div>
-        <span>
-          {hero
-            ? `${hero.energy} 能量 · ${hero.gold} 金币 · ${run.luck[actor]} 幸运筹码`
-            : "观战"}
-        </span>
+        {hero && run.phase === "battle" && (
+          <span className="exp-resource" aria-label={`剩余能量 ${hero.energy}`}>
+            能量 <strong>{hero.energy}</strong>
+          </span>
+        )}
+        {hero && run.phase === "shop" && (
+          <span className="exp-resource">
+            金币 <strong>{hero.gold}</strong>
+          </span>
+        )}
         <button onClick={() => setInspect(Math.max(0, actor))}>
           牌组与遗物
         </button>
@@ -278,18 +289,19 @@ export function ExpeditionTable({
           </>
         )}
       </header>
-      {run.phase !== "profession" && run.phase !== "battle" && (
-        <div className="exp-party" data-guide-target="expedition.party">
-          {run.combat.heroes.map((h, i) => (
-            <div key={i}>
-              <AvatarSurface {...avatar} index={i} />
-              <button onClick={() => setInspect(i)}>
-                {h.name} · {h.hp}/{h.maxHp} ♥ · {h.gold} ◈
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      {!["profession", "battle", "map"].includes(run.phase) &&
+        !(run.phase === "tie" && run.votePhase === "map") && (
+          <div className="exp-party" data-guide-target="expedition.party">
+            {run.combat.heroes.map((h, i) => (
+              <div key={i}>
+                <AvatarSurface {...avatar} index={i} />
+                <button onClick={() => setInspect(i)}>
+                  {h.name} · {h.hp}/{h.maxHp} ♥ · {h.gold} ◈
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       {run.phase === "waystation" && (
         <section className="exp-waystation">
           <h3>下一大层 · {chapters[run.chapter + 1].name}</h3>
@@ -338,7 +350,7 @@ export function ExpeditionTable({
           </p>
         </div>
       )}
-      {ballotPhase(run) && (
+      {ballotPhase(run) && ballotPhase(run) !== "map" && (
         <VoteStatus
           run={run}
           names={snapshot.seats.map((seat) => seat.name)}
@@ -369,6 +381,8 @@ export function ExpeditionTable({
               : [],
           )}
           names={snapshot.seats.map((seat) => seat.name)}
+          avatars={snapshot.seats.map((seat) => seat.avatar ?? "👤")}
+          pending={pending}
           onVote={vote}
         />
       )}
@@ -684,7 +698,6 @@ export function ExpeditionTable({
           </div>
         )}
       {[
-        "map",
         "reward",
         "shop",
         "camp",

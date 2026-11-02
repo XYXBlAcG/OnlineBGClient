@@ -1,0 +1,32 @@
+:root {
+  --board-surface: color-mix(in srgb, var(--canvas) 75%, var(--surface));
+  --board-rim: color-mix(in srgb, var(--muted) 18%, transparent);
+  --card-shadow: 0 2px 0 #1723300a, 0 5px 14px #1723300c;
+}
+.original-game {
+  background-image: repeating-linear-gradient(
+    0deg,
+    #82725303 0 1px,
+    transparent 1px 4px
+  );
+  box-shadow: inset 0 0 0 1px var(--board-rim);
+}
+.original-game > .expedition-table {
+  background: transparent;
+}
+.original-game :is(.dominion-card, .exp-card) {
+  box-shadow: var(--card-shadow);
+}
+.original-game .dominion-card {
+  --dom-face: var(--raised);
+}
+.exp-resource {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.exp-resource strong {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}

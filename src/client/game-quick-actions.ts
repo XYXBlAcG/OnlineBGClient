@@ -1,3 +1,4 @@
+import type { Snapshot } from "../domain/protocol";
 import type { GameKind } from "../domain/catalogue";
 import type { Action } from "../domain/types";
 interface QuickAction {
@@ -5,6 +6,15 @@ interface QuickAction {
   title: string;
   binding: string;
   matches: (action: Action) => boolean;
+}
+export function quickCandidate(
+  candidates: Snapshot["candidates"],
+  quick: QuickAction,
+) {
+  const matches = candidates.filter((candidate) =>
+    quick.matches(candidate.action),
+  );
+  return matches.length === 1 ? matches[0] : undefined;
 }
 export const gameQuickActions: Partial<Record<GameKind, QuickAction[]>> = {
   expedition: [
@@ -17,7 +27,79 @@ export const gameQuickActions: Partial<Record<GameKind, QuickAction[]>> = {
         ["ready", "unready"].includes(action.move.type),
     },
   ],
+  scmj: [
+    {
+      id: "win",
+      title: "胡牌",
+      binding: "H",
+      matches: (a) =>
+        a.type === "scmj-action" &&
+        (a.move.type === "win" ||
+          (a.move.type === "respond" && a.move.choice === "win")),
+    },
+    {
+      id: "pong",
+      title: "碰",
+      binding: "P",
+      matches: (a) =>
+        a.type === "scmj-action" &&
+        a.move.type === "respond" &&
+        a.move.choice === "pong",
+    },
+    {
+      id: "kong",
+      title: "杠",
+      binding: "G",
+      matches: (a) =>
+        a.type === "scmj-action" &&
+        (a.move.type === "kong" ||
+          (a.move.type === "respond" && a.move.choice === "kong")),
+    },
+    {
+      id: "pass",
+      title: "过",
+      binding: " ",
+      matches: (a) =>
+        a.type === "scmj-action" &&
+        a.move.type === "respond" &&
+        a.move.choice === "pass",
+    },
+  ],
+  ddz: [
+    {
+      id: "pass",
+      title: "不出",
+      binding: " ",
+      matches: (a) => a.type === "ddz-pass",
+    },
+    {
+      id: "claim",
+      title: "叫地主",
+      binding: "D",
+      matches: (a) => a.type === "ddz-claim",
+    },
+  ],
+  graphwar: [
+    {
+      id: "guard",
+      title: "防御",
+      binding: "G",
+      matches: (a) => a.type === "graphwar-guard",
+    },
+    {
+      id: "pass",
+      title: "跳过",
+      binding: " ",
+      matches: (a) => a.type === "graphwar-pass",
+    },
+  ],
   uno: [
+    {
+      id: "uno-report",
+      title: "喊 UNO",
+      binding: "U",
+      matches: (a) => a.type === "uno-report",
+    },
     {
       id: "uno-draw",
       title: "摸牌 / 不出",

@@ -15,6 +15,28 @@ impl RollingFile {
         let size = file.metadata()?.len();
         Ok(Self { path, file, size })
     }
+    fn clear(&mut self) -> std::io::Result<()> {
+        self.file.flush()?;
+        for path in [
+            self.path.with_extension("log.1"),
+            self.path.with_extension("log.2"),
+        ] {
+            match fs::remove_file(path) {
+                Ok(()) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(error),
+            }
+        }
+        self.reset()
+    }
+    fn reset(&mut self) -> std::io::Result<()> {
+        self.file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&self.path)?;
+        self.size = 0;
+        Ok(())
+    }
     fn append(&mut self, line: &str, limit: u64) -> std::io::Result<()> {
         if self.size + line.len() as u64 > limit {
             self.file.flush()?;
@@ -27,11 +49,7 @@ impl RollingFile {
                 fs::rename(&previous, &older)?;
             }
             fs::copy(&self.path, &previous)?;
-            self.file = OpenOptions::new()
-                .write(true)
-                .truncate(true)
-                .open(&self.path)?;
-            self.size = 0;
+            self.reset()?;
         }
         self.file.write_all(line.as_bytes())?;
         self.file.flush()?;
@@ -163,6 +181,22 @@ pub fn application_logs(
     Ok(output)
 }
 
+#[tauri::command]
+pub fn clear_application_logs(
+    window: tauri::WebviewWindow,
+    state: tauri::State<'_, LogState>,
+) -> Result<(), String> {
+    if window.label() != "main" && window.label() != "aux-settings" {
+        return Err("请在设置中清除日志".into());
+    }
+    state
+        .0
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clear()
+        .map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -186,6 +220,28 @@ mod tests {
         drop(file);
         assert_eq!(fs::read_dir(&dir).unwrap().count(), 3);
         assert_eq!(fs::read_to_string(path).unwrap(), "12345\n");
+        fs::remove_dir_all(dir).unwrap();
+    }
+    #[test]
+    fn clear_removes_rotated_history_and_resets_cursor_for_future_writes() {
+        let dir = std::env::temp_dir().join(format!("onlinebg-clear-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("client.log");
+        let mut file = RollingFile::open(path.clone()).unwrap();
+        for _ in 0..4 {
+            file.append("12345\n", 8).unwrap();
+        }
+        file.clear().unwrap();
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1);
+        assert_eq!(fs::read_to_string(&path).unwrap(), "");
+        assert_eq!(file.size, 0);
+        file.append("fresh\n", 8).unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), "fresh\n");
+        file.clear().unwrap();
+        file.clear().unwrap();
+        file.append("next\n", 8).unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), "next\n");
+        drop(file);
         fs::remove_dir_all(dir).unwrap();
     }
 }

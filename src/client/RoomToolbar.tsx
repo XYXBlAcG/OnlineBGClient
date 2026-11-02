@@ -111,20 +111,6 @@ export function RoomToolbar({
             {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
           </button>
         )}
-      {mobile && snapshot.actor >= 0 && (
-        <button
-          disabled={!snapshot.state || snapshot.finished}
-          onClick={() => {
-            setOpen(false);
-            registry
-              .list()
-              .find((command) => command.id === `${snapshot.kind}.actions`)
-              ?.run();
-          }}
-        >
-          游戏操作
-        </button>
-      )}
       {snapshot.canManage && gameCatalogue[snapshot.kind].ai && (
         <label className="room-tempo">
           AI 间隔
@@ -201,7 +187,7 @@ export function RoomToolbar({
           <small>
             {snapshot.seats.filter((seat) => seat.name).length}/
             {snapshot.seats.length} 人
-            {latency !== undefined && network && (
+            {latency !== undefined && latency > 150 && network && (
               <>
                 {" "}
                 ·{" "}
@@ -214,7 +200,6 @@ export function RoomToolbar({
               </>
             )}
           </small>
-          {!mobile && <small>{snapshot.room}</small>}
         </div>
         <div className="room-primary-actions">
           {(snapshot.canManage || snapshot.party.enabled) && (
@@ -265,12 +250,12 @@ export function RoomToolbar({
             )}
           {snapshot.actor >= 0 && (
             <GameCommands
-              showTrigger={!mobile}
               snapshot={snapshot}
               act={act}
               registry={registry}
               bindings={preferences.bindings}
               pending={pending}
+              onReveal={focused ? onFocus : undefined}
             />
           )}{" "}
           {network && (

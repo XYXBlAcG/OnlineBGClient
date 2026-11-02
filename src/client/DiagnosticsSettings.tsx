@@ -5,10 +5,12 @@ import { useEffect, useState } from "react";
 export function DiagnosticsSettings() {
   const [text, setText] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const refresh = async () => {
     setBusy(true);
     setError("");
+    setNotice("");
     try {
       const raw = await invoke<string>("application_logs", { full: false });
       setText(
@@ -36,6 +38,7 @@ export function DiagnosticsSettings() {
   const exportLogs = async () => {
     setBusy(true);
     setError("");
+    setNotice("");
     try {
       const path = await save({
         defaultPath: `OnlineBGClient-${new Date().toISOString().slice(0, 10)}.log`,
@@ -52,6 +55,20 @@ export function DiagnosticsSettings() {
       setBusy(false);
     }
   };
+  const clearLogs = async () => {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await invoke("clear_application_logs");
+      setText("");
+      setNotice("日志已清空");
+    } catch (value) {
+      setError(String(value));
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <section className="settings-section">
       <h3>软件日志</h3>
@@ -62,7 +79,11 @@ export function DiagnosticsSettings() {
         <button disabled={busy} onClick={() => void exportLogs()}>
           导出日志
         </button>
+        <button disabled={busy} onClick={clearLogs}>
+          清空日志
+        </button>
       </div>
+      {notice && <p role="status">{notice}</p>}
       <p className="muted">显示最近 300 条，导出包含当前保留的完整日志。</p>
       <textarea
         className="application-logs"

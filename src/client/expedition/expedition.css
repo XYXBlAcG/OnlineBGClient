@@ -76,19 +76,19 @@
   font-weight: 650;
   letter-spacing: 2px;
 }
-.exp-route {
+.exp-demo-route {
   display: flex;
   gap: 50px;
   align-items: center;
 }
-.exp-route > span {
+.exp-demo-route > span {
   display: flex;
   align-items: center;
   gap: 7px;
   color: var(--muted);
   position: relative;
 }
-.exp-route > span:not(:last-child)::after {
+.exp-demo-route > span:not(:last-child)::after {
   content: "";
   position: absolute;
   left: calc(100% + 8px);
@@ -96,7 +96,7 @@
   height: 1px;
   background: var(--line);
 }
-.exp-route b {
+.exp-demo-route b {
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
@@ -105,17 +105,17 @@
   height: 26px;
   font-size: 11px;
 }
-.exp-route small {
+.exp-demo-route small {
   font-size: 11px;
 }
-.exp-route .current {
+.exp-demo-route .current {
   color: var(--exp-ink);
 }
-.exp-route .current b {
+.exp-demo-route .current b {
   border-color: var(--exp-ink);
   background: color-mix(in srgb, var(--exp-ink) 10%, transparent);
 }
-.exp-route .complete {
+.exp-demo-route .complete {
   color: var(--exp-green);
 }
 .exp-round {
@@ -817,13 +817,13 @@
     min-height: 30px;
     padding: 4px 8px;
   }
-  .exp-route {
+  .exp-demo-route {
     gap: 10px;
   }
-  .exp-route small {
+  .exp-demo-route small {
     display: none;
   }
-  .exp-route > span:not(:last-child)::after {
+  .exp-demo-route > span:not(:last-child)::after {
     display: none;
   }
   .exp-runbar {
@@ -1015,10 +1015,10 @@
   .exp-location small {
     display: none;
   }
-  .exp-route small {
+  .exp-demo-route small {
     font-size: 9px;
   }
-  .exp-route b {
+  .exp-demo-route b {
     width: 21px;
     height: 21px;
   }

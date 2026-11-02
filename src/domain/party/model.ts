@@ -10,7 +10,7 @@ import { interactionUnitsSchema } from "../social";
 import { partyItems, type PartyItemId } from "./catalogue";
 import type { PredictionState } from "./predictions";
 export const partyEconomy = {
-  initial: 100,
+  initial: 30,
   completion: 40,
   winner: 20,
   support: 5,
@@ -213,7 +213,11 @@ export function partyAppearance(event: PartyEvent) {
     speed: 1,
     density: 1,
   };
-  return event.audience === "table"
-    ? { ...appearance, scope: "room" }
-    : appearance;
+  return {
+    ...appearance,
+    duration:
+      event.duration -
+      (event.pauses ?? []).reduce((sum, pause) => sum + pause.duration, 0),
+    ...(event.audience === "table" ? { scope: "room" } : {}),
+  };
 }

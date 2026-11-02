@@ -29,7 +29,7 @@ it("独立观众不占席位，不能管理或出牌，可在对局中加入、�
   expect(room.canManage(token)).toBe(false);
   const view = room.snapshot(token);
   expect(view.actor).toBeLessThan(-1);
-  expect(view.party.balances[view.spectators![0].id].coins).toBe(100);
+  expect(view.party.balances[view.spectators![0].id].coins).toBe(30);
   if (view.state?.kind !== "uno") throw Error();
   expect(view.state.view.playerCards.flat().every((c) => c < 0)).toBe(true);
   expect(() =>

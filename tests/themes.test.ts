@@ -26,7 +26,7 @@ it("publishes the effective scheme for every game while retaining manual and sys
 it("registers validated theme plugins and rejects duplicated identities or partial palettes", () => {
   const registry = new ThemeRegistry();
   registry.register(lightTheme);
-  expect(registry.get("light").tokens.accent).toBe("#256cda");
+  expect(registry.get("light")).toEqual(lightTheme);
   expect(() => registry.register(lightTheme)).toThrow("重复");
   expect(() =>
     registry.register({

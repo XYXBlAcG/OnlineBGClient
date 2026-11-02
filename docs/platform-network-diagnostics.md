@@ -32,3 +32,5 @@ HTTP 代理用于入口申请、隧道连接和公网健康探测。cloudflared 
 4. 查看并导出日志，检查失败原因和时间可读；导出文件包含留存历史，普通游戏和更新操作不因日志页面打开而中断。
 
 非界面验证：[控件](../tests/platform-controls.test.tsx)、[地址](../tests/lan-addresses.test.ts)、[HTTP 身份](../tests/lan-identities.test.ts)、[开房桥接](../tests/hosting-client.test.ts)。原生代理、日志与重试的定向测试位于对应实现模块。
+
+日志查看、导出与清空的唯一入口：[设置界面](../src/client/DiagnosticsSettings.tsx)、[原生日志服务](../src-tauri/src/diagnostics.rs)。清空只涉及当前及轮转日志；临时文件测试覆盖清空后继续写入。

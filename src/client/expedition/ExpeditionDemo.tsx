@@ -199,7 +199,7 @@ export function ExpeditionDemo() {
             <small>裂隙遗迹 / {state.encounter + 1} · 3</small>
             <h1>{encounters[state.encounter].name}</h1>
           </div>
-          <div className="exp-route" aria-label="冒险进度">
+          <div className="exp-demo-route" aria-label="冒险进度">
             {encounters.map((e, i) => (
               <span
                 key={e.name}

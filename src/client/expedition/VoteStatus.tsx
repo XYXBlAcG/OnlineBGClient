@@ -29,10 +29,10 @@ export function VoteStatus({
             </span>
             <strong>
               {names[index] || `玩家 ${index + 1}`}
-              <small>
-                席位 {index + 1}
-                {index === actor ? " · 我的选择" : ""}
-              </small>
+              {index === actor && <small>我的选择</small>}
+              {names.filter((name) => name === names[index]).length > 1 && (
+                <small>席位 {index + 1}</small>
+              )}
             </strong>
             <span>
               {choice === undefined

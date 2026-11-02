@@ -49,10 +49,10 @@ it("真实双端同步付费特效和余额，重复请求不重复投掷或扣�
       a.wait(() => a!.snapshot?.party.events.length === 1),
       b.wait(() => b!.snapshot?.party.events.length === 1),
     ]);
-    await b.wait(() => b!.snapshot?.party.balances[own]?.coins === 85);
+    await b.wait(() => b!.snapshot?.party.balances[own]?.coins === 15);
     a.send(command);
     a.send({ type: "snapshot", token: a.session!.token });
-    await a.wait(() => a!.snapshot?.party.balances[own]?.coins === 85);
+    await a.wait(() => a!.snapshot?.party.balances[own]?.coins === 15);
     expect(a.snapshot!.version).toBe(version);
     expect(b.snapshot!.version).toBe(version);
     expect(a.snapshot!.party.events[0]).toEqual(b.snapshot!.party.events[0]);

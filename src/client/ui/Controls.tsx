@@ -215,3 +215,21 @@ export function Panel({
     </DialogPrimitive.Root>
   );
 }
+
+export function Button({
+  variant = "secondary",
+  className = "",
+  type = "button",
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "danger" | "quiet";
+}) {
+  return (
+    <button
+      {...props}
+      type={type}
+      data-button-variant={variant}
+      className={`${variant === "primary" ? "primary-button " : ""}${className}`.trim()}
+    />
+  );
+}

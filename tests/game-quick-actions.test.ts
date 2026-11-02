@@ -55,3 +55,27 @@ it("dispatches Dominion's phase shortcuts only through currently legal room acti
   expect(registry.dispatch({ ...input, key: "e" }, "dominion")).toBe(true);
   expect(registry.dispatch(input, "dominion")).toBe(false);
 });
+
+it("常用摸牌、过牌、碰杠胡与防御有默认键；有多个匹配动作时不能擅自选择", async () => {
+  const { quickCandidate } = await import("../src/client/game-quick-actions");
+  expect(gameQuickActions.scmj?.map((q) => q.binding)).toEqual([
+    "H",
+    "P",
+    "G",
+    " ",
+  ]);
+  const quick = gameQuickActions.uno!.find((q) => q.id === "uno-draw")!;
+  expect(
+    quickCandidate([{ label: "摸牌", action: { type: "uno-draw" } }], quick)
+      ?.action.type,
+  ).toBe("uno-draw");
+  expect(
+    quickCandidate(
+      [
+        { label: "摸牌", action: { type: "uno-draw" } },
+        { label: "另一个动作", action: { type: "uno-draw" } },
+      ],
+      quick,
+    ),
+  ).toBeUndefined();
+});

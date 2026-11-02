@@ -2,7 +2,6 @@ import type { GameSizing } from "../game-sizing/model";
 import type { MediaSession } from "../social/media";
 import { attachmentSchema } from "../../domain/attachments";
 import { z } from "zod";
-import { actionSchema } from "../../domain/actions";
 import { preferencesSchema, type Preferences } from "../preferences";
 import { roomSetupSchema, type Snapshot } from "../../domain/protocol";
 import type { ComputeDiagnostic } from "../../domain/compute-diagnostics";
@@ -13,7 +12,6 @@ export const auxiliaryViews = [
   "records",
   "invite",
   "diagnostics",
-  "actions",
   "exit",
   "roomsetup",
   "chat",
@@ -73,11 +71,6 @@ export const auxiliaryIntentSchema = z.discriminatedUnion("type", [
     binding: z.string(),
   }),
   z.object({
-    type: z.literal("action"),
-    view: z.literal("actions"),
-    action: actionSchema,
-  }),
-  z.object({
     type: z.literal("setup"),
     view: z.literal("roomsetup"),
     setup: roomSetupSchema,
@@ -113,12 +106,6 @@ export type AuxiliaryPayload =
   | { view: "records" }
   | { view: "invite"; url: string }
   | { view: "diagnostics"; diagnostic: ComputeDiagnostic; canRetry: boolean }
-  | {
-      view: "actions";
-      snapshot: Snapshot;
-      bindings: Record<string, string>;
-      pending: boolean;
-    }
   | { view: "roomsetup"; snapshot: Snapshot }
   | { view: "exit"; hosting: boolean; voice?: boolean };
 export interface AuxiliaryFrame {

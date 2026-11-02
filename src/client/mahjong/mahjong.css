@@ -4,7 +4,7 @@
 .original-game[data-game="scmj"] {
   padding: 0;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--board-surface);
   color: var(--text);
   color-scheme: inherit;
 }

@@ -4,7 +4,7 @@
 
 ## 本地 macOS 审核应用
 
-客户端安装见 [软件更新](updating.md)。本机审核保留 `.app`；公开分发使用安装镜像和签名更新资源。
+客户端安装见 [软件更新](updating.md)。本机审核保留 `.app`；公开分发格式以[软件更新](updating.md)为准。
 
 GitHub Release 的手动安装和自动更新资源见 [软件更新](updating.md)。
 

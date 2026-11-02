@@ -1,3 +1,4 @@
+import { effectAnchorRect } from "./effect-anchor";
 import { effectTexture } from "./art";
 import { Emoji, emojiUrl } from "./Emoji";
 import { createPortal } from "react-dom";
@@ -23,6 +24,8 @@ function Particle({
   onEnd: (id: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const endCallback = useRef(onEnd);
+  endCallback.current = onEnd;
   useEffect(() => {
     const element = ref.current;
     const bounds = surface?.getBoundingClientRect();
@@ -32,37 +35,27 @@ function Particle({
     const targetSelector = event.units
       ? `[data-game-unit="${event.units.target}"]`
       : `[data-game-avatar="${event.target}"]`;
-    const source = surface.querySelector(sourceSelector),
-      destination = surface.querySelector(targetSelector);
-    const from = source?.getBoundingClientRect(),
-      target = destination?.getBoundingClientRect();
-    if (!element || !target || !bounds) {
-      onEnd(event.id);
+    const origin = effectAnchorRect(surface, sourceSelector),
+      destination = effectAnchorRect(surface, targetSelector);
+    if (!element || !destination || !bounds) {
+      endCallback.current(event.id);
       return;
     }
     const clip = effectClip(bounds, window.innerWidth, window.innerHeight);
     element.parentElement!.style.clipPath = `inset(${clip.top}px ${clip.right}px ${clip.bottom}px ${clip.left}px)`;
     if (sound) playCue("interaction");
-    const end = {
-      x: target.x + target.width / 2,
-      y: target.y + target.height / 2,
-    };
-    const start =
-      motion && from
-        ? {
-            x: from.x + from.width / 2,
-            y: from.y + from.height / 2,
-          }
-        : end;
+    const end = destination.point,
+      start = motion && origin ? origin.point : end;
     element.style.left = `${start.x}px`;
     element.style.top = `${start.y}px`;
+    element.style.visibility = "visible";
     const effect = interactionCatalogue[event.kind];
     const frames = effectMotion(
       effect.style,
       end.x - start.x,
       end.y - start.y,
       enhanced ? 16 : 10,
-      (event.units ? (enhanced ? 1.8 : 1.4) : 1),
+      event.units ? (enhanced ? 1.8 : 1.4) : 1,
       enhanced,
     );
     element.style.setProperty("--effect-color", effect.color);
@@ -70,28 +63,29 @@ function Particle({
     let frame = 0,
       positionKey = "";
     const track = () => {
-      if (!destination?.isConnected || (source && !source.isConnected)) {
-        onEnd(event.id);
+      const target = effectAnchorRect(surface, targetSelector),
+        source = effectAnchorRect(surface, sourceSelector);
+      if (!target) {
+        element.style.visibility = "hidden";
+        endCallback.current(event.id);
         return;
       }
       const current = surface.getBoundingClientRect(),
-        a = destination.getBoundingClientRect(),
-        b = motion && source ? source.getBoundingClientRect() : a;
+        a = target.point,
+        b = motion && source ? source.point : a;
       const clip = effectClip(current, window.innerWidth, window.innerHeight);
       element.parentElement!.style.clipPath = `inset(${clip.top}px ${clip.right}px ${clip.bottom}px ${clip.left}px)`;
-      element.style.left = `${b.x + b.width / 2}px`;
-      element.style.top = `${b.y + b.height / 2}px`;
-      const key = [a.x, a.y, a.width, b.x, b.y, b.width]
-        .map((n) => Math.round(n))
-        .join(":");
+      element.style.left = `${b.x}px`;
+      element.style.top = `${b.y}px`;
+      const key = [a.x, a.y, b.x, b.y].map((n) => Math.round(n)).join(":");
       if (motion && key !== positionKey) {
         positionKey = key;
         const nextFrames = effectMotion(
           effect.style,
-          a.x + a.width / 2 - b.x - b.width / 2,
-          a.y + a.height / 2 - b.y - b.height / 2,
+          a.x - b.x,
+          a.y - b.y,
           enhanced ? 16 : 10,
-          (event.units ? (enhanced ? 1.8 : 1.4) : 1),
+          event.units ? (enhanced ? 1.8 : 1.4) : 1,
           enhanced,
           frames,
         );
@@ -100,8 +94,8 @@ function Particle({
             nextFrames.body,
           );
         fragments.forEach((f) => {
-          f.style.left = `${a.x + a.width / 2}px`;
-          f.style.top = `${a.y + a.height / 2}px`;
+          f.style.left = `${a.x}px`;
+          f.style.top = `${a.y}px`;
         });
       }
       frame = requestAnimationFrame(track);
@@ -109,7 +103,11 @@ function Particle({
     frame = requestAnimationFrame(track);
     const stopTracking = () => cancelAnimationFrame(frame);
     if (!motion) {
-      const timer = window.setTimeout(() => onEnd(event.id), 900);
+      element.style.opacity = "1";
+      const timer = window.setTimeout(() => {
+        element.style.visibility = "hidden";
+        endCallback.current(event.id);
+      }, 900);
       return () => {
         stopTracking();
         window.clearTimeout(timer);
@@ -118,6 +116,7 @@ function Particle({
     const animation = element.animate(frames.body, {
       duration: frames.duration,
       easing: enhanced ? "linear" : "ease-out",
+      fill: "both",
     });
     frames.fragments.forEach((keyframes, index) => {
       const fragment = document.createElement("span");
@@ -145,22 +144,32 @@ function Particle({
         duration: frames.fragmentDuration,
         delay: frames.impactAt + (index % 4) * 24,
         easing: "ease-out",
+        fill: "both",
       }).onfinish = () => fragment.remove();
       fragments.push(fragment);
     });
-    animation.onfinish = () => onEnd(event.id);
+    animation.onfinish = () => {
+      element.style.visibility = "hidden";
+    };
+    const finished = window.setTimeout(
+      () => endCallback.current(event.id),
+      Math.max(frames.duration, frames.impactAt + frames.fragmentDuration + 72),
+    );
     return () => {
       stopTracking();
+      element.style.visibility = "hidden";
+      window.clearTimeout(finished);
       animation.cancel();
       fragments.forEach((fragment) => {
         fragment.getAnimations().forEach((animation) => animation.cancel());
         fragment.remove();
       });
     };
-  }, [event, surface, motion, enhanced, sound, onEnd]);
+  }, [event.id, surface, motion, enhanced, sound]);
   return (
     <div
       ref={ref}
+      style={{ opacity: 0 }}
       className="interaction-particle"
       data-interaction={event.id}
       data-effect={event.kind}

@@ -1,0 +1,67 @@
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-control: 10px;
+  --radius-panel: 18px;
+  --radius-card: 16px;
+  --motion-control: 140ms;
+  --motion-panel: 220ms;
+  --bg-app: var(--canvas);
+  --bg-panel: var(--surface);
+  --action-primary: var(--accent);
+  --action-foreground: var(--accent-text);
+  --surface-soft: color-mix(in srgb, var(--surface) 72%, var(--canvas));
+  --action-focus: var(--focus);
+  --action-danger: #b64040;
+  --link: #2563eb;
+}
+:root[data-color-scheme="dark"] {
+  --action-danger: #ffaaa1;
+  --link: #9bbdff;
+}
+:is(.app-shell, .native-window-root, .ui-panel) button[data-button-variant] {
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  transition:
+    background var(--motion-control),
+    transform var(--motion-control);
+}
+:is(.app-shell, .native-window-root, .ui-panel)
+  button[data-button-variant="primary"] {
+  background: var(--action-primary);
+  color: var(--action-foreground);
+}
+:is(.app-shell, .native-window-root, .ui-panel)
+  button[data-button-variant="danger"] {
+  background: color-mix(in srgb, var(--action-danger) 12%, var(--surface));
+  color: var(--action-danger);
+}
+:is(.app-shell, .native-window-root, .ui-panel)
+  button[data-button-variant="quiet"] {
+  background: transparent;
+}
+:is(.app-shell, .native-window-root, .ui-panel)
+  button[data-button-variant]:active:not(:disabled) {
+  transform: translateY(1px);
+}
+:is(.app-shell, .native-window-root, .ui-panel)
+  button[data-button-variant]:disabled {
+  background: var(--disabled);
+  color: var(--disabled-text);
+  transform: none;
+}
+:is(.app-shell, .native-window-root, .ui-panel)
+  button[data-button-variant]:focus-visible {
+  outline: 2px solid var(--action-focus);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-control: 0ms;
+    --motion-panel: 0ms;
+  }
+}

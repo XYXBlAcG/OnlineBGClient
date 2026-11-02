@@ -28,6 +28,9 @@ export function useGameCommands(commands: AppCommand[]): void {
   const environment = useContext(GameCommandContext),
     latest = useRef(commands);
   latest.current = commands;
+  const signature = commands
+    .map((command) => `${command.id}:${command.scope}:${command.binding}`)
+    .join("|");
   useEffect(() => {
     if (!environment) return;
     const dispose = latest.current.map((command) =>
@@ -40,5 +43,5 @@ export function useGameCommands(commands: AppCommand[]): void {
       }),
     );
     return () => dispose.forEach((stop) => stop());
-  }, [environment]);
+  }, [environment, signature]);
 }

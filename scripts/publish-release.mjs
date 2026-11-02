@@ -69,7 +69,7 @@ if (existing && !existing.draft) {
     await readFile("src/client/releases.json", "utf8"),
   );
   const release = history.find((item) => item.version === pkg.version);
-  const notes = `${release.changes.map((change) => `- ${change}`).join("\n")}\n\nWindows：下载 .exe。macOS：下载 .dmg，打开后将应用拖到 Applications。\nlatest.json 和 .app.tar.gz 为客户端自动更新资源。\n`;
+  const notes = `${release.changes.map((change) => `- ${change}`).join("\n")}\n\nWindows：下载 .exe。macOS：下载 .app.tar.gz，解压后将应用移到 Applications。\nlatest.json 和签名文件用于客户端自动更新。\n`;
   await writeFile("artifacts/release-output/notes.md", notes);
   if (!existing)
     await execute("gh", [

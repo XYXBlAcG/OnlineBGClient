@@ -117,7 +117,7 @@ it("keeps joining and creating mutually exclusive and retains invitation input",
   click("跨网络联机");
   expect(
     tree.root.findByProps({ className: "game-library" }).props.hidden,
-  ).toBe(true);
+  ).not.toBe(true);
   const inputs = tree.root.findAllByType("input");
   const invitation = inputs.find(
     (input) => input.props.placeholder === "粘贴邀请链接",
@@ -203,7 +203,8 @@ it("retains the game library across mode changes and creates with settings-owned
       .props.onClick(),
   );
   expect(tree.root.findByProps({ className: "game-library" })).toBe(library);
-  expect(library.props.hidden).toBe(true);
+  expect(library.props.hidden).not.toBe(true);
+  expect(library.props["aria-disabled"]).toBe(true);
   act(() =>
     tree.root
       .findAllByType("button")
@@ -213,7 +214,7 @@ it("retains the game library across mode changes and creates with settings-owned
       )!
       .props.onClick(),
   );
-  expect(library.props.hidden).toBe(false);
+  expect(library.props["aria-disabled"]).toBe(false);
   expect(JSON.stringify(tree.toJSON())).not.toContain("更多设置");
   act(() =>
     tree.root

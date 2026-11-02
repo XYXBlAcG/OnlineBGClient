@@ -1,11 +1,10 @@
-import { gameQuickActions } from "./game-quick-actions";
-import { useNativeWindow } from "./native/windows";
-import { auxiliaryView } from "./native/contract";
+import { ChoiceButton, useConfirmedAction } from "./ui/ConfirmedChoice";
+import { gameQuickActions, quickCandidate } from "./game-quick-actions";
+import * as Popover from "@radix-ui/react-popover";
 import { useEffect, useRef, useState } from "react";
 import type { Snapshot } from "../domain/protocol";
 import type { Action } from "../domain/types";
-import { Panel } from "./ui/Controls";
-import { CommandRegistry, formatBinding } from "./commands";
+import { CommandRegistry, formatBinding, keyboardBinding } from "./commands";
 
 export function GameCommands({
   snapshot,
@@ -13,35 +12,48 @@ export function GameCommands({
   registry,
   bindings,
   pending = false,
-  onError,
-  showTrigger = true,
+  onReveal,
 }: {
   pending?: boolean;
-  showTrigger?: boolean;
-  onError?: (message: string) => void;
+  onReveal?: () => void;
   snapshot: Snapshot;
   act: (action: Action) => void;
   registry: CommandRegistry;
   bindings: Record<string, string>;
 }) {
   const choices = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(auxiliaryView === "actions");
-  const detached = useNativeWindow(
-    "actions",
-    open,
-    { view: "actions", snapshot, bindings, pending },
-    (intent) => {
-      if (intent.type === "error") onError?.(intent.message);
-      if (intent.type === "close") setOpen(false);
-      if (intent.type === "action" && !pending) {
-        act(intent.action);
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState(0);
+  const confirm = useConfirmedAction(
+    snapshot.version,
+    pending,
+    (index: number) => {
+      const candidate = snapshot.candidates[index];
+      if (candidate) {
+        act(candidate.action);
         setOpen(false);
       }
     },
   );
-  const [selected, setSelected] = useState(0);
-  const latest = useRef({ snapshot, act, selected, open, pending });
-  latest.current = { snapshot, act, selected, open, pending };
+  const menuScope = `${snapshot.kind}.menu`;
+  const latest = useRef({
+    snapshot,
+    act,
+    selected,
+    open,
+    pending,
+    onReveal,
+    confirm,
+  });
+  latest.current = {
+    snapshot,
+    act,
+    selected,
+    open,
+    pending,
+    onReveal,
+    confirm,
+  };
   useEffect(() => {
     setSelected(0);
   }, [snapshot.version]);
@@ -54,7 +66,10 @@ export function GameCommands({
         binding: "F2",
         enabled: () =>
           !!latest.current.snapshot.state && !latest.current.snapshot.finished,
-        run: () => setOpen((value) => !value),
+        run: () => {
+          if (!latest.current.open) latest.current.onReveal?.();
+          setOpen((value) => !value);
+        },
       },
       {
         id: `${kind}.previous`,
@@ -70,7 +85,13 @@ export function GameCommands({
         enabled: () => latest.current.open,
         run: () =>
           setSelected((value) =>
-            Math.min(latest.current.snapshot.candidates.length - 1, value + 1),
+            Math.max(
+              0,
+              Math.min(
+                latest.current.snapshot.candidates.length - 1,
+                value + 1,
+              ),
+            ),
           ),
       },
       {
@@ -79,12 +100,10 @@ export function GameCommands({
         binding: "Enter",
         enabled: () =>
           latest.current.open &&
+          !latest.current.pending &&
           !!latest.current.snapshot.candidates[latest.current.selected],
         run: () => {
-          if (latest.current.pending) return;
-          const { snapshot, selected, act } = latest.current;
-          act(snapshot.candidates[selected].action);
-          setOpen(false);
+          latest.current.confirm(latest.current.selected);
         },
       },
     ];
@@ -96,13 +115,12 @@ export function GameCommands({
         enabled: () =>
           !latest.current.open &&
           !latest.current.pending &&
-          latest.current.snapshot.candidates.some((candidate) =>
-            quick.matches(candidate.action),
-          ),
+          !!quickCandidate(latest.current.snapshot.candidates, quick),
         run: () => {
           if (latest.current.pending) return;
-          const candidate = latest.current.snapshot.candidates.find(
-            (candidate) => quick.matches(candidate.action),
+          const candidate = quickCandidate(
+            latest.current.snapshot.candidates,
+            quick,
           );
           if (candidate) latest.current.act(candidate.action);
         },
@@ -110,17 +128,21 @@ export function GameCommands({
     const stop = entries.map((entry) =>
       registry.register({
         ...entry,
-        scope: kind,
+        scope: ["previous", "next", "submit"].some(
+          (id) => entry.id === `${kind}.${id}`,
+        )
+          ? `${kind}.menu`
+          : kind,
         binding: bindings[entry.id] ?? entry.binding,
       }),
     );
     return () => stop.forEach((dispose) => dispose());
   }, [snapshot.kind, registry, bindings]);
   return (
-    <>
-      {!auxiliaryView && showTrigger && (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger asChild>
         <button
-          onClick={() => setOpen(true)}
+          aria-pressed={open}
           disabled={!snapshot.state || snapshot.finished}
         >
           游戏操作{" "}
@@ -128,19 +150,32 @@ export function GameCommands({
             {formatBinding(bindings[`${snapshot.kind}.actions`] ?? "F2")}
           </kbd>
         </button>
-      )}
-      {!detached && (
-        <Panel
-          initialFocus={choices}
-          scope={snapshot.kind}
-          open={open}
-          onOpenChange={setOpen}
-          title="游戏操作"
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          className="ui-popover game-command-menu"
+          side="bottom"
+          align="end"
+          sideOffset={8}
+          collisionPadding={12}
+          data-command-scope={menuScope}
+          aria-label="游戏操作"
+          onKeyDown={(event) => {
+            if (
+              keyboardBinding(event) ===
+              (bindings[`${snapshot.kind}.actions`] ?? "F2")
+            ) {
+              event.preventDefault();
+              setOpen(false);
+            }
+          }}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            choices.current?.focus();
+          }}
         >
           <div className="command-picker">
-            <p className="muted command-keyboard-hint">
-              ↑ ↓ 选择 · Enter 确认 · Esc 关闭
-            </p>
+            <p className="muted command-keyboard-hint">双击确认，或按 Enter</p>
             {snapshot.candidates.length ? (
               <>
                 <div
@@ -152,39 +187,36 @@ export function GameCommands({
                   className="game-action-list"
                 >
                   {snapshot.candidates.map((candidate, index) => (
-                    <button
+                    <ChoiceButton
+                      value={index}
+                      selected={index === selected}
+                      onChoose={setSelected}
+                      onConfirm={confirm}
+                      disabled={pending}
                       role="option"
-                      aria-selected={index === selected}
                       id={`game-action-${index}`}
                       tabIndex={-1}
                       className={index === selected ? "selected-action" : ""}
                       key={index}
-                      onClick={() => setSelected(index)}
                     >
                       {candidate.label}
-                    </button>
+                    </ChoiceButton>
                   ))}
                 </div>
                 <button
                   className="primary-button"
-                  disabled={pending}
-                  onClick={() => {
-                    const candidate = snapshot.candidates[selected];
-                    if (candidate && !pending) {
-                      act(candidate.action);
-                      setOpen(false);
-                    }
-                  }}
+                  disabled={pending || !snapshot.candidates[selected]}
+                  onClick={() => confirm(selected)}
                 >
-                  确认动作
+                  确认
                 </button>
               </>
             ) : (
               <p>等待其他玩家操作</p>
             )}
           </div>
-        </Panel>
-      )}
-    </>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

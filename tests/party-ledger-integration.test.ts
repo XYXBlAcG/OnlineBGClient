@@ -1,7 +1,8 @@
+import { restoredPartySavings } from "./fixtures/party-savings";
 import { expect, it } from "vitest";
 import { Room } from "../src/domain/room";
 function table() {
-  const room = new Room("expansion", {
+  let room = new Room("expansion", {
     kind: "uno",
     humans: 2,
     ai: [],
@@ -11,6 +12,8 @@ function table() {
   });
   const a = room.claim("甲"),
     b = room.claim("乙");
+  room.setReady(b, true);
+  room = restoredPartySavings(room, [a, b]);
   room.setReady(b, true);
   room.start(a);
   const x = room.watch("观众甲"),
@@ -34,7 +37,7 @@ it("真实观众盘口锁盘与结算，重载不重复发奖，持币本金不�
     type: "bet",
     market: market.id,
     option: ids[1],
-    amount: 50,
+    amount: 20,
   });
   room.tickParty(market.closesAt);
   if (room.state?.kind !== "uno") throw Error();
@@ -42,9 +45,9 @@ it("真实观众盘口锁盘与结算，重载不重复发奖，持币本金不�
   room.state.view.isEnd = true;
   room.tickParty(market.closesAt + 1);
   const party = room.snapshot(x).party;
-  expect(party.markets[0].payouts).toEqual({ [sx]: 84 });
-  expect(party.balances[sx]).toMatchObject({ coins: 204, earned: 104 });
-  expect(party.balances[sy]).toMatchObject({ coins: 90, earned: 40 });
+  expect(party.markets[0].payouts).toEqual({ [sx]: 48 });
+  expect(party.balances[sx]).toMatchObject({ coins: 98, earned: 68 });
+  expect(party.balances[sy]).toMatchObject({ coins: 50, earned: 40 });
   const restored = Room.restore(room.export());
   expect(restored.snapshot(x).party.balances).toEqual(party.balances);
   expect(room.snapshot(a).version).toBe(restored.snapshot(a).version);
@@ -62,7 +65,7 @@ it("开放盘口重启退款，锁定盘口保留；手动结束仅退本金", (
   });
   const restored = Room.restore(room.export());
   expect(restored.snapshot(x).party.balances[id]).toMatchObject({
-    coins: 100,
+    coins: 30,
     earned: 0,
   });
   room.partyAction(y, "bet", {
@@ -76,30 +79,33 @@ it("开放盘口重启退款，锁定盘口保留；手动结束仅退本金", (
   expect(locked.snapshot(x).party.markets[0].status).toBe("locked");
   room.end(a);
   expect(room.snapshot(x).party.balances[id]).toMatchObject({
-    coins: 100,
+    coins: 30,
     earned: 0,
   });
 });
-it("已付费十秒演出排队而非截断；取消排队返还实际成交价；活跃演出保留", () => {
-  const { room, a } = table(),
+it("付费演出并发排队，取消只退还未开始的实际成交价", () => {
+  const { room, a, b, x, y } = table(),
     time = Date.now();
-  for (let i = 0; i < 5; i++)
+  const buyers = [a, b, x, y, a];
+  buyers.forEach((buyer, i) =>
     room.partyAction(
-      a,
+      buyer,
       `egg${i}`,
-      { type: "buy", item: "cometEgg", target: 1 },
-      time + i * 2100,
-    );
+      { type: "buy", item: "cometEgg", target: "table" },
+      time + (i === 4 ? 2100 : 0),
+    ),
+  );
   const party = room.snapshot(a).party;
   expect(party.events).toHaveLength(5);
-  expect(party.events[3].time).toBe(time + 10000);
-  room.partyAction(a, "off", { type: "enabled", enabled: false }, time + 8500);
+  expect(party.events[3].time).toBe(time + 6000);
+  room.partyAction(a, "off", { type: "enabled", enabled: false }, time + 5000);
   const after = room.snapshot(a).party,
     id = room.seats[0].id!;
   expect(after.events).toHaveLength(3);
-  expect(after.balances[id].coins).toBe(70);
-  expect(after.events[0].duration).toBe(10000);
+  expect(after.balances[id].coins).toBe(90);
+  expect(after.events[0].duration).toBe(6000);
 });
+
 it("真实观众抢币活动：金币不重复拾取，最低参与人数、退款和奖池补贴", () => {
   const { room, a, x, y } = table(),
     time = Date.now();
@@ -145,8 +151,8 @@ it("真实观众抢币活动：金币不重复拾取，最低参与人数、退�
   room.tickParty(game.closesAt);
   const party = room.snapshot(a).party;
   expect(party.minigames[0].status).toBe("won");
-  expect(party.balances[room.snapshot(x).spectators![0].id].coins).toBe(130);
-  expect(party.balances[room.snapshot(y).spectators![1].id].coins).toBe(130);
+  expect(party.balances[room.snapshot(x).spectators![0].id].coins).toBe(60);
+  expect(party.balances[room.snapshot(y).spectators![1].id].coins).toBe(60);
   expect(party.balances[room.seats[0].id!].coins).toBe(50);
 });
 it("装扮只对当前游戏装备一次，过局指令不扣币，装备与财富跨局边界明确", () => {

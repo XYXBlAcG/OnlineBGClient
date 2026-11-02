@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import {partyEconomy} from "../src/domain/party/model";
 import { Room } from "../src/domain/room";
 import { featuredWorkshopPacks } from "../src/domain/workshop/featured";
 import { Replay } from "../src/domain/replay";
@@ -40,7 +41,7 @@ it("插件版本整局锁定，未授权玩家不能更改房间插件，购买�
     scope: "room",
   });
   room.partyAction(a, "cat", action);
-  expect(room.snapshot(a).party.balances[room.seats[0].id!].coins).toBe(88);
+  expect(room.snapshot(a).party.balances[room.seats[0].id!].coins).toBe(partyEconomy.initial - 12);
   const replay = room.export().replay!;
   expect(replay.party).toHaveLength(1);
   expect(() => new Replay(replay)).not.toThrow();

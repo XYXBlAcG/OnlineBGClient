@@ -75,6 +75,7 @@ pub fn run() {
             voice::voice_active,
             diagnostics::record_log,
             diagnostics::application_logs,
+            diagnostics::clear_application_logs,
             hosting::start_host,
             hosting::host_endpoint,
             hosting::hosting_info,

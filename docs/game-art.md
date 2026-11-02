@@ -6,7 +6,7 @@
 | --- | --- |
 | 角色序列帧、粒子贴图与牌背映射 | [美术入口](../src/client/art.ts) |
 | 远征角色、敌人意图与战斗表现 | [战斗场景](../src/client/expedition/BattleScene.tsx) |
-| 地图宝箱 | [路线图](../src/client/expedition/ExpeditionMap.tsx) |
+| 地图节点 | [路线图](../src/client/expedition/ExpeditionMap.tsx)、[节点图形](../src/client/expedition/NodeSymbol.tsx) |
 | 抽牌翻面、落点与卡牌动效 | [牌桌动画器](../src/client/motion/table-animator.ts) |
 | 投掷飞行与粒子 | [互动层](../src/client/Interactions.tsx) |
 | 聊天掷骰 | [骰子消息](../src/client/social/ChatRoll.tsx) |
@@ -19,4 +19,4 @@
 
 派对矢量演出使用 [Anime.js 时间线](https://animejs.com/documentation/timeline/timeline-methods/seek/)，高画质粒子使用 [PixiJS 社区滤镜](https://pixijs.io/filters/docs/)。统一播放入口与验收项见[房间派对](room-party.md)。授权见 [Anime.js](../public/licenses/animejs.txt) 与 [Pixi Filters](../public/licenses/pixi-filters.txt)。
 
-
+大厅游戏图形见 [GameIcon](../src/client/GameIcon.tsx)。

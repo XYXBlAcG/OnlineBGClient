@@ -9,9 +9,9 @@
 - [解析与显示](../src/client/Emoji.tsx)、[共享资源状态](../src/client/emoji/client.ts)、[Windows 设置](../src/client/emoji/EmojiSettings.tsx)
 - [下载、校验、安装、停用、删除与本机协议](../src-tauri/src/emoji.rs)
 - [字符清单](../src/client/emoji-codes.json)、[macOS 离屏生成器](../scripts/render-apple-emoji.swift)、[独立资源打包](../scripts/build-emoji-pack.mjs)
-- [Release 附件与清单](../scripts/release-assets.mjs)、[构建工作流](../.github/workflows/desktop.yml)
+- [0.2.1 独立表情资源](https://github.com/XYXBlAcG/OnlineBGClient/releases/tag/v0.2.1)
 - [平台策略与回退测试](../tests/emoji-policy.test.tsx)
 
-维护者在 macOS 运行 `node scripts/build-emoji-pack.mjs`，生成独立资源包和下载清单。正式发布时工作流把它们附在同仓库 Release；没有正式上传附件前，在线下载会提示资源尚未提供。Windows 发布包直接使用附件，不运行 Apple 字体生成器。
+下载源固定为 0.2.1 的独立附件；之后的软件 Release 不重复生成或附带表情包。下载协议、资源目录和校验规则以原生入口为准。
 
 `@twemoji/api` 只负责 Unicode 分词，不提供图形；[解析器声明](../public/licenses/twemoji.txt)。

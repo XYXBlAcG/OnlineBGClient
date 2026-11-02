@@ -115,27 +115,3 @@
     filter: brightness(1.13);
   }
 }
-.exp-route-node b:has(.exp-route-chest) {
-  border: 0;
-  background: transparent;
-}
-.exp-route-chest {
-  display: block;
-  width: 30px;
-  height: 30px;
-  background: url(/art/chest.png) 100% 0 / 300% 100%;
-  image-rendering: pixelated;
-}
-:root[data-game-motion="enhanced"]
-  .exp-route-node[data-available="true"]
-  .exp-route-chest {
-  animation: exp-chest-open 700ms steps(2) both;
-}
-@keyframes exp-chest-open {
-  from {
-    background-position-x: 0;
-  }
-  to {
-    background-position-x: 100%;
-  }
-}

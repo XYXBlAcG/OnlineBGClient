@@ -189,10 +189,7 @@ export function SichuanTable({
   return (
     <section className="scmj-table">
       <header className="scmj-heading">
-        <span>
-          血战到底 · {v.options.cap} 番封顶 · 自摸
-          {v.options.selfDraw === "base" ? "加底" : "加番"}
-        </span>
+        <span>血战到底</span>
         <div>
           {!replay &&
             !snapshot.finished &&
@@ -204,7 +201,6 @@ export function SichuanTable({
             )}
           <button onClick={() => setHelp(true)}>牌桌规则</button>
           <button onClick={() => setScores(true)}>结算明细</button>
-
         </div>
       </header>
       <div className="scmj-board">
@@ -215,10 +211,12 @@ export function SichuanTable({
             余牌 <strong>{v.wall.length}</strong>
           </span>
           <strong role="status">{title}</strong>
-          <small>
-            换牌方向：
-            {v.direction === 1 ? "下家" : v.direction === 2 ? "对家" : "上家"}
-          </small>
+          {phase === "exchange" && (
+            <small>
+              换牌方向：
+              {v.direction === 1 ? "下家" : v.direction === 2 ? "对家" : "上家"}
+            </small>
+          )}
           <div className="scmj-wall" data-motion-zone="scmj.wall">
             <MahjongTile tile={-1} />
           </div>
@@ -369,7 +367,7 @@ export function SichuanTable({
                 ? "先选三张同色牌，再确认"
                 : mustLack
                   ? "金色标记为缺门，须优先打出"
-                  : "先选牌，再点出牌；F2 可查看合法操作"}
+                  : "选择手牌后出牌"}
             </span>
             {waits.length > 0 && (
               <details>

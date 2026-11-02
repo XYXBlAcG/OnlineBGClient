@@ -37,7 +37,7 @@ export class PartyCinema {
         const timeline = createTimeline({ autoplay: false });
         for (const track of cinemaScore(
           resolvePartyArt(event).scene,
-          event.duration,
+          partyAppearance(event).duration,
         )) {
           const targets = root.querySelectorAll<SVGGeometryElement>(
             `[data-${track.role}]`,
@@ -55,7 +55,11 @@ export class PartyCinema {
       const elapsed = partyElapsed(event, now);
       actor.timeline.seek(Math.max(0, elapsed), true);
       actor.root.style.opacity = String(
-        Math.min(1, elapsed / 300, (event.duration - elapsed) / 500),
+        Math.min(
+          1,
+          elapsed / 300,
+          (partyAppearance(event).duration - elapsed) / 500,
+        ),
       );
     }
   }

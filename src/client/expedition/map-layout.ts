@@ -17,5 +17,21 @@ export function routeLayout(map: MapNode[][]) {
       },
     ]),
   );
-  return { width, height, nodeWidth, nodeHeight, floors, points };
+  const links = map.flatMap((row) =>
+    row.flatMap((node) =>
+      node.next.map((id) => {
+        const from = points.get(node.id)!,
+          to = points.get(id)!,
+          start = from.y - nodeHeight / 2 - 6,
+          end = to.y + nodeHeight / 2 + 6,
+          bend = (start - end) * 0.45;
+        return {
+          from: node.id,
+          to: id,
+          path: `M${from.x},${start} C${from.x},${start - bend} ${to.x},${end + bend} ${to.x},${end}`,
+        };
+      }),
+    ),
+  );
+  return { width, height, nodeWidth, nodeHeight, floors, points, links };
 }

@@ -1,3 +1,4 @@
+import { restoredPartySavings } from "./fixtures/party-savings";
 import { expect, it } from "vitest";
 import { Room } from "../src/domain/room";
 import { partyActionSchema, partyAppearance } from "../src/domain/party";
@@ -22,9 +23,9 @@ it("整桌投掷只扣一次费用，并在事件和回放中保留全桌范围�
   });
   const event = room.partyAction(a, "all", action)!;
   expect(event.audience).toBe("table");
-  expect(event.duration).toBe(10000);
+  expect(event.duration).toBe(6000);
   expect(partyAppearance(event).scope).toBe("room");
-  expect(room.snapshot(a).party.balances[room.seats[0].id!].coins).toBe(90);
+  expect(room.snapshot(a).party.balances[room.seats[0].id!].coins).toBe(20);
   expect(room.export().replay!.party![0].event.audience).toBe("table");
 });
 import {
@@ -159,7 +160,7 @@ it("客户端时钟差异和重复快照不缩短演出，重连仍按服务器�
 });
 
 it("两次停时依次延长暂停，不让演出时钟倒退或使画面消失", () => {
-  const room = new Room("pause", {
+  let room = new Room("pause", {
       kind: "uno",
       humans: 2,
       ai: [],
@@ -171,6 +172,7 @@ it("两次停时依次延长暂停，不让演出时钟倒退或使画面消失"
     b = room.claim("乙");
   room.setReady(b, true);
   room.start(a);
+  room = restoredPartySavings(room, [a, b]);
   room.partyAction(
     a,
     "egg",
@@ -190,7 +192,7 @@ it("两次停时依次延长暂停，不让演出时钟倒退或使画面消失"
     2200,
   );
   const event = room.snapshot(a).party.events[0];
-  expect(event.duration).toBe(16000);
+  expect(event.duration).toBe(12000);
   expect(partyElapsed(event, 3200)).toBe(2100);
   expect(partyElapsed(event, 6200)).toBe(2100);
   expect(partyElapsed(event, 8200)).toBe(2200);

@@ -5,7 +5,7 @@ import {
   partyTier,
 } from "../src/domain/party/catalogue";
 import { PredictionPool } from "../src/domain/party/predictions";
-it("商品目录等级、十秒蛋雨与价格从唯一目录派生", () => {
+it("商品目录等级、短时蛋雨与价格从唯一目录派生", () => {
   expect(Object.keys(partyItems)).toHaveLength(50);
   expect(
     [0, 200, 600, 1500, 4000].map(
@@ -14,7 +14,7 @@ it("商品目录等级、十秒蛋雨与价格从唯一目录派生", () => {
           .length,
     ),
   ).toEqual([28, 36, 42, 46, 50]);
-  expect(partyItems.cometEgg.duration).toBe(10000);
+  expect(partyItems.cometEgg.duration).toBe(6000);
   expect(partyPrice("cometEgg", 600)).toBe(8);
   expect(partyPrice("cheer", 4000)).toBe(3);
 });

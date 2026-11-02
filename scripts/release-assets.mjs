@@ -5,7 +5,7 @@ import {
   mkdir,
   writeFile,
 } from "node:fs/promises";
-import { resolve, join, basename, sep } from "node:path";
+import { resolve, join, sep } from "node:path";
 import { createHash } from "node:crypto";
 export async function prepareRelease(input, output, version, tag, repo) {
   if (!/^\d+\.\d+\.\d+$/.test(version) || tag !== `v${version}`)
@@ -27,11 +27,9 @@ export async function prepareRelease(input, output, version, tag, repo) {
     return matches[0];
   };
   const windows = unique(".exe", "Windows 安装包"),
-    mac = unique(".dmg", "macOS 安装包"),
     updater = unique(".app.tar.gz", "macOS 更新包");
   const pairs = [
     [windows, `OnlineBGClient-${version}-Windows-x64.exe`],
-    [mac, `OnlineBGClient-${version}-macOS-arm64.dmg`],
     [updater, `OnlineBGClient-${version}-macOS-arm64.app.tar.gz`],
   ];
   await mkdir(out, { recursive: true });
@@ -46,13 +44,6 @@ export async function prepareRelease(input, output, version, tag, repo) {
     )
       throw Error("Windows 安装包格式无效");
     if (
-      name.endsWith(".dmg") &&
-      (bytes.length < 512 ||
-        bytes.subarray(bytes.length - 512, bytes.length - 508).toString() !==
-          "koly")
-    )
-      throw Error("macOS 安装包格式无效");
-    if (
       name.endsWith(".gz") &&
       !bytes.subarray(0, 2).equals(Buffer.from([31, 139]))
     )
@@ -61,48 +52,16 @@ export async function prepareRelease(input, output, version, tag, repo) {
     await copyFile(source, target);
     assets.push(target);
     checks.push(`${createHash("sha256").update(bytes).digest("hex")}  ${name}`);
-    if (!name.endsWith(".dmg")) {
-      const signature = (await readFile(source + ".sig", "utf8")).trim();
-      if (!/^[A-Za-z0-9+/=]+$/.test(signature) || signature.length < 20)
-        throw Error("更新签名无效");
-      const signaturePath = target + ".sig";
-      await writeFile(signaturePath, signature + "\n");
-      assets.push(signaturePath);
-      targets[name.endsWith(".exe") ? "windows-x86_64" : "darwin-aarch64"] = {
-        signature,
-        url: `https://github.com/${repo}/releases/download/${tag}/${name}`,
-      };
-    }
-  }
-  const emojiManifest = paths.find(
-    (path) => basename(path) === "emoji-pack.json",
-  );
-  if (emojiManifest) {
-    const manifest = JSON.parse(await readFile(emojiManifest, "utf8"));
-    const filename = "apple-emoji-v1.tar.gz";
-    const source = unique(filename, "可选表情包");
-    const bytes = await readFile(source);
-    if (
-      manifest.format !== 1 ||
-      manifest.bytes !== bytes.length ||
-      manifest.sha256 !== createHash("sha256").update(bytes).digest("hex") ||
-      manifest.url !==
-        `https://github.com/${repo}/releases/download/${tag}/${filename}`
-    )
-      throw Error("可选表情包清单不匹配");
-    for (const [file, name] of [
-      [source, filename],
-      [emojiManifest, "emoji-pack.json"],
-    ]) {
-      const target = join(out, name);
-      await copyFile(file, target);
-      assets.push(target);
-      checks.push(
-        `${createHash("sha256")
-          .update(await readFile(file))
-          .digest("hex")}  ${name}`,
-      );
-    }
+    const signature = (await readFile(source + ".sig", "utf8")).trim();
+    if (!/^[A-Za-z0-9+/=]+$/.test(signature) || signature.length < 20)
+      throw Error("更新签名无效");
+    const signaturePath = target + ".sig";
+    await writeFile(signaturePath, signature + "\n");
+    assets.push(signaturePath);
+    targets[name.endsWith(".exe") ? "windows-x86_64" : "darwin-aarch64"] = {
+      signature,
+      url: `https://github.com/${repo}/releases/download/${tag}/${name}`,
+    };
   }
   const latest = join(out, "latest.json");
   await writeFile(
