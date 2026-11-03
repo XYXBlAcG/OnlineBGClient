@@ -39,6 +39,7 @@
 
 - [秘塔远征：合作卡牌肉鸽待审核方案](cooperative-roguelike-plan.md)
 - [秘塔远征：主题地图、联机、AI、存档与审核](expedition.md)
+- [DeepSeek 秘塔远征交付指南](expedition-delivery.md)
 - [秘塔远征：多层世界、职业与随机机制扩展](expedition-depth-plan.md)
 - [秘塔远征：独立战斗样板](expedition-demo.md)
 - [变声、输出设备、快捷键与横幅审核](voice-effects-and-input.md)
