@@ -108,7 +108,7 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 !endif
 
 !if "${INSTALLMODE}" == "currentUser"
-  RequestExecutionLevel user
+  RequestExecutionLevel admin
 !endif
 
 !if "${INSTALLMODE}" == "both"

@@ -590,9 +590,10 @@
     transform: none;
   }
 }
-.emoji-settings {
+.settings-section.emoji-settings {
   display: grid;
-  gap: 10px;
+  margin-block: 24px 20px;
+  gap: 6px;
   min-width: 0;
   align-content: start;
 }
