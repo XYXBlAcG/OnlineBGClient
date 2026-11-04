@@ -20,15 +20,23 @@ it("相邻连线、捷径和回溯的曲线都不进入节点牌面", () => {
         expect(coordinates[0]).toBeCloseTo(from.x);
         expect(coordinates.at(-2)).toBeCloseTo(to.x);
         if (edge.shortcut || edge.backward) {
-          for (let index = 1; index < 50; index++) {
+          let collision: { x: number; y: number } | undefined;
+          for (let index = 1; index < 50 && !collision; index++) {
             const point = pointOnCurves(edge.curves, index / 50);
             for (const rect of layout.points.values()) {
-              expect(
+              if (
                 Math.abs(rect.x - point.x) < layout.nodeWidth / 2 - 2 &&
-                  Math.abs(rect.y - point.y) < layout.nodeHeight / 2 - 2,
-              ).toBe(false);
+                Math.abs(rect.y - point.y) < layout.nodeHeight / 2 - 2
+              ) {
+                collision = point;
+                break;
+              }
             }
           }
+          expect(
+            collision,
+            `seed ${seed}, chapter ${chapter}: ${edge.from} → ${edge.to}`,
+          ).toBeUndefined();
           continue;
         }
         for (const y of ys) {

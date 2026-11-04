@@ -47,7 +47,7 @@ jobs:
       - if: github.event_name != 'workflow_dispatch' || inputs.platform != 'windows'
         run: npm test
       - if: github.event_name == 'workflow_dispatch' && inputs.platform == 'windows'
-        run: npx vitest run tests/emoji-settings.test.tsx tests/updater-policy.test.ts
+        run: npx vitest run tests/emoji-settings.test.tsx tests/updater-policy.test.ts tests/route-links.test.ts
       - run: npm run hosting:build
         env:
           GH_TOKEN: ${{ github.token }}
