@@ -3,7 +3,7 @@ import { guideTarget } from "./guide-targets";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { gameCatalogue, type GameKind } from "../domain/catalogue";
-import { beginnerGuides } from "./beginner-guides";
+import { beginnerGuides, washizuGuide } from "./beginner-guides";
 import { guidePosition, type GuideSnapshot } from "./guide-position";
 
 export function BeginnerGuide({
@@ -38,7 +38,13 @@ export function BeginnerGuide({
   onRequestLocate?: () => void;
 }) {
   const [localIndex, setLocalIndex] = useState(0);
-  const index = stepIndex ?? localIndex;
+  const washizu =
+    snapshot?.config?.mahjong.mode === "washizu" && kind === "scmj";
+  const guide = washizu ? washizuGuide : beginnerGuides[kind];
+  const index = Math.min(
+    stepIndex ?? localIndex,
+    Math.max(0, (guide?.steps.length ?? 1) - 1),
+  );
   const setIndex = (value: number) => {
     setLocalIndex(value);
     onStepChange?.(value);
@@ -49,7 +55,6 @@ export function BeginnerGuide({
   const panel = useRef<HTMLElement>(null);
   const targets = useRef<Element[]>([]);
   const scrollRequested = useRef(false);
-  const guide = beginnerGuides[kind];
   const step = guide?.steps[index];
   const query = step ? guideTarget(step.focus.target, snapshot) : null;
   useEffect(() => {

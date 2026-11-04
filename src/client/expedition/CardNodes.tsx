@@ -19,11 +19,13 @@ export function RestSite({
   moves,
   send,
   recovery = false,
+  recoveryMultiplier = 1,
 }: {
   hero: Hero;
   moves: ExpeditionMove[];
   send: (move: ExpeditionMove) => void;
   recovery?: boolean;
+  recoveryMultiplier?: number;
 }) {
   const [mode, setMode] = useState<"upgrade" | "remove" | null>(null);
   const active = recovery
@@ -46,7 +48,9 @@ export function RestSite({
             onClick={() => send({ type: "rest" })}
           >
             <strong>休息</strong>
-            <span>恢复 {campRecovery(hero)} 生命</span>
+            <span>
+              恢复 {Math.ceil(campRecovery(hero) * recoveryMultiplier)} 生命
+            </span>
             <small>
               当前 {hero.hp}/{hero.maxHp}
             </small>
@@ -95,11 +99,13 @@ export function Shop({
   items,
   moves,
   send,
+  removalPrice = cardServices.removalPrice,
 }: {
   hero: Hero;
   items: ShopItem[];
   moves: ExpeditionMove[];
   send: (move: ExpeditionMove) => void;
+  removalPrice?: number;
 }) {
   const [tab, setTab] = useState("goods");
   return (
@@ -123,7 +129,7 @@ export function Shop({
           aria-controls="exp-shop-remove"
           onClick={() => setTab("remove")}
         >
-          移除服务 · {cardServices.removalPrice} 金币
+          移除服务 · {removalPrice} 金币
         </button>
       </div>
       {tab === "goods" ? (
@@ -184,7 +190,7 @@ export function Shop({
             hero={hero}
             moves={moves}
             onChoose={send}
-            price={cardServices.removalPrice}
+            price={removalPrice}
           />
         </div>
       )}

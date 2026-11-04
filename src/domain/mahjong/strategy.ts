@@ -1,3 +1,8 @@
+import {
+  riichiDistance,
+  riichiEffectiveTiles,
+  riichiTile,
+} from "./riichi-hand";
 import { sampleMahjong } from "./sample";
 import {
   Strategy,
@@ -14,6 +19,7 @@ import type {
 } from "../types";
 import { analyzeHand, shanten } from "./hand";
 import {
+  isTransparent,
   tileType,
   tileSuit,
   tileCounts,
@@ -48,6 +54,8 @@ export class MahjongStrategy extends Strategy {
   static readonly version = "sichuan-information-1";
   readonly version = MahjongStrategy.version;
   budget(request: SearchRequest) {
+    if (requireState(request.observation).view.riichi)
+      return { samples: 0, depth: 0, shortlist: 0, milliseconds: 150 };
     return {
       easy: { samples: 0, depth: 0, shortlist: 0, milliseconds: 150 },
       normal: { samples: 0, depth: 0, shortlist: 0, milliseconds: 600 },
@@ -60,7 +68,21 @@ export class MahjongStrategy extends Strategy {
       hand = view.hands[actor],
       open = view.melds[actor].length,
       lack = view.lacks[actor],
-      known = visibleCounts(view, actor);
+      known = view.riichi ? [] : visibleCounts(view, actor);
+    const riichiVisible = view.riichi
+      ? [
+          ...new Set([
+            ...view.hands.flatMap((hand, seat) =>
+              seat === actor ? hand : hand.filter(isTransparent),
+            ),
+            ...view.rivers.flat(),
+            ...view.melds.flat().flatMap((meld) => meld.tiles),
+            ...view.riichi.dora,
+          ]),
+        ]
+          .filter((tile) => tile >= 0)
+          .map(riichiTile)
+      : [];
     return moves.map((candidate) => {
       if (candidate.action.type !== "scmj-action")
         throw new Error("动作不匹配");
@@ -72,7 +94,42 @@ export class MahjongStrategy extends Strategy {
         if (request.audit)
           features.push({ name, value, weight, contribution: value * weight });
       };
-      if (move.type === "discard") {
+      if (view.riichi) {
+        const round = view.riichi;
+        if (
+          move.type === "win" ||
+          (move.type === "respond" && move.choice === "win")
+        )
+          add("和牌", 1, 10000);
+        else if (move.type === "discard" || move.type === "riichi") {
+          const after = hand.filter((tile) => tile !== move.tile);
+          add("向听", -riichiDistance(view, actor, after), 30);
+          if (move.type === "riichi") add("立直", 1, 4);
+          if (request.difficulty !== "easy") {
+            const draws = riichiEffectiveTiles(view, actor, after);
+            add(
+              "公开信息下的进张",
+              draws.reduce(
+                (sum, type) =>
+                  sum +
+                  Math.max(
+                    0,
+                    4 - riichiVisible.filter((tile) => tile === type).length,
+                  ),
+                0,
+              ),
+              0.6,
+            );
+            const safe = round.ready.filter(
+              (ready, seat) =>
+                ready &&
+                seat !== actor &&
+                round.discardedTypes[seat].includes(tileType(move.tile)),
+            ).length;
+            add("对立直家的现物", safe, 8);
+          }
+        } else if (move.type === "call") add("保留门清", -1, 2);
+      } else if (move.type === "discard") {
         const after = hand.filter((t) => t !== move.tile),
           distance = shanten(after, open);
         add("完成胡牌结构的向听数", -distance, 30);

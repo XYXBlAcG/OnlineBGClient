@@ -34,6 +34,20 @@ export function expeditionMotionEvents(
       >(),
       used = new Set<number>();
     for (const event of after.combat.visuals) {
+      if (
+        event.kind !== "damage" &&
+        event.kind !== "block" &&
+        event.kind !== "heal" &&
+        event.kind !== "status"
+      ) {
+        if (event.label)
+          events.push({
+            type: "celebrate",
+            target: target(event.target.side, event.target.index),
+            label: event.label,
+          });
+        continue;
+      }
       if (event.amount <= 0) continue;
       const origin =
         event.origin ??

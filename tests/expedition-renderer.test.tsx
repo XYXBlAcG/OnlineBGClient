@@ -28,12 +28,19 @@ it("正式远征使用职业、路线、场景和本人手牌，回放不提供�
     move: { type: "profession", profession: 2 },
   });
   expect(render()).toContain('data-guide-target="expedition.map"');
-  room.act(
-    token,
-    "map",
-    room.version,
-    room.snapshot(token).candidates[0].action,
-  );
+  const mapSnapshot = room.snapshot(token),
+    battleId =
+      mapSnapshot.state?.kind === "expedition"
+        ? mapSnapshot.state.view.map[0].find((node) => node.kind === "battle")!
+            .id
+        : "",
+    battleAction = mapSnapshot.candidates.find(
+      (candidate) =>
+        candidate.action.type === "expedition-action" &&
+        candidate.action.move.type === "vote" &&
+        candidate.action.move.choice === battleId,
+    )!.action;
+  room.act(token, "map", room.version, battleAction);
   const html = render();
   expect(html).toContain('data-guide-target="expedition.hand"');
   expect(html).toContain('data-guide-target="expedition.scene"');

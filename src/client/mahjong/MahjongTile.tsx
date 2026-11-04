@@ -1,5 +1,11 @@
 import { tileName, tileType, tileSuit } from "../../domain/mahjong/types";
-export function MahjongTile({ tile }: { tile: number }) {
+export function MahjongTile({
+  tile,
+  transparent = false,
+}: {
+  tile: number;
+  transparent?: boolean;
+}) {
   if (tile < 0)
     return (
       <svg viewBox="0 0 52 74" aria-hidden="true">
@@ -28,10 +34,22 @@ export function MahjongTile({ tile }: { tile: number }) {
         width="50"
         height="67"
         rx="6"
-        fill="#fffdf6"
-        stroke="#d5d6cf"
+        fill={transparent ? "#e8f6ff" : "#fffdf6"}
+        stroke={transparent ? "#478db1" : "#d5d6cf"}
       />
-      {suit === 0 ? (
+      {transparent && (
+        <path
+          d="M5 13V6H12M40 62H47V55"
+          stroke="#478db1"
+          strokeWidth="2"
+          fill="none"
+        />
+      )}
+      {suit === 3 ? (
+        <text x="26" y="44" textAnchor="middle" fontSize="30" fill="#243b4a">
+          {tileName(tile)}
+        </text>
+      ) : suit === 0 ? (
         <>
           <text x="26" y="28" textAnchor="middle" fontSize="24" fill={color}>
             {["一", "二", "三", "四", "五", "六", "七", "八", "九"][rank - 1]}
@@ -65,7 +83,7 @@ export function MahjongTile({ tile }: { tile: number }) {
           />
         ))
       )}
-      {suit !== 0 && (
+      {suit > 0 && suit < 3 && (
         <text x="26" y="64" textAnchor="middle" fontSize="9" fill={color}>
           {rank} {["万", "筒", "条"][suit]}
         </text>

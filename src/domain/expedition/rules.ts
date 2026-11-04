@@ -17,7 +17,14 @@ import {
   type CardId,
   type Effect,
   type EncounterDefinition,
+  type EncounterMechanicDefinition,
+  type EnemyDefinition,
 } from "./content";
+import {
+  encounterModifierEffect,
+  type EncounterModifierEffects,
+} from "./modifiers";
+import { enemyTraits, type EnemyTraitId } from "./enemy-traits";
 import type {
   ExpeditionState,
   ExpeditionAction,
@@ -35,7 +42,7 @@ export function allCards(hero: Hero): CardInstance[] {
     ...hero.discard,
     ...hero.played,
     ...hero.exhaust,
-  ];
+  ].filter((card) => !definition(card).temporary);
 }
 export function damageAmount(
   amount: number,
@@ -100,6 +107,8 @@ export class ExpeditionRules {
       visuals: [],
       rewardOffers: [],
       rewards: {},
+      summons: [],
+      modifiers: [],
       enemies: [],
       heroes: [],
       metrics: {
@@ -147,6 +156,9 @@ export class ExpeditionRules {
         exhaust: [],
         ready: false,
         shuffles: 0,
+        spore: 0,
+        tether: null,
+        silenced: 0,
       };
     });
     if (scenario.length) this.startEncounter(state);
@@ -156,6 +168,615 @@ export class ExpeditionRules {
   private log(state: ExpeditionState, text: string) {
     state.log.push({ id: ++state.sequence, text });
     state.log = state.log.slice(-60);
+  }
+  private mechanicDefinition(
+    state: ExpeditionState,
+  ): EncounterMechanicDefinition | undefined {
+    return state.scenario[state.encounter]?.mechanic;
+  }
+  private traitTotal(
+    enemy: Enemy,
+    key: keyof Omit<(typeof enemyTraits)[EnemyTraitId], "name" | "description">,
+  ) {
+    return (enemy.traits ?? []).reduce(
+      (total, id) => total + Number(enemyTraits[id][key] ?? 0),
+      0,
+    );
+  }
+  private modifierTotal(
+    state: ExpeditionState,
+    key: keyof EncounterModifierEffects,
+  ) {
+    return encounterModifierEffect(state.modifiers, key);
+  }
+  private mechanicBoss(state: ExpeditionState): Enemy | undefined {
+    return (
+      state.enemies.find((enemy) => enemy.role === "boss" && enemy.hp > 0) ??
+      state.enemies.find((enemy) => enemy.hp > 0)
+    );
+  }
+  private mechanicEvent(
+    state: ExpeditionState,
+    kind: "mechanic" | "phase" | "break" | "status",
+    label: string,
+    target?: Target,
+  ) {
+    const boss = this.mechanicBoss(state);
+    const index = boss ? state.enemies.indexOf(boss) : 0;
+    state.visuals.push({
+      kind,
+      target: target ?? { side: "enemy", index },
+      amount: state.mechanic?.track ?? 0,
+      label,
+    });
+    this.log(state, label);
+  }
+  private aliveParts(state: ExpeditionState, part?: string) {
+    return state.enemies.filter(
+      (enemy) =>
+        enemy.role === "part" && enemy.hp > 0 && (!part || enemy.part === part),
+    ).length;
+  }
+  private linkedPairs(state: ExpeditionState) {
+    const linked = new Set<number>();
+    return state.heroes.reduce((count, hero, index) => {
+      if (
+        linked.has(index) ||
+        hero.hp <= 0 ||
+        hero.tether === null ||
+        state.heroes[hero.tether]?.tether !== index
+      )
+        return count;
+      linked.add(index);
+      linked.add(hero.tether);
+      return count + 1;
+    }, 0);
+  }
+  private linkHeroes(state: ExpeditionState) {
+    const mechanic = state.mechanic;
+    if (!mechanic) return;
+    const living = state.heroes.flatMap((hero, index) =>
+      hero.hp > 0 ? [index] : [],
+    );
+    if (!living.length) return;
+    const targetPairs = Math.min(
+      mechanic.phase > 0 ? 2 : 1,
+      Math.floor(living.length / 2),
+    );
+    state.heroes.forEach((hero) => (hero.tether = null));
+    for (let pair = 0; pair < targetPairs; pair++) {
+      const left =
+          living[(state.round + pair * 3 + mechanic.phase) % living.length],
+        right =
+          living[(state.round + pair * 3 + 1 + mechanic.phase) % living.length];
+      if (left === right) continue;
+      state.heroes[left].tether = right;
+      state.heroes[right].tether = left;
+    }
+    mechanic.track = this.linkedPairs(state);
+    if (mechanic.track) this.mechanicEvent(state, "mechanic", "根须重新缠结");
+  }
+  private startMechanic(state: ExpeditionState) {
+    const definition = this.mechanicDefinition(state);
+    if (!definition) {
+      delete state.mechanic;
+      return;
+    }
+    state.mechanic = {
+      id: definition.id,
+      track: definition.track.initial ?? 0,
+      max: definition.track.max,
+      phase: 0,
+      roundCards: 0,
+    };
+    if (definition.id === "roots") this.linkHeroes(state);
+    if (definition.id === "symbiosis")
+      state.mechanic.track = state.enemies.filter(
+        (enemy) =>
+          enemy.hp > 0 && (enemy.role === "boss" || enemy.part === "twin"),
+      ).length;
+  }
+  private enterMechanicPhase(state: ExpeditionState) {
+    const mechanic = state.mechanic,
+      definition = this.mechanicDefinition(state);
+    if (!mechanic || !definition || mechanic.phase > 0) return;
+    mechanic.phase = 1;
+    if (mechanic.id === "fate" || mechanic.id === "tempo") mechanic.max = 4;
+    if (mechanic.id === "mirror") mechanic.max = 3;
+    if (mechanic.id === "brood") mechanic.max = 2;
+    if (mechanic.id === "silence") mechanic.max = 3;
+    if (mechanic.id === "tide") {
+      mechanic.max = 3;
+      const boss = this.mechanicBoss(state);
+      if (boss) boss.strength += 2;
+    }
+    if (mechanic.id === "furnace") {
+      const boss = this.mechanicBoss(state);
+      if (boss) {
+        boss.block = 0;
+        boss.vulnerable += 2;
+      }
+    }
+    if (mechanic.id === "trial") {
+      const boss = this.mechanicBoss(state);
+      if (boss) boss.strength += 2;
+    }
+    if (mechanic.id === "symbiosis") {
+      const boss = this.mechanicBoss(state);
+      if (boss) boss.strength += 3;
+    }
+    if (mechanic.id === "brood")
+      state.enemies
+        .filter((enemy) => enemy.hp > 0 && enemy.role === "minion")
+        .forEach((enemy) => (enemy.strength += 1));
+    state.enemies.forEach((enemy) => {
+      if (
+        enemy.hp > 0 &&
+        (enemy.role === "boss" || enemy.part === "twin") &&
+        enemy.phasePattern
+      ) {
+        enemy.phase = 1;
+        enemy.intent = structuredClone(enemy.phasePattern[0]);
+      }
+    });
+    if (mechanic.id === "roots") this.linkHeroes(state);
+    this.mechanicEvent(state, "phase", definition.phaseName);
+  }
+  private checkMechanicPhase(state: ExpeditionState) {
+    const mechanic = state.mechanic,
+      definition = this.mechanicDefinition(state),
+      boss = state.enemies.find((enemy) => enemy.role === "boss");
+    if (
+      mechanic &&
+      definition &&
+      mechanic.id !== "symbiosis" &&
+      mechanic.phase === 0 &&
+      boss &&
+      boss.hp > 0 &&
+      boss.hp / boss.maxHp <= definition.phaseThreshold
+    )
+      this.enterMechanicPhase(state);
+  }
+  private repeatIntent(
+    state: ExpeditionState,
+    enemy: Enemy,
+    intent: Enemy["intent"],
+  ) {
+    if (intent.kind === "block") enemy.block += intent.amount;
+    if (intent.kind === "strength") enemy.strength += intent.amount;
+    if (intent.kind === "thorns")
+      enemy.thorns = Math.min(
+        enemyThornsRule.maximum,
+        enemy.thorns + intent.amount,
+      );
+    if (intent.kind === "heal")
+      state.enemies
+        .filter((member) => member.hp > 0)
+        .forEach(
+          (member) =>
+            (member.hp = Math.min(member.maxHp, member.hp + intent.amount)),
+        );
+    if (intent.kind === "poison" || intent.kind === "weak")
+      for (const target of intentTargets(state, intent.target))
+        state.heroes[target][intent.kind] +=
+          intent.amount + Number(intent.kind === "weak");
+    if (intent.kind === "attack")
+      for (const attack of attackPlan(state, { ...enemy, intent }))
+        for (
+          let hit = 0;
+          hit < attack.hits && state.heroes[attack.actor].hp > 0;
+          hit++
+        )
+          this.hit(
+            state,
+            { side: "hero", index: attack.actor },
+            attack.amount,
+            undefined,
+            false,
+            { side: "enemy", index: state.enemies.indexOf(enemy) },
+          );
+  }
+  private resolveMechanic(state: ExpeditionState) {
+    const mechanic = state.mechanic,
+      boss = this.mechanicBoss(state);
+    if (!mechanic || !boss) return;
+    if (mechanic.id === "trial") {
+      this.mechanicEvent(state, "mechanic", "审判降临");
+      state.heroes.forEach((hero, index) => {
+        if (hero.hp > 0)
+          this.hit(
+            state,
+            { side: "hero", index },
+            5 + mechanic.phase * 2,
+            undefined,
+            false,
+            { side: "enemy", index: state.enemies.indexOf(boss) },
+          );
+      });
+      boss.block += 6;
+      mechanic.track = 0;
+    }
+    if (mechanic.id === "fate") {
+      this.mechanicEvent(state, "mechanic", "命运重演");
+      if (mechanic.lastIntent)
+        this.repeatIntent(state, boss, structuredClone(mechanic.lastIntent));
+      else boss.block += 6;
+      mechanic.track = 0;
+    }
+    if (mechanic.id === "furnace") {
+      const valves = this.aliveParts(state, "valve");
+      if (valves) {
+        this.mechanicEvent(state, "mechanic", "熔炉喷发");
+        state.heroes.forEach((hero, index) => {
+          if (hero.hp > 0)
+            this.hit(
+              state,
+              { side: "hero", index },
+              12 + mechanic.phase * 4,
+              undefined,
+              false,
+              { side: "enemy", index: state.enemies.indexOf(boss) },
+            );
+        });
+        mechanic.track = 6;
+      } else {
+        this.mechanicEvent(state, "mechanic", "冷却失效 · 巨像过热");
+        boss.stunned = 1;
+        boss.vulnerable += 2;
+        mechanic.track = 4;
+      }
+    }
+    if (mechanic.id === "tempo") {
+      this.mechanicEvent(state, "mechanic", "钟摆过载");
+      boss.block += 5 + mechanic.phase * 2;
+      boss.strength += 1;
+      mechanic.track = 0;
+    }
+    if (mechanic.id === "mirror") {
+      this.mechanicEvent(state, "mechanic", "镜面回响");
+      boss.block += 10 + mechanic.phase * 2;
+      boss.thorns = Math.min(enemyThornsRule.maximum, boss.thorns + 2);
+      boss.strength += 1;
+      mechanic.track = 0;
+    }
+    if (mechanic.id === "tide") {
+      this.mechanicEvent(state, "mechanic", "满潮爆发");
+      state.heroes.forEach((hero, index) => {
+        if (hero.hp > 0)
+          this.hit(
+            state,
+            { side: "hero", index },
+            8 + mechanic.phase * 3,
+            undefined,
+            false,
+            { side: "enemy", index: state.enemies.indexOf(boss) },
+          );
+      });
+      boss.block += 8 + mechanic.phase * 3;
+      if (mechanic.phase > 0) boss.strength += 1;
+      mechanic.track = 0;
+    }
+    if (mechanic.id === "brood") {
+      this.mechanicEvent(state, "mechanic", "母巢脉冲");
+      boss.block += 6 + mechanic.phase * 2;
+      state.enemies
+        .filter((enemy) => enemy.hp > 0 && enemy.role === "minion")
+        .forEach((enemy) => (enemy.strength += 1));
+      mechanic.track = 0;
+    }
+    if (mechanic.id === "silence") {
+      const living = state.heroes.flatMap((hero, index) =>
+          hero.hp > 0 ? [index] : [],
+        ),
+        target =
+          living[(state.round + mechanic.phase) % Math.max(1, living.length)];
+      if (target !== undefined) {
+        this.mechanicEvent(state, "mechanic", "圣咏封口", {
+          side: "hero",
+          index: target,
+        });
+        this.sealHand(state, target, 2 + mechanic.phase);
+        this.silenceHero(state, target, 1);
+      }
+      mechanic.track = 0;
+    }
+    if (mechanic.id === "tribute") {
+      const target = [...state.heroes]
+        .map((hero, index) => ({ hero, index }))
+        .filter(({ hero }) => hero.hp > 0)
+        .sort((left, right) => right.hero.gold - left.hero.gold)[0];
+      if (target) {
+        this.mechanicEvent(state, "mechanic", "贡赋清算", {
+          side: "hero",
+          index: target.index,
+        });
+        this.stealGold(state, boss, target.index, 15 + mechanic.phase * 10);
+        boss.block += 8 + mechanic.phase * 3;
+        boss.strength += target.hero.gold >= 40 ? 1 + mechanic.phase : 0;
+      }
+      mechanic.track = 0;
+    }
+  }
+  private advanceMechanic(state: ExpeditionState, amount: number) {
+    const mechanic = state.mechanic;
+    if (!mechanic || amount <= 0) return;
+    mechanic.track += amount;
+    if (mechanic.track >= mechanic.max) this.resolveMechanic(state);
+  }
+  private mechanicCardPlayed(
+    state: ExpeditionState,
+    effects: readonly Effect[],
+  ) {
+    const mechanic = state.mechanic;
+    if (!mechanic) return;
+    mechanic.roundCards++;
+    if (mechanic.id === "fate" && mechanic.roundCards % 2 === 0)
+      this.advanceMechanic(state, 1);
+    if (mechanic.id === "tempo") this.advanceMechanic(state, 1);
+    if (mechanic.id === "mirror") {
+      const kind = effects.some((effect) => effect.kind === "damage")
+        ? "attack"
+        : "skill";
+      if (mechanic.lastCardKind === kind) this.advanceMechanic(state, 1);
+      else if (mechanic.track > 0) mechanic.track--;
+      mechanic.lastCardKind = kind;
+    }
+  }
+  private mechanicCleansed(state: ExpeditionState, actor: number) {
+    const mechanic = state.mechanic;
+    if (!mechanic) return;
+    if (mechanic.id === "fate" && mechanic.track > 0) {
+      mechanic.track--;
+      this.mechanicEvent(state, "mechanic", "净化拨回命运", {
+        side: "hero",
+        index: actor,
+      });
+    }
+    if (mechanic.id === "roots") {
+      const partner = state.heroes[actor].tether;
+      state.heroes[actor].tether = null;
+      if (partner !== null && state.heroes[partner]?.tether === actor)
+        state.heroes[partner].tether = null;
+      mechanic.track = this.linkedPairs(state);
+      this.mechanicEvent(state, "break", "根须被净化斩断", {
+        side: "hero",
+        index: actor,
+      });
+    }
+  }
+  private mechanicPartDefeated(state: ExpeditionState, index: number) {
+    const mechanic = state.mechanic,
+      part = state.enemies[index];
+    if (!mechanic) return;
+    if (
+      mechanic.id === "symbiosis" &&
+      (part.role === "boss" || part.part === "twin")
+    ) {
+      this.mechanicEvent(state, "break", `${part.name}倒下`, {
+        side: "enemy",
+        index,
+      });
+      mechanic.track = state.enemies.filter(
+        (enemy) =>
+          enemy.hp > 0 && (enemy.role === "boss" || enemy.part === "twin"),
+      ).length;
+      if (mechanic.track === 1) this.enterMechanicPhase(state);
+      return;
+    }
+    if (part.role !== "part") return;
+    this.mechanicEvent(state, "break", `${part.name}被击破`, {
+      side: "enemy",
+      index,
+    });
+    if (mechanic.id === "trial") {
+      if (part.part === "judgment") mechanic.track = 0;
+      if (part.part === "seal") {
+        const boss = this.mechanicBoss(state);
+        if (boss) boss.block = 0;
+      }
+      if (this.aliveParts(state) === 0) {
+        const boss = this.mechanicBoss(state);
+        if (boss) boss.stunned = 1;
+      }
+    }
+    if (mechanic.id === "furnace" && part.part === "valve")
+      mechanic.track = Math.max(0, mechanic.track - 5);
+    if (mechanic.id === "silence" && part.part === "silence-seal") {
+      mechanic.track = 0;
+      state.heroes.forEach((hero) => {
+        hero.silenced = 0;
+        hero.hand = hero.hand.filter(
+          (instance) => !definition(instance).temporary,
+        );
+      });
+    }
+  }
+  private spawnMinion(
+    state: ExpeditionState,
+    sourceIndex: number,
+    template: EnemyDefinition,
+  ) {
+    const slot =
+      state.enemies.findIndex(
+        (enemy, index) => index !== sourceIndex && enemy.hp <= 0,
+      ) >= 0
+        ? state.enemies.findIndex(
+            (enemy, index) => index !== sourceIndex && enemy.hp <= 0,
+          )
+        : state.enemies.length < 4
+          ? state.enemies.length
+          : -1;
+    if (slot < 0) return false;
+    const enemy: Enemy = {
+      name: template.name,
+      icon: template.icon,
+      role: "minion",
+      key: template.key,
+      ownerIndex: sourceIndex,
+      deathBurst: template.deathBurst,
+      traits: [...(template.traits ?? [])],
+      stolenGold: 0,
+      stolenRelics: [],
+      hp: template.hp,
+      maxHp: template.hp,
+      block: (template.traits ?? []).reduce(
+        (total, id) => total + enemyTraits[id].openingBlock,
+        0,
+      ),
+      strength: 0,
+      vulnerable: 0,
+      poison: 0,
+      weak: 0,
+      dexterity: 0,
+      thorns: this.modifierTotal(state, "enemyThorns"),
+      regen: 0,
+      intent: structuredClone(template.pattern[0]),
+      pattern: structuredClone(template.pattern),
+      stunned: 0,
+      phase: 0,
+    };
+    if (slot === state.enemies.length) state.enemies.push(enemy);
+    else state.enemies[slot] = enemy;
+    this.mechanicEvent(state, "mechanic", `${enemy.name}孵化`, {
+      side: "enemy",
+      index: slot,
+    });
+    return true;
+  }
+  private summonEnemies(state: ExpeditionState) {
+    for (const clock of state.summons ?? []) {
+      const sourceIndex = state.enemies.findIndex(
+        (enemy) =>
+          enemy.hp > 0 &&
+          enemy.role === "boss" &&
+          (enemy.key === clock.rule.source || enemy.name === clock.rule.source),
+      );
+      if (sourceIndex < 0) {
+        clock.queued = false;
+        continue;
+      }
+      clock.cooldown--;
+      if (clock.cooldown > 0) continue;
+      const owned = state.enemies.filter(
+        (enemy) => enemy.hp > 0 && enemy.ownerIndex === sourceIndex,
+      ).length;
+      if (
+        owned < clock.rule.max &&
+        this.spawnMinion(state, sourceIndex, clock.rule.template)
+      ) {
+        clock.cooldown = clock.rule.every;
+        clock.queued = false;
+      } else {
+        clock.cooldown = 1;
+        clock.queued = true;
+      }
+    }
+  }
+  private cascadeMinions(state: ExpeditionState, sourceIndex: number) {
+    const owned = state.enemies.flatMap((enemy, index) =>
+      enemy.hp > 0 && enemy.ownerIndex === sourceIndex
+        ? [{ enemy, index }]
+        : [],
+    );
+    if (!owned.length) return;
+    for (const { enemy, index } of owned) {
+      enemy.hp = 0;
+      enemy.block = 0;
+      this.mechanicEvent(state, "break", `${enemy.name}连锁消散`, {
+        side: "enemy",
+        index,
+      });
+    }
+  }
+  private detonateMinion(state: ExpeditionState, index: number) {
+    const enemy = state.enemies[index];
+    if (!enemy.deathBurst) return;
+    this.mechanicEvent(state, "mechanic", `${enemy.name}爆裂`, {
+      side: "enemy",
+      index,
+    });
+    state.heroes.forEach((hero, heroIndex) => {
+      if (hero.hp > 0)
+        this.hit(
+          state,
+          { side: "hero", index: heroIndex },
+          enemy.deathBurst!,
+          undefined,
+          false,
+          { side: "enemy", index },
+        );
+    });
+  }
+  private mechanicRoundStart(state: ExpeditionState) {
+    const mechanic = state.mechanic;
+    if (!mechanic) return;
+    mechanic.roundCards = 0;
+    if (mechanic.id === "roots" && this.linkedPairs(state) === 0)
+      this.linkHeroes(state);
+    if (mechanic.id === "symbiosis") {
+      state.heroes.forEach((hero, index) => {
+        if (hero.hp > 0 && hero.spore > 0) {
+          this.hit(state, { side: "hero", index }, hero.spore, undefined, true);
+          hero.spore--;
+        }
+      });
+      const living = state.heroes.flatMap((hero, index) =>
+        hero.hp > 0 ? [index] : [],
+      );
+      if (living.length) {
+        const target = living[(state.round + mechanic.phase) % living.length];
+        state.heroes[target].spore = Math.min(
+          3,
+          state.heroes[target].spore + 1 + mechanic.phase,
+        );
+        this.mechanicEvent(state, "mechanic", "孢子扩散", {
+          side: "hero",
+          index: target,
+        });
+      }
+    }
+  }
+  private mechanicEnemyTurnEnd(state: ExpeditionState) {
+    const mechanic = state.mechanic,
+      boss = this.mechanicBoss(state);
+    if (!mechanic || !boss) return;
+    if (mechanic.id === "trial") {
+      if (this.aliveParts(state, "seal")) boss.block += 5;
+      this.advanceMechanic(state, mechanic.phase > 0 ? 3 : 2);
+    }
+    if (mechanic.id === "fate") {
+      const current = structuredClone(boss.intent);
+      this.advanceMechanic(state, mechanic.phase > 0 ? 2 : 1);
+      mechanic.lastIntent = current;
+    }
+    if (mechanic.id === "symbiosis") {
+      mechanic.track = state.enemies.filter(
+        (enemy) =>
+          enemy.hp > 0 && (enemy.role === "boss" || enemy.part === "twin"),
+      ).length;
+      if (mechanic.track === 1) this.enterMechanicPhase(state);
+    }
+    if (mechanic.id === "roots" && this.linkedPairs(state) === 0)
+      this.linkHeroes(state);
+    if (mechanic.id === "furnace")
+      this.advanceMechanic(state, mechanic.phase > 0 ? 4 : 3);
+    if (mechanic.id === "mirror" || mechanic.id === "tide")
+      this.advanceMechanic(state, 1);
+    if (mechanic.id === "brood") this.advanceMechanic(state, 1);
+    if (mechanic.id === "silence") this.advanceMechanic(state, 1);
+    if (mechanic.id === "tribute")
+      this.advanceMechanic(state, mechanic.phase > 0 ? 2 : 1);
+    if (mechanic.id === "tempo" && mechanic.roundCards === 0) {
+      const healed = Math.min(
+        boss.maxHp - boss.hp,
+        mechanic.phase > 0 ? 12 : 8,
+      );
+      if (healed > 0) {
+        boss.hp += healed;
+        this.mechanicEvent(state, "mechanic", `停手修复 ${healed}`);
+      }
+    }
+    this.checkMechanicPhase(state);
   }
   private draw(state: ExpeditionState, actor: number, amount: number) {
     const hero = state.heroes[actor];
@@ -206,16 +827,31 @@ export class ExpeditionRules {
       hero.thorns = 0;
       hero.regen = 0;
       Object.assign(hero, initialResources());
+      if (hero.profession === 7) hero.dice = 2;
       hero.relicUses = {};
       hero.vulnerable = 0;
       hero.energy = 3;
       hero.ready = false;
       hero.shuffles = 0;
+      hero.spore = 0;
+      hero.tether = null;
+      hero.silenced = 0;
       this.draw(state, actor, 5);
     });
     state.enemies = state.scenario[state.encounter].enemies.map((e) => ({
       name: e.name,
       icon: e.icon,
+      role: e.role ?? "guard",
+      ...(e.part ? { part: e.part } : {}),
+      ...(e.key ? { key: e.key } : {}),
+      pattern: structuredClone(e.pattern),
+      ...(e.phasePattern
+        ? { phasePattern: structuredClone(e.phasePattern) }
+        : {}),
+      ...(e.deathBurst ? { deathBurst: e.deathBurst } : {}),
+      traits: [...(e.traits ?? [])],
+      stolenGold: 0,
+      stolenRelics: [],
       hp: e.hp,
       maxHp: e.hp,
       block: 0,
@@ -227,7 +863,55 @@ export class ExpeditionRules {
       thorns: 0,
       regen: 0,
       intent: structuredClone(e.pattern[0]),
+      stunned: 0,
+      phase: 0,
     }));
+    const bossIndex = state.enemies.findIndex((enemy) => enemy.role === "boss");
+    state.enemies.forEach((enemy) => {
+      if (enemy.role === "minion" && bossIndex >= 0)
+        enemy.ownerIndex = bossIndex;
+    });
+    state.summons = (state.scenario[state.encounter].summons ?? []).map(
+      (rule) => ({
+        rule: structuredClone(rule) as typeof rule,
+        cooldown: rule.first,
+        queued: false,
+      }),
+    );
+    state.modifiers = [...(state.scenario[state.encounter].modifiers ?? [])];
+    const healthIncrease = this.modifierTotal(state, "enemyHealthIncrease"),
+      openingBlock = this.modifierTotal(state, "openingBlock"),
+      deathBurst = this.modifierTotal(state, "deathBurst"),
+      enemyThorns = this.modifierTotal(state, "enemyThorns"),
+      heroVulnerable = this.modifierTotal(state, "heroVulnerable");
+    state.enemies.forEach((enemy) => {
+      enemy.hp = enemy.maxHp = Math.ceil(enemy.maxHp * (1 + healthIncrease));
+      enemy.block += openingBlock + this.traitTotal(enemy, "openingBlock");
+      enemy.thorns += enemyThorns;
+      if (deathBurst && enemy.role !== "boss")
+        enemy.deathBurst = Math.max(deathBurst, enemy.deathBurst ?? 0);
+    });
+    if (state.modifiers.includes("awakened")) {
+      const eligible = state.enemies.filter((enemy) => enemy.role !== "boss"),
+        target = shuffled(
+          eligible.length ? eligible : state.enemies,
+          `${state.seed}:awakened:${state.encounter}:${state.battleSerial}`,
+        )[0];
+      if (target) {
+        target.traits ??= [];
+        const traits = target.traits;
+        const trait = shuffled(
+          (Object.keys(enemyTraits) as EnemyTraitId[]).filter(
+            (id) => !traits.includes(id),
+          ),
+          `${state.seed}:awakened-trait:${state.encounter}:${state.battleSerial}`,
+        )[0];
+        if (trait) traits.push(trait);
+        if (trait === "bulwark")
+          target.block += enemyTraits.bulwark.openingBlock;
+      }
+    }
+    state.heroes.forEach((hero) => (hero.vulnerable += heroVulnerable));
     state.turnStart = {
       damage: state.metrics.damage,
       blocked: state.metrics.blocked,
@@ -236,6 +920,7 @@ export class ExpeditionRules {
     };
     state.heroes.forEach((_, actor) => this.relic(state, actor, "start"));
     state.heroes.forEach((_, actor) => this.relic(state, actor, "round"));
+    this.startMechanic(state);
     this.log(
       state,
       `进入${state.scenario[state.encounter].name}，双方开始行动`,
@@ -276,10 +961,13 @@ export class ExpeditionRules {
     const hero = state.heroes[actor];
     if (!hero || hero.hp <= 0) return [];
     if (hero.ready) return [{ type: "unready", actor }];
+    if (hero.silenced > 0) return [{ type: "ready", actor }];
     const actions: ExpeditionAction[] = [];
     for (const instance of hero.hand) {
       const card = definition(instance);
+      if (card.unplayable) continue;
       if (card.cost > hero.energy) continue;
+      if ((card.diceCost ?? 0) > hero.dice) continue;
       if (card.target === "enemy" || card.target === "ally") {
         const side = card.target === "enemy" ? "enemy" : "hero";
         (side === "enemy" ? state.enemies : state.heroes).forEach(
@@ -305,11 +993,15 @@ export class ExpeditionRules {
     source?: number,
     piercing = false,
     origin?: Target,
-  ) {
+    linked = false,
+  ): number {
     const fighter =
       target.side === "hero"
         ? state.heroes[target.index]
         : state.enemies[target.index];
+    const targetHero =
+      target.side === "hero" ? state.heroes[target.index] : undefined;
+    const wasAlive = fighter.hp > 0;
     const absorbed = piercing ? 0 : Math.min(fighter.block, amount),
       damage = Math.min(fighter.hp, amount - absorbed);
     fighter.block -= absorbed;
@@ -338,6 +1030,63 @@ export class ExpeditionRules {
       state,
       `${fighter.name ?? "目标"}受到 ${damage} 伤害${absorbed ? `，格挡吸收 ${absorbed}` : ""}`,
     );
+    if (
+      targetHero &&
+      !linked &&
+      damage > 0 &&
+      targetHero.tether !== null &&
+      state.heroes[targetHero.tether]?.hp > 0
+    ) {
+      const partner = targetHero.tether,
+        shared = Math.ceil(damage / 2);
+      this.mechanicEvent(state, "mechanic", "根须传导伤害", {
+        side: "hero",
+        index: partner,
+      });
+      this.hit(
+        state,
+        { side: "hero", index: partner },
+        shared,
+        source,
+        false,
+        origin,
+        true,
+      );
+    }
+    if (targetHero && fighter.hp <= 0 && targetHero.tether !== null) {
+      const partner = targetHero.tether;
+      if (state.heroes[partner]?.tether === target.index)
+        state.heroes[partner].tether = null;
+      targetHero.tether = null;
+    }
+    if (target.side === "enemy" && wasAlive && fighter.hp <= 0) {
+      const enemy = state.enemies[target.index];
+      if (enemy.role === "boss") this.cascadeMinions(state, target.index);
+      if (enemy.role === "minion") this.detonateMinion(state, target.index);
+      this.mechanicPartDefeated(state, target.index);
+      this.recoverLoot(state, enemy, target.index);
+      const allyDeathHeal = this.modifierTotal(state, "allyDeathHeal");
+      state.enemies.forEach((ally, index) => {
+        if (index === target.index || ally.hp <= 0) return;
+        const strength = this.traitTotal(ally, "allyDeathStrength"),
+          healed = Math.min(ally.maxHp - ally.hp, allyDeathHeal);
+        ally.strength += strength;
+        ally.hp += healed;
+        if (strength)
+          this.mechanicEvent(state, "mechanic", `${ally.name}复仇强化`, {
+            side: "enemy",
+            index,
+          });
+        if (healed)
+          this.mechanicEvent(state, "status", `${ally.name}复生 ${healed}`, {
+            side: "enemy",
+            index,
+          });
+      });
+    }
+    if (target.side === "enemy" && fighter.hp > 0)
+      this.checkMechanicPhase(state);
+    return damage;
   }
   private effect(
     state: ExpeditionState,
@@ -366,9 +1115,11 @@ export class ExpeditionRules {
                     ? hero.heat * 2
                     : effect.scale === "turret"
                       ? hero.turret * 2
-                      : effect.scale === "marked" && fighter.vulnerable > 0
-                        ? 6
-                        : 0),
+                      : effect.scale === "dice"
+                        ? hero.dice * 2
+                        : effect.scale === "marked" && fighter.vulnerable > 0
+                          ? 6
+                          : 0),
           hero,
           fighter,
         ),
@@ -389,11 +1140,15 @@ export class ExpeditionRules {
     if (effect.kind === "block") {
       const recipient = target.side === "enemy" ? hero : fighter;
       const index = target.side === "enemy" ? actor : target.index;
-      recipient.block += effect.amount + recipient.dexterity;
+      const amount =
+        effect.amount +
+        recipient.dexterity +
+        (effect.scale === "dice" ? hero.dice * 2 : 0);
+      recipient.block += amount;
       state.visuals.push({
         kind: "block",
         target: { side: "hero", index },
-        amount: effect.amount + recipient.dexterity,
+        amount,
         source: actor,
       });
     }
@@ -420,6 +1175,22 @@ export class ExpeditionRules {
       this.draw(state, target.index, effect.amount);
     if (effect.kind === "energy" && target.side === "hero")
       state.heroes[target.index].energy += effect.amount;
+    if (effect.kind === "dice" && target.side === "hero") {
+      const recipient = state.heroes[target.index],
+        gain = Math.min(
+          expeditionResources.dice.maximum - recipient.dice,
+          effect.amount,
+        );
+      recipient.dice += gain;
+      if (gain) {
+        state.visuals.push({
+          kind: "status",
+          target,
+          amount: gain,
+          source: actor,
+        });
+      }
+    }
     if (
       [
         "strength",
@@ -470,6 +1241,22 @@ export class ExpeditionRules {
       fighter.poison = 0;
       fighter.vulnerable = 0;
       fighter.weak = 0;
+      if (target.side === "hero") {
+        const recipient = state.heroes[target.index];
+        recipient.spore = 0;
+        recipient.silenced = 0;
+        const sealed = recipient.hand.findIndex(
+          (instance) => definition(instance).temporary,
+        );
+        if (sealed >= 0) recipient.hand.splice(sealed, 1);
+        if (recipient.tether !== null) {
+          const partner = recipient.tether;
+          if (state.heroes[partner]?.tether === target.index)
+            state.heroes[partner].tether = null;
+          recipient.tether = null;
+        }
+        this.mechanicCleansed(state, target.index);
+      }
     }
   }
   effects(
@@ -509,7 +1296,10 @@ export class ExpeditionRules {
             : state.heroes[target.index];
         if (!fighter || fighter.hp <= 0) continue;
         const alive = fighter.hp;
-        this.effect(state, actor, effect, target);
+        for (let hit = 0; hit < (effect.hits ?? 1); hit++) {
+          if (fighter.hp <= 0) break;
+          this.effect(state, actor, effect, target);
+        }
         if (target.side === "enemy" && alive > 0 && fighter.hp <= 0)
           this.relic(state, actor, "kill");
       }
@@ -547,7 +1337,8 @@ export class ExpeditionRules {
       state.phase !== "combat" ||
       !state.heroes[actor] ||
       state.heroes[actor].hp <= 0 ||
-      state.heroes[actor].ready
+      state.heroes[actor].ready ||
+      state.heroes[actor].silenced > 0
     )
       throw new Error("当前不能使用药水");
     const id = state.heroes[actor].potions[index];
@@ -645,6 +1436,126 @@ export class ExpeditionRules {
       [{ side: "enemy", index: target.index }],
     );
   }
+  private sealHand(state: ExpeditionState, actor: number, amount: number) {
+    const hero = state.heroes[actor],
+      candidates = hero.hand.filter(
+        (instance) => !definition(instance).unplayable,
+      ),
+      chosen = shuffled(
+        candidates,
+        `${state.seed}:seal:${state.encounter}:${state.round}:${actor}:${state.sequence}`,
+      ).slice(0, amount);
+    for (const instance of chosen) {
+      const index = hero.hand.findIndex((card) => card.id === instance.id);
+      if (index < 0) continue;
+      const [original] = hero.hand.splice(index, 1);
+      hero.discard.push(original);
+      hero.hand.splice(index, 0, {
+        id: `sealed-${state.nextId++}`,
+        card: "sealed_echo",
+        upgradeLevel: 0,
+        expiresRound: state.round + 2,
+      });
+    }
+    if (chosen.length) {
+      state.visuals.push({
+        kind: "mechanic",
+        target: { side: "hero", index: actor },
+        amount: chosen.length,
+        label: `${hero.name}的 ${chosen.length} 张牌被封缄`,
+      });
+      this.log(state, `${hero.name}的 ${chosen.length} 张手牌被替换为废牌`);
+      this.relic(state, actor, "sealed");
+    }
+  }
+  private silenceHero(state: ExpeditionState, actor: number, amount: number) {
+    const hero = state.heroes[actor];
+    if (!hero || hero.hp <= 0) return;
+    hero.silenced = Math.max(hero.silenced, amount + 1);
+    state.visuals.push({
+      kind: "status",
+      target: { side: "hero", index: actor },
+      amount: hero.silenced,
+      label: `${hero.name}被封口`,
+    });
+    this.log(state, `${hero.name}被封口，下一轮不能出牌`);
+    this.relic(state, actor, "silenced");
+  }
+  private stealGold(
+    state: ExpeditionState,
+    enemy: Enemy,
+    actor: number,
+    amount: number,
+  ) {
+    const hero = state.heroes[actor];
+    if (!hero || hero.hp <= 0) return;
+    const stolen = Math.min(hero.gold, Math.max(0, amount));
+    if (!stolen) return;
+    hero.gold -= stolen;
+    enemy.stolenGold += stolen;
+    enemy.stolenFrom ??= actor;
+    state.visuals.push({
+      kind: "mechanic",
+      target: { side: "hero", index: actor },
+      amount: stolen,
+      label: `${enemy.name}夺走 ${stolen} 金币`,
+    });
+    this.log(state, `${enemy.name}从${hero.name}夺走 ${stolen} 金币`);
+    this.relic(state, actor, "loot");
+  }
+  private stealRelic(state: ExpeditionState, enemy: Enemy, actor: number) {
+    const hero = state.heroes[actor];
+    if (!hero?.relics.length) return;
+    const relic = shuffled(
+      hero.relics,
+      `${state.seed}:steal-relic:${state.encounter}:${state.round}:${actor}`,
+    )[0];
+    const index = hero.relics.indexOf(relic);
+    if (index < 0) return;
+    hero.relics.splice(index, 1);
+    enemy.stolenRelics.push({ relic, owner: actor });
+    enemy.stolenFrom ??= actor;
+    state.visuals.push({
+      kind: "mechanic",
+      target: { side: "hero", index: actor },
+      amount: 1,
+      label: `${enemy.name}夺走${relics[relic].name}`,
+    });
+    this.log(state, `${enemy.name}从${hero.name}夺走${relics[relic].name}`);
+    this.relic(state, actor, "loot");
+  }
+  private recoverLoot(state: ExpeditionState, enemy: Enemy, index: number) {
+    if (enemy.stolenGold > 0) {
+      const owner = enemy.stolenFrom ?? 0,
+        hero = state.heroes[owner];
+      if (hero) hero.gold += enemy.stolenGold;
+      state.visuals.push({
+        kind: "heal",
+        target: { side: "hero", index: owner },
+        amount: enemy.stolenGold,
+        label: `夺回 ${enemy.stolenGold} 金币`,
+      });
+      this.log(state, `${enemy.name}被击败，夺回 ${enemy.stolenGold} 金币`);
+      enemy.stolenGold = 0;
+      this.relic(state, owner, "loot");
+    }
+    for (const stolen of enemy.stolenRelics) {
+      state.heroes[stolen.owner]?.relics.push(stolen.relic);
+      state.visuals.push({
+        kind: "break",
+        target: { side: "enemy", index },
+        amount: 1,
+        label: `夺回${relics[stolen.relic].name}`,
+      });
+      this.log(
+        state,
+        `${state.heroes[stolen.owner]?.name ?? "队员"}夺回${relics[stolen.relic].name}`,
+      );
+      this.relic(state, stolen.owner, "loot");
+    }
+    enemy.stolenRelics = [];
+    enemy.stolenFrom = undefined;
+  }
   private enemiesAct(state: ExpeditionState) {
     state.heroes.forEach((hero, actor) => {
       if (hero.hp <= 0) return;
@@ -675,6 +1586,14 @@ export class ExpeditionRules {
         enemy.poison--;
       }
       if (enemy.hp <= 0) continue;
+      if (enemy.stunned > 0) {
+        enemy.stunned--;
+        this.mechanicEvent(state, "mechanic", `${enemy.name}失衡，跳过行动`, {
+          side: "enemy",
+          index: state.enemies.indexOf(enemy),
+        });
+        continue;
+      }
       const intent = enemy.intent;
       if (intent.kind === "block") enemy.block += intent.amount;
       if (intent.kind === "strength") enemy.strength += intent.amount;
@@ -694,13 +1613,26 @@ export class ExpeditionRules {
         for (const target of intentTargets(state, intent.target))
           state.heroes[target][intent.kind] +=
             intent.amount + Number(intent.kind === "weak");
+      if (intent.kind === "seal")
+        for (const target of intentTargets(state, intent.target))
+          this.sealHand(state, target, intent.amount);
+      if (intent.kind === "silence")
+        for (const target of intentTargets(state, intent.target))
+          this.silenceHero(state, target, 1);
+      if (intent.kind === "steal-gold")
+        for (const target of intentTargets(state, intent.target))
+          this.stealGold(state, enemy, target, intent.amount);
+      if (intent.kind === "steal-relic")
+        for (const target of intentTargets(state, intent.target))
+          this.stealRelic(state, enemy, target);
+      let damageDealt = 0;
       for (const attack of attackPlan(state, enemy))
         for (
           let hit = 0;
           hit < attack.hits && state.heroes[attack.actor].hp > 0;
           hit++
         ) {
-          this.hit(
+          damageDealt += this.hit(
             state,
             { side: "hero", index: attack.actor },
             attack.amount,
@@ -718,6 +1650,22 @@ export class ExpeditionRules {
             );
           if (enemy.hp <= 0) break;
         }
+      if (enemy.hp > 0 && enemy.intent.kind === "attack") {
+        enemy.strength += this.traitTotal(enemy, "attackStrength");
+        const attackHeal =
+          this.traitTotal(enemy, "attackHeal") +
+          this.modifierTotal(state, "attackHeal");
+        if (damageDealt > 0 && attackHeal > 0) {
+          const healed = Math.min(enemy.maxHp - enemy.hp, attackHeal);
+          if (healed > 0) {
+            enemy.hp += healed;
+            this.mechanicEvent(state, "status", `${enemy.name}汲取 ${healed}`, {
+              side: "enemy",
+              index: state.enemies.indexOf(enemy),
+            });
+          }
+        }
+      }
       if (state.heroes.every((h) => h.hp <= 0)) {
         state.phase = "lost";
         this.finishTurn(state);
@@ -725,15 +1673,34 @@ export class ExpeditionRules {
         return;
       }
     }
+    this.summonEnemies(state);
+    const roundStrength = this.modifierTotal(state, "roundStrength");
+    state.enemies
+      .filter((enemy) => enemy.hp > 0)
+      .forEach((enemy) => {
+        enemy.strength += roundStrength;
+      });
+    this.mechanicEnemyTurnEnd(state);
     if (this.victory(state)) return;
     this.finishTurn(state);
     state.round++;
+    this.mechanicRoundStart(state);
     state.heroes.forEach((hero, actor) => {
-      hero.discard.push(...hero.hand, ...hero.played);
-      hero.hand = [];
+      const retained = hero.hand.filter(
+        (instance) =>
+          definition(instance).temporary &&
+          (instance.expiresRound ?? 0) > state.round,
+      );
+      hero.discard.push(
+        ...hero.hand.filter((instance) => !definition(instance).temporary),
+        ...hero.played,
+      );
+      hero.hand = retained;
       hero.played = [];
       hero.block = 0;
       hero.energy = 3 + hero.focus;
+      if (hero.profession === 7)
+        hero.dice = Math.min(expeditionResources.dice.maximum, hero.dice + 2);
       hero.focus = 0;
       hero.ready = hero.hp <= 0;
       if (hero.hp > 0 && hero.echo > 0) {
@@ -742,6 +1709,7 @@ export class ExpeditionRules {
       }
       hero.vulnerable = Math.max(0, hero.vulnerable - 1);
       hero.weak = Math.max(0, hero.weak - 1);
+      hero.silenced = Math.max(0, hero.silenced - 1);
       if (hero.hp > 0 && hero.regen > 0) {
         this.effects(
           state,
@@ -762,7 +1730,7 @@ export class ExpeditionRules {
         hero.poison--;
       }
       if (hero.hp > 0) {
-        this.draw(state, actor, 5);
+        this.draw(state, actor, Math.max(0, 5 - retained.length));
         this.relic(state, actor, "round");
       }
     });
@@ -776,7 +1744,10 @@ export class ExpeditionRules {
     state.enemies.forEach((enemy, index) => {
       enemy.vulnerable = Math.max(0, enemy.vulnerable - 1);
       enemy.weak = Math.max(0, enemy.weak - 1);
-      const pattern = state.scenario[state.encounter].enemies[index].pattern;
+      const pattern =
+        enemy.phase > 0 && enemy.phasePattern
+          ? enemy.phasePattern
+          : enemy.pattern;
       enemy.intent = structuredClone(
         pattern[(state.round - 1) % pattern.length],
       );
@@ -805,11 +1776,26 @@ export class ExpeditionRules {
         instance = hero.hand.splice(index, 1)[0],
         card = definition(instance);
       hero.energy -= card.cost;
+      hero.dice = Math.max(0, hero.dice - (card.diceCost ?? 0));
+      const healthCost = Math.min(Math.max(0, hero.hp - 1), card.hpCost ?? 0);
+      if (healthCost) {
+        hero.hp -= healthCost;
+        next.metrics.healthLost += healthCost;
+        next.visuals.push({
+          kind: "damage",
+          target: { side: "hero", index: action.actor },
+          amount: healthCost,
+          source: action.actor,
+        });
+      }
       (card.exhaust ? hero.exhaust : hero.played).push(instance);
       next.metrics.cards++;
       next.metrics.byCard[instance.card] =
         (next.metrics.byCard[instance.card] ?? 0) + 1;
-      this.log(next, `${hero.name}使用${card.name}（${card.cost} 能量）`);
+      this.log(
+        next,
+        `${hero.name}使用${card.name}（${card.cost} 能量${card.diceCost ? `，${card.diceCost} 骰子` : ""}${healthCost ? `，失去 ${healthCost} 生命` : ""}）`,
+      );
       const targets: Target[] =
         card.target === "all-enemies"
           ? next.enemies.flatMap((e, index) =>
@@ -823,6 +1809,7 @@ export class ExpeditionRules {
         "card",
         card.effects.some((e) => e.kind === "damage") ? "attack" : "skill",
       );
+      if (next.phase === "combat") this.mechanicCardPlayed(next, card.effects);
     }
     if (action.type === "ready" || action.type === "unready") {
       hero.ready = action.type === "ready";

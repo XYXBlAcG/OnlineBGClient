@@ -470,3 +470,31 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
     ],
   },
 };
+
+
+export const washizuGuide: BeginnerGuide = {
+  goal: "四人透明立直单局。保持手牌进展，观察公开牌与弃牌，争取有役和牌。",
+  steps: [
+    {
+      title: "看清透明牌",
+      text: "每种牌有三张透明牌、一张暗牌。带蓝色边角的是透明牌，他家也能看到牌面。",
+      tip: "把他家透明牌、公开副露和弃牌合起来判断剩余牌张。",
+      details: [],
+      focus: { target: "scmj.hand", caption: "点击手牌选择，再确认出牌。" },
+    },
+    {
+      title: "立直与响应",
+      text: "门清听牌时，选中合适的弃牌可宣告立直。立直后通常只能打刚摸到的牌。",
+      tip: "打过任意一种当前听牌会振听，此时可以自摸。",
+      details: ["吃仅限下家。荣和优先于碰杠，碰杠优先于吃。"],
+      focus: { target: "scmj.actions", caption: "牌桌只显示当前合法动作。" },
+    },
+    {
+      title: "单局结算",
+      text: "一次和牌或流局即结束。和牌按番符结算，流局按听牌情况结算。",
+      tip: "宝牌能增加番数，和牌仍需至少一个役。",
+      details: [],
+      focus: { target: "scmj.score", caption: "在结算明细查看役种、番符和分数变化。" },
+    },
+  ],
+};

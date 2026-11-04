@@ -10,6 +10,8 @@ import {
 } from "../../domain/mahjong/rules";
 import {
   suitNames,
+  isTransparent,
+  mahjongModeNames,
   tileName,
   tileSuit,
   tileType,
@@ -38,7 +40,8 @@ export function SichuanTable({
       tiles: [] as number[],
     }),
     [scores, setScores] = useState(false),
-    [help, setHelp] = useState(false);
+    [help, setHelp] = useState(false),
+    [inspectSeat, setInspectSeat] = useState<number | null>(null);
   const visible = snapshot.state?.kind === "scmj" ? snapshot.state.view : null,
     viewer = Math.max(0, snapshot.actor);
   const selectionKey = visible
@@ -48,6 +51,7 @@ export function SichuanTable({
   const waits = useMemo(
     () =>
       visible &&
+      !visible.riichi &&
       visible.hands[viewer].every((t) => t >= 0) &&
       visible.hands[viewer].length % 3 === 1
         ? winningTiles(
@@ -72,10 +76,24 @@ export function SichuanTable({
     turn = interactive && rules.actors(state).includes(me),
     phase = v.phase,
     hand = v.hands[me];
+  const transparent = !!v.riichi;
+  const PublicHand = transparent ? "button" : "div";
+  const modeName = mahjongModeNames[transparent ? "washizu" : "sichuan"];
+  const choices =
+    transparent && turn
+      ? (snapshot.candidates ?? []).flatMap(({ action, label }) =>
+          action.type === "scmj-action" ? [{ move: action.move, label }] : [],
+        )
+      : [];
+  const discard = choices.find(
+    (choice) =>
+      choice.move.type === "discard" && choice.move.tile === selected[0],
+  );
   const send = (move: MahjongMove) => {
     if (turn) act({ type: "scmj-action", move });
   };
-  const response = turn && phase === "response" ? responseChoices(v, me) : [];
+  const response =
+    !transparent && turn && phase === "response" ? responseChoices(v, me) : [];
   const exchangeValid =
     selected.length === 3 && new Set(selected.map(tileSuit)).size === 1;
   const selectedTile = selected[0],
@@ -124,23 +142,30 @@ export function SichuanTable({
           <small>
             {v.wins.some((w) => w.player === id)
               ? `已胡 · 第${v.wins.findIndex((w) => w.player === id) + 1}家`
-              : `${v.hands[id].length} 张 · ${v.lacks[id] < 0 ? "待定缺" : `缺${suitNames[v.lacks[id]]}`}`}{" "}
+              : transparent
+                ? `${v.hands[id].length} 张${v.riichi?.ready[id] ? " · 立直" : ""}`
+                : `${v.hands[id].length} 张 · ${v.lacks[id] < 0 ? "待定缺" : `缺${suitNames[v.lacks[id]]}`}`}{" "}
             · {v.scores[id] > 0 ? "+" : ""}
             {v.scores[id]} 分
           </small>
         </div>
       </div>
       {id !== me && (
-        <div
+        <PublicHand
           className="scmj-hidden-hand"
-          aria-label={`${snapshot.seats[id].name}的牌背`}
+          type={transparent ? "button" : undefined}
+          onClick={transparent ? () => setInspectSeat(id) : undefined}
+          aria-label={`${snapshot.seats[id].name}的公开手牌`}
         >
           {v.hands[id].map((tile, i) => (
             <span key={tile < 0 ? i : tile}>
-              <MahjongTile tile={tile} />
+              <MahjongTile
+                tile={tile}
+                transparent={transparent && isTransparent(tile)}
+              />
             </span>
           ))}
-        </div>
+        </PublicHand>
       )}
       <div
         className="scmj-melds"
@@ -151,11 +176,13 @@ export function SichuanTable({
             className="scmj-meld"
             key={i}
             aria-label={
-              meld.type === "pong"
-                ? "碰牌"
-                : meld.type === "closed"
-                  ? "暗杠"
-                  : "杠牌"
+              meld.type === "chi"
+                ? "吃牌"
+                : meld.type === "pong"
+                  ? "碰牌"
+                  : meld.type === "closed"
+                    ? "暗杠"
+                    : "杠牌"
             }
           >
             {meld.tiles.map((tile, j) => (
@@ -163,7 +190,10 @@ export function SichuanTable({
                 data-motion-key={tile >= 0 ? `scmj-tile-${tile}` : undefined}
                 key={j}
               >
-                <MahjongTile tile={tile} />
+                <MahjongTile
+                  tile={tile}
+                  transparent={transparent && isTransparent(tile)}
+                />
               </span>
             ))}
           </div>
@@ -180,7 +210,10 @@ export function SichuanTable({
             data-motion-key={`scmj-tile-${tile}`}
             key={tile}
           >
-            <MahjongTile tile={tile} />
+            <MahjongTile
+              tile={tile}
+              transparent={transparent && isTransparent(tile)}
+            />
           </span>
         ))}
       </div>
@@ -189,7 +222,7 @@ export function SichuanTable({
   return (
     <section className="scmj-table">
       <header className="scmj-heading">
-        <span>血战到底</span>
+        <span>{modeName}</span>
         <div>
           {!replay &&
             !snapshot.finished &&
@@ -211,6 +244,22 @@ export function SichuanTable({
             余牌 <strong>{v.wall.length}</strong>
           </span>
           <strong role="status">{title}</strong>
+          {v.riichi && (
+            <div className="scmj-dora">
+              <span>宝牌指示</span>
+              {v.riichi.dora.map((tile) => (
+                <MahjongTile key={tile} tile={tile} />
+              ))}
+              {v.riichi.ura.length > 0 && (
+                <>
+                  <span>里宝牌指示</span>
+                  {v.riichi.ura.map((tile) => (
+                    <MahjongTile key={tile} tile={tile} />
+                  ))}
+                </>
+              )}
+            </div>
+          )}
           {phase === "exchange" && (
             <small>
               换牌方向：
@@ -226,7 +275,12 @@ export function SichuanTable({
           {v.pending && (
             <small>
               {snapshot.seats[v.pending.actor].name} ·{" "}
-              {v.pending.rob ? "补杠" : "出牌"} · {tileName(v.pending.tile)}
+              {v.pending.rob
+                ? "补杠"
+                : v.pending.declaration
+                  ? "宣告立直"
+                  : "出牌"}{" "}
+              · {tileName(v.pending.tile)}
             </small>
           )}
           {v.wins.length > 0 && (
@@ -265,7 +319,29 @@ export function SichuanTable({
                 </button>
               </>
             )}
-            {turn && phase === "play" && (
+            {transparent && turn && phase === "play" && (
+              <button
+                className="primary-button"
+                disabled={!discard}
+                onClick={() => {
+                  if (discard) send(discard.move);
+                }}
+              >
+                出牌
+              </button>
+            )}
+            {choices
+              .filter(
+                ({ move }) =>
+                  move.type !== "discard" &&
+                  (move.type !== "riichi" || move.tile === selectedTile),
+              )
+              .map(({ move, label }) => (
+                <button key={JSON.stringify(move)} onClick={() => send(move)}>
+                  {label}
+                </button>
+              ))}
+            {!transparent && turn && phase === "play" && (
               <>
                 <button
                   className="primary-button"
@@ -326,9 +402,23 @@ export function SichuanTable({
                 key={tile < 0 ? i : tile}
                 className={`scmj-tile ${selected.includes(tile) ? "is-selected" : ""} ${tile >= 0 && tileSuit(tile) === v.lacks[me] ? "is-lack" : ""}`}
                 disabled={
-                  !turn || !["play", "exchange"].includes(phase) || tile < 0
+                  !turn ||
+                  !["play", "exchange"].includes(phase) ||
+                  tile < 0 ||
+                  (transparent &&
+                    !choices.some(
+                      ({ move }) =>
+                        move.type === "discard" && move.tile === tile,
+                    ))
                 }
-                aria-label={tileName(tile)}
+                aria-label={
+                  tileName(tile) +
+                  (transparent && tile >= 0
+                    ? isTransparent(tile)
+                      ? "，透明牌"
+                      : "，暗牌"
+                    : "")
+                }
                 aria-pressed={selected.includes(tile)}
                 data-motion-key={tile >= 0 ? `scmj-tile-${tile}` : undefined}
                 onClick={() =>
@@ -351,7 +441,10 @@ export function SichuanTable({
                   })
                 }
               >
-                <MahjongTile tile={tile} />
+                <MahjongTile
+                  tile={tile}
+                  transparent={transparent && isTransparent(tile)}
+                />
                 {tile >= 0 && tileSuit(tile) === v.lacks[me] && (
                   <span className="scmj-lack-mark">缺</span>
                 )}
@@ -359,9 +452,11 @@ export function SichuanTable({
             ))}
           </div>
           <footer className="scmj-footer">
-            <span data-guide-target="scmj.lack">
-              定缺：{v.lacks[me] < 0 ? "未选" : suitNames[v.lacks[me]]}
-            </span>
+            {!transparent && (
+              <span data-guide-target="scmj.lack">
+                定缺：{v.lacks[me] < 0 ? "未选" : suitNames[v.lacks[me]]}
+              </span>
+            )}
             <span>
               {phase === "exchange"
                 ? "先选三张同色牌，再确认"
@@ -382,16 +477,41 @@ export function SichuanTable({
           </footer>
         </div>
       </div>
-      <Panel open={scores} onOpenChange={setScores} title="四川麻将 · 结算明细">
+      {transparent && inspectSeat !== null && (
+        <Panel
+          open
+          onOpenChange={(open) => {
+            if (!open) setInspectSeat(null);
+          }}
+          title={`${snapshot.seats[inspectSeat].name} · 公开手牌`}
+        >
+          <div className="scmj-inspect-hand">
+            {v.hands[inspectSeat].map((tile, index) => (
+              <span key={index} aria-label={tileName(tile)}>
+                <MahjongTile tile={tile} transparent={isTransparent(tile)} />
+              </span>
+            ))}
+          </div>
+        </Panel>
+      )}
+      <Panel
+        open={scores}
+        onOpenChange={setScores}
+        title={`${modeName} · 结算明细`}
+      >
         <div className="scmj-score" data-guide-target="scmj.payments">
-          {snapshot.seats.map((seat, i) => (
-            <p key={i}>
-              <strong>{seat.name}</strong> {v.scores[i] > 0 ? "+" : ""}
-              {v.scores[i]} 分
-              {v.wins.find((w) => w.player === i) &&
-                ` · ${v.wins.find((w) => w.player === i)!.labels.join("、")}`}
-            </p>
-          ))}
+          {snapshot.seats.map((seat, i) => {
+            const win = v.wins.find((w) => w.player === i);
+            return (
+              <p key={i}>
+                <strong>{seat.name}</strong> {v.scores[i] > 0 ? "+" : ""}
+                {v.scores[i]} 分{win && ` · ${win.labels.join("、")}`}
+                {transparent &&
+                  win &&
+                  ` · ${win.fan} 番${win.fu ? ` ${win.fu} 符` : ""} · ${win.value} 点`}
+              </p>
+            );
+          })}
           {!v.payments.length && <p className="muted">本局尚无分数转移。</p>}
           {v.payments.map((p, i) => (
             <p key={i}>
@@ -401,33 +521,47 @@ export function SichuanTable({
           ))}
         </div>
       </Panel>
-      <Panel open={help} onOpenChange={setHelp} title="血战到底 · 本房规则">
-        <p>
-          108
-          张万筒条，四人桌；不能吃，只能碰、杠、胡。换三张后同时定缺，有缺门牌必须先打缺门，未打缺不能胡。
-        </p>
-        <p>
-          第一家胡牌后离场，其余继续。三家胡牌或牌墙耗尽结束；一张牌可被多家胡，胡优先于碰杠。
-        </p>
-        <p>
-          平胡 0 番；对对胡 1 番；金钩钓额外 1 番；七对 2 番，龙七对每组四张额外
-          1 番；清一色加 2 番，普通胡型每根加 1 番。龙七对的四张不再重复算根。
-        </p>
-        <p>
-          杠上花、杠上炮、抢补杠和海底各加 1 番。每次胡牌基础为 2 的番数次方，
-          {v.options.cap} 番封顶；自摸
-          {v.options.selfDraw === "base"
-            ? "每位付款者加付 1 底分"
-            : "加 1 番后按封顶计算"}
-          。
-        </p>
-        <p>
-          暗杠每位未胡者付 2 分，补杠各付 1 分，点杠者付 2
-          分。流局未打缺者付给未胡且已打缺者封顶分；未听者向听牌者付其最大可胡分，未听者退回杠费。已胡者不参与流局查叫。
-        </p>
-        <p>
-          过胡后，同一轮只能胡更高番，摸牌或碰杠轮到自己后重置。不启用呼叫转移、天地胡、幺九将对和末四张强制胡牌。
-        </p>
+      <Panel
+        open={help}
+        onOpenChange={setHelp}
+        title={`${modeName} · 本房规则`}
+      >
+        {transparent ? (
+          <p>
+            四人透明立直单局。每种牌有三张透明牌、一张暗牌。他家只能看到你的透明手牌。支持吃、碰、杠、立直与振听，按番符计分。多人可荣和同一张牌，立直棒归顺位最接近的和家。流局按听牌结算并退还本局立直棒。
+          </p>
+        ) : (
+          <>
+            <p>
+              108
+              张万筒条，四人桌；不能吃，只能碰、杠、胡。换三张后同时定缺，有缺门牌必须先打缺门，未打缺不能胡。
+            </p>
+            <p>
+              第一家胡牌后离场，其余继续。三家胡牌或牌墙耗尽结束；一张牌可被多家胡，胡优先于碰杠。
+            </p>
+            <p>
+              平胡 0 番；对对胡 1 番；金钩钓额外 1 番；七对 2
+              番，龙七对每组四张额外 1 番；清一色加 2 番，普通胡型每根加 1
+              番。龙七对的四张不再重复算根。
+            </p>
+            <p>
+              杠上花、杠上炮、抢补杠和海底各加 1 番。每次胡牌基础为 2
+              的番数次方，
+              {v.options.cap} 番封顶；自摸
+              {v.options.selfDraw === "base"
+                ? "每位付款者加付 1 底分"
+                : "加 1 番后按封顶计算"}
+              。
+            </p>
+            <p>
+              暗杠每位未胡者付 2 分，补杠各付 1 分，点杠者付 2
+              分。流局未打缺者付给未胡且已打缺者封顶分；未听者向听牌者付其最大可胡分，未听者退回杠费。已胡者不参与流局查叫。
+            </p>
+            <p>
+              过胡后，同一轮只能胡更高番，摸牌或碰杠轮到自己后重置。不启用呼叫转移、天地胡、幺九将对和末四张强制胡牌。
+            </p>
+          </>
+        )}
       </Panel>
     </section>
   );

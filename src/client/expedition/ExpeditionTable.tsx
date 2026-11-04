@@ -1,6 +1,8 @@
 import { VoteStatus } from "./VoteStatus";
 import { ballotPhase } from "../../domain/expedition/ballot";
 import { chapters, waystationRecovery } from "../../domain/expedition/chapters";
+import { ascensionProfile } from "../../domain/expedition/ascension";
+import { cardServices } from "../../domain/expedition/card-services";
 import { Inventory } from "./Inventory";
 import { RestSite, Shop } from "./CardNodes";
 import { EnemyIntentStrip } from "./BattleScene";
@@ -27,6 +29,7 @@ import {
 import type { Target } from "../../domain/expedition/types";
 import { ExpeditionCard } from "./ExpeditionCard";
 import { BattleScene } from "./BattleScene";
+import { ProfessionDetail } from "./ProfessionDetail";
 import "./expedition.css";
 import "./table.css";
 const rules = new ExpeditionAdventure(),
@@ -40,6 +43,12 @@ const phaseNames = {
   shop: "旅途商店",
   camp: "围炉休整",
   event: "秘塔奇遇",
+  oracle: "观星台",
+  contract: "誓约碑",
+  pawnshop: "当铺",
+  gamble: "赌局",
+  library: "禁书库",
+  hunt: "追猎台",
   recovery: "整理牌组",
   treasure: "选择遗物",
   holder: "分配遗物",
@@ -47,6 +56,24 @@ const phaseNames = {
   won: "远征胜利",
   lost: "远征结束",
 };
+const optionalNodeText = {
+  pawnshop: {
+    name: "当铺",
+    text: "典当旧遗物，或把金币换成新的命运。",
+  },
+  gamble: {
+    name: "赌局",
+    text: "概率与结果公开，押注后由远征种子裁决。",
+  },
+  library: {
+    name: "禁书库",
+    text: "禁书会永久占据牌组，也会给出稀有资源。",
+  },
+  hunt: {
+    name: "追猎台",
+    text: "用下一场精英的额外词条换取队伍赏金。",
+  },
+} as const;
 export function ExpeditionTable({
   snapshot,
   act,
@@ -65,11 +92,14 @@ export function ExpeditionTable({
   const state = snapshot.state as ExpeditionGameState,
     run = state.view,
     actor = snapshot.actor,
-    hero = run.combat.heroes[actor];
+    hero = run.combat.heroes[actor],
+    ascension = ascensionProfile(run.ascension);
   const [selected, setSelected] = useState<string | null>(null),
     [hover, setHover] = useState<Target | null>(null),
     [inspect, setInspect] = useState<number | null>(null),
-    [markMode, setMarkMode] = useState(false);
+    [markMode, setMarkMode] = useState(false),
+    [professionPreview, setProfessionPreview] = useState(0),
+    [professionOpen, setProfessionOpen] = useState(false);
   useEffect(() => {
     setSelected(null);
     setHover(null);
@@ -237,7 +267,7 @@ export function ExpeditionTable({
   ).length;
   return (
     <section
-      className="expedition-table"
+      className={`expedition-table exp-chapter-${run.chapter}`}
       aria-label="秘塔远征牌桌"
       tabIndex={0}
       data-motion-scope="game"
@@ -258,6 +288,7 @@ export function ExpeditionTable({
             {run.phase === "battle" ? ` · 第 ${run.combat.round} 回合` : ""}
           </strong>
         </div>
+        <span className="exp-ascension-badge">N{run.ascension}</span>
         {hero && run.phase === "battle" && (
           <span className="exp-resource" aria-label={`剩余能量 ${hero.energy}`}>
             能量 <strong>{hero.energy}</strong>
@@ -268,9 +299,25 @@ export function ExpeditionTable({
             金币 <strong>{hero.gold}</strong>
           </span>
         )}
+        {hero && (
+          <span className="exp-resource">
+            罗盘 <strong>{run.compass}</strong>
+          </span>
+        )}
+        {run.contract && (
+          <span className="exp-contract-badge">誓约 · 下一首领增援</span>
+        )}
         <button onClick={() => setInspect(Math.max(0, actor))}>
           牌组与遗物
         </button>
+        {hero && run.professions[actor] !== undefined && (
+          <button
+            aria-expanded={professionOpen}
+            onClick={() => setProfessionOpen((open) => !open)}
+          >
+            职业详情
+          </button>
+        )}
         {!replay && !snapshot.finished && onAutoplay && (
           <>
             <button
@@ -289,6 +336,11 @@ export function ExpeditionTable({
           </>
         )}
       </header>
+      {professionOpen && hero && (
+        <div className="exp-inline-profession">
+          <ProfessionDetail profession={hero.profession} />
+        </div>
+      )}
       {!["profession", "battle", "map"].includes(run.phase) &&
         !(run.phase === "tie" && run.votePhase === "map") && (
           <div className="exp-party" data-guide-target="expedition.party">
@@ -337,6 +389,8 @@ export function ExpeditionTable({
                 )
               }
               onClick={() => send({ type: "profession", profession: i })}
+              onMouseEnter={() => setProfessionPreview(i)}
+              onFocus={() => setProfessionPreview(i)}
             >
               <span>{h.icon}</span>
               <h2>{h.name}</h2>
@@ -348,6 +402,22 @@ export function ExpeditionTable({
             {Object.keys(run.professions).length}/{run.combat.heroes.length}{" "}
             人已选 · 可以选择相同职业
           </p>
+          <details className="exp-profession-browser">
+            <summary>查看职业详细信息</summary>
+            <div className="exp-profession-tabs" role="tablist">
+              {heroContent.map((profession, index) => (
+                <button
+                  key={profession.name}
+                  role="tab"
+                  aria-selected={professionPreview === index}
+                  onClick={() => setProfessionPreview(index)}
+                >
+                  {profession.icon} {profession.name}
+                </button>
+              ))}
+            </div>
+            <ProfessionDetail profession={professionPreview} />
+          </details>
         </div>
       )}
       {ballotPhase(run) && ballotPhase(run) !== "map" && (
@@ -456,6 +526,11 @@ export function ExpeditionTable({
                 (sum, h, i) => sum + preview.heroes[i].block - h.block,
                 0,
               )}
+            </p>
+          )}
+          {hero && hero.silenced > 0 && (
+            <p className="exp-preview" role="status">
+              你本轮被封口，不能出牌或使用药水；队友的净化可以提前解除。
             </p>
           )}
           <div className="exp-ally-bar">
@@ -582,6 +657,9 @@ export function ExpeditionTable({
           items={run.shop[actor] ?? []}
           moves={moves.map((c) => c.move)}
           send={send}
+          removalPrice={Math.ceil(
+            cardServices.removalPrice * ascension.shopPrice,
+          )}
         />
       )}
       {run.phase === "event" && (
@@ -632,6 +710,16 @@ export function ExpeditionTable({
           <p className="muted">选择对全队生效；支出由每人分别承担。</p>
         </div>
       )}
+      {run.phase in optionalNodeText && (
+        <div className="exp-node-content">
+          <h2>
+            {optionalNodeText[run.phase as keyof typeof optionalNodeText].name}
+          </h2>
+          <p>
+            {optionalNodeText[run.phase as keyof typeof optionalNodeText].text}
+          </p>
+        </div>
+      )}
       {run.phase === "treasure" && (
         <div className="exp-relic-choices">
           {run.treasure.map((id) => (
@@ -667,6 +755,7 @@ export function ExpeditionTable({
           moves={moves.filter((c) => c.move.type !== "ping").map((c) => c.move)}
           send={send}
           recovery={run.phase === "recovery"}
+          recoveryMultiplier={ascension.campHealing}
         />
       )}
       {!(run.phase === "tie" && run.votePhase === "map") &&
@@ -705,6 +794,12 @@ export function ExpeditionTable({
         "treasure",
         "holder",
         "recovery",
+        "oracle",
+        "contract",
+        "pawnshop",
+        "gamble",
+        "library",
+        "hunt",
       ].includes(run.phase) && (
         <small className="exp-progress">
           {waiting}/{run.combat.heroes.length} 人已确认

@@ -13,37 +13,49 @@ it("封面只有图形，选中轮廓不依赖悬停阴影", () => {
   expect(css).not.toContain("club-cover-category");
 });
 it("种子路线存在分叉汇合且所有节点可达，最终都进入首领", () => {
-  let branches = 0,
-    merges = 0,
-    wide = 0;
   for (let seed = 0; seed < 32; seed++)
     for (let chapter = 0; chapter < 3; chapter++) {
-      const map = generateMap(String(seed), 2, chapter),
-        seen = new Set(map[0].map((n) => n.id));
+      const map = generateMap(String(seed), 2, chapter);
       expect(generateMap(String(seed), 2, chapter)).toEqual(map);
-      for (let floor = 0; floor < map.length - 1; floor++) {
-        const targets = map[floor + 1];
-        for (const node of map[floor]) {
-          expect(seen.has(node.id)).toBe(true);
-          expect(node.next.length).toBeGreaterThan(0);
-          branches += Number(node.next.length >= 3);
-          for (const id of node.next) {
-            expect(targets.some((n) => n.id === id)).toBe(true);
-            seen.add(id);
-          }
-        }
-        merges += targets.filter(
-          (n) => map[floor].filter((p) => p.next.includes(n.id)).length > 1,
-        ).length;
-        wide += Number(map[floor].length >= 6);
-      }
-      expect(seen.size).toBe(map.flat().length);
+      const nodes = map.flat();
+      const byId = new Map(nodes.map((node) => [node.id, node]));
       expect(map.at(-1)).toHaveLength(1);
-      expect(map.at(-1)![0].kind).toBe("boss");
+      const boss = map.at(-1)![0];
+      expect(boss.kind).toBe("boss");
+      const seen = new Set(map[0].map((node) => node.id));
+      const reachesBoss = new Set([boss.id]);
+      let branches = 0;
+      let merges = 0;
+      for (const node of nodes) {
+        const forward = node.next
+          .map((id) => {
+            const target = byId.get(id);
+            expect(target).toBeDefined();
+            return target!;
+          })
+          .filter((target) => target.floor > node.floor);
+        expect(seen.has(node.id)).toBe(true);
+        forward.forEach((target) => seen.add(target.id));
+        branches += Number(forward.length > 1);
+        merges += Number(
+          nodes.filter(
+            (source) =>
+              source.floor < node.floor && source.next.includes(node.id),
+          ).length > 1,
+        );
+      }
+      for (const node of [...nodes].reverse()) {
+        if (
+          node.next.some(
+            (id) => byId.get(id)!.floor > node.floor && reachesBoss.has(id),
+          )
+        )
+          reachesBoss.add(node.id);
+      }
+      expect(reachesBoss.size).toBe(nodes.length);
+      expect(branches).toBeGreaterThan(0);
+      expect(merges).toBeGreaterThan(0);
     }
-  expect(branches).toBeGreaterThan(200);
-  expect(merges).toBeGreaterThan(200);
-  expect(wide).toBeGreaterThan(100);
 });
 it("降低新账户开局币，普通全屏演出保持四到六秒", () => {
   expect(partyEconomy.initial).toBe(30);

@@ -26,10 +26,22 @@ export const expeditionResources = {
     maximum: 20,
     hint: "溢出治疗转化为格挡，每转化 1 点消耗 1 层祝福。",
   },
+  dice: {
+    name: "骰子",
+    maximum: 6,
+    hint: "骰术师每轮获得 2 枚；部分卡牌消耗或按当前骰子增幅。",
+  },
 } as const;
 export type HeroResources = Record<keyof typeof expeditionResources, number>;
 export function initialResources(): HeroResources {
-  return { heat: 0, turret: 0, focus: 0, echo: 0, blessing: 0 };
+  return {
+    heat: 0,
+    turret: 0,
+    focus: 0,
+    echo: 0,
+    blessing: 0,
+    dice: 0,
+  };
 }
 
 export const resourceEffects = {
@@ -38,4 +50,5 @@ export const resourceEffects = {
   focus: "focus",
   echo: "echo",
   blessing: "blessing",
+  dice: "dice",
 } as const;

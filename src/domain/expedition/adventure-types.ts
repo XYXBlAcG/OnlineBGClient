@@ -5,13 +5,18 @@ import { chapters } from "./chapters";
 import type { RelicId, StoryEventId, PotionId } from "./world";
 export const expeditionOptionsSchema = z.object({
   difficulty: z.enum(["story", "standard", "challenge"]).default("standard"),
+  ascension: z.number().int().min(0).max(10).default(0),
 });
 export const expeditionDifficulties = {
-  story: { label: "旅途", multiplier: 0.78 },
-  standard: { label: "标准", multiplier: 1 },
-  challenge: { label: "挑战", multiplier: 1.2 },
+  story: { label: "旅途", multiplier: 0.82, legacyMultiplier: 0.85 },
+  standard: { label: "标准", multiplier: 1.11, legacyMultiplier: 1.15 },
+  challenge: { label: "挑战", multiplier: 1.37, legacyMultiplier: 1.42 },
 } as const;
-export type ExpeditionOptions = z.infer<typeof expeditionOptionsSchema>;
+export type ResolvedExpeditionOptions = z.infer<typeof expeditionOptionsSchema>;
+export type ExpeditionOptions = {
+  difficulty: ResolvedExpeditionOptions["difficulty"];
+  ascension?: number;
+};
 const targetSchema = z.object({
   side: z.enum(["hero", "enemy"]),
   index: z.number().int().min(0).max(3),
@@ -62,7 +67,21 @@ export const expeditionMoveSchema = z.discriminatedUnion("type", [
 ]);
 export type ExpeditionMove = z.infer<typeof expeditionMoveSchema>;
 export type NodeKind =
-  "battle" | "elite" | "boss" | "event" | "shop" | "camp" | "treasure";
+  | "battle"
+  | "elite"
+  | "boss"
+  | "event"
+  | "shop"
+  | "camp"
+  | "treasure"
+  | "oracle"
+  | "contract"
+  | "forge"
+  | "secret"
+  | "pawnshop"
+  | "gamble"
+  | "library"
+  | "hunt";
 export const expeditionMapSchema = z
   .array(
     z
@@ -87,7 +106,27 @@ export const expeditionMapSchema = z
             "shop",
             "camp",
             "treasure",
+            "oracle",
+            "contract",
+            "forge",
+            "secret",
+            "pawnshop",
+            "gamble",
+            "library",
+            "hunt",
           ]),
+          route: z
+            .enum([
+              "vanguard",
+              "provision",
+              "ritual",
+              "abyss",
+              "pilgrimage",
+              "blackmarket",
+              "slayer",
+              "forbidden",
+            ])
+            .optional(),
           next: z
             .array(z.string().max(40))
             .max(Math.max(...chapters.map((chapter) => chapter.width))),
@@ -108,6 +147,7 @@ export interface ExpeditionRun {
   rulesVersion: 1;
   contentVersion: 1;
   campaignVersion: 1 | 2;
+  tuning?: 1 | 2;
   chapter: number;
   history: { chapter: number; path: string[] }[];
   luck: number[];
@@ -115,7 +155,8 @@ export interface ExpeditionRun {
   eventRerolls: number;
   runId: string;
   seed: string;
-  difficulty: ExpeditionOptions["difficulty"];
+  difficulty: ResolvedExpeditionOptions["difficulty"];
+  ascension: number;
   phase:
     | "waystation"
     | "profession"
@@ -127,6 +168,12 @@ export interface ExpeditionRun {
     | "event"
     | "recovery"
     | "treasure"
+    | "oracle"
+    | "contract"
+    | "pawnshop"
+    | "gamble"
+    | "library"
+    | "hunt"
     | "holder"
     | "tie"
     | "won"
@@ -147,7 +194,17 @@ export interface ExpeditionRun {
     options: Record<string, string>;
   };
   tieChoices: string[];
-  votePhase: "map" | "event" | "treasure" | "holder";
+  votePhase:
+    | "map"
+    | "event"
+    | "treasure"
+    | "holder"
+    | "oracle"
+    | "contract"
+    | "pawnshop"
+    | "gamble"
+    | "library"
+    | "hunt";
   nodeReady: boolean[];
   shop: ShopItem[][];
   shopRemoved: boolean[];
@@ -157,6 +214,9 @@ export interface ExpeditionRun {
   selectedRelic: RelicId | null;
   pending: { kind: "upgrade" | "remove"; left: number }[][];
   rewardElite: boolean;
+  contract: "brood" | null;
+  hunt: boolean;
+  compass: number;
   sequence: number;
   marks: {
     actor: number;

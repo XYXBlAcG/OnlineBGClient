@@ -33,7 +33,17 @@ describe("合作远征房间", () => {
         move: { type: "vote", choice: "0-0" },
       }),
     ).toThrow();
-    const move = room.snapshot(a).candidates[0].action;
+    const snapshot = room.snapshot(a),
+      battleId =
+        room.state?.kind === "expedition"
+          ? room.state.view.map[0].find((node) => node.kind === "battle")!.id
+          : "",
+      move = snapshot.candidates.find(
+        (candidate) =>
+          candidate.action.type === "expedition-action" &&
+          candidate.action.move.type === "vote" &&
+          candidate.action.move.choice === battleId,
+      )!.action;
     room.act(a, "vote-a", room.version, move);
     const after = room.version;
     room.act(a, "vote-a", version, move);

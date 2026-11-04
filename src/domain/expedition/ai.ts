@@ -5,17 +5,17 @@ import type { Candidate, DecisionCandidate, GameState } from "../types";
 import { ExpeditionRules, allCards, incoming } from "./rules";
 import { cards, definition, heroContent, type CardId } from "./content";
 import { relics, potions, storyEvents } from "./world";
-import { mapChoices } from "./map";
+import { mapChoices, travelCost } from "./map";
 import { shuffled } from "./random";
 const combat = new ExpeditionRules();
 export class ExpeditionStrategy extends Strategy {
-  static readonly version = "expedition-team-2";
+  static readonly version = "expedition-team-3";
   readonly version = ExpeditionStrategy.version;
   budget(request: SearchRequest) {
     return {
       easy: { samples: 0, depth: 0, shortlist: 0 },
-      normal: { samples: 3, depth: 3, shortlist: 3 },
-      hard: { samples: 8, depth: 6, shortlist: 4 },
+      normal: { samples: 0, depth: 0, shortlist: 0 },
+      hard: { samples: 0, depth: 0, shortlist: 0 },
     }[request.difficulty];
   }
   protected evaluate(
@@ -34,7 +34,9 @@ export class ExpeditionStrategy extends Strategy {
       hero = run.combat.heroes[actor],
       move = candidate.action.move;
     const cardValue = (id: CardId) => {
-      const card = cards[id];
+      const card = cards[id],
+        diceCost = "diceCost" in card ? (card.diceCost ?? 0) : 0,
+        hpCost = "hpCost" in card ? (card.hpCost ?? 0) : 0;
       return (
         card.effects.reduce(
           (sum, e) =>
@@ -60,10 +62,12 @@ export class ExpeditionStrategy extends Strategy {
                 focus: 4,
                 echo: 0.8,
                 blessing: 0.6,
+                dice: 3,
               }[e.kind],
           0,
         ) /
-          (card.cost + 0.7) -
+          (card.cost + diceCost * 0.6 + 0.7) -
+        hpCost * 0.35 -
         Math.max(0, allCards(hero).length - 14) * 1.2
       );
     };
@@ -77,7 +81,22 @@ export class ExpeditionStrategy extends Strategy {
           : actor % heroContent.length) === move.profession
           ? 5
           : 0);
-    if (move.type === "ready" || move.type === "done") score = 0;
+    if (move.type === "ready") {
+      const mechanic = run.combat.mechanic,
+        pace =
+          mechanic?.id === "trial" || mechanic?.id === "furnace"
+            ? mechanic.phase > 0
+              ? mechanic.id === "trial"
+                ? 3
+                : 4
+              : mechanic.id === "trial"
+                ? 2
+                : 3
+            : 0;
+      score =
+        mechanic && pace > 0 && mechanic.track + pace >= mechanic.max ? -16 : 4;
+    }
+    if (move.type === "done") score = 0;
     if (move.type === "advance")
       score =
         move.choice === "forge"
@@ -103,7 +122,11 @@ export class ExpeditionStrategy extends Strategy {
         (sum, e, i) =>
           sum +
           (e.hp - afterEnemies[i].hp) +
-          (e.hp > 0 && afterEnemies[i].hp <= 0 ? 14 : 0),
+          (e.hp > 0 && afterEnemies[i].hp <= 0
+            ? e.role === "part"
+              ? 22
+              : 14
+            : 0),
         0,
       );
       run.combat.heroes.forEach((h, i) => {
@@ -152,7 +175,13 @@ export class ExpeditionStrategy extends Strategy {
               dexterity: 4,
               thorns: 3,
               regen: 3,
-              cleanse: hero.poison + hero.weak + hero.vulnerable,
+              cleanse:
+                hero.poison +
+                hero.weak +
+                hero.vulnerable +
+                hero.spore * 2 +
+                Number(hero.tether !== null) * 3 +
+                Number(run.combat.mechanic?.id === "fate"),
               heat: hero.heat >= 5 ? -3 : -0.5,
               cool: hero.heat > 3 ? 2 : 0,
               device:
@@ -161,9 +190,36 @@ export class ExpeditionStrategy extends Strategy {
               focus: hero.focus < expeditionResources.focus.maximum ? 4 : 0,
               echo: 0.8,
               blessing: hero.blessing < 10 ? 0.5 : 0,
+              dice: hero.dice < expeditionResources.dice.maximum ? 3 : 0,
             }[e.kind],
         0,
       );
+      if (
+        move.type === "card" &&
+        (run.combat.mechanic?.id === "fate" ||
+          run.combat.mechanic?.id === "tempo") &&
+        run.combat.mechanic.track + 1 >= run.combat.mechanic.max &&
+        !run.combat.enemies.some(
+          (enemy, index) => enemy.hp > 0 && afterEnemies[index].hp <= 0,
+        )
+      )
+        score -= 8;
+      if (move.type === "card" && run.combat.mechanic?.id === "mirror") {
+        const kind = effects.some((effect) => effect.kind === "damage")
+          ? "attack"
+          : "skill";
+        if (
+          run.combat.mechanic.lastCardKind === kind &&
+          run.combat.mechanic.track + 1 >= run.combat.mechanic.max
+        )
+          score -= 7;
+        if (
+          run.combat.mechanic.lastCardKind &&
+          run.combat.mechanic.lastCardKind !== kind &&
+          run.combat.mechanic.track > 0
+        )
+          score += 2;
+      }
       score -= move.type === "potion" ? 9 : 0.5;
       if (audit) {
         const damage = run.combat.enemies.reduce(
@@ -230,6 +286,7 @@ export class ExpeditionStrategy extends Strategy {
       const phase = run.phase === "tie" ? run.votePhase : run.phase;
       if (phase === "map") {
         const node = mapChoices(run).find((n) => n.id === move.choice)!;
+        const travel = travelCost(run, node);
         const health =
           run.combat.heroes.reduce((sum, h) => sum + h.hp / h.maxHp, 0) /
           run.combat.heroes.length;
@@ -241,7 +298,17 @@ export class ExpeditionStrategy extends Strategy {
           treasure: 30,
           event: 16,
           shop: hero.gold >= 65 ? 23 : 3,
+          oracle: 24,
+          contract: health > 0.65 ? 18 : -4,
+          forge: 30,
+          secret: 28,
+          pawnshop: 20,
+          gamble: 12,
+          library: 8,
+          hunt: 19,
         }[node.kind];
+        score -= travel.cost * 8;
+        if (travel.visited) score -= 60;
       } else if (phase === "event") {
         score =
           move.choice === "reroll"
@@ -268,7 +335,43 @@ export class ExpeditionStrategy extends Strategy {
                                 : 12),
                   0,
                 );
-      } else if (phase === "holder")
+      } else if (phase === "oracle")
+        score =
+          move.choice === "luck"
+            ? 16
+            : move.choice === "compass"
+              ? run.compass < 2
+                ? 18
+                : 8
+              : Math.min(8, hero.maxHp - hero.hp) * 2;
+      else if (phase === "contract")
+        score =
+          move.choice === "accept"
+            ? hero.gold < 80 &&
+              run.combat.heroes.reduce(
+                (sum, member) => sum + member.hp / member.maxHp,
+                0,
+              ) /
+                run.combat.heroes.length >
+                0.7
+              ? 12
+              : -6
+            : 2;
+      else if (phase === "pawnshop")
+        score = move.choice === "sell" ? 8 : move.choice === "buy" ? 15 : 1;
+      else if (phase === "gamble")
+        score =
+          move.choice === "safe"
+            ? 10
+            : move.choice === "risk"
+              ? hero.hp > hero.maxHp * 0.65
+                ? 14
+                : -8
+              : 0;
+      else if (phase === "library") score = move.choice === "bargain" ? 9 : 0;
+      else if (phase === "hunt")
+        score = move.choice === "accept" ? (hero.gold < 60 ? 15 : 8) : 1;
+      else if (phase === "holder")
         score = 20 - run.combat.heroes[Number(move.choice)].relics.length * 3;
       else if (phase === "treasure")
         score = relics[move.choice as keyof typeof relics].effects.reduce(
@@ -308,6 +411,11 @@ export class ExpeditionStrategy extends Strategy {
           this.engine.seed(
             `${request.seed}:${JSON.stringify(candidate.action)}`,
           )() * 8;
+      else if (request.difficulty === "normal")
+        result.score +=
+          this.engine.seed(
+            `${request.seed}:${JSON.stringify(candidate.action)}`,
+          )() * 3;
       return result;
     });
   }
@@ -351,7 +459,15 @@ export class ExpeditionStrategy extends Strategy {
       run.combat.enemies.reduce(
         (sum, e) => sum + e.hp + e.block * 0.4 - e.poison * 2,
         0,
-      )
+      ) -
+      (run.combat.mechanic
+        ? (run.combat.mechanic.track / run.combat.mechanic.max) * 18 +
+          run.combat.heroes.reduce(
+            (sum, hero) =>
+              sum + hero.spore * 4 + Number(hero.tether !== null) * 2,
+            0,
+          )
+        : 0)
     );
   }
 }

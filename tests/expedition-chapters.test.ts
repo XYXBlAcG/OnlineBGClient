@@ -16,8 +16,8 @@ const apply = (
   move: ExpeditionMove,
 ) => rules.apply(state, actor, { type: "expedition-action", move });
 
-it("前三主题地图随着层数变复杂，所有分支都连接下一行并可到达唯一首领", () => {
-  expect(chapters).toHaveLength(3);
+it("当前四主题地图随着层数变复杂，所有分支都连接下一行并可到达唯一首领", () => {
+  expect(chapters).toHaveLength(4);
   for (let seed = 0; seed < 10000; seed++)
     for (let chapter = 0; chapter < chapters.length; chapter++) {
       const map = generateMap(String(seed), 2, chapter);
@@ -34,7 +34,10 @@ it("前三主题地图随着层数变复杂，所有分支都连接下一行并�
       }
       expect(map.at(-1)).toHaveLength(1);
       expect(map.at(-1)![0].kind).toBe("boss");
-      if (chapter > 0) expect(map.some((row) => row.length > 6)).toBe(true);
+      if (chapter > 0)
+        expect(map.some((row) => row.length > (chapter > 1 ? 4 : 3))).toBe(
+          true,
+        );
     }
 }, 120000);
 

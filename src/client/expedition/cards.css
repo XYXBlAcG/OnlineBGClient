@@ -4,6 +4,27 @@
   --exp-card-secondary: #465062;
   --exp-card-edge: #aab2be;
 }
+.exp-card[data-card-role="temporary"],
+.exp-card[data-card-role="curse"] {
+  filter: saturate(0.45);
+}
+.exp-card[data-card-role="temporary"] {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 8px,
+      color-mix(in srgb, var(--exp-red) 9%, transparent) 8px 12px
+    ),
+    var(--exp-paper);
+}
+.exp-card[data-card-role="curse"] {
+  box-shadow: inset 0 0 0 2px
+    color-mix(in srgb, var(--exp-red) 70%, transparent);
+}
+.exp-card[data-card-role="curse"] .exp-card-text,
+.exp-card[data-card-role="temporary"] .exp-card-text {
+  color: var(--exp-red);
+}
 [data-color-scheme="dark"] .exp-card {
   --exp-paper: #303644;
   --exp-card-foreground: #f1f3f8;
@@ -54,6 +75,11 @@
   align-items: center;
   gap: 7px;
   padding-right: 8px;
+}
+.exp-card-top small {
+  color: var(--exp-red);
+  font-size: 0.72em;
+  font-weight: 750;
 }
 .exp-card-top strong {
   font-size: 12px;

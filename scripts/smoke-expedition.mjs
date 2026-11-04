@@ -91,6 +91,10 @@ try {
       (m) => m.type === "snapshot" && m.snapshot.state?.view.phase === "map",
     )
   ).snapshot;
+  const battleId =
+    map.state?.kind === "expedition"
+      ? map.state.view.map[0].find((node) => node.kind === "battle").id
+      : "";
   a.send({
     type: "action",
     token: sa.token,
@@ -113,7 +117,7 @@ try {
       version: map.version,
       action: {
         type: "expedition-action",
-        move: { type: "vote", choice: "f0-0" },
+        move: { type: "vote", choice: battleId },
       },
     });
   const battle = (
@@ -177,9 +181,9 @@ try {
   );
   const evidence = {
     passed: true,
-    runtime:process.version,
-    serverEntry:process.env.TEST_SERVER_ENTRY||"dist-server/main.mjs",
-    guiOperated:false,
+    runtime: process.version,
+    serverEntry: process.env.TEST_SERVER_ENTRY || "dist-server/main.mjs",
+    guiOperated: false,
     checks: [
       "two-client concurrent actions",
       "stale window rejection",

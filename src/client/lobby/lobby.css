@@ -471,3 +471,24 @@
 .lobby-shell .game-card-main:active {
   transform: none;
 }
+
+.opening-choice {
+  min-inline-size: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.opening-choice legend {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.opening-modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 10px;
+}
+.opening-modes button {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+}

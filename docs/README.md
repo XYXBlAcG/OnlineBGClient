@@ -22,7 +22,7 @@
 - [界面、游戏动效与自选头像](ui-motion-plan.md)
 
 - [游戏动画方案演示](game-motion-demo.md)
-- [四川麻将：血战到底、AI 与验证入口](sichuan-mahjong-plan.md)
+- [麻将：四川血战、瓦西子透明麻将与验证入口](mahjong.md)
 
 - [多人房间、记录管理与手动验收](multiplayer-room-experience.md)
 - [手机沉浸牌桌、主题与公网重试验收](mobile-table-review.md)

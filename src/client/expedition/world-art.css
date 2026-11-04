@@ -53,7 +53,21 @@
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 0 #1c273125);
 }
-.exp-route .exp-route-canvas {background:var(--board-surface);}
+.exp-route .exp-route-canvas {
+  background: var(--board-surface);
+}
+.exp-route.exp-biome-3 .exp-route-canvas {
+  background:
+    radial-gradient(circle at 50% 14%, #b6c7f42e, transparent 34%),
+    radial-gradient(circle at 48% 48%, #8fd3dc1f, transparent 46%),
+    var(--board-surface);
+}
+[data-color-scheme="dark"] .exp-route.exp-biome-3 .exp-route-canvas {
+  background:
+    radial-gradient(circle at 50% 14%, #98aef033, transparent 34%),
+    radial-gradient(circle at 48% 48%, #5bc1cc24, transparent 46%),
+    var(--board-surface);
+}
 [data-motion="false"] .exp-pixel-figure {
   animation: none;
 }

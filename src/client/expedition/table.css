@@ -66,6 +66,33 @@
   gap: 3px;
   margin-right: auto;
 }
+.exp-contract-badge {
+  color: var(--exp-red);
+  font-size: 12px;
+  font-weight: 650;
+}
+.exp-ascension-summary {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.exp-ascension-summary p {
+  margin: 0;
+}
+.exp-ascension-summary strong {
+  color: var(--exp-red);
+  font-size: 16px;
+  font-weight: 800;
+}
+.exp-ascension-summary p:last-child strong {
+  color: var(--exp-green);
+  font-size: 13px;
+}
 .exp-table-status small,
 .exp-progress {
   color: var(--muted);
@@ -96,6 +123,104 @@
   font-size: 42px;
   color: var(--accent);
 }
+.exp-profession-browser {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--canvas);
+}
+.exp-profession-browser > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 700;
+}
+.exp-profession-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.exp-profession-tabs button[aria-selected="true"] {
+  color: var(--accent-text);
+  background: var(--accent);
+}
+.exp-profession-detail {
+  display: grid;
+  gap: 8px;
+}
+.exp-inline-profession {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--canvas);
+}
+.exp-profession-detail > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.exp-profession-detail > header > span {
+  font-size: 32px;
+  color: var(--accent);
+}
+.exp-profession-detail > header > div {
+  display: grid;
+  gap: 2px;
+}
+.exp-profession-detail h3,
+.exp-profession-detail h4,
+.exp-profession-detail p {
+  margin: 0;
+}
+.exp-profession-detail > header > b {
+  margin-left: auto;
+  color: var(--exp-red);
+}
+.exp-profession-detail > small {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.exp-profession-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.exp-profession-summary > section,
+.exp-profession-detail > details {
+  min-width: 0;
+}
+.exp-profession-summary > section > div,
+.exp-profession-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+.exp-profession-summary span,
+.exp-profession-deck span {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+}
+.exp-profession-summary span b,
+.exp-profession-deck span b {
+  color: var(--text);
+  font-size: 12px;
+}
+.exp-profession-summary span small,
+.exp-profession-deck span small {
+  color: var(--exp-red);
+  font-size: 10px;
+}
+.exp-profession-summary span em,
+.exp-profession-deck span em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.45;
+}
 .expedition-table .exp-scene {
   height: auto;
   min-height: 100%;
@@ -112,6 +237,182 @@
       transparent 65%
     ),
     var(--canvas);
+}
+.exp-mechanic-board {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  left: 50%;
+  width: min(560px, calc(100% - 32px));
+  display: grid;
+  gap: 5px;
+  padding: 9px 12px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 10px 30px #111b241f;
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+.exp-mechanic-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.exp-mechanic-heading strong {
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.exp-mechanic-heading small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.exp-mechanic-heading b {
+  margin-left: auto;
+  color: var(--exp-ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.exp-mechanic-meter {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 62%, transparent);
+}
+.exp-mechanic-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--exp-blue), var(--exp-ink));
+  transition: width 240ms ease;
+}
+.exp-mechanic-board[data-mechanic="mirror"] .exp-mechanic-meter > span {
+  background: linear-gradient(90deg, #8098d8, #c5b9ff);
+}
+.exp-mechanic-board[data-mechanic="tide"] .exp-mechanic-meter > span {
+  background: linear-gradient(90deg, #65b5c8, #8fcde0);
+}
+.exp-mechanic-board[data-mechanic="silence"] .exp-mechanic-meter > span {
+  background: linear-gradient(90deg, #7c6cff, #d2ccff);
+}
+.exp-mechanic-board[data-mechanic="tribute"] .exp-mechanic-meter > span {
+  background: linear-gradient(90deg, #d9a521, #ffe39a);
+}
+.exp-mechanic-board > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.exp-mechanic-trigger {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--exp-ink);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px #111b2428;
+  transform: translateX(-50%);
+  animation: exp-mechanic-trigger 900ms ease both;
+}
+.exp-summon-board {
+  position: absolute;
+  z-index: 5;
+  top: 82px;
+  left: 50%;
+  display: flex;
+  max-width: calc(100% - 32px);
+  gap: 6px;
+  overflow-x: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.exp-summon-board > span {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: 0 4px 14px #111b241a;
+}
+.exp-summon-board b {
+  font-size: 11px;
+}
+.exp-summon-board small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.exp-summon-board > span[data-queued] {
+  color: var(--exp-red);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--exp-red) 45%, transparent);
+}
+.exp-modifier-board {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  right: 10px;
+  display: flex;
+  max-width: 160px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  pointer-events: none;
+}
+.exp-modifier-board span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--exp-red);
+  font-size: 10px;
+  font-weight: 650;
+  box-shadow: 0 4px 12px #111b2417;
+}
+.exp-mechanic-board.is-phase {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--exp-ink) 55%, transparent),
+    0 14px 36px #111b2430;
+  animation: exp-mechanic-phase 800ms ease both;
+}
+.exp-mechanic-board.is-break {
+  animation: exp-mechanic-break 560ms ease both;
+}
+.exp-unit.is-part .exp-target {
+  border-radius: 14px;
+  background: radial-gradient(ellipse at center, #78a6b51a, transparent 72%);
+}
+.exp-unit.is-part .exp-intent b {
+  color: var(--exp-blue);
+}
+.exp-unit.is-part .exp-unit-name small {
+  color: var(--exp-blue);
+}
+.exp-statuses .is-spore {
+  color: var(--exp-green);
+}
+.exp-statuses .is-tether {
+  color: var(--exp-blue);
+}
+.exp-scene.has-phase-shift .exp-enemies {
+  animation: exp-enemy-phase 720ms ease both;
+}
+.exp-scene.has-part-break .exp-unit.is-defeated {
+  animation: exp-part-break 520ms ease both;
+}
+.exp-chapter-3 .exp-scene {
+  background:
+    radial-gradient(ellipse at 62% 18%, #7d8fc42b, transparent 64%),
+    radial-gradient(ellipse at 35% 82%, #6eb6c31f, transparent 62%),
+    var(--canvas);
+}
+.exp-chapter-3 .exp-scene::before {
+  opacity: 0.24;
+  filter: hue-rotate(178deg) saturate(0.7);
 }
 .expedition-table .exp-scenery {
   border-radius: inherit;
@@ -220,6 +521,77 @@
 .exp-intent-strip p {
   font-size: 12px;
   margin: 6px 0 0;
+}
+@keyframes exp-mechanic-trigger {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.82);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.04);
+  }
+  74% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.96);
+  }
+}
+@keyframes exp-mechanic-phase {
+  0% {
+    filter: brightness(1);
+  }
+  32% {
+    filter: brightness(1.35);
+    transform: translateX(-50%) scale(1.025);
+  }
+  100% {
+    filter: brightness(1);
+    transform: translateX(-50%) scale(1);
+  }
+}
+@keyframes exp-mechanic-break {
+  0%,
+  100% {
+    transform: translateX(-50%);
+  }
+  32% {
+    transform: translateX(calc(-50% - 4px));
+  }
+  62% {
+    transform: translateX(calc(-50% + 4px));
+  }
+}
+@keyframes exp-enemy-phase {
+  0% {
+    filter: brightness(1);
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    filter: brightness(1.35);
+    transform: translateY(-5px) scale(1.025);
+  }
+  100% {
+    filter: brightness(1);
+    transform: none;
+  }
+}
+@keyframes exp-part-break {
+  0% {
+    filter: brightness(1.4);
+    transform: scale(1.04);
+  }
+  40% {
+    filter: grayscale(1) brightness(1.2);
+    transform: scale(0.94) rotate(-2deg);
+  }
+  100% {
+    filter: grayscale(1);
+    transform: scale(0.85);
+  }
 }
 .exp-table-hand,
 .exp-reward-cards,
@@ -513,6 +885,19 @@
   .expedition-table .exp-statuses span {
     font-size: 10px;
   }
+  .exp-mechanic-board {
+    width: calc(100% - 18px);
+    padding: 7px 9px 8px;
+  }
+  .exp-summon-board {
+    top: 66px;
+  }
+  .exp-mechanic-board > p {
+    display: none;
+  }
+  .exp-mechanic-heading strong {
+    font-size: 12px;
+  }
   .exp-ally-bar > div {
     flex: 1 1 45%;
   }
@@ -572,6 +957,20 @@
   .expedition-table .exp-unit-name small {
     display: none;
   }
+  .exp-mechanic-board {
+    top: 4px;
+    gap: 3px;
+    padding: 5px 8px;
+  }
+  .exp-summon-board {
+    top: 54px;
+  }
+  .exp-mechanic-board > p {
+    display: none;
+  }
+  .exp-mechanic-heading small {
+    display: none;
+  }
   .expedition-table .exp-scene {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 12px;
@@ -603,6 +1002,38 @@
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 12px;
 }
+.exp-route-intel {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--canvas);
+}
+.exp-route-intel strong {
+  font-size: 14px;
+}
+.exp-route-intel b {
+  color: var(--exp-ink);
+  font-size: 12px;
+}
+.exp-route-intel span,
+.exp-route-intel small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.exp-route-modifiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.exp-route-modifiers span {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--exp-red) 12%, transparent);
+  color: var(--exp-red);
+  font-size: 10px;
+}
 .exp-route > .map-viewport {
   flex: 1;
   min-height: 0;
@@ -631,17 +1062,19 @@
 .exp-route-svg {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   display: block;
   width: 100%;
   height: 100%;
 }
 .exp-route-links path {
-  stroke: var(--muted);
-  stroke-width: 3;
+  stroke: color-mix(in srgb, var(--text) 42%, var(--muted));
+  stroke-width: 2.4;
   vector-effect: non-scaling-stroke;
-  opacity: 0.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.74;
 }
 .exp-route-links path[data-visited="true"] {
   stroke: var(--accent);
@@ -652,6 +1085,30 @@
   stroke: var(--accent);
   stroke-dasharray: 7 5;
   opacity: 1;
+}
+.exp-route-links path[data-shortcut="true"] {
+  color: var(--exp-blue);
+  stroke: var(--exp-blue);
+  stroke-width: 2.5;
+  stroke-dasharray: 3 7;
+  opacity: 0.9;
+  animation: exp-route-glow 2.8s ease-in-out infinite;
+}
+.exp-route-links path[data-backward="true"] {
+  color: var(--exp-red);
+  stroke: var(--exp-red);
+  stroke-width: 2.5;
+  stroke-dasharray: 2 6;
+  opacity: 0.8;
+}
+.exp-route-links path[data-focus="muted"] {
+  opacity: 0.16;
+}
+.exp-route-links path[data-focus="active"] {
+  stroke: var(--accent);
+  stroke-width: 3.6;
+  opacity: 1;
+  animation: exp-route-focus 1.2s ease-in-out infinite alternate;
 }
 .exp-route-floor {
   fill: var(--muted);
@@ -667,10 +1124,13 @@
   gap: 2px;
   border: 0;
   border-radius: 16px;
-  background: var(--raised);
+  z-index: 1;
+  background: color-mix(in srgb, var(--raised) 96%, white 4%);
   color: var(--muted);
   font: clamp(7px, 1.9444cqw, 56px) system-ui;
-  box-shadow: 0 2px 9px #0001;
+  box-shadow:
+    0 4px 16px #0002,
+    0 0 0 5px color-mix(in srgb, var(--canvas) 94%, transparent);
   cursor: pointer;
 }
 .exp-route-node .exp-node-symbol {
@@ -707,6 +1167,30 @@
 .exp-route-node[data-visited="true"]:not([data-current="true"]) {
   color: var(--text);
 }
+.exp-route-node[data-route="vanguard"] {
+  border-top: 2px solid color-mix(in srgb, var(--exp-red) 70%, transparent);
+}
+.exp-route-node[data-route="provision"] {
+  border-top: 2px solid color-mix(in srgb, var(--exp-green) 70%, transparent);
+}
+.exp-route-node[data-route="ritual"] {
+  border-top: 2px solid color-mix(in srgb, var(--exp-blue) 70%, transparent);
+}
+.exp-route-node[data-route="abyss"] {
+  border-top: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.exp-route-node[data-route="pilgrimage"] {
+  border-top: 2px solid color-mix(in srgb, var(--exp-green) 70%, transparent);
+}
+.exp-route-node[data-route="blackmarket"] {
+  border-top: 2px solid color-mix(in srgb, #c28b13 70%, transparent);
+}
+.exp-route-node[data-route="slayer"] {
+  border-top: 2px solid color-mix(in srgb, var(--exp-red) 82%, transparent);
+}
+.exp-route-node[data-route="forbidden"] {
+  border-top: 2px solid color-mix(in srgb, #7c6cff 78%, transparent);
+}
 .exp-route-node:disabled {
   cursor: default;
 }
@@ -739,6 +1223,18 @@
     filter: drop-shadow(
       0 0 5px color-mix(in srgb, var(--accent) 50%, transparent)
     );
+  }
+}
+@keyframes exp-route-focus {
+  to {
+    filter: drop-shadow(
+      0 0 5px color-mix(in srgb, var(--accent) 60%, transparent)
+    );
+  }
+}
+@keyframes exp-silenced {
+  50% {
+    opacity: 0.45;
   }
 }
 
@@ -790,6 +1286,52 @@
   min-height: 0;
   overflow-y: auto;
   align-content: start;
+}
+.exp-route-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.exp-route-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.exp-route-legend span::before {
+  width: 18px;
+  height: 0;
+  border-top: 2px dashed var(--exp-blue);
+  content: "";
+}
+.exp-route-legend span[data-kind="backward"]::before {
+  border-color: var(--exp-red);
+  border-top-style: dotted;
+}
+.exp-ascension-badge {
+  align-self: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--exp-red) 14%, transparent);
+  color: var(--exp-red);
+  font-size: 11px;
+  font-weight: 700;
+}
+.expedition-table .exp-statuses .is-trait {
+  color: var(--exp-blue);
+  font-weight: 700;
+}
+.expedition-table .exp-statuses .is-silenced,
+.expedition-table .exp-statuses .is-loot {
+  color: var(--exp-red);
+  font-weight: 700;
+}
+.expedition-table .exp-statuses .is-silenced {
+  animation: exp-silenced 1.6s ease-in-out infinite;
+}
+.expedition-table .exp-statuses .is-loot {
+  color: #c28b13;
 }
 .exp-route-options {
   display: grid;
@@ -878,6 +1420,14 @@
   flex: none;
 }
 @media (max-width: 900px) {
+  .exp-profession-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .exp-profession-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
   .expedition-table .exp-route {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(180px, 1fr) auto;

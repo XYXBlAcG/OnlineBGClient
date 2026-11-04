@@ -7,13 +7,14 @@ import { bannerSchema, chatEventSchema } from "./banner";
 import { avatarSchema } from "./avatar";
 import { z } from "zod";
 import { actionSchema, configSchema } from "./protocol";
-import { gameCatalogue } from "./catalogue";
+import { gameCatalogue, gameRulesVersion } from "./catalogue";
 import { GameEngine } from "./engine";
 
 export const replaySchema = z.object({
   format: z.literal(1),
   graphwarInitial: graphwarInitialSchema.optional(),
   expeditionMap: expeditionMapSchema.optional(),
+  expeditionTuning: z.union([z.literal(1), z.literal(2)]).optional(),
   expeditionCampaign: z.union([z.literal(1), z.literal(2)]).optional(),
   room: z.string().min(1).max(12),
   config: configSchema,
@@ -87,7 +88,7 @@ export class Replay {
     this.record = replaySchema.parse(input);
     if (
       this.record.rulesVersion !==
-      gameCatalogue[this.record.config.kind].version
+      gameRulesVersion(this.record.config.kind, this.record.config.mahjong.mode)
     )
       throw new Error("该记录需要不同版本的游戏规则");
     if (
@@ -123,6 +124,7 @@ export class Replay {
           {
             expedition: this.record.config.expedition,
             expeditionMap: this.record.expeditionMap,
+            expeditionTuning: this.record.expeditionTuning ?? 1,
             expeditionCampaign: this.record.expeditionCampaign ?? 1,
             expeditionLayout: this.record.expeditionMap ? 2 : 1,
             dominion: this.record.config.dominion,

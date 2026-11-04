@@ -1,6 +1,8 @@
 import { expeditionResources, heatRule, resourceEffects } from "./resources";
 import { extraCards } from "./extra-cards";
 import type { Effect, CardDefinition } from "./card-types";
+import type { EncounterModifierId } from "./modifiers";
+import type { EnemyTraitId } from "./enemy-traits";
 export type { Effect, CardDefinition } from "./card-types";
 const baseCards = {
   strike: {
@@ -585,6 +587,7 @@ export interface CardInstance {
   id: string;
   card: CardId;
   upgradeLevel: number;
+  expiresRound?: number;
 }
 export function definition(instance: CardInstance): CardDefinition {
   const base: CardDefinition = cards[instance.card];
@@ -635,8 +638,9 @@ export function effectsText(
   return effects
     .map((effect) => {
       const n = effect.amount;
+      const hitCount = effect.kind === "damage" ? (effect.hits ?? 1) : 1;
       const text = {
-        damage: `造成 ${n} 伤害`,
+        damage: `造成 ${n} 伤害${hitCount > 1 ? `，连续 ${hitCount} 次` : ""}`,
         block: `获得 ${n} 格挡`,
         draw: `抽 ${n} 张牌`,
         poison: `施加 ${n} 层中毒`,
@@ -648,13 +652,14 @@ export function effectsText(
         dexterity: `敏捷 +${n}（提高格挡）`,
         thorns: `反伤 +${n}`,
         regen: `再生 +${n}（下轮开始恢复生命并衰减一层）`,
-        cleanse: "清除中毒、易伤和虚弱",
+        cleanse: "清除中毒、易伤、虚弱、孢子和根须连接",
         heat: `获得 ${n} 热量（上限 ${expeditionResources.heat.maximum}）；${expeditionResources.heat.hint}`,
         cool: `冷却 ${n} 热量`,
         device: `架设炮台 +${n}（上限 ${expeditionResources.turret.maximum}）；每轮行动结束时攻击生命最低的敌人`,
         focus: `蓄能 ${n}（上限 ${expeditionResources.focus.maximum}）；下一轮获得等量额外能量后清空`,
         echo: `积累 ${n} 回响（上限 ${expeditionResources.echo.maximum}）；下一轮开始时攻击生命最低的敌人后清空`,
         blessing: `获得 ${n} 祝福（上限 ${expeditionResources.blessing.maximum}）；每层将 1 点溢出治疗转化为格挡并消耗`,
+        dice: `获得 ${n} 骰子（上限 ${expeditionResources.dice.maximum}）`,
       }[effect.kind];
       const compact = {
         heat: `热量 +${n}（≥${heatRule.threshold} 时回合末自伤）`,
@@ -663,6 +668,7 @@ export function effectsText(
         focus: `下轮能量 +${n}（上限 ${expeditionResources.focus.maximum}）`,
         echo: `回响 +${n}（下轮攻击后清空）`,
         blessing: `祝福 +${n}（溢出治疗转为格挡）`,
+        dice: `骰子 +${n}`,
       };
       const scope =
         effect.target === "party"
@@ -687,14 +693,21 @@ export function effectsText(
                   ? "，追加自身热量两倍伤害"
                   : effect.scale === "turret"
                     ? "，追加炮台数值两倍伤害"
-                    : "")
+                    : effect.scale === "dice"
+                      ? "，追加当前骰子两倍伤害"
+                      : "")
       );
     })
     .join("；");
 }
 export function cardText(instance: CardInstance, detailed = true): string {
   const card = definition(instance);
+  if (card.unplayable)
+    return card.temporary
+      ? "不可打出，本轮行动结束后自动消散。"
+      : "不可打出，作为永久诅咒留在牌组中。";
   return (
+    `${card.hpCost ? `失去 ${card.hpCost} 生命；` : ""}${card.diceCost ? `消耗 ${card.diceCost} 骰子；` : ""}` +
     effectsText(card.effects, detailed) +
     (card.exhaust && detailed ? "。消耗：本场战斗不再抽到。" : "。")
   );
@@ -703,6 +716,8 @@ export const heroContent = [
   {
     name: "铁卫",
     title: "守护与破甲",
+    description: "以格挡和援护维持队伍阵线，利用破甲与反击打开输出窗口。",
+    resourceHint: "适合从防御转入爆发，队伍生存压力高时更稳定。",
     maxHp: 48,
     icon: "⛨",
     deck: [
@@ -722,6 +737,8 @@ export const heroContent = [
   {
     name: "游侠",
     title: "印记与连击",
+    description: "铺设标记，安排抽弃顺序，并用多段攻击收割被标记目标。",
+    resourceHint: "需要规划手牌与攻击次数，轻装但爆发窗口明显。",
     maxHp: 42,
     icon: "➶",
     deck: [
@@ -741,6 +758,8 @@ export const heroContent = [
   {
     name: "炼术师",
     title: "腐蚀、再生与协同",
+    description: "用毒、再生和净化处理持续战斗，擅长把负面状态转成节奏。",
+    resourceHint: "毒与再生需要提前布局，面对高生命敌人时收益更高。",
     maxHp: 44,
     icon: "⚗",
     deck: [
@@ -765,6 +784,8 @@ export const heroContent = [
   {
     name: "机巧师",
     title: "炮台与过热",
+    description: "架设炮台并管理热量，在过热前完成蓄能与连续攻击。",
+    resourceHint: "炮台会在每轮行动结束后自动攻击，热量过高会反噬自身。",
     maxHp: 43,
     icon: "⚙",
     deck: [
@@ -789,6 +810,8 @@ export const heroContent = [
   {
     name: "星象师",
     title: "蓄能与延迟回响",
+    description: "把能量存到下一轮，通过蓄能和回响制造跨回合爆发。",
+    resourceHint: "蓄能与回响会在下一轮转化，当前轮需要为未来保留空间。",
     maxHp: 40,
     icon: "✦",
     deck: [
@@ -813,6 +836,8 @@ export const heroContent = [
   {
     name: "祈愿师",
     title: "祝福与溢出庇护",
+    description: "通过治疗、祝福和光暗转化维持队友，并把溢出治疗变成格挡。",
+    resourceHint: "祝福只转化溢出治疗，队伍满血时收益会降低。",
     maxHp: 45,
     icon: "✚",
     deck: [
@@ -832,6 +857,59 @@ export const heroContent = [
       "prayer_smite",
       "prayer_clean",
       "prayer_renew",
+    ] as CardId[],
+  },
+  {
+    name: "契刃客",
+    title: "生命契约与击杀回收",
+    description: "主动支付生命换取高额伤害、力量和击杀后的恢复。",
+    resourceHint: "卡牌的生命费用不会直接杀死角色，但低生命时仍需要谨慎。",
+    maxHp: 52,
+    icon: "⚔",
+    deck: [
+      "covenant_cut",
+      "covenant_cut",
+      "covenant_cut",
+      "covenant_cut",
+      "covenant_guard",
+      "covenant_guard",
+      "covenant_guard",
+      "covenant_hunt",
+      "covenant_oath",
+      "covenant_second",
+    ] as CardId[],
+    rewards: [
+      "covenant_execution",
+      "covenant_reap",
+      "covenant_moon",
+      "covenant_redline",
+    ] as CardId[],
+  },
+  {
+    name: "骰术师",
+    title: "骰子资源与点数爆发",
+    description: "每轮积累骰子，消耗骰子强化攻击与防御，并利用点数资源连携。",
+    resourceHint:
+      "骰子有上限，部分卡牌没有骰子时不能打出；回合转换会补充骰子。",
+    maxHp: 40,
+    icon: "⚄",
+    deck: [
+      "dice_shot",
+      "dice_shot",
+      "dice_shot",
+      "dice_shot",
+      "dice_guard",
+      "dice_guard",
+      "dice_guard",
+      "dice_prepare",
+      "dice_loaded",
+      "dice_bank",
+    ] as CardId[],
+    rewards: [
+      "dice_burst",
+      "dice_jackpot",
+      "dice_even",
+      "dice_mirror",
     ] as CardId[],
   },
 ];
@@ -857,26 +935,82 @@ export const cardPools: CardId[][] = [
   Object.keys(cards).filter((id) => id.startsWith("machine_")) as CardId[],
   Object.keys(cards).filter((id) => id.startsWith("star_")) as CardId[],
   Object.keys(cards).filter((id) => id.startsWith("prayer_")) as CardId[],
+  Object.keys(cards).filter((id) => id.startsWith("covenant_")) as CardId[],
+  Object.keys(cards).filter((id) => id.startsWith("dice_")) as CardId[],
 ];
 export const commonCards = (Object.keys(cards) as CardId[]).filter(
-  (id) => !cardPools.some((pool) => pool.includes(id)),
+  (id) =>
+    !cardPools.some((pool) => pool.includes(id)) &&
+    !("unplayable" in cards[id] && cards[id].unplayable),
 );
 export interface Intent {
-  kind: "attack" | "block" | "strength" | "poison" | "weak" | "heal" | "thorns";
+  kind:
+    | "attack"
+    | "block"
+    | "strength"
+    | "poison"
+    | "weak"
+    | "heal"
+    | "thorns"
+    | "seal"
+    | "silence"
+    | "steal-gold"
+    | "steal-relic";
   amount: number;
   target: number | "all";
   hits?: number;
 }
+export type EncounterMechanicId =
+  | "trial"
+  | "fate"
+  | "symbiosis"
+  | "roots"
+  | "furnace"
+  | "tempo"
+  | "mirror"
+  | "tide"
+  | "brood"
+  | "silence"
+  | "tribute";
+export interface EncounterMechanicDefinition {
+  id: EncounterMechanicId;
+  name: string;
+  summary: string;
+  track: {
+    label: string;
+    max: number;
+    initial?: number;
+  };
+  phaseThreshold: number;
+  phaseName: string;
+  phaseSummary: string;
+}
 export interface EnemyDefinition {
+  key?: string;
   name: string;
   hp: number;
   icon: string;
   pattern: readonly Intent[];
+  phasePattern?: readonly Intent[];
+  role?: "boss" | "guard" | "part" | "minion";
+  part?: string;
+  deathBurst?: number;
+  traits?: readonly EnemyTraitId[];
+}
+export interface SummonRule {
+  source: string;
+  template: EnemyDefinition;
+  first: number;
+  every: number;
+  max: number;
 }
 export interface EncounterDefinition {
   name: string;
   subtitle: string;
   enemies: EnemyDefinition[];
+  mechanic?: EncounterMechanicDefinition;
+  summons?: readonly SummonRule[];
+  modifiers?: readonly EncounterModifierId[];
 }
 export const encounters: EncounterDefinition[] = [
   {

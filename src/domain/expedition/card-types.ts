@@ -18,16 +18,23 @@ export type Effect = {
     | "device"
     | "focus"
     | "echo"
-    | "blessing";
+    | "blessing"
+    | "dice";
   amount: number;
   target?: "self" | "selected" | "party";
-  scale?: "block" | "poison" | "played" | "marked" | "heat" | "turret";
+  hits?: number;
+  scale?: "block" | "poison" | "played" | "marked" | "heat" | "turret" | "dice";
 };
 export interface CardDefinition {
   name: string;
   cost: number;
+  diceCost?: number;
+  hpCost?: number;
   target: "enemy" | "ally" | "self" | "all-enemies";
   icon: string;
   effects: readonly Effect[];
   exhaust?: boolean;
+  unplayable?: boolean;
+  temporary?: boolean;
+  curse?: boolean;
 }

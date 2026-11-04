@@ -5,6 +5,7 @@ import { CardGuides } from "../domain/card-guide";
 export const guideTargetKeys = [
   "expedition.card",
   "expedition.intent",
+  "expedition.mechanic",
   "expedition.status",
   "expedition.party",
   "expedition.profession",
@@ -68,6 +69,10 @@ export interface TargetQuery {
 const labels: Record<GuideTargetKey, [string, string]> = {
   "expedition.card": ["查看可用手牌", "等待自己的手牌与可用能量"],
   "expedition.intent": ["查看敌方意图", "进入战斗后可查看敌方意图"],
+  "expedition.mechanic": [
+    "查看首领机制",
+    "首领战开始时会出现机制进度与阶段说明",
+  ],
   "expedition.status": ["查看远征状态", "进入相应远征阶段后可定位"],
   "expedition.party": ["查看队友", "进入相应远征阶段后可定位"],
   "expedition.profession": ["查看职业选择", "进入相应远征阶段后可定位"],

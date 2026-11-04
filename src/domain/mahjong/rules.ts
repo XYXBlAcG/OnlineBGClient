@@ -1,3 +1,5 @@
+import type { GameOptions } from "../game-options";
+import { WashizuRules } from "./washizu";
 import type { Rules } from "../plugin";
 import type { Action, Candidate } from "../types";
 import { analyzeHand } from "./hand";
@@ -214,8 +216,20 @@ function openResponse(
 }
 export class SichuanRules implements Rules<"scmj"> {
   constructor(private random: () => number) {}
-  actionWindow(state:import("./types").MahjongState,action:Action):string|undefined {const v=state.view;return action.type === "scmj-action" && ["exchange","lack","respond"].includes(action.move.type) ? `${v.phase}:${v.turn}:${v.pending?.actor}:${v.pending?.tile}:${v.pending?.rob}` : undefined;}
-  create(players: number): MahjongState {
+  actionWindow(
+    state: import("./types").MahjongState,
+    action: Action,
+  ): string | undefined {
+    const v = state.view;
+    return action.type === "scmj-action" &&
+      ["exchange", "lack", "respond"].includes(action.move.type)
+      ? `${v.phase}:${v.turn}:${v.pending?.actor}:${v.pending?.tile}:${v.pending?.rob}`
+      : undefined;
+  }
+  private readonly washizu = new WashizuRules(() => this.random());
+  create(players: number, team = false, options?: GameOptions): MahjongState {
+    if (options?.mahjong?.mode === "washizu")
+      return this.washizu.create(players, team, options);
     if (players !== 4) throw new Error("四川麻将需要四个席位");
     const wall = Array.from({ length: 108 }, (_, i) => i);
     for (let i = 107; i > 0; i--) {
@@ -267,6 +281,7 @@ export class SichuanRules implements Rules<"scmj"> {
     return view.phase === "play" ? [view.turn] : [];
   }
   candidates(state: MahjongState, actor: number): Candidate[] {
+    if (state.view.riichi) return this.washizu.candidates(state, actor);
     const view = state.view;
     if (!this.actors(state).includes(actor)) return [];
     const moves: { move: MahjongMove; label: string }[] = [];
@@ -324,6 +339,12 @@ export class SichuanRules implements Rules<"scmj"> {
     }));
   }
   apply(state: MahjongState, actor: number, action: Action): MahjongState {
+    if (state.view.riichi) return this.washizu.apply(state, actor, action);
+    if (
+      action.type === "scmj-action" &&
+      (action.move.type === "riichi" || action.move.type === "call")
+    )
+      throw new Error("四川血战不支持此动作");
     if (action.type !== "scmj-action" || !this.actors(state).includes(actor))
       throw new Error("当前不能执行此麻将动作");
     const move = mahjongMoveSchema.parse(action.move),
@@ -413,6 +434,7 @@ export class SichuanRules implements Rules<"scmj"> {
     return next;
   }
   project(state: MahjongState, actor: number): MahjongState {
+    if (state.view.riichi) return this.washizu.project(state, actor);
     const result = structuredClone(state),
       view = result.view;
     view.wall = view.wall.map(() => -1);

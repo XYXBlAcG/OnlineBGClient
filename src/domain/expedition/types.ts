@@ -1,10 +1,14 @@
 import type { HeroResources } from "./resources";
 import type { RelicId, PotionId } from "./world";
+import type { EncounterModifierId } from "./modifiers";
+import type { EnemyTraitId } from "./enemy-traits";
 import type {
   CardId,
   CardInstance,
   Intent,
   EncounterDefinition,
+  EncounterMechanicId,
+  SummonRule,
 } from "./content";
 export interface Fighter {
   hp: number;
@@ -33,11 +37,41 @@ export interface Hero extends Fighter, HeroResources {
   exhaust: CardInstance[];
   ready: boolean;
   shuffles: number;
+  spore: number;
+  tether: number | null;
+  silenced: number;
 }
 export interface Enemy extends Fighter {
   name: string;
   icon: string;
   intent: Intent;
+  pattern: readonly Intent[];
+  phasePattern?: readonly Intent[];
+  role: "boss" | "guard" | "part" | "minion";
+  part?: string;
+  key?: string;
+  ownerIndex?: number;
+  deathBurst?: number;
+  traits?: EnemyTraitId[];
+  stolenGold: number;
+  stolenFrom?: number;
+  stolenRelics: { relic: RelicId; owner: number }[];
+  stunned: number;
+  phase: number;
+}
+export interface SummonClock {
+  rule: SummonRule;
+  cooldown: number;
+  queued: boolean;
+}
+export interface EncounterMechanicState {
+  id: EncounterMechanicId;
+  track: number;
+  max: number;
+  phase: number;
+  roundCards: number;
+  lastCardKind?: "attack" | "skill";
+  lastIntent?: Intent;
 }
 export type Target = { side: "hero" | "enemy"; index: number };
 export type Reward =
@@ -59,11 +93,12 @@ export interface TurnRecord {
   cards: number;
 }
 export interface VisualEvent {
-  kind: "damage" | "block" | "heal" | "status";
+  kind: "damage" | "block" | "heal" | "status" | "mechanic" | "phase" | "break";
   target: Target;
   amount: number;
   source?: number;
   origin?: Target;
+  label?: string;
 }
 export interface ExpeditionState {
   seed: string;
@@ -75,6 +110,9 @@ export interface ExpeditionState {
   revivalFraction?: number;
   heroes: Hero[];
   enemies: Enemy[];
+  mechanic?: EncounterMechanicState;
+  summons?: SummonClock[];
+  modifiers?: EncounterModifierId[];
   nextId: number;
   sequence: number;
   log: { id: number; text: string }[];

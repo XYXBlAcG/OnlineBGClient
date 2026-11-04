@@ -1,14 +1,26 @@
 import { z } from "zod";
 export const mahjongOptionsSchema = z.object({
+  mode: z.enum(["sichuan", "washizu"]).optional(),
   cap: z.union([z.literal(3), z.literal(4), z.literal(5)]).default(3),
   selfDraw: z.enum(["base", "fan"]).default("base"),
 });
+export const mahjongModeNames = {
+  sichuan: "四川血战",
+  washizu: "瓦西子透明麻将",
+} as const;
+export type MahjongMode = keyof typeof mahjongModeNames;
 export type MahjongOptions = z.infer<typeof mahjongOptionsSchema>;
-const tile = z.number().int().min(0).max(107);
+const tile = z.number().int().min(0).max(135);
 export const mahjongMoveSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("exchange"), tiles: z.array(tile).length(3) }),
   z.object({ type: z.literal("lack"), suit: z.number().int().min(0).max(2) }),
   z.object({ type: z.literal("discard"), tile }),
+  z.object({ type: z.literal("riichi"), tile }),
+  z.object({
+    type: z.literal("call"),
+    choice: z.enum(["chi", "pong", "kong"]),
+    tiles: z.array(tile).min(2).max(3),
+  }),
   z.object({
     type: z.literal("respond"),
     choice: z.enum(["pass", "pong", "kong", "win"]),
@@ -18,12 +30,13 @@ export const mahjongMoveSchema = z.discriminatedUnion("type", [
 ]);
 export type MahjongMove = z.infer<typeof mahjongMoveSchema>;
 export interface MahjongMeld {
-  type: "pong" | "open" | "closed" | "added";
+  type: "chi" | "pong" | "open" | "closed" | "added";
   tiles: number[];
   from: number;
 }
 export interface MahjongScore {
   fan: number;
+  fu?: number;
   labels: string[];
   value: number;
 }
@@ -41,13 +54,14 @@ export interface MahjongPayment {
   ref?: number;
 }
 export interface MahjongEvent {
-  type: "draw" | "discard" | "exchange" | "pong" | "kong" | "win";
+  type: "draw" | "discard" | "exchange" | "chi" | "pong" | "kong" | "win";
   actor: number;
   tiles: number[];
   from?: number;
 }
 export interface MahjongView {
   sequence: number;
+  riichi?: RiichiRound;
   options: MahjongOptions;
   phase: "exchange" | "lack" | "play" | "response" | "finished";
   dealer: number;
@@ -68,6 +82,7 @@ export interface MahjongView {
     tile: number;
     rob: boolean;
     afterKong: boolean;
+    declaration?: boolean;
   } | null;
   wins: MahjongWin[];
   scores: number[];
@@ -76,6 +91,21 @@ export interface MahjongView {
   lastDraw: { actor: number; tile: number; kong: boolean } | null;
   finishedReason: string;
 }
+export type RiichiCall = Extract<MahjongMove, { type: "call" }>;
+export interface RiichiRound {
+  deadWall: number[];
+  dora: number[];
+  ura: number[];
+  kongCount: number;
+  ready: boolean[];
+  ippatsu: boolean[];
+  furiten: boolean[];
+  calls: (RiichiCall | null)[];
+  sticks: number;
+  forbidden: number[];
+  discardedTypes: number[][];
+}
+export const isTransparent = (tile: number) => tile >= 0 && tile % 4 !== 3;
 export type MahjongState = { kind: "scmj"; view: MahjongView };
 export const tileType = (tile: number) => Math.floor(tile / 4);
 export const tileSuit = (tile: number) => Math.floor(tile / 36);
@@ -83,7 +113,9 @@ export const suitNames = ["万", "筒", "条"];
 export const tileName = (tile: number) =>
   tile < 0
     ? "牌背"
-    : `${["一", "二", "三", "四", "五", "六", "七", "八", "九"][tileType(tile) % 9]}${suitNames[tileSuit(tile)]}`;
+    : tileType(tile) >= 27
+      ? ["东", "南", "西", "北", "白", "发", "中"][tileType(tile) - 27]
+      : `${["一", "二", "三", "四", "五", "六", "七", "八", "九"][tileType(tile) % 9]}${suitNames[tileSuit(tile)]}`;
 export function tileCounts(tiles: number[]): number[] {
   const counts = Array<number>(27).fill(0);
   for (const tile of tiles) if (tile >= 0) counts[tileType(tile)]++;

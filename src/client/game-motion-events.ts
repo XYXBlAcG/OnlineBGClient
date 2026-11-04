@@ -113,7 +113,7 @@ export function gameMotionEvents(
                       : avatar(event.actor),
                   target: `.scmj-river ${key(`scmj-tile-${tile}`)}`,
                 });
-          if (event.type === "pong" || event.type === "kong")
+          if (event.type === "chi" || event.type === "pong" || event.type === "kong")
             for (const tile of view.melds[event.actor]
               .flatMap((m) => m.tiles)
               .filter(

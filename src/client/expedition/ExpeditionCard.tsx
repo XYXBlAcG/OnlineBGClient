@@ -30,6 +30,8 @@ export function ExpeditionCard({
       <span className="exp-card-top">
         <b className="exp-cost">{card.cost}</b>
         <strong>{card.name}</strong>
+        {card.diceCost ? <small>骰 {card.diceCost}</small> : null}
+        {card.hpCost ? <small>血 {card.hpCost}</small> : null}
       </span>
       <span className="exp-card-art" aria-hidden="true">
         <img draggable={false} alt="" src={expeditionItemArt(card.effects)} />
@@ -64,6 +66,13 @@ export function ExpeditionCard({
           data-unavailable={unavailable || disabled || undefined}
           data-card-type={
             card.effects.some((e) => e.kind === "damage") ? "attack" : "skill"
+          }
+          data-card-role={
+            card.unplayable
+              ? card.temporary
+                ? "temporary"
+                : "curse"
+              : undefined
           }
           data-guide-target="expedition.card"
           data-guide-id={instance.id}

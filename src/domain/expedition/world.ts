@@ -1,14 +1,19 @@
 import { extraCreatures, type Creature } from "./extra-creatures";
-import {
-  cards,
-  effectsText,
-  type Effect,
-  type CardId,
-} from "./content";
+import { cards, effectsText, type Effect, type CardId } from "./content";
+import { bossMechanics } from "./boss-mechanics";
+export type { Creature } from "./extra-creatures";
 export interface RelicDefinition {
   name: string;
   icon: string;
-  trigger: "start" | "round" | "card" | "kill" | "victory";
+  trigger:
+    | "start"
+    | "round"
+    | "card"
+    | "kill"
+    | "victory"
+    | "sealed"
+    | "silenced"
+    | "loot";
   effects: Effect[];
   every?: number;
   cardType?: "attack" | "skill";
@@ -128,6 +133,55 @@ export const relics = {
     icon: "⬢",
     trigger: "victory",
     effects: [{ kind: "heal", amount: 2, target: "party" }],
+  },
+  lockpick: {
+    name: "断锁钳",
+    icon: "⌁",
+    trigger: "sealed",
+    effects: [{ kind: "strength", amount: 1 }],
+  },
+  pawnTicket: {
+    name: "当票",
+    icon: "▱",
+    trigger: "loot",
+    effects: [{ kind: "heal", amount: 4 }],
+  },
+  relicSatchel: {
+    name: "无主遗物袋",
+    icon: "◫",
+    trigger: "loot",
+    every: 2,
+    effects: [{ kind: "regen", amount: 3 }],
+  },
+  silentBell: {
+    name: "静默耳塞",
+    icon: "◌",
+    trigger: "silenced",
+    effects: [{ kind: "cleanse", amount: 1 }],
+  },
+  curseIndex: {
+    name: "禁书索引",
+    icon: "▥",
+    trigger: "start",
+    effects: [{ kind: "block", amount: 8 }],
+  },
+  secondFate: {
+    name: "二手命运",
+    icon: "↻",
+    trigger: "sealed",
+    effects: [{ kind: "focus", amount: 1 }],
+  },
+  lootScales: {
+    name: "赃物天平",
+    icon: "⚖",
+    trigger: "loot",
+    effects: [{ kind: "strength", amount: 1 }],
+  },
+  blackLedger: {
+    name: "黑市账本",
+    icon: "▤",
+    trigger: "victory",
+    effects: [{ kind: "heal", amount: 6 }],
   },
 } as const satisfies Record<string, RelicDefinition>;
 export type RelicId = keyof typeof relics;
@@ -299,26 +353,58 @@ const baseCreatures = {
   },
   warden: {
     name: "遗迹守门者",
-    hp: 150,
+    hp: 112,
     icon: "warden",
     rank: "boss",
+    mechanic: bossMechanics.trial,
     pattern: [
+      { kind: "attack", amount: 7, target: "all" },
+      { kind: "strength", amount: 2, target: 0 },
+      { kind: "attack", amount: 6, hits: 2, target: 0 },
+      { kind: "block", amount: 14, target: 0 },
+    ],
+    phasePattern: [
+      { kind: "attack", amount: 8, target: "all" },
+      { kind: "attack", amount: 6, hits: 2, target: 0 },
+      { kind: "strength", amount: 2, target: 0 },
       { kind: "attack", amount: 9, target: "all" },
-      { kind: "strength", amount: 3, target: 0 },
-      { kind: "attack", amount: 9, hits: 2, target: 0 },
-      { kind: "block", amount: 18, target: 0 },
+    ],
+    parts: [
+      {
+        name: "戒律碑",
+        hp: 24,
+        icon: "crystal",
+        role: "part",
+        part: "seal",
+        pattern: [{ kind: "block", amount: 4, target: 0 }],
+      },
+      {
+        name: "裁决碑",
+        hp: 24,
+        icon: "crystal",
+        role: "part",
+        part: "judgment",
+        pattern: [{ kind: "strength", amount: 1, target: 0 }],
+      },
     ],
   },
   oracle: {
     name: "裂隙先知",
-    hp: 135,
+    hp: 105,
     icon: "crystal",
     rank: "boss",
+    mechanic: bossMechanics.fate,
     pattern: [
       { kind: "strength", amount: 2, target: 0 },
-      { kind: "attack", amount: 6, hits: 2, target: "all" },
-      { kind: "block", amount: 14, target: 0 },
-      { kind: "attack", amount: 16, target: 0 },
+      { kind: "attack", amount: 4, hits: 2, target: "all" },
+      { kind: "block", amount: 10, target: 0 },
+      { kind: "attack", amount: 11, target: 0 },
+    ],
+    phasePattern: [
+      { kind: "attack", amount: 5, hits: 2, target: "all" },
+      { kind: "block", amount: 10, target: 0 },
+      { kind: "attack", amount: 13, target: 0 },
+      { kind: "strength", amount: 3, target: 0 },
     ],
   },
 } as const satisfies Record<string, Creature>;
@@ -466,6 +552,9 @@ export function relicText(id: RelicId): string {
     card: "出牌时",
     kill: "击败敌人后",
     victory: "战斗胜利后",
+    sealed: "手牌被封缄时",
+    silenced: "被封口时",
+    loot: "金币或遗物被夺时",
   }[relic.trigger];
   return `${trigger}${relic.every ? `，每 ${relic.every} 次触发` : ""}${relic.cardType ? `（仅${relic.cardType === "attack" ? "攻击" : "技能"}牌）` : ""}：${effectsText(relic.effects)}`;
 }

@@ -1,9 +1,13 @@
+import { GameOpeningChoice } from "./GameOpeningChoice";
 import { useSceneTransition } from "./scene-transition";
 import { usePresentation } from "./motion";
 import { GameLibrary } from "./lobby/GameLibrary";
 import { GameCover } from "./lobby/GameCover";
 import "./lobby/lobby.css";
-import { ExpeditionOptionsControl } from "./expedition/ExpeditionOptionsControl";
+import {
+  ExpeditionOptionsControl,
+  expeditionAiDifficultyNames,
+} from "./expedition/ExpeditionOptionsControl";
 import { expeditionOptionsSchema } from "../domain/expedition/adventure-types";
 import { DominionOptionsControl } from "./dominion/DominionOptionsControl";
 import { dominionOptionsSchema } from "../domain/dominion/types";
@@ -12,10 +16,13 @@ import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
 import { graphwarOptionsSchema } from "../domain/graphwar/types";
 import { invitationLink } from "./invitation";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
-import { mahjongOptionsSchema } from "../domain/mahjong/types";
+import {
+  mahjongModeNames,
+  mahjongOptionsSchema,
+} from "../domain/mahjong/types";
 import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
-import { Button, Select, Slider, Switch } from "./ui/Controls";
+import { Button, Panel, Select, Slider, Switch } from "./ui/Controls";
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { gameCatalogue, type GameKind } from "../domain/catalogue";
@@ -52,6 +59,7 @@ export function Lobby({
   ) => void;
   onJoin: (name: string, invitation: string, spectator?: boolean) => void;
 }) {
+  const [opening, setOpening] = useState<"scmj" | "expedition" | null>(null);
   const [kind, setKind] = useState<GameKind>("uno");
   const [spectator, setSpectator] = useState(false);
   const [networkPage, setNetworkPage] = useState<"join" | "create">("join");
@@ -88,6 +96,8 @@ export function Lobby({
   const localDebug = isTauri() && preferences.network.showLanDebug && lan;
   const temporary = isTauri() && preferences.network.temporary;
   const game = gameCatalogue[kind];
+  const aiDifficultyNames =
+    kind === "expedition" ? expeditionAiDifficultyNames : difficultyNames;
   const displayAi = balanceSeats({ kind, humans, ai }).ai;
   const total = humans + displayAi.length;
   const changeGame = (next: GameKind) => {
@@ -130,7 +140,10 @@ export function Lobby({
         disabled={busy || !creating}
         favorites={preferences.favorites}
         recent={preferences.recentGames}
-        onSelect={changeGame}
+        onSelect={(next) => {
+          if (next === "scmj" || next === "expedition") setOpening(next);
+          else changeGame(next);
+        }}
         onFavorite={(key) =>
           onPreferencesChange({
             ...preferences,
@@ -140,6 +153,28 @@ export function Lobby({
           })
         }
       />
+      {opening && (
+        <Panel
+          open
+          onOpenChange={(open) => {
+            if (!open) setOpening(null);
+          }}
+          title={gameCatalogue[opening].name}
+        >
+          <GameOpeningChoice
+            kind={opening}
+            expedition={expedition}
+            mahjong={mahjong}
+            onCancel={() => setOpening(null)}
+            onConfirm={(nextRun, nextMahjong) => {
+              setExpedition(nextRun);
+              setMahjong(nextMahjong);
+              changeGame(opening);
+              setOpening(null);
+            }}
+          />
+        </Panel>
+      )}
       <section className="room-setup" data-scene-layout="setup">
         <div className="club-setup-heading">
           {creating && <GameCover kind={kind} />}
@@ -147,7 +182,9 @@ export function Lobby({
             <h2>{creating ? game.name : "加入朋友的房间"}</h2>
             <p>
               {creating
-                ? `${game.minPlayers}–${game.maxPlayers} 人`
+                ? kind === "scmj"
+                  ? mahjongModeNames[mahjong.mode ?? "sichuan"]
+                  : `${game.minPlayers}–${game.maxPlayers} 人`
                 : "粘贴邀请链接"}
             </p>
           </div>
@@ -460,7 +497,7 @@ export function Lobby({
                             )
                           }
                         >
-                          {Object.entries(difficultyNames).map(
+                          {Object.entries(aiDifficultyNames).map(
                             ([value, label]) => (
                               <option value={value} key={value}>
                                 {label}

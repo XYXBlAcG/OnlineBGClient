@@ -1,3 +1,4 @@
+import type { MahjongMode } from "./mahjong/types";
 import { balance as graphwarBalance } from "./graphwar/balance";
 import {
   expeditionPlugin,
@@ -46,9 +47,9 @@ export const gameCatalogue = {
   scmj: {
     rules: sichuanPlugin,
     apiVersion: 1,
-    name: "四川麻将",
+    name: "麻将",
     category: "纸牌",
-    description: "换三张、定缺与血战到底",
+    description: "四川血战与透明立直",
     minPlayers: 4,
     maxPlayers: 4,
     presentation: { kind: "sichuan" },
@@ -179,3 +180,10 @@ export const gameKinds = Object.keys(gameCatalogue) as [
 export const maxRoomSeats = Math.max(
   ...gameKinds.map((kind) => gameCatalogue[kind].maxPlayers),
 );
+
+
+export function gameRulesVersion(kind: GameKind, mahjongMode?: MahjongMode) {
+  return kind === "scmj" && mahjongMode === "washizu"
+    ? "washizu-1"
+    : gameCatalogue[kind]?.version;
+}

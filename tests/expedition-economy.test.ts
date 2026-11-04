@@ -7,6 +7,7 @@ import type {
 } from "../src/domain/expedition/adventure-types";
 import { allCards, ExpeditionRules } from "../src/domain/expedition/rules";
 import { cards, type CardId } from "../src/domain/expedition/content";
+import { definition } from "../src/domain/expedition/content";
 const rules = new ExpeditionAdventure();
 function apply(
   state: ExpeditionGameState,
@@ -40,7 +41,8 @@ it("营地升级、移除、休息互斥且全员完成才离开", () => {
   const id = allCards(state.view.combat.heroes[0])[0].id;
   state = apply(state, 0, { type: "upgrade", instance: id });
   expect(
-    allCards(state.view.combat.heroes[0]).find((c) => c.id === id)?.upgradeLevel,
+    allCards(state.view.combat.heroes[0]).find((c) => c.id === id)
+      ?.upgradeLevel,
   ).toBe(1);
   expect(state.view.phase).toBe("camp");
   expect(() => apply(state, 0, { type: "rest" })).toThrow();
@@ -68,11 +70,15 @@ it("共享遗物先票选再分配，仅有持有人获得；平票由轮值领�
 });
 it("全部卡牌在六个强化等级及升级版通过同一个执行器产生有限数值且守恒实例", () => {
   const combat = new ExpeditionRules();
-  for (const card of Object.keys(cards) as CardId[])
+  for (const card of Object.keys(cards) as CardId[]) {
+    if (definition({ id: "inspect", card, upgradeLevel: 0 }).unplayable)
+      continue;
     for (const upgradeLevel of [0, 1, 2, 3, 4, 5]) {
       let state = combat.create("all-effects", [0, 1, 2]);
       state.heroes[0].hand = [{ id: "test-card", card, upgradeLevel }];
       state.heroes[0].energy = 10;
+      state.heroes[0].dice = 6;
+      state.heroes[0].hp = state.heroes[0].maxHp;
       const action = combat
         .candidates(state, 0)
         .find((a) => a.type === "play")!;
@@ -89,4 +95,5 @@ it("全部卡牌在六个强化等级及升级版通过同一个执行器产生�
           card,
         ).toBe(true);
     }
+  }
 });

@@ -6,7 +6,7 @@ import type { Snapshot } from "../domain/protocol";
 export type GuideSnapshot = Pick<
   Snapshot,
   "state" | "candidates" | "finished" | "actor" | "version"
->;
+> & Partial<Pick<Snapshot, "config">>;
 
 export function guidePosition({
   state,

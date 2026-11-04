@@ -7,7 +7,14 @@ import { ExpeditionStrategy } from "../src/domain/expedition/ai";
 it("跨层推进、新职业和多级强化通过真实房间记录回放，驿站检查点可恢复", () => {
   const room = new Room(
     "depth-replay",
-    { kind: "expedition", humans: 2, ai: [], team: false, training: false },
+    {
+      kind: "expedition",
+      humans: 2,
+      ai: [],
+      team: false,
+      training: false,
+      expedition: { difficulty: "story", ascension: 0 },
+    },
     "depth-replay-paired",
   );
   const tokens = [room.claim("星象"), room.claim("祈愿")];

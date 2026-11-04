@@ -150,7 +150,7 @@ export function BalancePanel({
         {error && <span role="alert">{error}</span>}
       </div>
       <details className="exp-number-sheet">
-        <summary>全部 15 种牌的初始设计值</summary>
+        <summary>全部 {Object.keys(cards).length} 种牌的初始设计值</summary>
         <table>
           <thead>
             <tr>

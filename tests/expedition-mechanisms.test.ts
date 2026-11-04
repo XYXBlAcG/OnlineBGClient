@@ -9,16 +9,16 @@ import {
 } from "../src/domain/expedition/content";
 import { creatures } from "../src/domain/expedition/world";
 
-it("首批内容包含六个职业、168 种独立牌和三十种敌人，卡池不重复", () => {
-  expect(heroContent).toHaveLength(6);
-  expect(Object.keys(cards)).toHaveLength(168);
-  expect(Object.keys(creatures)).toHaveLength(30);
+it("当前内容包含八个职业、216 张可玩牌和五十一种敌人，卡池不重复", () => {
+  expect(heroContent).toHaveLength(8);
+  expect(Object.keys(cards)).toHaveLength(218);
+  expect(Object.keys(creatures)).toHaveLength(51);
   expect(cardPools.map((pool) => pool.length)).toEqual([
-    24, 24, 24, 24, 24, 24,
+    24, 24, 24, 24, 24, 24, 24, 24,
   ]);
   expect(commonCards).toHaveLength(24);
-  expect(new Set([...cardPools.flat(), ...commonCards]).size).toBe(168);
-  expect(new Set(Object.values(cards).map((card) => card.name)).size).toBe(168);
+  expect(new Set([...cardPools.flat(), ...commonCards]).size).toBe(216);
+  expect(new Set(Object.values(cards).map((card) => card.name)).size).toBe(218);
   expect(
     cardPools
       .slice(0, 3)

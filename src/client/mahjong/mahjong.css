@@ -500,3 +500,33 @@
     min-height: 18px;
   }
 }
+
+.scmj-dora {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.scmj-dora svg {
+  width: 24px;
+  height: auto;
+}
+
+.original-game button.scmj-hidden-hand {
+  min-height: 28px;
+  padding: 3px;
+  background: transparent;
+}
+.scmj-inspect-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.scmj-inspect-hand > span {
+  width: 32px;
+}
+.scmj-inspect-hand svg {
+  display: block;
+  width: 100%;
+}

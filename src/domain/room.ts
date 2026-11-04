@@ -1,3 +1,4 @@
+import { gameRulesVersion } from "./catalogue";
 import { migrateExpedition } from "./expedition/migration";
 import { partyResults, partySignals } from "./party/facts";
 import type { PartyEvent } from "./party/model";
@@ -203,10 +204,13 @@ export class Room {
         this.records.push(this.replay);
         this.records = this.records.slice(-20);
       }
+      const roundSeed = this.config.kind === "scmj" && this.config.mahjong.mode === "washizu"
+        ? randomId()
+        : `${this.seed}:round:${this.version}`;
       this.state = this.engine.create(
         this.config.kind,
         this.seats.length,
-        `${this.seed}:round:${this.version}`,
+        roundSeed,
         this.config.team,
         {
           expedition: this.config.expedition,
@@ -219,11 +223,11 @@ export class Room {
         format: 1,
         room: this.id,
         config: structuredClone(this.config),
-        rulesVersion: gameCatalogue[this.config.kind].version,
+        rulesVersion: gameRulesVersion(this.config.kind, this.config.mahjong.mode),
         names: this.seats.map((seat) => seat.name),
         avatars: this.seats.map(seatAvatar),
         memberIds:this.seats.map((s,i)=>s.id??`ai:${i}`),
-        seed: `${this.seed}:round:${this.version}`,
+        seed: roundSeed,
         startedAt: Date.now(),
         ...(this.state.kind === "graphwar"
           ? {
@@ -235,7 +239,7 @@ export class Room {
             }
           : {}),
         ...(this.state.kind === "expedition"
-          ? { expeditionMap: structuredClone(this.state.view.map), expeditionCampaign: this.state.view.campaignVersion }
+          ? { expeditionMap: structuredClone(this.state.view.map), expeditionCampaign: this.state.view.campaignVersion, expeditionTuning: this.state.view.tuning }
           : {}),
         events: [],
       };
@@ -504,7 +508,9 @@ export class Room {
     return {
       players:[...this.seats.map((s,i)=>({id:s.id??`ai:${i}`,name:s.name,human:!!s.token})),...this.spectators.map(s=>({id:s.id,name:s.name,human:true}))],
       observers:[...(this.ended?[]:observerSeats(this.state,this.seats.length)),...this.spectators.map((_,i)=>this.seats.length+i)],
-      round:this.replay?.seed??"lobby",
+      round: this.replay?.config.mahjong.mode === "washizu"
+        ? `${this.id}:${this.replay.startedAt}`
+        : this.replay?.seed ?? "lobby",
       playing:!!this.state&&!this.ended&&!this.engine.finished(this.state),
       finished:!!this.state&&!this.ended&&this.engine.finished(this.state),
       state:this.state,
@@ -729,7 +735,7 @@ export class Room {
           : undefined,
       serverTime: Date.now(),
       apiVersion: protocolVersion,
-      rulesVersion: gameCatalogue[this.config.kind].version,
+      rulesVersion: gameRulesVersion(this.config.kind, this.config.mahjong.mode),
       room: this.id,
       kind: this.config.kind,
       config: this.config,

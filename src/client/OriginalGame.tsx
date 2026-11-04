@@ -32,7 +32,7 @@ export type GameSnapshot = Pick<
   | "state"
   | "finished"
 > &
-  Partial<Pick<Snapshot, "turnDeadline" | "serverTime" | "paused">>;
+  Partial<Pick<Snapshot, "turnDeadline" | "serverTime" | "paused" | "candidates">>;
 export const OriginalGame = memo(function OriginalGame({
   snapshot,
   pending = false,

@@ -13,6 +13,15 @@ export function migrateExpedition(run: ExpeditionRun): void {
     run.rerolls = run.combat.heroes.map(() => 0);
     run.eventRerolls = 0;
   }
+  if (run.contract === undefined) run.contract = null;
+  if (typeof run.hunt !== "boolean") run.hunt = false;
+  if (!Number.isInteger(run.compass) || run.compass < 0) run.compass = 2;
+  if (
+    !Number.isInteger(run.ascension) ||
+    run.ascension < 0 ||
+    run.ascension > 10
+  )
+    run.ascension = 0;
   if (
     !Number.isInteger(run.chapter) ||
     run.chapter < 0 ||
@@ -20,6 +29,17 @@ export function migrateExpedition(run: ExpeditionRun): void {
   )
     throw new Error("远征大层编号无效，原存档保留");
   for (const hero of run.combat.heroes) {
+    if (!Number.isInteger(hero.spore) || hero.spore < 0) hero.spore = 0;
+    if (!Number.isInteger(hero.silenced) || hero.silenced < 0)
+      hero.silenced = 0;
+    if (
+      hero.tether !== null &&
+      (!Number.isInteger(hero.tether) ||
+        hero.tether < 0 ||
+        hero.tether >= run.combat.heroes.length ||
+        hero.tether === run.combat.heroes.indexOf(hero))
+    )
+      hero.tether = null;
     for (const [key, value] of Object.entries(initialResources())) {
       const resource = key as keyof typeof expeditionResources;
       if (!(key in hero)) hero[resource] = value;
@@ -45,5 +65,25 @@ export function migrateExpedition(run: ExpeditionRun): void {
         throw new Error("卡牌强化等级无效，原存档保留");
       delete saved.upgraded;
     }
+  }
+  for (const [index, enemy] of run.combat.enemies.entries()) {
+    const definition =
+      run.combat.scenario[run.combat.encounter]?.enemies[index];
+    if (!enemy.pattern && definition) enemy.pattern = definition.pattern;
+    if (!enemy.phasePattern && definition?.phasePattern)
+      enemy.phasePattern = definition.phasePattern;
+    if (!Array.isArray(enemy.traits))
+      enemy.traits = [...(definition?.traits ?? [])];
+    if (!["boss", "guard", "part", "minion"].includes(enemy.role))
+      enemy.role =
+        enemy.hp > 0 && run.combat.enemies.indexOf(enemy) === 0
+          ? "boss"
+          : "guard";
+    if (!Number.isInteger(enemy.stunned) || enemy.stunned < 0)
+      enemy.stunned = 0;
+    if (!Number.isInteger(enemy.phase) || enemy.phase < 0) enemy.phase = 0;
+    if (!Number.isInteger(enemy.stolenGold) || enemy.stolenGold < 0)
+      enemy.stolenGold = 0;
+    if (!Array.isArray(enemy.stolenRelics)) enemy.stolenRelics = [];
   }
 }

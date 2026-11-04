@@ -3,13 +3,16 @@ import { VoteStatus } from "./VoteStatus";
 import { ChoiceButton, useConfirmedAction } from "../ui/ConfirmedChoice";
 import { useGameCommands } from "../use-game-commands";
 import { useState } from "react";
-import { mapChoices } from "../../domain/expedition/map";
+import {
+  mapChoices,
+  nodeNames,
+} from "../../domain/expedition/map";
 import { ballotOption, routeLabel } from "../../domain/expedition/ballot";
 import { NodeSymbol } from "./NodeSymbol";
 import type { ExpeditionRun } from "../../domain/expedition/adventure-types";
-import { nodeNames } from "../../domain/expedition/map";
 import { MapViewport } from "../MapViewport";
 import { routeLayout } from "./map-layout";
+import { ascensionProfile } from "../../domain/expedition/ascension";
 export function ExpeditionMap({
   run,
   actor = -1,
@@ -38,7 +41,6 @@ export function ExpeditionMap({
   });
   const chosen = options.find((node) => node.id === selected);
   const leader = Math.max(0, run.floor) % run.combat.heroes.length;
-
   useGameCommands([
     ...Array.from({ length: 9 }, (_, index) => ({
       id: `expedition.route-${index + 1}`,
@@ -66,7 +68,8 @@ export function ExpeditionMap({
     },
   ]);
   const layout = routeLayout(run.map);
-  const { points } = layout;
+  const { points } = layout,
+    routeCost = 1 + ascensionProfile(run.ascension).extraRouteCost;
   return (
     <div
       className={`exp-route exp-biome-${run.chapter ?? 0}`}
@@ -79,6 +82,10 @@ export function ExpeditionMap({
             ? `平票 · 由${names[leader] || `玩家 ${leader + 1}`}领队裁决`
             : "选择路线"}
         </strong>
+        <div className="exp-route-legend" aria-label="路线图例">
+          <span data-kind="shortcut">捷径 · {routeCost} 罗盘</span>
+          <span data-kind="backward">回溯 · {routeCost} 罗盘</span>
+        </div>
         <div className="exp-route-options">
           {options.map((node) => {
             const option = ballotOption(run, "map", node.id);
@@ -94,7 +101,6 @@ export function ExpeditionMap({
                 <NodeSymbol kind={node.kind} />
                 <span>
                   <strong>{option.label}</strong>
-                  <small>{option.detail}</small>
                 </span>
               </ChoiceButton>
             );
@@ -127,6 +133,28 @@ export function ExpeditionMap({
             aria-label="秘塔路线图"
             className="exp-route-svg"
           >
+            <defs>
+              <marker
+                id="exp-route-shortcut-arrow"
+                markerWidth="6"
+                markerHeight="6"
+                refX="4.5"
+                refY="3"
+                orient="auto"
+              >
+                <path d="M0,0 L6,3 L0,6 Z" fill="var(--exp-blue)" />
+              </marker>
+              <marker
+                id="exp-route-backward-arrow"
+                markerWidth="6"
+                markerHeight="6"
+                refX="4.5"
+                refY="3"
+                orient="auto"
+              >
+                <path d="M0,0 L6,3 L0,6 Z" fill="var(--exp-red)" />
+              </marker>
+            </defs>
             <g className="exp-route-links" fill="none">
               {layout.links.map((link) => (
                 <path
@@ -135,6 +163,30 @@ export function ExpeditionMap({
                     run.path.includes(link.from) && run.path.includes(link.to)
                   }
                   data-reachable={link.from === run.current}
+                  data-shortcut={link.shortcut}
+                  data-backward={link.backward}
+                  data-route-kind={
+                    link.backward
+                      ? "backward"
+                      : link.shortcut
+                        ? "shortcut"
+                        : "normal"
+                  }
+                  data-focus={
+                    chosen
+                      ? (link.from === run.current && link.to === chosen.id) ||
+                        link.from === chosen.id
+                        ? "active"
+                        : "muted"
+                      : undefined
+                  }
+                  markerEnd={
+                    link.backward
+                      ? "url(#exp-route-backward-arrow)"
+                      : link.shortcut
+                        ? "url(#exp-route-shortcut-arrow)"
+                        : undefined
+                  }
                   d={link.path}
                 />
               ))}
@@ -175,6 +227,7 @@ export function ExpeditionMap({
                   data-current={node.id === run.current}
                   data-available={available.includes(node.id)}
                   data-visited={run.path.includes(node.id)}
+                  data-route={node.route}
                   data-preview={selected === node.id}
                   disabled={
                     pending || !options.some((option) => option.id === node.id)

@@ -1,10 +1,22 @@
 import type { ExpeditionRun, MapNode } from "./adventure-types";
-import { nodeNames } from "./map";
+import { nodeNames, travelCost } from "./map";
 import { relics, storyEvents, type RelicId } from "./world";
+import { routeProfiles } from "./route-profiles";
 export type BallotPhase = ExpeditionRun["votePhase"];
 export function ballotPhase(run: ExpeditionRun): BallotPhase | undefined {
   const phase = run.phase === "tie" ? run.votePhase : run.phase;
-  return ["map", "event", "treasure", "holder"].includes(phase)
+  return [
+    "map",
+    "event",
+    "treasure",
+    "holder",
+    "oracle",
+    "contract",
+    "pawnshop",
+    "gamble",
+    "library",
+    "hunt",
+  ].includes(phase)
     ? (phase as BallotPhase)
     : undefined;
 }
@@ -28,10 +40,11 @@ export function ballotOption(
 ) {
   if (phase === "map") {
     const node = run.map.flat().find((node) => node.id === choice)!;
+    const travel = travelCost(run, node);
     return {
       label: routeLabel(run.map, node),
       node,
-      detail: `后续：${
+      detail: `${node.route ? `${routeProfiles[node.route].name}：${routeProfiles[node.route].summary} ` : ""}${travel.visited ? "已探索，仅可通行 · " : ""}${travel.cost ? `罗盘 ${travel.cost} · ` : ""}后续：${
         node.next.length
           ? [
               ...new Set(
@@ -45,6 +58,83 @@ export function ballotOption(
       }`,
     };
   }
+  if (phase === "oracle")
+    return {
+      label:
+        choice === "luck"
+          ? "每人获得 1 幸运筹码"
+          : choice === "heal"
+            ? "每人恢复 8 生命"
+            : choice === "compass"
+              ? "罗盘充能 +1"
+              : "观星选项",
+      node: undefined,
+      detail: "全队选择后统一结算",
+    };
+  if (phase === "contract")
+    return {
+      label:
+        choice === "accept"
+          ? "签订孵巢契约"
+          : choice === "refuse"
+            ? "拒绝契约"
+            : "誓约选项",
+      node: undefined,
+      detail:
+        choice === "accept"
+          ? "每人获得 80 金币，下一首领增加一只幼体"
+          : "不改变后续首领",
+    };
+  if (phase === "pawnshop")
+    return {
+      label:
+        choice === "sell"
+          ? "典当遗物"
+          : choice === "buy"
+            ? "购入随机遗物"
+            : "离开当铺",
+      node: undefined,
+      detail:
+        choice === "sell"
+          ? "每人失去 1 件遗物并回复 65 金币"
+          : choice === "buy"
+            ? "每人支付 45 金币获得随机遗物"
+            : "不进行交换",
+    };
+  if (phase === "gamble")
+    return {
+      label:
+        choice === "safe"
+          ? "稳妥分赃"
+          : choice === "risk"
+            ? "押上命运"
+            : "离开赌局",
+      node: undefined,
+      detail:
+        choice === "safe"
+          ? "每人获得 15 金币"
+          : choice === "risk"
+            ? "约六成概率获得 55 金币，否则失去 12 生命"
+            : "不冒险",
+    };
+  if (phase === "library")
+    return {
+      label: choice === "bargain" ? "签下禁书契约" : "离开禁书库",
+      node: undefined,
+      detail:
+        choice === "bargain"
+          ? "每人获得 1 张永久废牌和 1 件遗物、50 金币"
+          : "不带走禁书",
+    };
+  if (phase === "hunt")
+    return {
+      label: choice === "accept" ? "接下悬赏" : "离开追猎台",
+      node: undefined,
+      detail:
+        choice === "accept"
+          ? "下一次精英获得额外词条，胜利后每人多得 50 金币"
+          : "不改变下一场精英",
+    };
   const label =
     phase === "event"
       ? choice === "leave"

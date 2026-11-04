@@ -6,7 +6,7 @@ export const chapters = [
     health: 1,
     attack: 1,
     width: 6,
-    rule: "护甲与蓄力：观察格挡和攻击意图，保留爆发窗口。",
+    rule: "审判与命运：拆除律令碑、拨回未来议程，在阶段切换前保留爆发窗口。",
   },
   {
     name: "菌蚀花园",
@@ -15,7 +15,7 @@ export const chapters = [
     health: 1.35,
     attack: 1.12,
     width: 8,
-    rule: "孢子与再生：毒素绕过格挡，优先处理治疗者，净化可以阻止持续损血。",
+    rule: "孢子与根须：净化孢子、斩断连接，并决定先击破哪一具双生身体。",
   },
   {
     name: "齿轮熔炉",
@@ -24,7 +24,16 @@ export const chapters = [
     health: 1.75,
     attack: 1.25,
     width: 8,
-    rule: "机关与蓄力：拆除护卫并削弱蓄势中的攻击者，集火或提前援护。",
+    rule: "熔炉与节拍：开关冷却阀管理热量，控制出牌数量避免时钟过载。",
+  },
+  {
+    name: "镜月回廊",
+    biome: "mirror",
+    depth: 16,
+    health: 2.2,
+    attack: 1.4,
+    width: 8,
+    rule: "镜面与月潮：切换攻击和技能打断回响，在满潮前安排爆发与防护。",
   },
 ] as const;
 export type Biome = (typeof chapters)[number]["biome"];

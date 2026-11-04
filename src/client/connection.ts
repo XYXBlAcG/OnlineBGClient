@@ -5,7 +5,7 @@ import {
 } from "../domain/compute-diagnostics";
 import type { SearchHostRequest } from "./compute-ports";
 import { SnapshotReplica } from "../domain/sync";
-import { gameCatalogue } from "../domain/catalogue";
+import { gameRulesVersion } from "../domain/catalogue";
 import {
   protocolVersion,
   type Command,
@@ -175,7 +175,10 @@ export class NetworkConnection implements Connection {
         response.type === "snapshot" &&
         (response.snapshot.apiVersion !== protocolVersion ||
           response.snapshot.rulesVersion !==
-            gameCatalogue[response.snapshot.kind]?.version)
+            gameRulesVersion(
+              response.snapshot.kind,
+              response.snapshot.config?.mahjong.mode,
+            ))
       ) {
         this.close();
         this.status("版本不兼容");
