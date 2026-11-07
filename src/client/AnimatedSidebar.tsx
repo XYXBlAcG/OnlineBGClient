@@ -37,8 +37,8 @@ export function AnimatedSidebar({
       { opacity: 1, transform: "translate(0,0)" },
     ];
     const animation = element.animate(open ? frames : [...frames].reverse(), {
-      duration: 200,
-      easing: "cubic-bezier(.2,.7,.2,1)",
+      duration: 240,
+      easing: "cubic-bezier(.16,1,.3,1)",
     });
     void animation.finished.then(
       () => {

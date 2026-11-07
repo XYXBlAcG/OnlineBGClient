@@ -250,7 +250,7 @@ pub fn open_link(key: String) -> Result<(), String> {
     let profile: serde_json::Value =
         serde_json::from_str(include_str!("../../src/client/about.json"))
             .map_err(|error| error.to_string())?;
-    if !["github", "original", "livekit"].contains(&key.as_str()) {
+    if !["github", "project", "original", "livekit"].contains(&key.as_str()) {
         return Err("链接未配置".into());
     }
     let url = profile[&key].as_str().ok_or("链接未配置")?;

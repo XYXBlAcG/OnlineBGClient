@@ -3,6 +3,7 @@ import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { confirmation } from "../confirmation-controller";
 import { Slider } from "../ui/Controls";
+import { Shortcut } from "../ui/Shortcut";
 import { useVoice } from "./VoiceProvider";
 import "./voice.css";
 const labels = {
@@ -13,7 +14,13 @@ const labels = {
   reconnecting: "正在恢复语音",
   error: "语音已断开",
 };
-export function VoiceToolbar({ onOpen }: { onOpen: () => void }) {
+export function VoiceToolbar({
+  onOpen,
+  muteBinding,
+}: {
+  onOpen: () => void;
+  muteBinding?: string;
+}) {
   const { view, send } = useVoice();
   if (!isTauri()) return null;
   const active = ["connected", "reconnecting"].includes(view.phase);
@@ -29,7 +36,8 @@ export function VoiceToolbar({ onOpen }: { onOpen: () => void }) {
           aria-pressed={view.muted}
           onClick={() => send({ type: "mute" })}
         >
-          {view.muted ? "麦克风已静音" : "麦克风开启"}
+          {view.muted ? "麦克风已静音" : "麦克风开启"}{" "}
+          {muteBinding && <Shortcut binding={muteBinding} />}
         </button>
       )}
     </span>
@@ -171,7 +179,7 @@ export function VoiceDock() {
                   value={member.volume}
                   min={0}
                   max={1}
-                  step={0.05}
+                  step={0.001}
                   onValueChange={(volume) =>
                     send({ type: "volume", target: member.id, volume })
                   }

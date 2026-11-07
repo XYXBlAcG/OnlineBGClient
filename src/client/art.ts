@@ -14,14 +14,16 @@ export function effectTexture(style: InteractionStyle): string {
   const file =
     style === "fire"
       ? "fire_01"
-      : style === "rain" || style === "float"
-        ? "circle_01"
-        : style === "cloud" || style === "splat"
-          ? "smoke_01"
-          : style === "shine" || style === "bloom"
-            ? "light_01"
-            : style === "confetti" || style === "orbit"
-              ? "star_01"
-              : "spark_01";
+      : style === "impact" || style === "shock"
+        ? "muzzle_01"
+        : style === "bloom" || style === "shine"
+          ? "magic_01"
+          : style === "orbit" || style === "confetti"
+            ? "twirl_01"
+            : style === "rain" || style === "float"
+              ? "circle_01"
+              : style === "cloud" || style === "splat"
+                ? "smoke_01"
+                : "spark_01";
   return `/art/${file}.png`;
 }

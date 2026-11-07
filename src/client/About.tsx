@@ -1,4 +1,5 @@
 import releases from "./releases.json";
+import links from "./about.json";
 import { useNativeWindow } from "./native/windows";
 import { ExternalLink } from "./ExternalLink";
 import { Panel } from "./ui/Controls";
@@ -33,6 +34,12 @@ export function About({
     >
       <h2>{productName}</h2>
       <p className="muted">{version}</p>
+      <p>
+        项目 Github 主页：
+        <ExternalLink name="project" onError={onError}>
+          {links.project}
+        </ExternalLink>
+      </p>
       {(
         [
           ["github", "作者 Github 主页：", "链接"],

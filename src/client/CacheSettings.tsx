@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { ClientStore, subscribeRecords } from "./storage";
 import { confirmation } from "./confirmation-controller";
+import { Switch } from "./ui/Controls";
 export function CacheSettings({
   onError,
   onAuditCleared,
@@ -81,20 +82,16 @@ export function CacheSettings({
   return (
     <section className="settings-section">
       <h3>对局记录</h3>
-      <label className="setting-row">
-        <span>自动保存对局记录</span>
-        <input
-          type="checkbox"
-          aria-label="自动保存对局记录"
-          disabled={saving === null || busy}
-          checked={saving ?? true}
-          onChange={(event) => {
-            void store
-              .setRecordSaving(event.target.checked)
-              .catch((error) => onError(String(error)));
-          }}
-        />
-      </label>
+      <Switch
+        label="自动保存对局记录"
+        disabled={saving === null || busy}
+        checked={saving ?? true}
+        onCheckedChange={(enabled) => {
+          void store
+            .setRecordSaving(enabled)
+            .catch((error) => onError(String(error)));
+        }}
+      />
       <p className="muted">
         控制本机历史归档，手动导入和当前房间恢复不受影响。
       </p>

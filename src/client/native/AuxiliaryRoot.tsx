@@ -15,6 +15,7 @@ import { Records } from "../Records";
 import { ComputeDiagnostics } from "../ComputeDiagnostics";
 import { loadPreferences } from "../preferences";
 import { applyTheme } from "../themes";
+import { applyDisplayScale } from "../display-scale";
 import { installContextMenuPolicy } from "../desktop-context-menu";
 import {
   auxiliaryView,
@@ -83,6 +84,7 @@ export function AuxiliaryRoot() {
   }, [payload]);
   useEffect(() => {
     applyTheme(preferences.theme);
+    applyDisplayScale(preferences);
     const media = matchMedia("(prefers-color-scheme: dark)");
     const update = () => applyTheme(preferences.theme);
     media.addEventListener("change", update);

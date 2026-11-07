@@ -35,7 +35,7 @@
   display: grid;
   gap: 12px;
 }
-.banner-permissions h3 {
+.banner-permissions .setting-row {
   margin: 0;
 }
 .chat-composer {
@@ -50,8 +50,10 @@
   flex-wrap: wrap;
 }
 .chat-compose-tools button {
-  padding: 6px 9px;
-  font-size: 12px;
+  padding: 7px 10px;
+  font-size: var(--font-size-control);
+  font-weight: var(--font-weight-control);
+  line-height: var(--line-height-control);
 }
 .chat-compose-tools input[hidden] {
   display: none;
@@ -72,9 +74,24 @@
 .chat-command-help > button {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   text-align: left;
+}
+.chat-command-help code,
+.chat-command-hints code {
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+.chat-command-help > button > span {
+  color: var(--text);
+  font-size: 13px;
 }
 .effect-picker {
   display: grid;
@@ -169,7 +186,6 @@
   overflow-wrap: anywhere;
   color: #ffce37;
   text-shadow: 0 2px 8px #0006;
-  background: #1c1234e6;
 }
 .social-banner[data-preset="red"] strong {
   text-shadow: 0 2px 8px #0006;
@@ -222,9 +238,7 @@
 }
 .banner-actionbar strong {
   font-size: clamp(18px, 3vw, 30px);
-  padding: 10px 20px;
-  background: #161a28ce;
-  border-radius: 16px;
+  text-shadow: 0 2px 8px #0006;
 }
 .banner-effect-main {
   font-size: clamp(100px, 26vw, 250px);
@@ -401,6 +415,7 @@
   top: auto;
   bottom: 0;
   left: 0;
+  right: 0;
   transform: none;
   width: 100%;
   max-height: 85dvh;

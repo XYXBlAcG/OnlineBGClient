@@ -34,7 +34,7 @@ export function VoiceEffectControls({
               value={value.amount}
               min={0}
               max={1}
-              step={0.05}
+              step={0.001}
               onValueChange={(amount) => onChange({ ...value, amount })}
             />
           </label>

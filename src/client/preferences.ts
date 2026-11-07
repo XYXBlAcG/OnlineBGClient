@@ -27,6 +27,8 @@ export const preferencesSchema = z.object({
   quickStartOpen: z.boolean().default(true),
   voice: voicePreferencesSchema.default(voicePreferencesSchema.parse({})),
   gameSizes: z.record(z.string(), z.number().finite().min(0.5).max(3)).default({}),
+  uiFontScale: z.number().finite().min(0.9).max(1.2).default(1),
+  uiScale: z.number().finite().min(1).max(1.25).default(1),
   theme: z.string().default("system"),
   motion: z.boolean().default(true),
   enhancedGameMotion: z.boolean().default(false),
@@ -49,7 +51,15 @@ export const preferencesSchema = z.object({
   beginnerGuides: z.partialRecord(z.enum(gameKinds), z.boolean()).default({}),
   bindings: z.record(z.string(), z.string()).default({}),
   favorites: z.array(z.string()).default([]),
-  recentGames: z.array(z.string()).default([]),
+  gameStats: z
+    .record(
+      z.string(),
+      z.object({
+        plays: z.number().int().min(0).default(0),
+        lastPlayed: z.number().int().min(0).default(0),
+      }),
+    )
+    .default({}),
 });
 export type Preferences = z.infer<typeof preferencesSchema>;
 export const defaultPreferences = preferencesSchema.parse({});
@@ -57,7 +67,21 @@ export function loadPreferences(): Preferences {
   const saved = localStorage.getItem("onlinebg.preferences");
   if (!saved) return preferencesSchema.parse({});
   try {
-    const preferences = preferencesSchema.parse(JSON.parse(saved));
+    const raw = JSON.parse(saved) as Record<string, unknown>,
+      preferences = preferencesSchema.parse(raw);
+    if (
+      !Object.keys(preferences.gameStats).length &&
+      Array.isArray(raw.recentGames)
+    ) {
+      const recentGames = raw.recentGames;
+      recentGames.forEach((kind, index) => {
+        if (typeof kind === "string")
+          preferences.gameStats[kind] = {
+            plays: Math.max(0, recentGames.length - index),
+            lastPlayed: Date.now() - index,
+          };
+      });
+    }
     if (
       preferences.theme !== "system" &&
       !themes.list().some((theme) => theme.id === preferences.theme)

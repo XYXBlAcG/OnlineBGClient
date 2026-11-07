@@ -1,19 +1,55 @@
 :root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --ui-font-scale: 1;
+  --ui-scale: 1;
+  --font-size-control: calc(14px * var(--ui-font-scale));
+  --font-weight-control: 600;
+  --line-height-control: calc(20px * var(--ui-font-scale));
+  --font-size-input: calc(16px * var(--ui-font-scale));
+  --line-height-input: calc(22px * var(--ui-font-scale));
+  --font-size-body: calc(14px * var(--ui-font-scale));
+  --line-height-body: 1.5;
+  --font-size-aux: calc(12px * var(--ui-font-scale));
+  --line-height-aux: calc(18px * var(--ui-font-scale));
+  --font-size-group: calc(16px * var(--ui-font-scale));
+  --font-weight-group: 650;
+  --line-height-group: calc(24px * var(--ui-font-scale));
+  --font-size-page: calc(22px * var(--ui-font-scale));
+  --font-weight-page: 700;
+  --line-height-page: 1.3;
+  --control-height: calc(38px * var(--ui-scale));
+  --control-height-compact: calc(34px * var(--ui-scale));
+  --control-padding-y: calc(8px * var(--ui-scale));
+  --control-padding-x: calc(12px * var(--ui-scale));
+  --app-toolbar-height: calc(58px * var(--ui-scale));
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
-  --radius-control: 10px;
+  --control-gap: 10px;
+  --details-content-gap: var(--space-2);
+  --radius-control: 11px;
   --radius-panel: 18px;
   --radius-card: 16px;
   --motion-control: 140ms;
   --motion-panel: 220ms;
+  --motion-smooth: 280ms;
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
   --bg-app: var(--canvas);
   --bg-panel: var(--surface);
   --action-primary: var(--accent);
   --action-foreground: var(--accent-text);
+  --interactive-hover: color-mix(in srgb, var(--field) 88%, #000);
+  --interactive-pressed: color-mix(in srgb, var(--field) 78%, #000);
+  --progress-track: color-mix(in srgb, var(--line) 72%, transparent);
+  --progress-fill: var(--accent);
   --surface-soft: color-mix(in srgb, var(--surface) 72%, var(--canvas));
   --action-focus: var(--focus);
   --action-danger: #b64040;
@@ -23,12 +59,22 @@
   --action-danger: #ffaaa1;
   --link: #9bbdff;
 }
-:is(.app-shell, .native-window-root, .ui-panel) button[data-button-variant] {
+:is(.app-shell, .native-window-root, .ui-panel)
+  button[data-button-variant] {
   border-radius: var(--radius-control);
-  font-weight: 600;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-control);
+  font-weight: var(--font-weight-control);
+  line-height: var(--line-height-control);
   transition:
     background var(--motion-control),
+    color var(--motion-control),
+    box-shadow var(--motion-control),
     transform var(--motion-control);
+}
+:is(.app-shell, .native-window-root, .ui-panel)
+  button[data-button-variant="secondary"] {
+  color: color-mix(in srgb, var(--text) 82%, transparent);
 }
 :is(.app-shell, .native-window-root, .ui-panel)
   button[data-button-variant="primary"] {
@@ -41,11 +87,12 @@
   color: var(--action-danger);
 }
 :is(.app-shell, .native-window-root, .ui-panel)
-  button[data-button-variant="quiet"] {
-  background: transparent;
+  button[data-button-variant]:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 999px #00000012;
 }
 :is(.app-shell, .native-window-root, .ui-panel)
   button[data-button-variant]:active:not(:disabled) {
+  box-shadow: inset 0 0 0 999px #00000022;
   transform: translateY(1px);
 }
 :is(.app-shell, .native-window-root, .ui-panel)

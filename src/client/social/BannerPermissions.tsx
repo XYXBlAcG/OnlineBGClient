@@ -11,19 +11,21 @@ export function BannerPermissions({
   const policy = snapshot.bannerPolicy;
   return (
     <section className="banner-permissions">
-      <h3>横幅与全屏表情</h3>
-      <Select
-        aria-label="横幅使用权限"
-        value={policy.mode}
-        onValueChange={(mode) =>
-          onChange({ ...policy, mode: mode as BannerPolicy["mode"] })
-        }
-      >
-        <option value="host">仅房主</option>
-        <option value="selected">房主和指定玩家</option>
-        <option value="all">所有玩家</option>
-        <option value="off">禁止发送</option>
-      </Select>
+      <label className="setting-row">
+        <span>横幅与全屏表情</span>
+        <Select
+          aria-label="横幅使用权限"
+          value={policy.mode}
+          onValueChange={(mode) =>
+            onChange({ ...policy, mode: mode as BannerPolicy["mode"] })
+          }
+        >
+          <option value="host">仅房主</option>
+          <option value="selected">房主和指定玩家</option>
+          <option value="all">所有玩家</option>
+          <option value="off">禁止发送</option>
+        </Select>
+      </label>
       {policy.mode === "selected" &&
         snapshot.seats
           .filter(

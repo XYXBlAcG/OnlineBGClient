@@ -178,7 +178,7 @@
 :root[data-mobile-orientation="landscape"]
   .mobile-shell.mobile-immersive
   .game-area
-  > :not(.game-stage,.game-status-row) {
+  > :not(.game-stage, .game-status-row) {
   display: none;
 }
 :root[data-mobile-orientation="landscape"]
@@ -529,10 +529,13 @@
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
   .gw-table
-  > .map-viewport {
+  > .gw-battlefield {
   grid-column: 1;
   grid-row: 2;
   min-height: 0;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-shot-panel {
+  display: none;
 }
 :root[data-mobile-orientation="landscape"] .mobile-shell .gw-board-space {
   min-height: 0;
@@ -560,19 +563,6 @@
   flex: 1;
   width: calc(100% - 35px);
 }
-:root[data-mobile-orientation="landscape"] .mobile-shell .gw-toolbar {
-  align-items: stretch;
-  gap: 4px;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
-  .gw-toolbar
-  .ui-select {
-  max-width: 100%;
-}
-:root[data-mobile-orientation="landscape"] .mobile-shell .gw-last-shot {
-  display: none;
-}
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
   .gw-soldier
@@ -582,14 +572,13 @@
 }
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
-  .gw-table:has(.gw-controls)
-  .gw-keyboard {
-  max-height: none;
-  overflow: visible;
-}
-:root[data-mobile-orientation="landscape"]
-  .mobile-shell
   .gw-table:not(:has(.gw-controls)) {
   grid-template-columns: minmax(0, 1fr);
 }
-:root[data-mobile-orientation="landscape"] .mobile-shell .original-game:is([data-game="dominion"],[data-game="expedition"]) { min-height:0; flex:1; padding:2px; }
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game:is([data-game="dominion"], [data-game="expedition"]) {
+  min-height: 0;
+  flex: 1;
+  padding: 2px;
+}

@@ -23,7 +23,7 @@
   flex-wrap: wrap;
 }
 .app-shell .library-heading h1 {
-  font-size: 32px;
+  font-size: calc(32px * var(--ui-font-scale));
   letter-spacing: -1px;
   margin: 8px 0;
   line-height: 1.2;
@@ -250,6 +250,25 @@
   min-width: 0;
   box-shadow: 0 2px 12px #17233006;
 }
+.lobby-setup-transition {
+  transition: height var(--motion-panel) var(--ease-emphasized);
+}
+.lobby-setup-transition[data-animating="true"] {
+  overflow: hidden;
+}
+.lobby-setup-transition-content {
+  display: flow-root;
+  transition:
+    opacity 140ms var(--ease-standard),
+    transform 140ms var(--ease-standard);
+}
+.lobby-setup-transition[data-phase="out"] .lobby-setup-transition-content {
+  opacity: 0;
+}
+.lobby-setup-transition[data-phase="in"] .lobby-setup-transition-content {
+  opacity: 0;
+  animation: lobby-content-in 200ms var(--ease-emphasized) 20ms forwards;
+}
 .club-setup-heading {
   display: flex;
   align-items: center;
@@ -283,8 +302,8 @@
   white-space: nowrap;
   min-width: 0;
 }
-.room-setup > label:not(.checkbox, .ui-switch-label),
-.lobby-body > label:not(.checkbox, .ui-switch-label) {
+.lobby-setup-transition > .lobby-setup-transition-content > .ui-field,
+.lobby-body > label:not(.checkbox, .ui-switch-label, .setting-row) {
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -333,6 +352,18 @@
   outline-offset: 3px;
   border-radius: 4px;
 }
+.lobby-options-open {
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--canvas) 78%, transparent);
+}
+.lobby-options-title {
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 750;
+}
 .lobby-options[open] > summary {
   margin-bottom: 12px;
 }
@@ -367,6 +398,19 @@
 .club-empty p {
   color: var(--muted);
   font-size: 13px;
+}
+.club-empty button {
+  margin-top: 18px;
+}
+@keyframes lobby-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @media (hover: hover) {
   .lobby-shell .club-game-card:hover {
@@ -427,7 +471,7 @@
     height: 98px;
   }
   .app-shell .library-heading h1 {
-    font-size: 28px;
+    font-size: calc(28px * var(--ui-font-scale));
   }
 
   .category-tabs {
@@ -441,10 +485,19 @@
   transition: none;
   transform: none;
 }
+:root[data-motion="false"] .lobby-setup-transition,
+:root[data-motion="false"] .lobby-setup-transition-content {
+  transition: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .lobby-shell .club-game-card {
     transition: none;
     transform: none;
+  }
+  .lobby-setup-transition,
+  .lobby-setup-transition-content {
+    transition: none;
+    animation: none;
   }
 }
 

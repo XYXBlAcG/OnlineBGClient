@@ -5,6 +5,7 @@ import {
   type GameKind,
 } from "../../domain/catalogue";
 import { GameCover } from "./GameCover";
+import { TextField } from "../ui/Controls";
 export function GameLibrary({
   selected,
   favorites,
@@ -27,23 +28,29 @@ export function GameLibrary({
       (category === "全部" ||
         gameCatalogue[kind].category === category ||
         (category === "收藏" && favorites.includes(kind)) ||
-        (category === "最近" && recent.includes(kind))) &&
+        (category === "常玩" && recent.includes(kind))) &&
       gameCatalogue[kind].name
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
   );
-  if (category === "最近")
-    kinds.sort((a, b) => recent.indexOf(a) - recent.indexOf(b));
+  kinds.sort((a, b) => {
+    const ai = recent.indexOf(a),
+      bi = recent.indexOf(b);
+    if (ai < 0 && bi < 0) return 0;
+    if (ai < 0) return 1;
+    if (bi < 0) return -1;
+    return ai - bi;
+  });
   return (
     <section className="game-library" aria-disabled={disabled}>
       <div className="library-heading">
         <div>
           <h1>今晚玩什么？</h1>
         </div>
-        <input
+        <TextField
+          label="搜索游戏"
           type="search"
           aria-label="搜索游戏"
-          placeholder="搜索游戏"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -51,7 +58,7 @@ export function GameLibrary({
       <nav className="category-tabs" aria-label="游戏分类">
         {[
           "全部",
-          "最近",
+          "常玩",
           "收藏",
           ...new Set(gameKinds.map((kind) => gameCatalogue[kind].category)),
         ].map((value) => (
@@ -105,8 +112,8 @@ export function GameLibrary({
           <p>
             {category === "收藏"
               ? "点游戏卡片上的星标，收藏喜欢的游戏。"
-              : category === "最近"
-                ? "玩过的游戏会出现在这里。"
+              : category === "常玩"
+                ? "开始过的游戏会按游玩次数排在这里。"
                 : "试试其他关键词或分类。"}
           </p>
           <button

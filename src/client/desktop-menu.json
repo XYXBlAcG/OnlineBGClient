@@ -13,7 +13,7 @@
     "title": "房间",
     "items": [
       { "id": "app.invite", "title": "复制邀请" },
-      { "id": "room.setup", "title": "游戏与人数" },
+      { "id": "room.setup", "title": "更换游戏 / 下一局" },
       { "id": "room.leave", "title": "离开房间" }
     ]
   },

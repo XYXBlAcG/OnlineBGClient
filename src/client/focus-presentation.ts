@@ -1,3 +1,5 @@
+export const focusToggleBinding = "F";
+
 export function focusPresentation({
   focused,
   playing,

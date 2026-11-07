@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Snapshot } from "../domain/protocol";
 import type { Action } from "../domain/types";
 import { CommandRegistry, formatBinding, keyboardBinding } from "./commands";
+import { Button } from "./ui/Controls";
+import { Shortcut } from "./ui/Shortcut";
 
 export function GameCommands({
   snapshot,
@@ -141,15 +143,14 @@ export function GameCommands({
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button
+        <Button
+          variant="primary"
           aria-pressed={open}
           disabled={!snapshot.state || snapshot.finished}
         >
           游戏操作{" "}
-          <kbd>
-            {formatBinding(bindings[`${snapshot.kind}.actions`] ?? "F2")}
-          </kbd>
-        </button>
+          <Shortcut binding={bindings[`${snapshot.kind}.actions`] ?? "F2"} />
+        </Button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
@@ -203,13 +204,16 @@ export function GameCommands({
                     </ChoiceButton>
                   ))}
                 </div>
-                <button
-                  className="primary-button"
+                <Button
+                  variant="primary"
                   disabled={pending || !snapshot.candidates[selected]}
                   onClick={() => confirm(selected)}
                 >
-                  确认
-                </button>
+                  确认{" "}
+                  <Shortcut
+                    binding={bindings[`${snapshot.kind}.submit`] ?? "Enter"}
+                  />
+                </Button>
               </>
             ) : (
               <p>等待其他玩家操作</p>

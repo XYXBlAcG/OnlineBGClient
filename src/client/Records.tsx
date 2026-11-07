@@ -3,8 +3,7 @@ import { PartyLedger } from "../domain/party";
 import { ReplayBanners } from "./social/ReplayBanners";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
-import { useEffect, useState, useMemo, useRef } from "react";
-import { GameEngine } from "../domain/engine";
+import { useEffect, useState, useRef } from "react";
 import { gameCatalogue } from "../domain/catalogue";
 import { Replay, type ReplayRecord } from "../domain/replay";
 import type { GameState } from "../domain/types";
@@ -34,7 +33,6 @@ export function Records({
       if (intent.type === "error") onError(intent.message);
     },
   );
-  const engine = useMemo(() => new GameEngine(), []);
   const [store] = useState(() => new ClientStore());
   const [records, setRecords] = useState<ReplayRecord[]>([]);
   const [selected, setSelected] = useState<ReplayRecord | null>(null);
@@ -44,9 +42,24 @@ export function Records({
   } | null>(null);
   const replayWorker = useRef<Worker | null>(null);
   const wantedFrame = useRef(0);
-  const frameCount = selected ? Math.max(selected.events.length+1,...(selected.party??[]).map(({frame,event})=>frame+Math.ceil((event.time-(event.createdAt??event.time)+event.duration)/1000)+1)) : 0;
+  const frameCache = useRef(new Map<string, GameState>());
+  const requestedFrames = useRef(new Set<string>());
+  const frameCount = selected
+    ? Math.max(
+        selected.events.length + 1,
+        ...(selected.party ?? []).map(
+          ({ frame, event }) =>
+            frame +
+            Math.ceil(
+              (event.time - (event.createdAt ?? event.time) + event.duration) /
+                1000,
+            ) +
+            1,
+        ),
+      )
+    : 0;
   const [step, setStep] = useState(0);
-  const gameStep=selected?Math.min(step,selected.events.length):0;
+  const gameStep = selected ? Math.min(step, selected.events.length) : 0;
   wantedFrame.current = gameStep;
   const [actor, setActor] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -76,44 +89,104 @@ export function Records({
   }, [open, detached, store]);
   useEffect(() => {
     if (!selected) return;
+    frameCache.current.clear();
+    requestedFrames.current.clear();
+    setFrame(null);
+    setLoading(true);
     const worker = new Worker(new URL("./replay-worker.ts", import.meta.url), {
       type: "module",
     });
+    const request = (indexes: number[]) => {
+      const missing = indexes.filter((index) => {
+        const key = `${actor}:${index}`;
+        if (frameCache.current.has(key) || requestedFrames.current.has(key))
+          return false;
+        requestedFrames.current.add(key);
+        return true;
+      });
+      if (missing.length) worker.postMessage({ actor, indexes: missing });
+    };
     worker.onmessage = (event) => {
-      if (!event.data.error && event.data.index !== wantedFrame.current) return;
-      setLoading(false);
-      if (event.data.error) onError(event.data.error);
-      else setFrame({ index: event.data.index, state: event.data.state });
+      if (event.data.error) {
+        setLoading(false);
+        onError(event.data.error);
+        return;
+      }
+      for (const item of event.data.frames ?? []) {
+        frameCache.current.set(`${event.data.actor}:${item.index}`, item.state);
+        requestedFrames.current.delete(`${event.data.actor}:${item.index}`);
+      }
+      const wanted = frameCache.current.get(
+        `${event.data.actor}:${wantedFrame.current}`,
+      );
+      if (wanted) {
+        setFrame({ index: wantedFrame.current, state: wanted });
+        setLoading(false);
+      }
     };
     worker.onerror = (event) => {
       setLoading(false);
       onError(event.message);
     };
     replayWorker.current = worker;
-    worker.postMessage({ record: selected, index: 0 });
+    worker.postMessage({ record: selected, actor, indexes: [0] });
     return () => {
       worker.terminate();
       replayWorker.current = null;
     };
   }, [selected]);
   useEffect(() => {
-    if (selected && replayWorker.current) {
+    if (!selected || !replayWorker.current) return;
+    const worker = replayWorker.current;
+    const key = `${actor}:${gameStep}`;
+    const cached = frameCache.current.get(key);
+    if (cached) {
+      setFrame({ index: gameStep, state: cached });
+      setLoading(false);
+    } else {
       setLoading(true);
-      replayWorker.current.postMessage({ index: gameStep });
     }
-  }, [gameStep]);
+    const indexes = [
+      gameStep,
+      ...Array.from(
+        { length: Math.max(6, Math.ceil(speed * 4)) },
+        (_, index) => gameStep + index + 1,
+      ),
+    ].filter((index) => index < frameCount);
+    const missing = indexes.filter((index) => {
+      const frameKey = `${actor}:${index}`;
+      if (
+        frameCache.current.has(frameKey) ||
+        requestedFrames.current.has(frameKey)
+      )
+        return false;
+      requestedFrames.current.add(frameKey);
+      return true;
+    });
+    if (missing.length) worker.postMessage({ actor, indexes: missing });
+  }, [gameStep, actor, speed, frameCount, selected]);
   useEffect(() => {
     if (!selected || loading || !playing || frameCount < 2) return;
-    if (step >= frameCount - 1) {
-      setPlaying(false);
-      return;
-    }
-    const timer = window.setTimeout(
-      () => setStep((value) => Math.min(value + 1, frameCount - 1)),
-      1000 / speed,
-    );
-    return () => window.clearTimeout(timer);
-  }, [selected, loading, playing, frameCount, step, speed]);
+    let frameId = 0,
+      previous = performance.now(),
+      carry = 0;
+    const tick = (now: number) => {
+      carry += ((now - previous) / 1000) * speed;
+      previous = now;
+      const advance = Math.floor(carry);
+      if (advance > 0) {
+        carry -= advance;
+        setStep((value) => {
+          const next = Math.min(value + advance, frameCount - 1);
+          if (next >= frameCount - 1) setPlaying(false);
+          return next;
+        });
+      }
+      frameId = requestAnimationFrame(tick);
+    };
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [selected, loading, playing, frameCount, speed]);
   if (detached) return null;
   const preview: Snapshot | null =
     selected && frame && frame.index === gameStep
@@ -137,12 +210,18 @@ export function Records({
             online: true,
             ready: true,
           })),
-          state: engine.project(frame.state, actor),
+          state: frame.state,
           candidates: [],
           computation: null,
           aiPaused: false,
           bannerPolicy: { mode: "off", members: [] },
-          party: new PartyLedger().snapshot({players:[],observers:[],round:"replay",playing:false,finished:false}),
+          party: new PartyLedger().snapshot({
+            players: [],
+            observers: [],
+            round: "replay",
+            playing: false,
+            finished: false,
+          }),
           chat: [],
           chatSequence: 0,
           chatTotals: {},
@@ -227,7 +306,7 @@ export function Records({
       </Panel>
       {selected && (
         <Panel
-          className="ui-panel-wide"
+          className="ui-panel-wide replay-panel"
           open={!!selected}
           onOpenChange={(value) => {
             if (!value) {
@@ -299,7 +378,15 @@ export function Records({
             />
           </div>
           {!loading && <ReplayBanners record={selected} step={step} />}
-          {preview&&<ReplayParty record={selected} step={step} playing={playing&&!loading} speed={speed} preview={preview}/>}
+          {preview && (
+            <ReplayParty
+              record={selected}
+              step={step}
+              playing={playing && !loading}
+              speed={speed}
+              preview={preview}
+            />
+          )}
           {loading ? (
             <p>正在重放…</p>
           ) : (

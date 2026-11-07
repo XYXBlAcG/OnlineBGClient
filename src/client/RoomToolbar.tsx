@@ -7,12 +7,16 @@ import type { Command, Snapshot } from "../domain/protocol";
 import { gameCatalogue } from "../domain/catalogue";
 import { RoomSetup } from "./RoomSetup";
 import { ThemeControl } from "./ThemeControl";
-import { Panel, Select } from "./ui/Controls";
+import { Button, Panel, Select } from "./ui/Controls";
 import { GameCommands } from "./GameCommands";
 import type { Preferences } from "./preferences";
-import type { CommandRegistry } from "./commands";
+import { platformModifier, type CommandRegistry } from "./commands";
+import { focusToggleBinding } from "./focus-presentation";
+import { Shortcut } from "./ui/Shortcut";
 import type { Action } from "../domain/types";
 import { BannerPermissions } from "./social/BannerPermissions";
+import { ChallengeBoard } from "./ChallengeBoard";
+import { ConnectionStatus } from "./ConnectionStatus";
 
 export function RoomToolbar({
   snapshot,
@@ -35,6 +39,7 @@ export function RoomToolbar({
   guideAvailable,
   guideShown,
   onGuide,
+  onPractice,
 }: {
   snapshot: Snapshot;
   mobile: boolean;
@@ -63,6 +68,7 @@ export function RoomToolbar({
   guideAvailable: boolean;
   guideShown: boolean;
   onGuide: () => void;
+  onPractice?: () => void;
 }) {
   const [surface, dispatch] = useReducer(roomSurfaceTransition, null);
   const open = surface === "menu";
@@ -77,77 +83,168 @@ export function RoomToolbar({
         )));
   const controls = (
     <>
-      {mobile && <ThemeControl value={preferences.theme} onChange={onTheme} />}
-      {mobile && snapshot.canManage && (
-        <RoomSetup
-          registry={registry}
-          binding={preferences.bindings["room.setup"] ?? ""}
-          snapshot={snapshot}
-          onError={onError}
-          onApply={(setup) => {
-            send({ type: "game", setup });
-            setOpen(false);
-          }}
-        />
-      )}
-      {mobile && guideAvailable && (
-        <button
-          aria-pressed={guideShown}
-          onClick={() => {
-            setOpen(false);
-            onGuide();
-          }}
-        >
-          {guideShown ? "关闭新手引导" : "新手引导"}
-        </button>
-      )}
-      {mobile &&
-        snapshot.canManage &&
-        snapshot.state &&
-        snapshot.config.ai.length > 0 && (
-          <button
-            onClick={() => send({ type: "ai-run", enabled: snapshot.aiPaused })}
+      <section className="room-drawer-section">
+        {guideAvailable && (
+          <Button
+            aria-pressed={guideShown}
+            onClick={() => {
+              setOpen(false);
+              onGuide();
+            }}
           >
-            {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
-          </button>
+            {guideShown ? "关闭新手引导" : "新手引导"}
+          </Button>
         )}
-      {snapshot.canManage && gameCatalogue[snapshot.kind].ai && (
-        <label className="room-tempo">
-          AI 间隔
-          <Select
-            aria-label="对局 AI 间隔"
-            value={snapshot.config.aiDelayMs}
-            onValueChange={(value) =>
-              send({ type: "tempo", delayMs: Number(value) })
-            }
+        {snapshot.playing && (
+          <Button
+            aria-pressed={focused}
+            onClick={() => {
+              setOpen(false);
+              onFocus();
+            }}
           >
-            {[
-              ...new Set([
-                0,
-                500,
-                1000,
-                1500,
-                2000,
-                3000,
-                5000,
-                snapshot.config.aiDelayMs,
-              ]),
-            ]
-              .sort((a, b) => a - b)
-              .map((value) => (
-                <option key={value} value={value}>
-                  {value / 1000} 秒
-                </option>
-              ))}
-          </Select>
-        </label>
+            {focused ? "恢复界面" : "专注牌桌"}{" "}
+            <Shortcut
+              binding={preferences.bindings["view.focus"] ?? focusToggleBinding}
+            />
+          </Button>
+        )}
+        {onPractice && (
+          <Button
+            onClick={() => {
+              setOpen(false);
+              onPractice();
+            }}
+          >
+            练习核心操作
+          </Button>
+        )}
+        {snapshot.challenges && (
+          <ChallengeBoard board={snapshot.challenges} snapshot={snapshot} />
+        )}
+      </section>
+      {(snapshot.canManage || snapshot.party.enabled || network) && (
+        <section className="room-drawer-section">
+          {(snapshot.canManage || snapshot.party.enabled) && (
+            <Button
+              data-room-action="party"
+              onClick={() => dispatch({ type: "open", surface: "party" })}
+            >
+              {observer
+                ? snapshot.finished
+                  ? "颁奖"
+                  : "旁观互动"
+                : "房间派对"}
+            </Button>
+          )}
+          {network && (
+            <Button
+              onClick={() => {
+                setOpen(false);
+                onInvite();
+              }}
+            >
+              邀请二维码
+            </Button>
+          )}
+          {network && (
+            <Button onClick={invite}>
+              {inviteCopied ? "已复制邀请" : "复制邀请"}{" "}
+              <Shortcut
+                binding={
+                  preferences.bindings["app.invite"] ??
+                  `${platformModifier()}+Shift+I`
+                }
+              />
+            </Button>
+          )}
+        </section>
       )}
       {snapshot.canManage && (
-        <BannerPermissions
-          snapshot={snapshot}
-          onChange={(policy) => send({ type: "banner-policy", policy })}
-        />
+        <section className="room-drawer-section">
+          <RoomSetup
+            registry={registry}
+            binding={preferences.bindings["room.setup"] ?? ""}
+            snapshot={snapshot}
+            onError={onError}
+            onApply={(setup) => {
+              send({ type: "game", setup });
+              setOpen(false);
+            }}
+          />
+          {snapshot.state && snapshot.config.ai.length > 0 && (
+            <Button
+              onClick={() =>
+                send({ type: "ai-run", enabled: snapshot.aiPaused })
+              }
+            >
+              {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
+            </Button>
+          )}
+          {gameCatalogue[snapshot.kind].ai && (
+            <label className="room-tempo">
+              AI 间隔
+              <Select
+                aria-label="对局 AI 间隔"
+                value={snapshot.config.aiDelayMs}
+                onValueChange={(value) =>
+                  send({ type: "tempo", delayMs: Number(value) })
+                }
+              >
+                {[
+                  ...new Set([
+                    0,
+                    500,
+                    1000,
+                    1500,
+                    2000,
+                    3000,
+                    5000,
+                    snapshot.config.aiDelayMs,
+                  ]),
+                ]
+                  .sort((a, b) => a - b)
+                  .map((value) => (
+                    <option key={value} value={value}>
+                      {value / 1000} 秒
+                    </option>
+                  ))}
+              </Select>
+            </label>
+          )}
+          <BannerPermissions
+            snapshot={snapshot}
+            onChange={(policy) => send({ type: "banner-policy", policy })}
+          />
+        </section>
       )}
+      <section className="room-drawer-section">
+        <ConnectionStatus
+          snapshot={snapshot}
+          network={network}
+          latency={latency}
+        />
+      </section>
+      <section className="room-drawer-section">
+        <ThemeControl value={preferences.theme} onChange={onTheme} />
+      </section>
+      {onEnd &&
+        snapshot.canManage &&
+        snapshot.playing &&
+        !snapshot.finished && (
+          <section className="room-drawer-section room-drawer-danger">
+            <Button
+              variant="danger"
+              data-room-action="end"
+              onClick={() => {
+                setOpen(false);
+                onEnd();
+              }}
+            >
+              结束对局
+            </Button>
+          </section>
+        )}
     </>
   );
   return (
@@ -200,54 +297,22 @@ export function RoomToolbar({
               </>
             )}
           </small>
+          {snapshot.kind === "uno" && snapshot.config.team && (
+            <small className="uno-team-legend">
+              红队{" "}
+              {snapshot.seats
+                .filter((_, index) => index % 2 === 0)
+                .map((seat) => seat.name)
+                .join("、")}{" "}
+              · 蓝队{" "}
+              {snapshot.seats
+                .filter((_, index) => index % 2 === 1)
+                .map((seat) => seat.name)
+                .join("、")}
+            </small>
+          )}
         </div>
         <div className="room-primary-actions">
-          {(snapshot.canManage || snapshot.party.enabled) && (
-            <button
-              data-room-action="party"
-              onClick={() => dispatch({ type: "open", surface: "party" })}
-            >
-              {observer
-                ? snapshot.finished
-                  ? "颁奖"
-                  : "旁观互动"
-                : "房间派对"}
-            </button>
-          )}
-          {onEnd &&
-            snapshot.canManage &&
-            snapshot.playing &&
-            !snapshot.finished && (
-              <button data-room-action="end" onClick={onEnd}>
-                结束对局
-              </button>
-            )}
-          {snapshot.playing && (
-            <button aria-pressed={focused} onClick={onFocus}>
-              {focused ? "恢复界面" : mobile ? "沉浸牌桌" : "专注模式"}
-            </button>
-          )}
-          {!mobile && snapshot.canManage && (
-            <RoomSetup
-              registry={registry}
-              binding={preferences.bindings["room.setup"] ?? ""}
-              snapshot={snapshot}
-              onError={onError}
-              onApply={(setup) => send({ type: "game", setup })}
-            />
-          )}
-          {!mobile &&
-            snapshot.canManage &&
-            snapshot.state &&
-            snapshot.config.ai.length > 0 && (
-              <button
-                onClick={() =>
-                  send({ type: "ai-run", enabled: snapshot.aiPaused })
-                }
-              >
-                {snapshot.aiPaused ? "继续 AI" : "暂停 AI"}
-              </button>
-            )}
           {snapshot.actor >= 0 && (
             <GameCommands
               snapshot={snapshot}
@@ -257,22 +322,10 @@ export function RoomToolbar({
               pending={pending}
               onReveal={focused ? onFocus : undefined}
             />
-          )}{" "}
-          {network && (
-            <>
-              {!mobile && (
-                <button onClick={invite}>
-                  {inviteCopied ? "已复制邀请" : "复制邀请"}
-                </button>
-              )}
-              <button onClick={onInvite}>
-                {mobile ? "邀请" : "邀请二维码"}
-              </button>
-            </>
           )}
-          <button aria-expanded={open} onClick={() => setOpen(true)}>
+          <Button aria-expanded={open} onClick={() => setOpen(true)}>
             房间菜单
-          </button>
+          </Button>
         </div>
 
         <Panel
@@ -282,6 +335,7 @@ export function RoomToolbar({
           open={open}
           onOpenChange={setOpen}
           title="房间菜单"
+          overlayClassName="room-menu-overlay"
         >
           <div className="room-menu-controls">
             {controls}

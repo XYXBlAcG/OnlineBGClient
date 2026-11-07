@@ -3,7 +3,7 @@ import { PartySettings } from "./party/PartySettings";
 import { EmojiSettings } from "./emoji/EmojiSettings";
 import { DiagnosticsSettings } from "./DiagnosticsSettings";
 import { useGameSizing, type GameSizing } from "./game-sizing/GameSizing";
-import { GameSizeSettings } from "./game-sizing/GameSizeSettings";
+import { DisplaySettings } from "./game-sizing/DisplaySettings";
 import { UpdateSettings } from "./updates/UpdateSettings";
 import { emitTo } from "@tauri-apps/api/event";
 import { bannerContrast } from "./social/banner-color";
@@ -19,6 +19,7 @@ import { useNativeWindow } from "./native/windows";
 import type { PerformanceSettings } from "../domain/performance";
 import { PhraseSettings } from "./PhraseSettings";
 import { CacheSettings } from "./CacheSettings";
+import { AchievementGallery } from "./Achievements";
 import { enableNotifications } from "./notifications";
 import { ThemeControl } from "./ThemeControl";
 import { Panel, Select, Slider, Switch } from "./ui/Controls";
@@ -111,7 +112,7 @@ export function Settings({
         <nav className="settings-nav" aria-label="设置分组">
           {[
             "外观",
-            "游戏显示",
+            "界面显示",
             "消息与互动",
             ...(isTauri()
               ? ["声音与语音", "软件更新", "软件日志", "使用统计"]
@@ -120,6 +121,7 @@ export function Settings({
             "AI 计算",
             "常用语",
             "数据",
+            "成就",
             "快捷键",
           ].map((label) => (
             <button
@@ -139,8 +141,8 @@ export function Settings({
               onChange={(voice) => onChange({ ...preferences, voice })}
             />
           )}
-          {section === "游戏显示" && (
-            <GameSizeSettings
+          {section === "界面显示" && (
+            <DisplaySettings
               preferences={preferences}
               info={sizing}
               onChange={onChange}
@@ -228,7 +230,7 @@ export function Settings({
                 aria-label="提示音量"
                 min={0}
                 max={1}
-                step={0.05}
+                step={0.001}
                 value={preferences.soundVolume}
                 onValueChange={(soundVolume) =>
                   onChange({ ...preferences, soundVolume })
@@ -418,6 +420,7 @@ export function Settings({
               onError={onError}
             />
           </div>
+          {section === "成就" && <AchievementGallery />}
           <div hidden={section !== "数据"}>
             {mediaSession?.endpoint && (
               <MediaCacheControls session={mediaSession} onError={onError} />

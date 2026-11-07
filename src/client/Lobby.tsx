@@ -1,7 +1,7 @@
-import { GameOpeningChoice } from "./GameOpeningChoice";
 import { useSceneTransition } from "./scene-transition";
 import { usePresentation } from "./motion";
 import { GameLibrary } from "./lobby/GameLibrary";
+import { LobbySetupTransition } from "./lobby/LobbySetupTransition";
 import { GameCover } from "./lobby/GameCover";
 import "./lobby/lobby.css";
 import {
@@ -12,8 +12,13 @@ import { expeditionOptionsSchema } from "../domain/expedition/adventure-types";
 import { DominionOptionsControl } from "./dominion/DominionOptionsControl";
 import { dominionOptionsSchema } from "../domain/dominion/types";
 import { balanceSeats } from "../domain/room-balance";
+import { fitSeats } from "../domain/room-seats";
 import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
 import { graphwarOptionsSchema } from "../domain/graphwar/types";
+import { FlightOptionsControl } from "./flight/FlightOptionsControl";
+import { flightOptionsSchema } from "../domain/flight";
+import { CheckersOptionsControl } from "./checkers/CheckersOptionsControl";
+import { checkersOptionsSchema } from "../domain/checkers";
 import { invitationLink } from "./invitation";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import {
@@ -22,18 +27,13 @@ import {
 } from "../domain/mahjong/types";
 import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
-import { Button, Panel, Select, Slider, Switch } from "./ui/Controls";
+import { Button, Select, Slider, Switch, TextField } from "./ui/Controls";
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
-import { gameCatalogue, type GameKind } from "../domain/catalogue";
+import { gameCatalogue, gameKinds, type GameKind } from "../domain/catalogue";
 import { configSchema, type RoomConfig } from "../domain/protocol";
 import type { Difficulty } from "../domain/types";
-
-export const difficultyNames: Record<Difficulty, string> = {
-  easy: "简单",
-  normal: "普通",
-  hard: "困难",
-};
+import { difficultyNames } from "./game-difficulty";
 export function Lobby({
   service,
   initialRoom,
@@ -59,7 +59,6 @@ export function Lobby({
   ) => void;
   onJoin: (name: string, invitation: string, spectator?: boolean) => void;
 }) {
-  const [opening, setOpening] = useState<"scmj" | "expedition" | null>(null);
   const [kind, setKind] = useState<GameKind>("uno");
   const [spectator, setSpectator] = useState(false);
   const [networkPage, setNetworkPage] = useState<"join" | "create">("join");
@@ -79,6 +78,8 @@ export function Lobby({
   ]);
   const [aiDelayMs, setDelay] = useState(1500);
   const [graphwar, setGraphwar] = useState(graphwarOptionsSchema.parse({}));
+  const [flight, setFlight] = useState(flightOptionsSchema.parse({}));
+  const [checkers, setCheckers] = useState(checkersOptionsSchema.parse({}));
   const [expedition, setExpedition] = useState(
     expeditionOptionsSchema.parse({}),
   );
@@ -98,8 +99,30 @@ export function Lobby({
   const game = gameCatalogue[kind];
   const aiDifficultyNames =
     kind === "expedition" ? expeditionAiDifficultyNames : difficultyNames;
-  const displayAi = balanceSeats({ kind, humans, ai }).ai;
-  const total = humans + displayAi.length;
+  const fitted = fitSeats({ kind, humans, ai, checkers });
+  const displayHumans = fitted.humans;
+  const displayAi = balanceSeats({
+    kind,
+    humans: displayHumans,
+    ai: fitted.ai,
+  }).ai;
+  const total = displayHumans + displayAi.length;
+  const seatCap =
+    kind === "tq" && checkers.mode === "siege" ? 2 : game.maxPlayers;
+  const humanFloor = ["tq", "scmj"].includes(kind)
+    ? 0
+    : game.ai
+      ? 1
+      : game.minPlayers;
+  const frequentGames = gameKinds
+    .filter((gameKind) => preferences.gameStats[gameKind])
+    .sort(
+      (a, b) =>
+        preferences.gameStats[b].plays - preferences.gameStats[a].plays ||
+        preferences.gameStats[b].lastPlayed -
+          preferences.gameStats[a].lastPlayed ||
+        gameKinds.indexOf(a) - gameKinds.indexOf(b),
+    );
   const changeGame = (next: GameKind) => {
     const max = gameCatalogue[next].maxPlayers;
     setKind(next);
@@ -139,10 +162,9 @@ export function Lobby({
         selected={kind}
         disabled={busy || !creating}
         favorites={preferences.favorites}
-        recent={preferences.recentGames}
+        recent={frequentGames}
         onSelect={(next) => {
-          if (next === "scmj" || next === "expedition") setOpening(next);
-          else changeGame(next);
+          changeGame(next);
         }}
         onFavorite={(key) =>
           onPreferencesChange({
@@ -153,445 +175,416 @@ export function Lobby({
           })
         }
       />
-      {opening && (
-        <Panel
-          open
-          onOpenChange={(open) => {
-            if (!open) setOpening(null);
-          }}
-          title={gameCatalogue[opening].name}
+      <section className="room-setup">
+        <LobbySetupTransition
+          panelKey={creating ? `${kind}:${mode}` : `join:${mode}`}
         >
-          <GameOpeningChoice
-            kind={opening}
-            expedition={expedition}
-            mahjong={mahjong}
-            onCancel={() => setOpening(null)}
-            onConfirm={(nextRun, nextMahjong) => {
-              setExpedition(nextRun);
-              setMahjong(nextMahjong);
-              changeGame(opening);
-              setOpening(null);
-            }}
-          />
-        </Panel>
-      )}
-      <section className="room-setup" data-scene-layout="setup">
-        <div className="club-setup-heading">
-          {creating && <GameCover kind={kind} />}
-          <div>
-            <h2>{creating ? game.name : "加入朋友的房间"}</h2>
-            <p>
-              {creating
-                ? kind === "scmj"
-                  ? mahjongModeNames[mahjong.mode ?? "sichuan"]
-                  : `${game.minPlayers}–${game.maxPlayers} 人`
-                : "粘贴邀请链接"}
-            </p>
+          <div className="club-setup-heading">
+            {creating && <GameCover kind={kind} />}
+            <div>
+              <h2>{creating ? game.name : "加入朋友的房间"}</h2>
+              <p>
+                {creating
+                  ? kind === "scmj"
+                    ? mahjongModeNames[mahjong.mode ?? "sichuan"]
+                    : `${game.minPlayers}–${game.maxPlayers} 人`
+                  : "粘贴邀请链接"}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="segmented">
-          <button
-            className={mode === "local" ? "active" : ""}
-            onClick={() => setMode("local")}
-          >
-            本地对局
-          </button>
-          <button
-            className={mode === "network" ? "active" : ""}
-            onClick={() => {
-              setMode("network");
-              setNetworkPage("join");
-            }}
-          >
-            跨网络联机
-          </button>
-        </div>
-        {mode === "network" && (
-          <div className="segmented" role="tablist" aria-label="联机方式">
+          <div className="segmented">
             <button
-              role="tab"
-              aria-selected={networkPage === "join"}
-              className={networkPage === "join" ? "active" : ""}
-              disabled={busy}
-              onClick={() => setNetworkPage("join")}
+              className={mode === "local" ? "active" : ""}
+              onClick={() => setMode("local")}
             >
-              加入
+              本地对局
             </button>
             <button
-              role="tab"
-              aria-selected={networkPage === "create"}
-              className={networkPage === "create" ? "active" : ""}
-              disabled={busy}
-              onClick={() => setNetworkPage("create")}
+              className={mode === "network" ? "active" : ""}
+              onClick={() => {
+                setMode("network");
+                setNetworkPage("join");
+              }}
             >
-              创建房间
+              跨网络联机
             </button>
           </div>
-        )}
-        <label>
-          昵称
-          <input
+          {mode === "network" && (
+            <div className="segmented" role="tablist" aria-label="联机方式">
+              <button
+                role="tab"
+                aria-selected={networkPage === "join"}
+                className={networkPage === "join" ? "active" : ""}
+                disabled={busy}
+                onClick={() => setNetworkPage("join")}
+              >
+                加入
+              </button>
+              <button
+                role="tab"
+                aria-selected={networkPage === "create"}
+                className={networkPage === "create" ? "active" : ""}
+                disabled={busy}
+                onClick={() => setNetworkPage("create")}
+              >
+                创建房间
+              </button>
+            </div>
+          )}
+          <TextField
+            label="昵称"
             value={name}
             maxLength={24}
             onChange={(event) => setName(event.target.value)}
           />
-        </label>
-        <details className="lobby-options club-avatar">
-          <summary>我的头像 · {preferences.avatar}</summary>
-          <AvatarPicker
-            value={preferences.avatar}
-            onChange={(avatar) =>
-              onPreferencesChange({ ...preferences, avatar })
-            }
-          />
-        </details>
-        <div className="lobby-body" data-scene-size="form" data-scene-enter>
-          {mode === "network" && !creating && (
-            <div className="invite-entry">
-              <Switch
-                label="只旁观，不占游戏席位"
-                checked={spectator}
-                onCheckedChange={setSpectator}
-              />
-              <input
-                aria-label="邀请链接"
-                placeholder="粘贴邀请链接"
-                value={invitation}
-                onChange={(event) => setInvitation(event.target.value)}
-              />
-              <Button
-                variant="primary"
-                disabled={busy || !name.trim() || !invitation.trim()}
-                onClick={() => onJoin(name, invitation, spectator)}
-              >
-                加入 / 恢复房间
-              </Button>
-            </div>
-          )}
-          {creating && (
-            <>
-              {kind === "tq" && preferences.benchmarkVisible && (
-                <button
-                  onClick={() => {
-                    setHumans(0);
-                    setAi(
-                      Array.from({ length: 6 }, () => ({
-                        difficulty: "hard",
-                        name: "",
-                      })),
-                    );
-                    setDelay(0);
-                    setMode("local");
-                  }}
+          <details className="lobby-options club-avatar">
+            <summary>我的头像 · {preferences.avatar}</summary>
+            <AvatarPicker
+              value={preferences.avatar}
+              onChange={(avatar) =>
+                onPreferencesChange({ ...preferences, avatar })
+              }
+            />
+          </details>
+          <div className="lobby-body" data-scene-enter>
+            {mode === "network" && !creating && (
+              <div className="invite-entry">
+                <Switch
+                  label="只旁观，不占游戏席位"
+                  checked={spectator}
+                  onCheckedChange={setSpectator}
+                />
+                <TextField
+                  label="邀请链接"
+                  aria-label="邀请链接"
+                  value={invitation}
+                  onChange={(event) => setInvitation(event.target.value)}
+                />
+                <Button
+                  variant="primary"
+                  disabled={busy || !name.trim() || !invitation.trim()}
+                  onClick={() => onJoin(name, invitation, spectator)}
                 >
-                  6 个困难 AI 性能测试
-                </button>
-              )}
-              {mode === "network" && (
-                <label className="setting-row">
-                  <span>仅启动服务，不参与游戏</span>
-                  <input
-                    type="checkbox"
-                    checked={hostOnly}
-                    onChange={(event) => setHostOnly(event.target.checked)}
-                  />
-                </label>
-              )}
-              {mode === "network" &&
-                isTauri() &&
-                preferences.network.showLanDebug && (
-                  <label className="checkbox">
-                    <input
-                      type="checkbox"
-                      checked={lan}
-                      onChange={(event) => setLan(event.target.checked)}
-                    />
-                    局域网调试（同一 Wi-Fi，无需公网入口）
-                  </label>
+                  加入 / 恢复房间
+                </Button>
+              </div>
+            )}
+            {creating && (
+              <>
+                {kind === "tq" && preferences.benchmarkVisible && (
+                  <button
+                    onClick={() => {
+                      setHumans(0);
+                      setAi(
+                        Array.from({ length: 6 }, () => ({
+                          difficulty: "hard",
+                          name: "",
+                        })),
+                      );
+                      setDelay(0);
+                      setMode("local");
+                    }}
+                  >
+                    6 个困难 AI 性能测试
+                  </button>
                 )}
-              <div className="setting-row">
-                <span>真人玩家</span>
-                <Select
-                  disabled={game.minPlayers === game.maxPlayers && !game.ai}
-                  aria-label="真人人数"
-                  value={humans}
-                  onValueChange={(value) => {
-                    const count = Number(value),
-                      manual = ai.filter((entry) => !entry.balance);
-                    setHumans(count);
-                    setAi(
-                      Array.from(
-                        {
-                          length: game.ai
-                            ? Math.max(
-                                game.minPlayers - count,
-                                Math.min(
-                                  manual.length,
-                                  game.maxPlayers - count,
+                {mode === "network" && (
+                  <Switch
+                    label="只旁观，不占游戏席位"
+                    checked={hostOnly}
+                    onCheckedChange={setHostOnly}
+                  />
+                )}
+                {mode === "network" &&
+                  isTauri() &&
+                  preferences.network.showLanDebug && (
+                    <Switch
+                      label="局域网调试（同一 Wi-Fi，无需公网入口）"
+                      checked={lan}
+                      onCheckedChange={setLan}
+                    />
+                  )}
+                <div className="setting-row">
+                  <span>真人玩家</span>
+                  <Select
+                    disabled={game.minPlayers === game.maxPlayers && !game.ai}
+                    aria-label="真人人数"
+                    value={displayHumans}
+                    onValueChange={(value) => {
+                      const count = Number(value),
+                        manual = ai.filter((entry) => !entry.balance);
+                      setHumans(count);
+                      setAi(
+                        Array.from(
+                          {
+                            length: game.ai
+                              ? Math.max(
+                                  game.minPlayers - count,
+                                  Math.min(manual.length, seatCap - count),
+                                )
+                              : 0,
+                          },
+                          (_, index) =>
+                            manual[index]
+                              ? { ...manual[index], balance: undefined }
+                              : { difficulty: "normal", name: "" },
+                        ),
+                      );
+                    }}
+                  >
+                    {Array.from(
+                      { length: seatCap - humanFloor + 1 },
+                      (_, index) => (
+                        <option key={index} value={index + humanFloor}>
+                          {index + humanFloor} 人
+                        </option>
+                      ),
+                    )}
+                  </Select>
+                </div>
+                {[
+                  "graphwar",
+                  "expedition",
+                  "dominion",
+                  "scmj",
+                  "fxq",
+                  "tq",
+                ].includes(kind) && (
+                  <section
+                    className="lobby-options lobby-options-open"
+                    aria-label="玩法选项"
+                  >
+                    <div className="lobby-options-title">玩法选项</div>
+                    {kind === "graphwar" && (
+                      <>
+                        <GraphwarOptionsControl
+                          value={graphwar}
+                          onChange={setGraphwar}
+                        />
+                        {total * graphwar.soldiers > 36 &&
+                          graphwar.size === "standard" && (
+                            <button
+                              onClick={() =>
+                                setGraphwar({ ...graphwar, size: "large" })
+                              }
+                            >
+                              兵力较多，切换大型地图
+                            </button>
+                          )}
+                      </>
+                    )}
+                    {kind === "expedition" && (
+                      <ExpeditionOptionsControl
+                        value={expedition}
+                        onChange={setExpedition}
+                      />
+                    )}
+                    {kind === "dominion" && (
+                      <DominionOptionsControl
+                        value={dominion}
+                        onChange={setDominion}
+                      />
+                    )}
+                    {kind === "scmj" && (
+                      <MahjongOptionsControl
+                        value={mahjong}
+                        onChange={setMahjong}
+                      />
+                    )}
+                    {kind === "fxq" && (
+                      <FlightOptionsControl
+                        value={flight}
+                        onChange={setFlight}
+                      />
+                    )}
+                    {kind === "tq" && (
+                      <CheckersOptionsControl
+                        value={checkers}
+                        onChange={setCheckers}
+                      />
+                    )}
+                  </section>
+                )}
+                <div className="setting-row">
+                  <span>总席位</span>
+                  <Select
+                    disabled={!game.ai}
+                    aria-label="总席位"
+                    value={total}
+                    onValueChange={(value) =>
+                      setAi(
+                        Array.from(
+                          { length: Number(value) - displayHumans },
+                          (_, index) =>
+                            ai[index]
+                              ? { ...ai[index], balance: undefined }
+                              : { difficulty: "normal", name: "" },
+                        ),
+                      )
+                    }
+                  >
+                    {Array.from(
+                      {
+                        length:
+                          seatCap -
+                          Math.max(displayHumans, game.minPlayers) +
+                          1,
+                      },
+                      (_, index) => (
+                        <option
+                          key={index}
+                          value={
+                            Math.max(displayHumans, game.minPlayers) + index
+                          }
+                        >
+                          {Math.max(displayHumans, game.minPlayers) + index} 人
+                        </option>
+                      ),
+                    )}
+                  </Select>
+                </div>
+                {!game.ai && (
+                  <p className="muted">{displayHumans} 名真人 · AI 尚未接入</p>
+                )}
+                {!!displayAi.length && (
+                  <details className="lobby-options">
+                    <summary>AI 玩家 · {displayAi.length} 位</summary>
+                    <div className="ai-settings">
+                      {displayAi.map((entry, index) => (
+                        <div className="ai-setting" key={index}>
+                          <span className="ai-badge">
+                            {entry.balance ? "平衡补位" : `AI ${index + 1}`}
+                          </span>
+                          <input
+                            aria-label={`AI ${index + 1} 名称`}
+                            placeholder={
+                              kind === "sgs" ? "自动使用武将名" : "自动生成名称"
+                            }
+                            value={entry.name}
+                            maxLength={24}
+                            onChange={(event) =>
+                              setAi(
+                                displayAi.map((value, id) =>
+                                  id === index
+                                    ? { ...value, name: event.target.value }
+                                    : value,
                                 ),
                               )
-                            : 0,
-                        },
-                        (_, index) =>
-                          manual[index]
-                            ? { ...manual[index], balance: undefined }
-                            : { difficulty: "normal", name: "" },
-                      ),
-                    );
-                  }}
-                >
-                  {Array.from(
-                    {
-                      length:
-                        game.maxPlayers -
-                        (["tq", "scmj"].includes(kind)
-                          ? 0
-                          : game.ai
-                            ? 1
-                            : game.minPlayers) +
-                        1,
-                    },
-                    (_, index) => (
-                      <option
-                        key={index}
-                        value={
-                          index +
-                          (["tq", "scmj"].includes(kind)
-                            ? 0
-                            : game.ai
-                              ? 1
-                              : game.minPlayers)
-                        }
-                      >
-                        {index +
-                          (["tq", "scmj"].includes(kind)
-                            ? 0
-                            : game.ai
-                              ? 1
-                              : game.minPlayers)}{" "}
-                        人
-                      </option>
-                    ),
-                  )}
-                </Select>
-              </div>
-              {["graphwar", "expedition", "dominion", "scmj"].includes(
-                kind,
-              ) && (
-                <details className="lobby-options">
-                  <summary>玩法选项</summary>
-                  {kind === "graphwar" && (
-                    <>
-                      <GraphwarOptionsControl
-                        value={graphwar}
-                        onChange={setGraphwar}
-                      />
-                      {total * graphwar.soldiers > 36 &&
-                        graphwar.size === "standard" && (
-                          <button
-                            onClick={() =>
-                              setGraphwar({ ...graphwar, size: "large" })
+                            }
+                          />
+                          <Select
+                            aria-label={`AI ${index + 1} 难度`}
+                            value={entry.difficulty}
+                            onValueChange={(difficulty) =>
+                              setAi(
+                                displayAi.map((value, id) =>
+                                  id === index
+                                    ? {
+                                        ...value,
+                                        difficulty: difficulty as Difficulty,
+                                      }
+                                    : value,
+                                ),
+                              )
                             }
                           >
-                            兵力较多，切换大型地图
-                          </button>
-                        )}
-                    </>
-                  )}
-                  {kind === "expedition" && (
-                    <ExpeditionOptionsControl
-                      value={expedition}
-                      onChange={setExpedition}
-                    />
-                  )}
-                  {kind === "dominion" && (
-                    <DominionOptionsControl
-                      value={dominion}
-                      onChange={setDominion}
-                    />
-                  )}
-                  {kind === "scmj" && (
-                    <MahjongOptionsControl
-                      value={mahjong}
-                      onChange={setMahjong}
-                    />
-                  )}
-                </details>
-              )}
-              <div className="setting-row">
-                <span>总席位</span>
-                <Select
-                  disabled={!game.ai}
-                  aria-label="总席位"
-                  value={total}
-                  onValueChange={(value) =>
-                    setAi(
-                      Array.from(
-                        { length: Number(value) - humans },
-                        (_, index) =>
-                          ai[index]
-                            ? { ...ai[index], balance: undefined }
-                            : { difficulty: "normal", name: "" },
-                      ),
+                            {Object.entries(aiDifficultyNames).map(
+                              ([value, label]) => (
+                                <option value={value} key={value}>
+                                  {label}
+                                </option>
+                              ),
+                            )}
+                          </Select>
+                        </div>
+                      ))}
+                    </div>
+                    {!!displayAi.length && (
+                      <label className="tempo-control">
+                        AI 动作间隔{" "}
+                        <output>{(aiDelayMs / 1000).toFixed(2)} 秒</output>
+                        <Slider
+                          aria-label="AI 动作间隔"
+                          min={0}
+                          max={5000}
+                          step={1}
+                          value={aiDelayMs}
+                          onValueChange={setDelay}
+                        />
+                      </label>
+                    )}
+                  </details>
+                )}
+                {kind === "ktd" && !!ai.length && (
+                  <Switch
+                    label="允许 AI 主动提出交易"
+                    checked={catanTrades}
+                    onCheckedChange={setCatanTrades}
+                  />
+                )}
+                {game.team && (
+                  <Switch
+                    label={
+                      kind === "uno" && ![4, 6].includes(total)
+                        ? "组队模式 · 需要 4 或 6 人"
+                        : "组队模式"
+                    }
+                    checked={team}
+                    disabled={kind === "uno" && ![4, 6].includes(total)}
+                    onCheckedChange={setTeam}
+                  />
+                )}
+                <p className="club-seat-summary">
+                  {displayHumans} 名真人 · {displayAi.length} 名 AI
+                  {displayAi.some((entry) => entry.balance)
+                    ? " · 已平衡两队"
+                    : ""}
+                </p>
+                <Button
+                  variant="primary"
+                  className={busy ? "operation-working" : ""}
+                  aria-busy={busy}
+                  disabled={busy || !name.trim() || total < game.minPlayers}
+                  onClick={() =>
+                    onCreate(
+                      configSchema.parse({
+                        kind,
+                        humans: displayHumans,
+                        ai: displayAi,
+                        team,
+                        training: false,
+                        aiDelayMs,
+                        auditEnabled: preferences.auditVisible,
+                        catanTrades,
+                        expedition,
+                        dominion,
+                        mahjong,
+                        graphwar,
+                        flight,
+                        checkers,
+                        performance: preferences.performance,
+                      }),
+                      name,
+                      mode,
+                      endpoint,
+                      temporary,
+                      mode === "network" && hostOnly,
+                      mode === "network" && localDebug,
                     )
                   }
                 >
-                  {Array.from(
-                    {
-                      length:
-                        game.maxPlayers - Math.max(humans, game.minPlayers) + 1,
-                    },
-                    (_, index) => (
-                      <option
-                        key={index}
-                        value={Math.max(humans, game.minPlayers) + index}
-                      >
-                        {Math.max(humans, game.minPlayers) + index} 人
-                      </option>
-                    ),
-                  )}
-                </Select>
-              </div>
-              {!game.ai && (
-                <p className="muted">{humans} 名真人 · AI 尚未接入</p>
-              )}
-              {!!displayAi.length && (
-                <details className="lobby-options">
-                  <summary>AI 玩家 · {displayAi.length} 位</summary>
-                  <div className="ai-settings">
-                    {displayAi.map((entry, index) => (
-                      <div className="ai-setting" key={index}>
-                        <span className="ai-badge">
-                          {entry.balance ? "平衡补位" : `AI ${index + 1}`}
-                        </span>
-                        <input
-                          aria-label={`AI ${index + 1} 名称`}
-                          placeholder={
-                            kind === "sgs" ? "自动使用武将名" : "自动生成名称"
-                          }
-                          value={entry.name}
-                          maxLength={24}
-                          onChange={(event) =>
-                            setAi(
-                              displayAi.map((value, id) =>
-                                id === index
-                                  ? { ...value, name: event.target.value }
-                                  : value,
-                              ),
-                            )
-                          }
-                        />
-                        <Select
-                          aria-label={`AI ${index + 1} 难度`}
-                          value={entry.difficulty}
-                          onValueChange={(difficulty) =>
-                            setAi(
-                              displayAi.map((value, id) =>
-                                id === index
-                                  ? {
-                                      ...value,
-                                      difficulty: difficulty as Difficulty,
-                                    }
-                                  : value,
-                              ),
-                            )
-                          }
-                        >
-                          {Object.entries(aiDifficultyNames).map(
-                            ([value, label]) => (
-                              <option value={value} key={value}>
-                                {label}
-                              </option>
-                            ),
-                          )}
-                        </Select>
-                      </div>
-                    ))}
-                  </div>
-                  {!!displayAi.length && (
-                    <label className="tempo-control">
-                      AI 动作间隔{" "}
-                      <output>{(aiDelayMs / 1000).toFixed(1)} 秒</output>
-                      <Slider
-                        aria-label="AI 动作间隔"
-                        min={0}
-                        max={5000}
-                        step={250}
-                        value={aiDelayMs}
-                        onValueChange={setDelay}
-                      />
-                    </label>
-                  )}
-                </details>
-              )}
-              {kind === "ktd" && !!ai.length && (
-                <label className="checkbox">
-                  <input
-                    type="checkbox"
-                    checked={catanTrades}
-                    onChange={(event) => setCatanTrades(event.target.checked)}
-                  />
-                  允许 AI 主动提出交易
-                </label>
-              )}
-              {game.team && (
-                <label className="checkbox">
-                  <input
-                    type="checkbox"
-                    checked={team}
-                    onChange={(event) => setTeam(event.target.checked)}
-                  />
-                  组队模式
-                </label>
-              )}
-              <p className="club-seat-summary">
-                {humans} 名真人 · {displayAi.length} 名 AI
-                {displayAi.some((entry) => entry.balance)
-                  ? " · 已平衡两队"
-                  : ""}
-              </p>
-              <Button
-                variant="primary"
-                className={busy ? "operation-working" : ""}
-                aria-busy={busy}
-                disabled={busy || !name.trim() || total < game.minPlayers}
-                onClick={() =>
-                  onCreate(
-                    configSchema.parse({
-                      kind,
-                      humans,
-                      ai: displayAi,
-                      team,
-                      training: false,
-                      aiDelayMs,
-                      auditEnabled: preferences.auditVisible,
-                      catanTrades,
-                      expedition,
-                      dominion,
-                      mahjong,
-                      graphwar,
-                      performance: preferences.performance,
-                    }),
-                    name,
-                    mode,
-                    endpoint,
-                    temporary,
-                    mode === "network" && hostOnly,
-                    mode === "network" && localDebug,
-                  )
-                }
-              >
-                {busy
-                  ? "正在准备房间…"
-                  : mode === "network" && localDebug
-                    ? "创建局域网调试房间"
-                    : mode === "network" && temporary
-                      ? "一键创建公网房间"
-                      : "创建房间"}
-              </Button>
-            </>
-          )}
-        </div>
+                  {busy
+                    ? "正在准备房间…"
+                    : mode === "network" && localDebug
+                      ? "创建局域网调试房间"
+                      : mode === "network" && temporary
+                        ? "一键创建公网房间"
+                        : "创建房间"}
+                </Button>
+              </>
+            )}
+          </div>
+        </LobbySetupTransition>
       </section>
     </main>
   );

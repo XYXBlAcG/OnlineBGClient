@@ -1317,5 +1317,41 @@
     "license": "CC0-1.0",
     "width": 16,
     "height": 28
+  },
+  {
+    "file": "magic_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/magic_01.png",
+    "sha256": "4530b084d541351c779aac12877e831a398f7e4575126fa2a26c5eb2c47ca37b",
+    "license": "CC0-1.0"
+  },
+  {
+    "file": "slash_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/slash_01.png",
+    "sha256": "ebe034d985eff38bcc5191317aa117997eb0e2ebf5a2988395dea056e0d84a5f",
+    "license": "CC0-1.0"
+  },
+  {
+    "file": "twirl_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/twirl_01.png",
+    "sha256": "a7031a2250cb2b98ef20ba049940fd7e8f4b4c4ee82000547ea12dd7445c9981",
+    "license": "CC0-1.0"
+  },
+  {
+    "file": "muzzle_01.png",
+    "source": "https://kenney.nl/assets/particle-pack",
+    "repository": "Calinou/kenney-particle-pack",
+    "revision": "ab7086639ee73be31abd87feb21bf1402d4e8144",
+    "path": "addons/kenney_particle_pack/muzzle_01.png",
+    "sha256": "1e7da51836e4d703fbc336808e2f9b9570ccb149d340cbac1de15b7b0f4d6c2a",
+    "license": "CC0-1.0"
   }
 ]

@@ -1,12 +1,15 @@
-import { GameOpeningChoice } from "./GameOpeningChoice";
 import type { CommandRegistry } from "./commands";
+import { Shortcut } from "./ui/Shortcut";
 import {
   ExpeditionOptionsControl,
   expeditionAiDifficultyNames,
 } from "./expedition/ExpeditionOptionsControl";
 import { DominionOptionsControl } from "./dominion/DominionOptionsControl";
 import { balanceSeats } from "../domain/room-balance";
+import { fitSeats } from "../domain/room-seats";
 import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
+import { FlightOptionsControl } from "./flight/FlightOptionsControl";
+import { CheckersOptionsControl } from "./checkers/CheckersOptionsControl";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
@@ -17,9 +20,9 @@ import {
   type RoomSetup as Setup,
   type Snapshot,
 } from "../domain/protocol";
-import { Panel, Select } from "./ui/Controls";
+import { Button, Panel, Select, TextField } from "./ui/Controls";
 import { confirmation } from "./confirmation-controller";
-import { difficultyNames } from "./Lobby";
+import { difficultyNames } from "./game-difficulty";
 export function RoomSetup({
   snapshot,
   registry,
@@ -43,9 +46,9 @@ export function RoomSetup({
     [members, setMembers] = useState<string[]>(
       snapshot.seats.filter((s) => !s.difficulty && s.name).map((s) => s.id),
     );
-  const [opening, setOpening] = useState<"scmj" | "expedition" | null>(null);
-  const config = balanceSeats(draftConfig);
-  const setConfig = (next: typeof config) => updateConfig(balanceSeats(next));
+  const config = balanceSeats(fitSeats(draftConfig));
+  const setConfig = (next: typeof config) =>
+    updateConfig(balanceSeats(fitSeats(next)));
   const detached = useNativeWindow(
     "roomsetup",
     open,
@@ -60,7 +63,6 @@ export function RoomSetup({
     },
   );
   const openSetup = () => {
-    setOpening(null);
     setConfig(structuredClone(snapshot.config));
     const ids = snapshot.seats
       .filter((s) => !s.difficulty && s.name)
@@ -73,7 +75,7 @@ export function RoomSetup({
     () =>
       registry?.register({
         id: "room.setup",
-        title: "游戏与人数",
+        title: "更换游戏或开始下一局",
         scope: "global",
         binding,
         enabled: () => snapshot.canManage,
@@ -120,7 +122,11 @@ export function RoomSetup({
       : difficultyNames;
   return (
     <>
-      {!auxiliaryView && <button onClick={openSetup}>游戏与人数</button>}
+      {!auxiliaryView && (
+        <Button data-room-action="setup" onClick={openSetup}>
+          更换游戏 / 下一局 <Shortcut binding={binding} />
+        </Button>
+      )}
       {!detached && (
         <Panel
           open={open}
@@ -128,7 +134,7 @@ export function RoomSetup({
             setOpen(value);
             if (!value) onClose?.();
           }}
-          title="下一局"
+          title="更换游戏与下一局"
         >
           <label className="setting-row">
             游戏
@@ -137,11 +143,7 @@ export function RoomSetup({
               value={config.kind}
               onValueChange={(value) => {
                 const next = value as GameKind;
-                if (next === "scmj" || next === "expedition") setOpening(next);
-                else {
-                  setOpening(null);
-                  changeGame(next);
-                }
+                changeGame(next);
               }}
             >
               {gameKinds.map((kind) => (
@@ -151,24 +153,7 @@ export function RoomSetup({
               ))}
             </Select>
           </label>
-          {opening && (
-            <GameOpeningChoice
-              key={opening}
-              kind={opening}
-              expedition={config.expedition}
-              mahjong={config.mahjong}
-              onCancel={() => setOpening(null)}
-              onConfirm={(expedition, mahjong) => {
-                changeGame(opening, expedition, mahjong);
-                setOpening(null);
-              }}
-            />
-          )}
-          <fieldset
-            className="opening-choice"
-            disabled={!!opening}
-            hidden={!!opening}
-          >
+          <fieldset className="opening-choice" disabled={false}>
             <label className="setting-row">
               真人席位
               <Select
@@ -296,11 +281,23 @@ export function RoomSetup({
                 onChange={(mahjong) => setConfig({ ...config, mahjong })}
               />
             )}
+            {config.kind === "fxq" && (
+              <FlightOptionsControl
+                value={config.flight}
+                onChange={(flight) => setConfig({ ...config, flight })}
+              />
+            )}
+            {config.kind === "tq" && (
+              <CheckersOptionsControl
+                value={config.checkers}
+                onChange={(checkers) => setConfig({ ...config, checkers })}
+              />
+            )}
             {config.ai.map((ai, i) => (
               <div className="setting-row" key={i}>
-                <input
+                <TextField
+                  label={`AI ${i + 1} 名称`}
                   aria-label={`AI ${i + 1} 名称`}
-                  placeholder="自动命名"
                   maxLength={24}
                   value={ai.name}
                   onChange={(event) =>
@@ -339,6 +336,22 @@ export function RoomSetup({
                 </Select>
               </div>
             ))}
+            {game.team && (
+              <label className="setting-row">
+                <span>组队模式</span>
+                <input
+                  type="checkbox"
+                  checked={config.team}
+                  disabled={
+                    config.kind === "uno" &&
+                    ![4, 6].includes(config.humans + config.ai.length)
+                  }
+                  onChange={(event) =>
+                    setConfig({ ...config, team: event.target.checked })
+                  }
+                />
+              </label>
+            )}
             {config.kind === "ktd" && (
               <label className="setting-row">
                 <span>AI 主动交易</span>

@@ -2,6 +2,11 @@ import { useGameScale } from "./game-sizing/GameSizing";
 import { ExpeditionTable } from "./expedition/ExpeditionTable";
 import { DominionTable } from "./dominion/DominionTable";
 import { GraphwarTable } from "./graphwar/GraphwarTable";
+import { FlightSpecialPanel } from "./flight/FlightSpecialPanel";
+import { FlightMapViewport } from "./flight/FlightMapViewport";
+import { FlightOverlayProvider } from "./flight/FlightWeatherContext";
+import { CheckersSpecialPanel } from "./checkers/CheckersSpecialPanel";
+import { UnoTeamPanel } from "./uno/UnoTeamPanel";
 import { SichuanTable } from "./mahjong/SichuanTable";
 import type { MotionPreferences } from "./MotionControls";
 import { GameMotionLayer } from "./GameMotionLayer";
@@ -16,7 +21,7 @@ import type { InteractionEvent } from "../domain/social";
 import { HeroSurface } from "./HeroSurface";
 import { CardSurface } from "./CardSurface";
 import { gameCatalogue } from "../domain/catalogue";
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { UpstreamRuntime } from "../upstream/runtime";
 import type { Action } from "../domain/types";
 import type { Snapshot } from "../domain/protocol";
@@ -32,7 +37,9 @@ export type GameSnapshot = Pick<
   | "state"
   | "finished"
 > &
-  Partial<Pick<Snapshot, "turnDeadline" | "serverTime" | "paused" | "candidates">>;
+  Partial<
+    Pick<Snapshot, "turnDeadline" | "serverTime" | "paused" | "candidates">
+  >;
 export const OriginalGame = memo(function OriginalGame({
   snapshot,
   pending = false,
@@ -78,10 +85,24 @@ export const OriginalGame = memo(function OriginalGame({
     units?: import("../domain/social").InteractionUnits,
   ) => void;
 }) {
-  replay ||= snapshot.actor<0;
+  replay ||= snapshot.actor < 0;
   const { game: gameMotion } = usePresentation();
   const surface = useRef<HTMLDivElement>(null);
+  const [flightPlayersCollapsed, setFlightPlayersCollapsed] = useState(false);
   const elementScale = useGameScale(surface, snapshot.kind);
+  useEffect(() => {
+    setFlightPlayersCollapsed(false);
+  }, [snapshot.kind, snapshot.room]);
+  useEffect(() => {
+    if (typeof document === "undefined" || !document.addEventListener) return;
+    const reveal = (event: Event) => {
+      const target = (event as CustomEvent<string>).detail;
+      if (target === "fxq.players" || target === "fxq.turn")
+        setFlightPlayersCollapsed(false);
+    };
+    document.addEventListener("room-reveal", reveal);
+    return () => document.removeEventListener("room-reveal", reveal);
+  }, []);
   const runtime = useMemo(() => new UpstreamRuntime(), []);
   const view = useMemo(
     () =>
@@ -132,7 +153,8 @@ export const OriginalGame = memo(function OriginalGame({
     previousPlayback.current = { gameMotion, animationActive, animationRate };
   }, [gameMotion, animationActive, animationRate, snapshot.kind]);
   runtime.bridge.feedback = GameFeedback;
-  runtime.bridge.mapViewport = MapViewport;
+  runtime.bridge.mapViewport =
+    snapshot.kind === "fxq" ? FlightMapViewport : MapViewport;
   runtime.bridge.heroCard = HeroSurface;
   runtime.bridge.trickCard = CardSurface;
   runtime.bridge.avatar = AvatarSurface;
@@ -152,27 +174,22 @@ export const OriginalGame = memo(function OriginalGame({
     if ((action as { type: string }).type === "round-restart") restart?.();
     else if (!snapshot.finished) act(action as Action);
   };
-  useEffect(
-    () => () => {
-      runtime.bridge.svgAnimations = undefined;
-      runtime.bridge.animateSvg = undefined;
-      runtime.bridge.mapViewport = undefined;
-      runtime.bridge.heroCard = undefined;
-      runtime.bridge.trickCard = undefined;
-      runtime.bridge.avatar = undefined;
-      runtime.bridge.avatarContext = undefined;
-      runtime.bridge.sink = undefined;
-    },
-    [runtime],
-  );
   const presentation = gameCatalogue[snapshot.kind].presentation;
+  const flightOverlay =
+    snapshot.kind === "fxq" && snapshot.state?.kind === "fxq"
+      ? {
+          view: snapshot.state.view,
+          actor: snapshot.actor,
+          candidates: snapshot.candidates ?? [],
+        }
+      : null;
   const Game =
     presentation.kind === "upstream"
       ? runtime.load(presentation.module).default
       : null;
   const events = runtime.load(5982).Z;
   const room = {
-    position: Math.max(0,snapshot.actor + 1),
+    position: Math.max(0, snapshot.actor + 1),
     owner: replay ? 0 : snapshot.canManage ? snapshot.actor + 1 : 1,
     playerList: snapshot.seats.map((seat) => ({
       name: seat.name,
@@ -185,6 +202,18 @@ export const OriginalGame = memo(function OriginalGame({
       stateTime: 0,
     })),
   };
+  const game = Game ? (
+    <Game
+      key={`${snapshot.kind}:${snapshot.actor}`}
+      onReplay={onReplay}
+      view={view}
+      room={room}
+      game={{ version: snapshot.version, data: new Uint8Array() }}
+      send={(event: number) => {
+        if (!replay && event === events.OwnerExitGame) end();
+      }}
+    />
+  ) : null;
   return (
     <div
       ref={surface}
@@ -194,6 +223,13 @@ export const OriginalGame = memo(function OriginalGame({
       data-motion-scope="game"
       data-game-motion={animationActive ? gameMotion : "reduced"}
       data-game={snapshot.kind}
+      data-flight-players={
+        snapshot.kind === "fxq"
+          ? flightPlayersCollapsed
+            ? "collapsed"
+            : "expanded"
+          : undefined
+      }
       data-renderer={presentation.kind === "upstream" ? "upstream" : "client"}
       data-game-version={snapshot.version}
       onKeyDown={(event) => {
@@ -261,16 +297,33 @@ export const OriginalGame = memo(function OriginalGame({
           avatar={avatarContext}
         />
       ) : Game ? (
-        <Game
-          key={`${snapshot.kind}:${snapshot.actor}`}
-          onReplay={onReplay}
-          view={view}
-          room={room}
-          game={{ version: snapshot.version, data: new Uint8Array() }}
-          send={(event: number) => {
-            if (!replay && event === events.OwnerExitGame) end();
-          }}
-        />
+        <>
+          {snapshot.kind === "fxq" && snapshot.state?.kind === "fxq" && (
+            <FlightSpecialPanel
+              view={snapshot.state.view}
+              snapshot={snapshot}
+              act={act}
+              replay={replay}
+              playersCollapsed={flightPlayersCollapsed}
+              onTogglePlayers={() =>
+                setFlightPlayersCollapsed((value) => !value)
+              }
+            />
+          )}
+          {snapshot.kind === "tq" && snapshot.state?.kind === "tq" && (
+            <CheckersSpecialPanel view={snapshot.state.view} />
+          )}
+          {snapshot.kind === "uno" && snapshot.state?.kind === "uno" && (
+            <UnoTeamPanel view={snapshot.state.view} snapshot={snapshot} />
+          )}
+          {game && flightOverlay ? (
+            <FlightOverlayProvider value={flightOverlay}>
+              {game}
+            </FlightOverlayProvider>
+          ) : (
+            game
+          )}
+        </>
       ) : null}
       <GameMotionLayer
         snapshot={snapshot}

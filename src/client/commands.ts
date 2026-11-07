@@ -85,6 +85,11 @@ export class CommandRegistry {
     return true;
   }
 }
+export function platformModifier(
+  platform = typeof navigator === "undefined" ? "" : navigator.platform,
+): string {
+  return /Mac|iPhone|iPad/.test(platform) ? "Meta" : "Control";
+}
 export function formatBinding(
   binding: string,
   platform = typeof navigator === "undefined" ? "" : navigator.platform,

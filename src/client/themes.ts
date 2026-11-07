@@ -106,4 +106,8 @@ export function applyTheme(id: string): void {
     "--shadow",
     theme.scheme === "dark" ? "0 10px 36px #0005" : "0 8px 30px #15233d19",
   );
+  root.style.setProperty(
+    "--shadow-soft",
+    theme.scheme === "dark" ? "0 4px 16px #0003" : "0 4px 14px #15233d0f",
+  );
 }

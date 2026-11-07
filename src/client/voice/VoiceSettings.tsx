@@ -241,7 +241,7 @@ export function VoiceSettings({
           value={value.volume}
           min={0}
           max={1}
-          step={0.05}
+          step={0.001}
           onValueChange={(volume) => onChange({ ...value, volume })}
         />
       </label>

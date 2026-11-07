@@ -5,6 +5,7 @@ import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
 import { useEffect, useState } from "react";
 import { gameCatalogue, type GameKind } from "../domain/catalogue";
+import { TextField } from "./ui/Controls";
 export function MobileJoin({
   preferences,
   onPreferencesChange,
@@ -70,17 +71,17 @@ export function MobileJoin({
         }}
       >
         {!room && (
-          <input
+          <TextField
+            label="邀请链接"
             aria-label="邀请链接"
-            placeholder="粘贴邀请链接"
             value={invitation}
             onChange={(event) => setInvitation(event.target.value)}
           />
         )}
-        <input
+        <TextField
+          label="你的昵称"
           aria-label="昵称"
           autoComplete="nickname"
-          placeholder="你的昵称"
           value={name}
           maxLength={24}
           onChange={(event) => setName(event.target.value)}

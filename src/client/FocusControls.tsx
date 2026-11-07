@@ -1,4 +1,4 @@
-import { Select } from "./ui/Controls";
+import { Button, Select } from "./ui/Controls";
 export function FocusControls({
   onExit,
   onChat,
@@ -34,18 +34,20 @@ export function FocusControls({
         </Select>
       )}
       {onEnd && (
-        <button data-room-action="end" onClick={onEnd}>
+        <Button variant="danger" data-room-action="end" onClick={onEnd}>
           结束对局
-        </button>
+        </Button>
       )}
-      <button onClick={onExit}>退出专注</button>
-      <button
+      <Button onClick={onExit}>
+        退出专注 <kbd>Esc</kbd>
+      </Button>
+      <Button
         className={`immersive-chat ${unread ? "chat-unread" : ""}`}
         aria-expanded={chatOpen}
         onClick={onChat}
       >
         聊天{unread ? ` · ${unread}` : ""}
-      </button>
+      </Button>
     </nav>
   );
 }

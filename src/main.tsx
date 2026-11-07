@@ -12,7 +12,10 @@ import { sceneKey } from "./client/scene-transition";
 import { usePreferences } from "./client/use-preferences";
 import { QuickStart } from "./client/QuickStart";
 import { FocusControls } from "./client/FocusControls";
-import { focusPresentation } from "./client/focus-presentation";
+import {
+  focusPresentation,
+  focusToggleBinding,
+} from "./client/focus-presentation";
 import "./client/ui/focus.css";
 import { GameCommandProvider } from "./client/use-game-commands";
 import { RunShelf } from "./client/expedition/RunShelf";
@@ -33,7 +36,7 @@ import { auxiliaryView } from "./client/native/contract";
 import { nativeMain, useNativeWindow } from "./client/native/windows";
 import { ComputeDiagnostics } from "./client/ComputeDiagnostics";
 import type { ComputeDiagnostic } from "./domain/compute-diagnostics";
-import { beginnerGuides } from "./client/beginner-guides";
+import { guideFor } from "./client/beginner-guides";
 import { BeginnerGuide } from "./client/BeginnerGuide";
 import { Notices } from "./client/Notices";
 import { MotionProvider } from "./client/motion";
@@ -49,13 +52,18 @@ import { ChatPanel } from "./client/ChatPanel";
 import type { InteractionEvent, FreeInteractionKind } from "./domain/social";
 import { installContextMenuPolicy } from "./client/desktop-context-menu";
 import { applyTheme } from "./client/themes";
-import { Panel } from "./client/ui/Controls";
+import { applyDisplayScale } from "./client/display-scale";
+import { Button, Panel } from "./client/ui/Controls";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { About } from "./client/About";
 import { Records } from "./client/Records";
 import { ClientStore } from "./client/storage";
+import { evaluateReplay, type AchievementUnlock } from "./domain/achievements";
+import { AchievementToasts } from "./client/Achievements";
+import { useAppProgress } from "./client/app-progress";
 import { Settings } from "./client/Settings";
-import { CommandRegistry } from "./client/commands";
+import { CommandRegistry, platformModifier } from "./client/commands";
+import { Shortcut } from "./client/ui/Shortcut";
 import { loadPreferences, type Preferences } from "./client/preferences";
 import { Select } from "./client/ui/Controls";
 import { Confirmation } from "./client/Confirmation";
@@ -81,8 +89,10 @@ import type { Response, RoomConfig, Snapshot } from "./domain/protocol";
 import { UpstreamRuntime } from "./upstream/runtime";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Lobby, difficultyNames } from "./client/Lobby";
-import { gameCatalogue } from "./domain/catalogue";
+import { Lobby } from "./client/Lobby";
+import { PregamePanel } from "./client/PregamePanel";
+import { toGameSnapshot } from "./client/game-snapshot";
+import { gameCatalogue, type GameKind } from "./domain/catalogue";
 import { cardNames, skillNames } from "./domain/terms";
 import "./styles.css";
 import "./client/ui/experience.css";
@@ -91,9 +101,15 @@ import "./client/ui/mobile-landscape.css";
 import "./client/ui/platform-controls.css";
 import "./client/ui/mobile-usability.css";
 
-
 const emptyInteractions: InteractionEvent[] = [];
 const invited = new URLSearchParams(location.search);
+const DevPhoneRoom = import.meta.env.DEV
+  ? React.lazy(() => import("./client/dev/PhoneRoom"))
+  : null;
+const Practice = React.lazy(() =>
+  import("./client/Practice").then((module) => ({ default: module.Practice })),
+);
+const devPhoneRoom = import.meta.env.DEV && invited.get("dev") === "phone";
 const initialService =
   invited.get("service") ||
   (!isTauri() &&
@@ -116,6 +132,7 @@ function App() {
   const connection = useRef<Connection | null>(null);
   const session = useRef<{ token: string; room: string } | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const countedPlay = useRef<string | null>(null);
   const [computeFailure, setComputeFailure] =
     useState<ComputeDiagnostic | null>(null);
   const [notice, setNotice] = useState("");
@@ -155,14 +172,22 @@ function App() {
   const [guideStep, setGuideStep] = useState(0);
   const [guideLocation, setGuideLocation] = useState(0);
   const [focused, setFocused] = useState(false);
+  const [practice, setPractice] = useState<{
+    kind: GameKind;
+    config: RoomConfig;
+  } | null>(null);
 
   const quitting = useRef(false);
   const [closeIntent, setCloseIntent] = useState<"close" | "quit" | null>(null);
   const [service, setService] = useState(initialService);
   const invitationEndpoint = useRef("");
   const lanHosting = useRef(false);
-  useEffect(() => { if (status) recordClientLog("connection", status); }, [status]);
-  useEffect(() => { if (notice) recordClientLog("notice", notice); }, [notice]);
+  useEffect(() => {
+    if (status) recordClientLog("connection", status);
+  }, [status]);
+  useEffect(() => {
+    if (notice) recordClientLog("notice", notice);
+  }, [notice]);
   const [tokens, setTokens] = useState<string[]>([]);
   const [tab, setTab] = useState<"game" | "audit" | "rules">("game");
   const [heroGuides] = useState(() => new HeroGuides().all());
@@ -216,7 +241,7 @@ function App() {
   }, []);
   const guideEnabled =
     !!snapshot &&
-    !!beginnerGuides[snapshot.kind] &&
+    !!guideFor(snapshot.kind, snapshot.config) &&
     !!preferences.beginnerGuides[snapshot.kind];
   useGameFeedback(snapshot, preferences);
   useEffect(() => {
@@ -231,6 +256,29 @@ function App() {
     playing: !!snapshot?.state && !snapshot.finished,
     tab,
   });
+  useEffect(() => {
+    if (!tableFocused) return;
+    const exit = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        event.isComposing ||
+        document.querySelector("[role=dialog][data-state=open]")
+      )
+        return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (
+        target?.closest(
+          'input,textarea,[contenteditable="true"],[role="combobox"],[role="slider"]',
+        )
+      )
+        return;
+      event.preventDefault();
+      setFocused(false);
+    };
+    window.addEventListener("keydown", exit);
+    return () => window.removeEventListener("keydown", exit);
+  }, [tableFocused]);
   const immersive = mobile && tableFocused;
   const sidebarVisible =
     sidebarOpen && (!tableFocused || sidebarTab === "chat") && !detachedSidebar;
@@ -252,8 +300,86 @@ function App() {
   const preferencesRef = useRef(preferences);
   preferencesRef.current = preferences;
   const [store] = useState(() => new ClientStore());
+  const [achievementToasts, setAchievementToasts] = useState<
+    AchievementUnlock[]
+  >([]);
   const [recordsOpen, setRecordsOpen] = useState(false);
-  useUsageContext(snapshot, mode === "local" || status === "已连接", recordsOpen);
+  const appProgress = useAppProgress({
+    store,
+    snapshot,
+    network: mode === "network",
+    onUnlocked: (items) =>
+      setAchievementToasts((value) => [...value, ...items].slice(-4)),
+    onError: (error) => setNotice(String(error)),
+  });
+  const unlockAchievements = async (
+    records: import("./domain/replay").ReplayRecord[],
+    current: Snapshot,
+  ) => {
+    if (!records.length || current.actor < 0) return;
+    const seat = current.seats[current.actor];
+    if (
+      !seat ||
+      seat.difficulty !== null ||
+      seat.autoplay ||
+      current.config.training
+    )
+      return;
+    const profileId = store.achievementProfileId();
+    const now = Date.now();
+    const unlocks: AchievementUnlock[] = [];
+    const completed: import("./client/app-progress").CompletedGame[] = [];
+    for (const record of records) {
+      if (
+        record.memberIds &&
+        record.memberIds[current.actor] !== current.seats[current.actor].id
+      )
+        continue;
+      let result: ReturnType<typeof evaluateReplay> = {
+        achievements: [],
+        winner: false,
+      };
+      try {
+        result = evaluateReplay(record, current.actor);
+      } catch {
+        continue;
+      }
+      completed.push({
+        playId: `${record.room}:${record.startedAt}`,
+        kind: record.config.kind,
+        win: result.winner,
+      });
+      for (const achievementId of result.achievements) {
+        unlocks.push({
+          profileId,
+          achievementId,
+          firstAt: now,
+          lastAt: now,
+          count: 1,
+          evidence: {
+            room: record.room,
+            startedAt: record.startedAt,
+            rulesVersion: record.rulesVersion,
+            actor: current.actor,
+            seatName: seat.name,
+            replayFingerprint: `${record.room}:${record.startedAt}:${record.seed}:${record.events.length}`,
+            summary: `${gameCatalogue[record.config.kind].name} · ${seat.name}`,
+          },
+        });
+      }
+    }
+    if (unlocks.length) {
+      const created = await store.unlockAchievements(unlocks);
+      if (created.length)
+        setAchievementToasts((value) => [...value, ...created].slice(-4));
+    }
+    await appProgress.recordCompletion(completed);
+  };
+  useUsageContext(
+    snapshot,
+    mode === "local" || status === "已连接",
+    recordsOpen,
+  );
   const [hasLocalSave, setHasLocalSave] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -431,6 +557,13 @@ function App() {
           ...response.snapshot.records,
           ...(response.snapshot.replay ? [response.snapshot.replay] : []),
         ])
+        .then(() => {
+          if (response.snapshot.replay)
+            return unlockAchievements(
+              [response.snapshot.replay],
+              response.snapshot,
+            );
+        })
         .catch((error) => setNotice(String(error)));
       setSnapshot(response.snapshot);
       if (
@@ -460,7 +593,10 @@ function App() {
       if (connection.current instanceof NetworkConnection) {
         localStorage.setItem(
           "onlinebg.last-room",
-          invitationLink(response.snapshot.room, invitationEndpoint.current || connection.current.endpoint),
+          invitationLink(
+            response.snapshot.room,
+            invitationEndpoint.current || connection.current.endpoint,
+          ),
         );
       }
     }
@@ -469,6 +605,21 @@ function App() {
     setActionPending(false);
     setLatencyMs(undefined);
   }, [snapshot?.room]);
+  useEffect(() => {
+    if (!snapshot?.playId || countedPlay.current === snapshot.playId) return;
+    countedPlay.current = snapshot.playId;
+    const kind = snapshot.kind;
+    setPreferences((value) => {
+      const previous = value.gameStats[kind] ?? { plays: 0, lastPlayed: 0 };
+      return {
+        ...value,
+        gameStats: {
+          ...value.gameStats,
+          [kind]: { plays: previous.plays + 1, lastPlayed: Date.now() },
+        },
+      };
+    });
+  }, [snapshot?.playId, snapshot?.kind, setPreferences]);
   useEffect(() => {
     setInteractions([]);
   }, [snapshot?.room, snapshot?.kind, !!snapshot?.state]);
@@ -528,19 +679,16 @@ function App() {
     const generation = ++launch.current;
     setBusy(true);
     try {
-    config={...config,party:{...config.party,enabled:preferences.party.autoEnable},plugins:[]};
+      config = {
+        ...config,
+        party: { ...config.party, enabled: preferences.party.autoEnable },
+        plugins: [],
+      };
       connection.current?.close();
       setNotice("");
       localStorage.setItem("player-name", name);
       setMode(nextMode);
       setTab("game");
-      setPreferences((value) => ({
-        ...value,
-        recentGames: [
-          config.kind,
-          ...value.recentGames.filter((kind) => kind !== config.kind),
-        ].slice(0, 12),
-      }));
       if (nextMode === "local") {
         setStatus("本地离线");
         connection.current = new LocalConnection(receive);
@@ -586,7 +734,7 @@ function App() {
       if (generation === launch.current) setBusy(false);
     }
   };
-  const join = (name: string, invitation: string,spectator=false) => {
+  const join = (name: string, invitation: string, spectator = false) => {
     invitationEndpoint.current = "";
     lanHosting.current = false;
     launch.current++;
@@ -598,7 +746,7 @@ function App() {
       setService(endpoint);
       connection.current = new NetworkConnection(
         endpoint,
-        { type: "join", room, name, avatar: preferences.avatar,spectator },
+        { type: "join", room, name, avatar: preferences.avatar, spectator },
         receive,
         setStatus,
       );
@@ -606,6 +754,15 @@ function App() {
       setNotice(String(error));
     }
   };
+  const autoJoined = useRef(false);
+  useEffect(() => {
+    if (autoJoined.current || !invited.has("room") || snapshot) return;
+    autoJoined.current = true;
+    join(
+      localStorage.getItem("player-name") || "我",
+      invitationLink(invited.get("room") || "", initialService),
+    );
+  }, [snapshot, invited, initialService, join]);
   const leave = async () => {
     if (!session.current || !snapshot) return;
     if (snapshot.canManage) {
@@ -626,7 +783,11 @@ function App() {
     const generation = ++launch.current;
     setBusy(true);
     try {
-      const identity = JSON.parse(saved) as { room: string; token: string; lan?: boolean };
+      const identity = JSON.parse(saved) as {
+        room: string;
+        token: string;
+        lan?: boolean;
+      };
       const prepared = await startHosting(preferences.network, identity.lan);
       lanHosting.current = !!identity.lan;
       const endpoint = prepared.endpoint;
@@ -664,7 +825,9 @@ function App() {
       setTab("game");
       setMode(link.endpoint ? "network" : "local");
       if (link.endpoint) {
-        const prepared = link.hosted ? await startHosting(preferences.network, link.lan) : null;
+        const prepared = link.hosted
+          ? await startHosting(preferences.network, link.lan)
+          : null;
         const endpoint = prepared?.endpoint ?? link.endpoint;
         invitationEndpoint.current = prepared?.invitation ?? "";
         lanHosting.current = !!link.lan;
@@ -773,19 +936,7 @@ function App() {
   }, []);
   const review = useCallback(() => setTab("audit"), []);
   const gameSnapshot = useMemo(
-    () =>
-      snapshot
-        ? {
-            room: snapshot.room,
-            kind: snapshot.kind,
-            actor: snapshot.actor,
-            canManage: snapshot.canManage,
-            version: snapshot.version,
-            seats: snapshot.seats,
-            state: snapshot.state,
-            finished: snapshot.finished,
-          }
-        : null,
+    () => (snapshot ? toGameSnapshot(snapshot) : null),
     [
       snapshot?.room,
       snapshot?.kind,
@@ -794,6 +945,7 @@ function App() {
       snapshot?.version,
       snapshot?.seats,
       snapshot?.state,
+      snapshot?.candidates,
       snapshot?.finished,
     ],
   );
@@ -804,7 +956,9 @@ function App() {
     return () => clearTimeout(timer);
   }, [inviteCopied]);
   const invitationUrl = () =>
-    snapshot ? invitationLink(snapshot.room, invitationEndpoint.current || service) : service;
+    snapshot
+      ? invitationLink(snapshot.room, invitationEndpoint.current || service)
+      : service;
   const invite = async () => {
     const url = new URL(invitationUrl());
     try {
@@ -816,6 +970,9 @@ function App() {
   };
 
   useEffect(() => {
+    applyDisplayScale(preferences);
+  }, [preferences.uiFontScale, preferences.uiScale]);
+  useEffect(() => {
     applyTheme(preferences.theme);
     const media = matchMedia("(prefers-color-scheme: dark)");
     const changed = () => {
@@ -826,7 +983,7 @@ function App() {
     return () => media.removeEventListener("change", changed);
   }, [preferences.theme]);
   useEffect(() => {
-    const modifier = navigator.platform.includes("Mac") ? "Meta" : "Control";
+    const modifier = platformModifier();
     const commands = [
       {
         id: "voice.mute",
@@ -1005,13 +1162,14 @@ function App() {
       {
         id: "view.focus",
         title: focused ? "退出专注" : "专注模式",
+        binding: focusToggleBinding,
         enabled: () => !!snapshot?.playing && !snapshot.finished,
         run: () => setFocused((value) => !value),
       },
       {
         id: "view.guide",
         title: guideShown ? "关闭新手引导" : "新手引导",
-        enabled: () => !!snapshot && !!beginnerGuides[snapshot.kind],
+        enabled: () => !!snapshot && !!guideFor(snapshot.kind, snapshot.config),
         run: () => {
           if (!snapshot) return;
           setFocused(false);
@@ -1206,758 +1364,731 @@ function App() {
     setPreferences(next);
   };
   return (
-    <GameSizeProvider profiles={preferences.gameSizes}><MotionProvider preferences={preferences}>
-      <UpdaterController
-        preferences={preferences.updates}
-        busy={
-          !!snapshot ||
-          !!session.current ||
-          busy ||
-          voiceActive ||
-          /连接中|重连|正在准备/.test(status)
-        }
-      />
-      <div
-        className={`app-shell ${mobile ? "mobile-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
-      >
-        <Confirmation />
-        {!nativeMain() && (
-          <Panel
-            open={!!closeIntent}
-            onOpenChange={(value) => {
-              if (!value) setCloseIntent(null);
-            }}
-            title="关闭客户端"
-          >
-            <p>{hosting.current ? "房间正在运行。" : "当前对局已自动保存。"}</p>
-            <div className="close-options">
-              {hosting.current && (
-                <button onClick={hideClient}>保留房间，隐藏窗口</button>
-              )}
-              <button className="primary-button" onClick={quitClient}>
-                {hosting.current ? "结束房间并退出" : "退出客户端"}
-              </button>
-            </div>
-          </Panel>
-        )}
-        <Invite
-          url={invitationUrl()}
-          open={inviteOpen}
-          onOpenChange={setInviteOpen}
-          onError={setNotice}
+    <GameSizeProvider profiles={preferences.gameSizes}>
+      <MotionProvider preferences={preferences}>
+        <UpdaterController
+          preferences={preferences.updates}
+          busy={
+            !!snapshot ||
+            !!session.current ||
+            busy ||
+            voiceActive ||
+            /连接中|重连|正在准备/.test(status)
+          }
         />
-        <About
-          open={aboutOpen}
-          onOpenChange={setAboutOpen}
-          onError={setNotice}
-        />
-        {!mobile && (
-          <Records
-            open={recordsOpen}
-            onOpenChange={setRecordsOpen}
+        <div
+          className={`app-shell ${mobile ? "mobile-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
+        >
+          <Confirmation />
+          {!nativeMain() && (
+            <Panel
+              open={!!closeIntent}
+              onOpenChange={(value) => {
+                if (!value) setCloseIntent(null);
+              }}
+              title="关闭客户端"
+            >
+              <p>
+                {hosting.current ? "房间正在运行。" : "当前对局已自动保存。"}
+              </p>
+              <div className="close-options">
+                {hosting.current && (
+                  <button onClick={hideClient}>保留房间，隐藏窗口</button>
+                )}
+                <button className="primary-button" onClick={quitClient}>
+                  {hosting.current ? "结束房间并退出" : "退出客户端"}
+                </button>
+              </div>
+            </Panel>
+          )}
+          <Invite
+            url={invitationUrl()}
+            open={inviteOpen}
+            onOpenChange={setInviteOpen}
             onError={setNotice}
           />
-        )}
-        <Settings
-          initialSection={settingsSection}
-          mediaSession={
-            snapshot?.canManage && session.current && mode === "network"
-              ? { ...session.current, endpoint: service }
-              : undefined
-          }
-          canConfigureAI={
-            !snapshot ||
-            (snapshot.canManage && (!snapshot.host || snapshot.actor < 0))
-          }
-          roomPerformance={snapshot?.config.performance}
-          onError={setNotice}
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-          preferences={preferences}
-          onChange={changePreferences}
-          commands={registeredCommands}
-          onBind={bind}
-        />
-        <header className="app-toolbar" hidden={tableFocused}>
-          <div>
-            <span className="app-mark">OnlineBGClient</span>
-            <span className="connection-status">{status}</span>
-            {(busy || /连接中|重连中|连接中断/.test(status)) && (
-              <button
-                onClick={() =>
-                  void cancelConnect().catch((error) =>
-                    setNotice(String(error)),
-                  )
-                }
-              >
-                {busy ? "取消开房" : "取消连接"}
-              </button>
-            )}
-          </div>
-          <div>
-            {!mobile && (
-              <button onClick={() => setAboutOpen(true)}>关于</button>
-            )}
-            {!mobile && (
-              <button onClick={() => setRecordsOpen(true)}>对局记录</button>
-            )}
-            {snapshot && (
-              <button
-                className={unread ? "chat-unread" : ""}
-                onClick={toggleChat}
-              >
-                聊天{unread ? ` · ${unread}` : ""}
-              </button>
-            )}
-            {snapshot && (
-              <VoiceToolbar
-                onOpen={() => {
-                  setFocused(false);
-                  setSidebarTab("chat");
-                  setPreferences((value) => ({ ...value, chatVisible: true }));
-                }}
-              />
-            )}
-            {!mobile && (
-              <button
-                onClick={() => {
-                  setSettingsSection("外观");
-                  setSettingsOpen(true);
-                }}
-                aria-label="打开设置"
-              >
-                设置
-              </button>
-            )}
-            {snapshot && (
-              <button onClick={leave}>
-                {snapshot.canManage ? "关闭房间" : "离开房间"}
-              </button>
-            )}
-          </div>
-        </header>
-        <Notices
-          notice={notice}
-          progress={busy || /连接中|重连中|连接中断/.test(status) ? status : ""}
-          onDismiss={dismissNotice}
-          onCancel={() =>
-            void cancelConnect().catch((error) => setNotice(String(error)))
-          }
-        />
-        <SceneSurface scene={sceneKey(snapshot)}>
-          {!snapshot && mobile ? (
-            <MobileJoin
-              preferences={preferences}
-              onPreferencesChange={changePreferences}
-              room={invited.get("room") || ""}
-              service={service}
-              busy={busy}
-              onJoin={join}
+          <About
+            open={aboutOpen}
+            onOpenChange={setAboutOpen}
+            onError={setNotice}
+          />
+          {!mobile && (
+            <Records
+              open={recordsOpen}
+              onOpenChange={setRecordsOpen}
+              onError={setNotice}
             />
-          ) : !snapshot ? (
-            <>
-              <QuickStart
-                desktop={isTauri()}
-                showGuide={preferences.showQuickStart}
-                showVoice={preferences.showVoiceShortcut}
-                expanded={preferences.quickStartOpen}
-                onExpandedChange={(quickStartOpen) =>
-                  changePreferences({ ...preferences, quickStartOpen })
-                }
-                onVoiceSettings={() => voice.send({ type: "settings" })}
-              />
-              <div className="recent-rooms">
-                {isTauri() && localStorage.getItem("onlinebg.hosted-room") && (
-                  <button disabled={busy} onClick={() => void restoreHosted()}>
-                    恢复我创建的公网房间
-                  </button>
-                )}
-                {hasLocalSave && (
-                  <button onClick={restoreLocal}>恢复本地对局</button>
-                )}
-                {localStorage.getItem("onlinebg.last-room") && (
-                  <button
-                    onClick={() =>
-                      join(
-                        localStorage.getItem("player-name") || "我",
-                        localStorage.getItem("onlinebg.last-room")!,
-                      )
+          )}
+          <Settings
+            initialSection={settingsSection}
+            mediaSession={
+              snapshot?.canManage && session.current && mode === "network"
+                ? { ...session.current, endpoint: service }
+                : undefined
+            }
+            canConfigureAI={
+              !snapshot ||
+              (snapshot.canManage && (!snapshot.host || snapshot.actor < 0))
+            }
+            roomPerformance={snapshot?.config.performance}
+            onError={setNotice}
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            preferences={preferences}
+            onChange={changePreferences}
+            commands={registeredCommands}
+            onBind={bind}
+          />
+          <header className="app-toolbar" hidden={tableFocused}>
+            <div>
+              <span className="app-mark">OnlineBGClient</span>
+              <span className="connection-status">{status}</span>
+              {(busy || /连接中|重连中|连接中断/.test(status)) && (
+                <Button
+                  onClick={() =>
+                    void cancelConnect().catch((error) =>
+                      setNotice(String(error)),
+                    )
+                  }
+                >
+                  {busy ? "取消开房" : "取消连接"}
+                </Button>
+              )}
+            </div>
+            <div>
+              {!mobile && (
+                <Button onClick={() => setAboutOpen(true)}>关于</Button>
+              )}
+              {!mobile && (
+                <Button onClick={() => setRecordsOpen(true)}>对局记录</Button>
+              )}
+              {snapshot && (
+                <Button
+                  className={unread ? "chat-unread" : ""}
+                  onClick={toggleChat}
+                >
+                  聊天{unread ? ` · ${unread}` : ""}{" "}
+                  <Shortcut
+                    binding={
+                      preferences.bindings["app.chat"] ??
+                      `${platformModifier()}+J`
                     }
-                  >
-                    恢复联机房间
-                  </button>
-                )}
-              </div>
-              <RunShelf
-                busy={busy}
-                onRestore={(link) => void restoreRun(link)}
-                onAbandon={abandonRun}
-              />
-              <Lobby
-                service={service}
-                initialRoom={invited.get("room") || ""}
-                busy={busy || pendingOperation?.kind === "create"}
-                onCreate={connect}
-                onJoin={join}
-                preferences={preferences}
-                onPreferencesChange={changePreferences}
-              />
-            </>
-          ) : (
-            <main
-              className={`room-layout ${sidebarVisible ? "sidebar-open" : "chat-hidden"} ${snapshot.state && tab === "game" ? "playing-room" : ""} ${tableFocused ? "focused-room" : ""} ${guideLocated ? "guide-located" : ""}`}
-              style={
-                {
-                  "--chat-width": `${sidebarWidth}px`,
-                } as React.CSSProperties
-              }
-            >
-              <section className="game-area">
-                <RoomToolbar
-                  snapshot={snapshot}
-                  mobile={mobile}
-                  focused={tableFocused}
-                  onFocus={() => setFocused(!focused)}
-                  onEnd={tab === "game" ? end : undefined}
-                  preferences={preferences}
-                  onTheme={(theme) =>
-                    setPreferences((value) => ({ ...value, theme }))
+                  />
+                </Button>
+              )}
+              {snapshot && (
+                <VoiceToolbar
+                  muteBinding={
+                    preferences.bindings["voice.mute"] ??
+                    `${platformModifier()}+Shift+M`
                   }
-                  latency={latencyMs ?? undefined}
-                  network={mode === "network"}
-                  invite={invite}
-                  inviteCopied={inviteCopied}
-                  onInvite={() => setInviteOpen(true)}
-                  send={(command) =>
-                    connection.current!.send({
-                      ...command,
-                      token: session.current!.token,
-                    })
-                  }
-                  onError={setNotice}
-                  act={act}
-                  registry={registry}
-                  pending={actionPending}
-                  guideAvailable={!!beginnerGuides[snapshot.kind]}
-                  guideShown={guideShown}
-                  onGuide={() => {
+                  onOpen={() => {
                     setFocused(false);
-                    setGuideLocated(false);
-                    setSidebarTab(!guideShown ? "guide" : null);
+                    setSidebarTab("chat");
                     setPreferences((value) => ({
                       ...value,
-                      chatVisible: false,
-                      beginnerGuides: {
-                        ...value.beginnerGuides,
-                        [snapshot.kind]: !guideShown,
-                      },
+                      chatVisible: true,
                     }));
                   }}
                 />
-                <ComputeDiagnostics
-                  diagnostic={computeFailure}
-                  onError={setNotice}
-                  onRetry={
-                    snapshot.canManage && snapshot.aiPaused
-                      ? () => {
-                          setComputeFailure(null);
-                          connection.current!.send({
-                            type: "ai-run",
-                            token: session.current!.token,
-                            enabled: true,
-                          });
-                        }
-                      : undefined
-                  }
-                />
-                <ComputeStatus
-                  details={preferences.computeDetails}
-                  benchmarkVisible={preferences.benchmarkVisible}
-                  snapshot={snapshot}
-                  control={(enabled) =>
-                    connection.current!.send({
-                      type: "ai-run",
-                      token: session.current!.token,
-                      enabled,
-                    })
-                  }
-                />
-                <div className="room-navigation">
-                  {tokens.length > 1 && (
-                    <Select
-                      aria-label="当前本地玩家"
-                      value={session.current?.token || ""}
-                      onValueChange={selectLocalPlayer}
-                    >
-                      {tokens.map((token, index) => (
-                        <option value={token} key={token}>
-                          玩家 {index + 1}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                  <BeginnerGuide
-                    showToggle={!mobile}
-                    key={snapshot.kind}
-                    snapshot={snapshot}
-                    dock={guideDock}
-                    visible={guideShown && !tableFocused}
-                    stepIndex={guideStep}
-                    onStepChange={setGuideStep}
-                    targetsOnly={detachedSidebar}
-                    locateRequest={guideLocation}
-                    onLocate={setGuideLocated}
-                    kind={snapshot.kind}
-                    enabled={guideShown}
-                    onChange={(enabled) => {
-                      setFocused(false);
-                      setGuideLocated(false);
-                      setSidebarTab(enabled ? "guide" : null);
-                      setPreferences({
-                        ...preferences,
-                        chatVisible: false,
-                        beginnerGuides: {
-                          ...preferences.beginnerGuides,
-                          [snapshot.kind]: enabled,
-                        },
-                      });
-                    }}
-                  />
-                  {snapshot.actor >= 0 &&
-                    (snapshot.kind === "sgs" ||
-                      (!mobile &&
-                        preferences.auditVisible &&
-                        gameCatalogue[snapshot.kind].ai)) && (
-                      <nav className="segmented">
-                        <button
-                          className={tab === "game" ? "active" : ""}
-                          onClick={() => setTab("game")}
-                        >
-                          对局
-                        </button>
-                        {!mobile &&
-                          preferences.auditVisible &&
-                          gameCatalogue[snapshot.kind].ai && (
-                            <button
-                              className={tab === "audit" ? "active" : ""}
-                              onClick={() => setTab("audit")}
-                            >
-                              策略审核
-                            </button>
-                          )}
-                        {snapshot.kind === "sgs" && (
-                          <button
-                            className={tab === "rules" ? "active" : ""}
-                            onClick={() => setTab("rules")}
-                          >
-                            术语与技能
-                          </button>
-                        )}
-                      </nav>
-                    )}
-                </div>
-                {tab === "game" && (
-                  <>
-                    {!snapshot.state ? (
-                      <div className="lobby">
-                        {snapshot.resumeRoles && (
-                          <div className="resume-roles">
-                            <h3>确认远征角色后继续</h3>
-                            {snapshot.resumeRoles.map((role, index) => (
-                              <p key={index}>
-                                {snapshot.seats[index].name ||
-                                  `等待席位 ${index + 1}`}{" "}
-                                · {role.profession}（原玩家：{role.name}）
-                              </p>
-                            ))}
-                            <p className="muted">
-                              确认本人接管的角色后准备，房主点开始对局继续原进度。
-                            </p>
-                          </div>
-                        )}
-                        <h2>
-                          {snapshot.config.humans === 0
-                            ? "AI 性能测试"
-                            : snapshot.actor < 0
-                              ? "服务运行中"
-                              : "等待开局"}
-                        </h2>
-                        {snapshot.actor < 0 && (
-                          <p className="muted">
-                            {snapshot.config.humans === 0
-                              ? "全 AI 对战 · 你可以观战并控制开局"
-                              : `${snapshot.playing ? "对局进行中" : "等待手机玩家加入"} · 电脑不占席位`}
-                          </p>
-                        )}
-                        {snapshot.seats.map((seat, index) => (
-                          <div className="seat-row" key={index}>
-                            <strong>席位 {index + 1}</strong>
-                            <span>{seat.name || "等待加入"}</span>
-                            {!(
-                              snapshot.canManage &&
-                              index > 0 &&
-                              seat.difficulty
-                            ) && (
-                              <small>
-                                {seat.difficulty
-                                  ? difficultyNames[seat.difficulty]
-                                  : seat.online
-                                    ? seat.ready
-                                      ? "已准备"
-                                      : "未准备"
-                                    : "等待加入"}
-                              </small>
-                            )}
-                            {snapshot.canManage &&
-                              index > 0 &&
-                              (!seat.name || seat.difficulty) && (
-                                <Select
-                                  aria-label={`席位 ${index + 1} 类型`}
-                                  value={seat.difficulty || "human"}
-                                  onValueChange={(value) =>
-                                    connection.current!.send({
-                                      type: "seat",
-                                      token: session.current!.token,
-                                      index,
-                                      config:
-                                        value === "human"
-                                          ? { type: "human" }
-                                          : {
-                                              type: "ai",
-                                              difficulty: value as
-                                                "easy" | "normal" | "hard",
-                                              name: "",
-                                            },
-                                    })
-                                  }
-                                >
-                                  <option value="human">真人</option>
-                                  {gameCatalogue[snapshot.kind].ai &&
-                                    Object.entries(difficultyNames).map(
-                                      ([value, label]) => (
-                                        <option value={value} key={value}>
-                                          {label} AI
-                                        </option>
-                                      ),
-                                    )}
-                                </Select>
-                              )}
-                          </div>
-                        ))}
-                        <div className="room-ready-actions">
-                          {snapshot.actor >= 0 && (
-                            <button
-                              onClick={() =>
-                                connection.current!.send({
-                                  type: "ready",
-                                  token: session.current!.token,
-                                  ready: !snapshot.seats[snapshot.actor].ready,
-                                })
-                              }
-                            >
-                              {snapshot.seats[snapshot.actor].ready
-                                ? "取消准备"
-                                : "准备"}
-                            </button>
-                          )}
-                          {snapshot.canManage && !snapshot.playing && (
-                            <button
-                              disabled={
-                                !roomReadiness(snapshot.seats).canStart ||
-                                !!pendingOperation
-                              }
-                              aria-busy={pendingOperation?.kind === "start"}
-                              className={`primary-button ${pendingOperation?.kind === "start" ? "operation-working" : ""}`}
-                              onClick={restart}
-                            >
-                              {pendingOperation?.kind === "start"
-                                ? "正在开始…"
-                                : "开始对局"}
-                            </button>
-                          )}
-                        </div>
-                        {!snapshot.playing && (
-                          <p className="room-readiness" role="status">
-                            {roomReadiness(snapshot.seats).message}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        {snapshot.paused && (
-                          <div className="resolution-status">
-                            {snapshot.aiPaused
-                              ? "AI 性能测试已暂停"
-                              : "有玩家掉线，等待恢复连接"}
-                          </div>
-                        )}
-                        {snapshot.finished && (
-                          <div className="finish-banner">
-                            <strong>对局已结束</strong>
-                            {!mobile &&
-                              preferences.auditVisible &&
-                              gameCatalogue[snapshot.kind].ai && (
-                                <button onClick={() => setTab("audit")}>
-                                  审核 AI 决策
-                                </button>
-                              )}
-                            {!mobile && (
-                              <button onClick={() => setRecordsOpen(true)}>
-                                查看回放
-                              </button>
-                            )}
-                            {snapshot.canManage && (
-                              <button
-                                onClick={restart}
-                                disabled={!!pendingOperation}
-                              >
-                                再来一局
-                              </button>
-                            )}
-                          </div>
-                        )}
-                        {snapshot.resolving && !snapshot.finished && (
-                          <div className="resolution-status">
-                            等待无懈可击响应，房间服务自动结算
-                          </div>
-                        )}
-                        {snapshot.playing && (
-                          <div className="game-status-row">
-                            <span
-                              className="game-turn-indicator"
-                              aria-live="polite"
-                              role="status"
-                            >
-                              {actionPending
-                                ? "操作确认中…"
-                                : snapshot.playing &&
-                                    !snapshot.paused &&
-                                    snapshot.candidates.length
-                                  ? "轮到你了"
-                                  : ""}
-                            </span>
-                          </div>
-                        )}
-                        <div
-                          className="game-stage"
-                          aria-busy={actionPending}
-                          onClickCapture={(event) => {
-                            if (actionPending) {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }
-                          }}
-                        >
-                          <GameCommandProvider
-                            registry={registry}
-                            bindings={preferences.bindings}
-                          >
-                            <OriginalGame
-                              pending={actionPending}
-                              onAutoplay={(enabled, index) =>
-                                connection.current!.send({
-                                  type: "autoplay",
-                                  index,
-                                  token: session.current!.token,
-                                  enabled,
-                                })
-                              }
-                              onPhrase={sendChat}
-                              customPhrases={preferences.phraseGroups}
-                              interactions={
-                                preferences.interactions
-                                  ? interactions
-                                  : emptyInteractions
-                              }
-                              sound={preferences.interactionSound}
-                              onInteractionEnd={finishInteraction}
-                              restart={restart}
-                              snapshot={gameSnapshot!}
-                              motionPreferences={preferences}
-                              onMotion={(motion) =>
-                                changePreferences({ ...preferences, ...motion })
-                              }
-                              onAvatar={(avatar) => {
-                                sendAvatar(avatar);
-                                setPreferences({ ...preferences, avatar });
-                              }}
-                              act={act}
-                              end={end}
-                              onInteract={interact}
-                              onReplay={
-                                !mobile && preferences.auditVisible
-                                  ? review
-                                  : undefined
-                              }
-                            />
-                          </GameCommandProvider>
-                          {actionPending && (
-                            <div className="action-feedback" role="status">
-                              正在同步操作…
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-                {!mobile && preferences.auditVisible && tab === "audit" && (
-                  <Audit snapshot={snapshot} />
-                )}
-                {tab === "rules" && snapshot.kind === "sgs" && (
-                  <section className="dictionary">
-                    <h2>三国杀术语</h2>
-                    <details open>
-                      <summary>武将</summary>
-                      <div className="terms-grid">
-                        {heroGuides.map((hero) => (
-                          <HeroDescription key={hero.id} hero={hero} />
-                        ))}
-                      </div>
-                    </details>
-                    <details>
-                      <summary>技能</summary>
-                      {skillNames.map((name, id) => (
-                        <p key={name}>
-                          <strong>{name}</strong> ·{" "}
-                          {dictionary.load(1983).H[id][1]}
-                        </p>
-                      ))}
-                    </details>
-                    <details>
-                      <summary>卡牌</summary>
-                      {cardNames.map((name, id) => (
-                        <p key={name}>
-                          <strong>{name}</strong> ·{" "}
-                          {dictionary.load(8280).zd(id)}
-                        </p>
-                      ))}
-                    </details>
-                  </section>
-                )}
-              </section>
-              <AnimatedSidebar open={sidebarVisible} animated={preferences.motion} mobile={mobile}>
-                {!mobile && (
-                  <SidebarDivider
-                    width={sidebarWidth}
-                    onChange={(sidebarWidth) =>
-                      setPreferences((value) => ({ ...value, sidebarWidth }))
+              )}
+              {!mobile && (
+                <Button
+                  onClick={() => {
+                    setSettingsSection("外观");
+                    setSettingsOpen(true);
+                  }}
+                  aria-label="打开设置"
+                >
+                  设置{" "}
+                  <Shortcut
+                    binding={
+                      preferences.bindings["app.settings"] ??
+                      `${platformModifier()}+,`
                     }
                   />
-                )}
-                <nav className="sidebar-tabs" aria-label="房间侧栏">
-                  <button
-                    aria-pressed={!guideShown}
-                    onClick={() => {
-                      setSidebarTab("chat");
+                </Button>
+              )}
+              {snapshot && (
+                <Button variant="danger" onClick={leave}>
+                  {snapshot.canManage ? "关闭房间" : "离开房间"}
+                </Button>
+              )}
+            </div>
+          </header>
+          <Notices
+            notice={notice}
+            progress={
+              busy || /连接中|重连中|连接中断/.test(status) ? status : ""
+            }
+            onDismiss={dismissNotice}
+            onCancel={() =>
+              void cancelConnect().catch((error) => setNotice(String(error)))
+            }
+          />
+          <SceneSurface scene={sceneKey(snapshot)}>
+            {!snapshot && mobile ? (
+              <MobileJoin
+                preferences={preferences}
+                onPreferencesChange={changePreferences}
+                room={invited.get("room") || ""}
+                service={service}
+                busy={busy}
+                onJoin={join}
+              />
+            ) : !snapshot ? (
+              <>
+                <QuickStart
+                  desktop={isTauri()}
+                  showGuide={preferences.showQuickStart}
+                  showVoice={preferences.showVoiceShortcut}
+                  expanded={preferences.quickStartOpen}
+                  onExpandedChange={(quickStartOpen) =>
+                    changePreferences({ ...preferences, quickStartOpen })
+                  }
+                  onVoiceSettings={() => voice.send({ type: "settings" })}
+                />
+                <div className="recent-rooms">
+                  {isTauri() &&
+                    localStorage.getItem("onlinebg.hosted-room") && (
+                      <button
+                        disabled={busy}
+                        onClick={() => void restoreHosted()}
+                      >
+                        恢复我创建的公网房间
+                      </button>
+                    )}
+                  {hasLocalSave && (
+                    <button onClick={restoreLocal}>恢复本地对局</button>
+                  )}
+                  {localStorage.getItem("onlinebg.last-room") && (
+                    <button
+                      onClick={() =>
+                        join(
+                          localStorage.getItem("player-name") || "我",
+                          localStorage.getItem("onlinebg.last-room")!,
+                        )
+                      }
+                    >
+                      恢复联机房间
+                    </button>
+                  )}
+                </div>
+                <RunShelf
+                  busy={busy}
+                  onRestore={(link) => void restoreRun(link)}
+                  onAbandon={abandonRun}
+                />
+                <Lobby
+                  service={service}
+                  initialRoom={invited.get("room") || ""}
+                  busy={busy || pendingOperation?.kind === "create"}
+                  onCreate={connect}
+                  onJoin={join}
+                  preferences={preferences}
+                  onPreferencesChange={changePreferences}
+                />
+              </>
+            ) : (
+              <main
+                className={`room-layout ${sidebarVisible ? "sidebar-open" : "chat-hidden"} ${snapshot.state && tab === "game" ? "playing-room" : ""} ${tableFocused ? "focused-room" : ""} ${guideLocated ? "guide-located" : ""}`}
+                style={
+                  {
+                    "--chat-width": `${sidebarWidth}px`,
+                  } as React.CSSProperties
+                }
+              >
+                <section className="game-area">
+                  <RoomToolbar
+                    snapshot={snapshot}
+                    mobile={mobile}
+                    focused={tableFocused}
+                    onFocus={() => setFocused(!focused)}
+                    onEnd={tab === "game" ? end : undefined}
+                    preferences={preferences}
+                    onTheme={(theme) =>
+                      setPreferences((value) => ({ ...value, theme }))
+                    }
+                    latency={latencyMs ?? undefined}
+                    network={mode === "network"}
+                    invite={invite}
+                    inviteCopied={inviteCopied}
+                    onInvite={() => setInviteOpen(true)}
+                    send={(command) =>
+                      connection.current!.send({
+                        ...command,
+                        token: session.current!.token,
+                      })
+                    }
+                    onError={setNotice}
+                    act={act}
+                    registry={registry}
+                    pending={actionPending}
+                    guideAvailable={!!guideFor(snapshot.kind, snapshot.config)}
+                    guideShown={guideShown}
+                    onPractice={
+                      gameCatalogue[snapshot.kind].ai
+                        ? () =>
+                            setPractice({
+                              kind: snapshot.kind,
+                              config: snapshot.config,
+                            })
+                        : undefined
+                    }
+                    onGuide={() => {
+                      setFocused(false);
+                      setGuideLocated(false);
+                      setSidebarTab(!guideShown ? "guide" : null);
                       setPreferences((value) => ({
                         ...value,
-                        chatVisible: true,
+                        chatVisible: false,
+                        beginnerGuides: {
+                          ...value.beginnerGuides,
+                          [snapshot.kind]: !guideShown,
+                        },
                       }));
                     }}
-                  >
-                    聊天{unread > 0 ? ` · ${unread}` : ""}
-                  </button>
-                  {guideEnabled && !tableFocused && (
+                  />
+                  <ComputeDiagnostics
+                    diagnostic={computeFailure}
+                    onError={setNotice}
+                    onRetry={
+                      snapshot.canManage && snapshot.aiPaused
+                        ? () => {
+                            setComputeFailure(null);
+                            connection.current!.send({
+                              type: "ai-run",
+                              token: session.current!.token,
+                              enabled: true,
+                            });
+                          }
+                        : undefined
+                    }
+                  />
+                  <ComputeStatus
+                    details={preferences.computeDetails}
+                    benchmarkVisible={preferences.benchmarkVisible}
+                    snapshot={snapshot}
+                    control={(enabled) =>
+                      connection.current!.send({
+                        type: "ai-run",
+                        token: session.current!.token,
+                        enabled,
+                      })
+                    }
+                  />
+                  <div className="room-navigation">
+                    {tokens.length > 1 && (
+                      <Select
+                        aria-label="当前本地玩家"
+                        value={session.current?.token || ""}
+                        onValueChange={selectLocalPlayer}
+                      >
+                        {tokens.map((token, index) => (
+                          <option value={token} key={token}>
+                            玩家 {index + 1}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                    <BeginnerGuide
+                      showToggle={false}
+                      key={snapshot.kind}
+                      snapshot={snapshot}
+                      dock={guideDock}
+                      visible={guideShown && !tableFocused}
+                      stepIndex={guideStep}
+                      onStepChange={setGuideStep}
+                      targetsOnly={detachedSidebar}
+                      locateRequest={guideLocation}
+                      onLocate={setGuideLocated}
+                      kind={snapshot.kind}
+                      onPractice={
+                        gameCatalogue[snapshot.kind].ai
+                          ? () =>
+                              setPractice({
+                                kind: snapshot.kind,
+                                config: snapshot.config,
+                              })
+                          : undefined
+                      }
+                      enabled={guideShown}
+                      onChange={(enabled) => {
+                        setFocused(false);
+                        setGuideLocated(false);
+                        setSidebarTab(enabled ? "guide" : null);
+                        setPreferences({
+                          ...preferences,
+                          chatVisible: false,
+                          beginnerGuides: {
+                            ...preferences.beginnerGuides,
+                            [snapshot.kind]: enabled,
+                          },
+                        });
+                      }}
+                    />
+                    {snapshot.actor >= 0 &&
+                      (snapshot.kind === "sgs" ||
+                        (!mobile &&
+                          preferences.auditVisible &&
+                          gameCatalogue[snapshot.kind].ai)) && (
+                        <nav className="segmented">
+                          <button
+                            className={tab === "game" ? "active" : ""}
+                            onClick={() => setTab("game")}
+                          >
+                            对局
+                          </button>
+                          {!mobile &&
+                            preferences.auditVisible &&
+                            gameCatalogue[snapshot.kind].ai && (
+                              <button
+                                className={tab === "audit" ? "active" : ""}
+                                onClick={() => setTab("audit")}
+                              >
+                                策略审核
+                              </button>
+                            )}
+                          {snapshot.kind === "sgs" && (
+                            <button
+                              className={tab === "rules" ? "active" : ""}
+                              onClick={() => setTab("rules")}
+                            >
+                              术语与技能
+                            </button>
+                          )}
+                        </nav>
+                      )}
+                  </div>
+                  {tab === "game" && (
+                    <>
+                      {!snapshot.state ? (
+                        <div className="lobby">
+                          <PregamePanel
+                            snapshot={snapshot}
+                            starting={pendingOperation?.kind === "start"}
+                            onReady={() =>
+                              connection.current!.send({
+                                type: "ready",
+                                token: session.current!.token,
+                                ready: !snapshot.seats[snapshot.actor].ready,
+                              })
+                            }
+                            onStart={restart}
+                            onSeatChange={(index, config) =>
+                              connection.current!.send({
+                                type: "seat",
+                                token: session.current!.token,
+                                index,
+                                config,
+                              })
+                            }
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          {snapshot.paused && (
+                            <div className="resolution-status">
+                              {snapshot.aiPaused
+                                ? "AI 性能测试已暂停"
+                                : "有玩家掉线，等待恢复连接"}
+                            </div>
+                          )}
+                          {snapshot.finished && (
+                            <div className="finish-banner">
+                              <strong>对局已结束</strong>
+                              {!mobile &&
+                                preferences.auditVisible &&
+                                gameCatalogue[snapshot.kind].ai && (
+                                  <button onClick={() => setTab("audit")}>
+                                    审核 AI 决策
+                                  </button>
+                                )}
+                              {!mobile && (
+                                <button onClick={() => setRecordsOpen(true)}>
+                                  查看回放
+                                </button>
+                              )}
+                              {snapshot.canManage && (
+                                <button
+                                  onClick={restart}
+                                  disabled={!!pendingOperation}
+                                >
+                                  再来一局
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {snapshot.resolving && !snapshot.finished && (
+                            <div className="resolution-status">
+                              等待无懈可击响应，房间服务自动结算
+                            </div>
+                          )}
+                          {snapshot.playing && (
+                            <div className="game-status-row">
+                              <span
+                                className="game-turn-indicator"
+                                aria-live="polite"
+                                role="status"
+                              >
+                                {actionPending
+                                  ? "操作确认中…"
+                                  : snapshot.playing &&
+                                      !snapshot.paused &&
+                                      snapshot.candidates.length
+                                    ? "轮到你了"
+                                    : ""}
+                              </span>
+                            </div>
+                          )}
+                          <div
+                            className="game-stage"
+                            aria-busy={actionPending}
+                            onClickCapture={(event) => {
+                              if (actionPending) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }
+                            }}
+                          >
+                            <GameCommandProvider
+                              registry={registry}
+                              bindings={preferences.bindings}
+                            >
+                              <OriginalGame
+                                pending={actionPending}
+                                onAutoplay={(enabled, index) =>
+                                  connection.current!.send({
+                                    type: "autoplay",
+                                    index,
+                                    token: session.current!.token,
+                                    enabled,
+                                  })
+                                }
+                                onPhrase={sendChat}
+                                customPhrases={preferences.phraseGroups}
+                                interactions={
+                                  preferences.interactions
+                                    ? interactions
+                                    : emptyInteractions
+                                }
+                                sound={preferences.interactionSound}
+                                onInteractionEnd={finishInteraction}
+                                restart={restart}
+                                snapshot={gameSnapshot!}
+                                motionPreferences={preferences}
+                                onMotion={(motion) =>
+                                  changePreferences({
+                                    ...preferences,
+                                    ...motion,
+                                  })
+                                }
+                                onAvatar={(avatar) => {
+                                  sendAvatar(avatar);
+                                  setPreferences({ ...preferences, avatar });
+                                }}
+                                act={act}
+                                end={end}
+                                onInteract={interact}
+                                onReplay={
+                                  !mobile && preferences.auditVisible
+                                    ? review
+                                    : undefined
+                                }
+                              />
+                            </GameCommandProvider>
+                            {actionPending && (
+                              <div className="action-feedback" role="status">
+                                正在同步操作…
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+                  {!mobile && preferences.auditVisible && tab === "audit" && (
+                    <Audit snapshot={snapshot} />
+                  )}
+                  {tab === "rules" && snapshot.kind === "sgs" && (
+                    <section className="dictionary">
+                      <h2>三国杀术语</h2>
+                      <details open>
+                        <summary>武将</summary>
+                        <div className="terms-grid">
+                          {heroGuides.map((hero) => (
+                            <HeroDescription key={hero.id} hero={hero} />
+                          ))}
+                        </div>
+                      </details>
+                      <details>
+                        <summary>技能</summary>
+                        {skillNames.map((name, id) => (
+                          <p key={name}>
+                            <strong>{name}</strong> ·{" "}
+                            {dictionary.load(1983).H[id][1]}
+                          </p>
+                        ))}
+                      </details>
+                      <details>
+                        <summary>卡牌</summary>
+                        {cardNames.map((name, id) => (
+                          <p key={name}>
+                            <strong>{name}</strong> ·{" "}
+                            {dictionary.load(8280).zd(id)}
+                          </p>
+                        ))}
+                      </details>
+                    </section>
+                  )}
+                </section>
+                <AnimatedSidebar
+                  open={sidebarVisible}
+                  animated={preferences.motion}
+                  mobile={mobile}
+                >
+                  {!mobile && (
+                    <SidebarDivider
+                      width={sidebarWidth}
+                      onChange={(sidebarWidth) =>
+                        setPreferences((value) => ({ ...value, sidebarWidth }))
+                      }
+                    />
+                  )}
+                  <nav className="sidebar-tabs" aria-label="房间侧栏">
                     <button
-                      aria-pressed={guideShown}
+                      aria-pressed={!guideShown}
                       onClick={() => {
-                        setSidebarTab("guide");
+                        setSidebarTab("chat");
+                        setPreferences((value) => ({
+                          ...value,
+                          chatVisible: true,
+                        }));
+                      }}
+                    >
+                      聊天{unread > 0 ? ` · ${unread}` : ""}
+                    </button>
+                    {guideEnabled && !tableFocused && (
+                      <button
+                        aria-pressed={guideShown}
+                        onClick={() => {
+                          setSidebarTab("guide");
+                          setPreferences((value) => ({
+                            ...value,
+                            chatVisible: false,
+                          }));
+                          setGuideLocated(false);
+                        }}
+                      >
+                        引导
+                      </button>
+                    )}
+                    <button
+                      className="sidebar-close"
+                      aria-label="关闭辅助区域"
+                      onClick={() => {
+                        setSidebarTab(null);
                         setPreferences((value) => ({
                           ...value,
                           chatVisible: false,
                         }));
-                        setGuideLocated(false);
                       }}
                     >
-                      引导
+                      ×
                     </button>
-                  )}
-                  <button
-                    className="sidebar-close"
-                    aria-label="关闭辅助区域"
-                    onClick={() => {
+                  </nav>
+                  <div
+                    ref={setGuideDock}
+                    className="room-guide-slot"
+                    hidden={!guideShown}
+                  />
+
+                  <ChatPanel
+                    showClose={false}
+                    snapshot={snapshot}
+                    endpoint={mode === "network" ? service : undefined}
+                    preferences={{
+                      ...preferences,
+                      chatVisible: sidebarTab === "chat" && sidebarVisible,
+                    }}
+                    onUnread={setUnread}
+                    onClose={() => {
                       setSidebarTab(null);
                       setPreferences((value) => ({
                         ...value,
                         chatVisible: false,
                       }));
                     }}
-                  >
-                    ×
-                  </button>
-                </nav>
-                <div
-                  ref={setGuideDock}
-                  className="room-guide-slot"
-                  hidden={!guideShown}
-                />
-
-                <ChatPanel
-                  showClose={false}
-                  snapshot={snapshot}
-                  endpoint={mode === "network" ? service : undefined}
-                  preferences={{
-                    ...preferences,
-                    chatVisible: sidebarTab === "chat" && sidebarVisible,
-                  }}
-                  onUnread={setUnread}
-                  onClose={() => {
-                    setSidebarTab(null);
-                    setPreferences((value) => ({
-                      ...value,
-                      chatVisible: false,
-                    }));
-                  }}
-                  token={session.current?.token}
-                  onImage={sendImage}
-                  onImageQuality={(imageQuality) =>
-                    setPreferences((value) => ({ ...value, imageQuality }))
-                  }
-                  onBannerDisplay={(bannerDisplay) =>
-                    setPreferences((value) => ({ ...value, bannerDisplay }))
-                  }
-                  onText={sendChat}
-                />
-              </AnimatedSidebar>
-            </main>
+                    token={session.current?.token}
+                    onImage={sendImage}
+                    onImageQuality={(imageQuality) =>
+                      setPreferences((value) => ({ ...value, imageQuality }))
+                    }
+                    onBannerDisplay={(bannerDisplay) =>
+                      setPreferences((value) => ({ ...value, bannerDisplay }))
+                    }
+                    onText={sendChat}
+                  />
+                </AnimatedSidebar>
+              </main>
+            )}
+          </SceneSurface>
+          {snapshot && (
+            <BannerLayer
+              serverTime={snapshot.serverTime}
+              room={snapshot.room}
+              messages={snapshot.chat}
+              preferences={preferences}
+            />
           )}
-        </SceneSurface>
-        {snapshot && (
-          <BannerLayer
-            serverTime={snapshot.serverTime}
-            room={snapshot.room}
-            messages={snapshot.chat}
-            preferences={preferences}
-          />
-        )}
-        {tableFocused && (
-          <FocusControls
-            players={tokens.map((id, index) => ({
-              id,
-              name: `玩家 ${index + 1}`,
-            }))}
-            selected={session.current?.token}
-            onPlayer={selectLocalPlayer}
-            unread={unread}
-            chatOpen={sidebarVisible}
-            onExit={() => setFocused(false)}
-            onChat={toggleChat}
-            onEnd={
-              snapshot?.canManage && snapshot.playing && !snapshot.finished
-                ? end
-                : undefined
-            }
-          />
-        )}
-      </div>
-    </MotionProvider></GameSizeProvider>
+          {practice && (
+            <React.Suspense fallback={null}>
+              <Practice
+                source={practice.config}
+                onClose={() => setPractice(null)}
+              />
+            </React.Suspense>
+          )}
+          {tableFocused && (
+            <FocusControls
+              players={tokens.map((id, index) => ({
+                id,
+                name: `玩家 ${index + 1}`,
+              }))}
+              selected={session.current?.token}
+              onPlayer={selectLocalPlayer}
+              unread={unread}
+              chatOpen={sidebarVisible}
+              onExit={() => setFocused(false)}
+              onChat={toggleChat}
+              onEnd={
+                snapshot?.canManage && snapshot.playing && !snapshot.finished
+                  ? end
+                  : undefined
+              }
+            />
+          )}
+        </div>
+      </MotionProvider>
+    </GameSizeProvider>
   );
 }
 
-applyTheme(loadPreferences().theme);
+const initialPreferences = loadPreferences();
+applyTheme(initialPreferences.theme);
+applyDisplayScale(initialPreferences);
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <VoiceProvider>{auxiliaryView ? <AuxiliaryRoot /> : <App />}</VoiceProvider>
+    <VoiceProvider>
+      {auxiliaryView ? (
+        <AuxiliaryRoot />
+      ) : devPhoneRoom && DevPhoneRoom ? (
+        <React.Suspense fallback={null}>
+          <DevPhoneRoom />
+        </React.Suspense>
+      ) : (
+        <App />
+      )}
+    </VoiceProvider>
   </React.StrictMode>,
 );

@@ -118,9 +118,6 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 180px;
 }
-.mobile-shell .original-game[data-game="graphwar"] .gw-toolbar {
-  font-size: 13px;
-}
 .mobile-shell .original-game[data-game="graphwar"] .gw-input-row input {
   font-size: 16px;
   min-height: 44px;

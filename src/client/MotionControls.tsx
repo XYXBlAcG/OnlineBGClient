@@ -1,3 +1,4 @@
+import { Switch } from "./ui/Controls";
 import type { Preferences } from "./preferences";
 export type MotionPreferences = Pick<
   Preferences,
@@ -12,30 +13,18 @@ export function MotionControls({
 }) {
   return (
     <div className="motion-controls">
-      <label className="checkbox">
-        <input
-          type="checkbox"
-          checked={preferences.motion}
-          onChange={(event) =>
-            onChange({ ...preferences, motion: event.target.checked })
-          }
-        />
-        界面动画
-      </label>
-      <label className="checkbox">
-        <input
-          type="checkbox"
-          checked={preferences.enhancedGameMotion}
-          onChange={(event) =>
-            onChange({
-              ...preferences,
-              enhancedGameMotion: event.target.checked,
-            })
-          }
-        />
-        游戏动画
-      </label>
-      <p className="muted">未勾选：当前版；勾选：增强版</p>
+      <Switch
+        label="界面动画"
+        checked={preferences.motion}
+        onCheckedChange={(motion) => onChange({ ...preferences, motion })}
+      />
+      <Switch
+        label="增强游戏动画"
+        checked={preferences.enhancedGameMotion}
+        onCheckedChange={(enhancedGameMotion) =>
+          onChange({ ...preferences, enhancedGameMotion })
+        }
+      />
     </div>
   );
 }

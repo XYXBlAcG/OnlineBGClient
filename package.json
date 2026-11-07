@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "dev:phone": "vite --host 127.0.0.1 --mode phone --strictPort",
     "preview:phone": "vite --host 127.0.0.1 --mode phone --strictPort",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
@@ -22,7 +23,11 @@
     "desktop:prepare": "npm run upstream:build && npm run build && npm run hosting:build",
     "verify:smoke": "node scripts/verify-smoke.mjs",
     "benchmark:expedition-chapter": "node scripts/benchmark-expedition-chapter.mjs",
+    "analyze:expedition-experience": "node scripts/analyze-expedition-experience.mjs",
+    "analyze:expedition-difficulty": "node scripts/analyze-expedition-difficulty.mjs",
+    "analyze:expedition-difficulty:python": "python3 scripts/run_expedition_difficulty.py",
     "verify:expedition-chapter": "node --experimental-strip-types scripts/smoke-expedition.mjs",
+    "verify:expedition-dev-scope": "node scripts/verify-expedition-dev-scope.mjs",
     "assets:emoji:apple": "swift -module-cache-path .tmp/swift-module-cache scripts/render-apple-emoji.swift",
     "workshop:pack": "tsx scripts/build-workshop-pack.ts"
   },
@@ -49,6 +54,7 @@
     "livekit-client": "2.23.0",
     "livekit-server-sdk": "2.19.2",
     "mathjs": "15.2.0",
+    "mathlive": "^0.111.4",
     "munkres": "^2.1.1",
     "pixi-filters": "6.1.5",
     "pixi.js": "8.22.0",

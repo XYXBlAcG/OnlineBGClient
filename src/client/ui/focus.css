@@ -41,6 +41,6 @@
   background: var(--canvas);
 }
 .focus-controls button {
-  font-size: 12px;
-  min-height: 30px;
+  font-size: var(--font-size-control);
+  min-height: 36px;
 }
