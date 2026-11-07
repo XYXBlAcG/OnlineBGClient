@@ -1,7 +1,7 @@
 import { balance, battlefields } from "../../domain/graphwar/balance";
 import type { GraphwarOptions } from "../../domain/graphwar/types";
 import { graphwarModes, graphwarMaps } from "../../domain/graphwar/types";
-import { Select, Switch } from "../ui/Controls";
+import { RadioChoice, Select, Switch } from "../ui/Controls";
 export function GraphwarOptionsControl({
   value,
   onChange,
@@ -11,6 +11,15 @@ export function GraphwarOptionsControl({
 }) {
   return (
     <>
+      <RadioChoice
+        label="Graphwar 场景"
+        value={value.scenario}
+        onValueChange={(scenario) => onChange({ ...value, scenario })}
+        options={[
+          { value: "classic", label: "经典函数战" },
+          { value: "storm", label: "裂隙风暴" },
+        ]}
+      />
       <label className="setting-row">
         函数战玩法
         <Select

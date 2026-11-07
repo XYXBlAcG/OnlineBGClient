@@ -70,6 +70,7 @@ export function GraphwarBoard({
     return () => observer.disconnect();
   }, []);
   const arena = battlefield(view);
+  const impacts = preview?.impacts ?? view.lastShot?.impacts ?? [];
   const scale = Math.min(size.width / arena.width, size.height / arena.height);
   const width = scale * arena.width,
     height = scale * arena.height;
@@ -280,6 +281,31 @@ export function GraphwarBoard({
             style={{ width, height }}
             aria-label={`函数坐标战场：${arena.width}×${arena.height}`}
           />
+          {impacts.map((hit) => {
+            const soldier = view.soldiers.find(
+              (item) => item.id === hit.soldier,
+            );
+            return (
+              <span
+                key={`impact-${hit.soldier}`}
+                className="gw-impact-badge"
+                aria-hidden="true"
+                style={
+                  {
+                    left: `${((hit.point.x + arena.width / 2) / arena.width) * 100}%`,
+                    top: `${((arena.height / 2 - hit.point.y) / arena.height) * 100}%`,
+                    "--gw-team": soldier
+                      ? colors[view.teams[soldier.player]]
+                      : colors[0],
+                  } as React.CSSProperties
+                }
+                title={`${soldier ? snapshot.seats[soldier.player].name : hit.soldier} · -${hit.damage} HP → ${hit.hpAfter} HP${hit.guarded ? " · 防御减伤" : ""}${hit.openingProtected ? " · 首轮护阵" : ""}`}
+              >
+                <b>-{hit.damage}</b>
+                <small>{hit.hpAfter}</small>
+              </span>
+            );
+          })}
           {moveMode && <MovementOverlay view={view} point={destination} />}
           {view.soldiers.map((soldier) => (
             <div

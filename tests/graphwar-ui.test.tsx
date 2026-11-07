@@ -1,16 +1,15 @@
 import React from "react";
+import { act, create } from "react-test-renderer";
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { Room } from "../src/domain/room";
 import { OriginalGame } from "../src/client/OriginalGame";
-import {
-  readFormulaHistory,
-  saveFormulaHistory,
-} from "../src/client/graphwar/formula-history";
 import { guidePosition } from "../src/client/guide-position";
 import { beginnerGuides } from "../src/client/beginner-guides";
 import { guideTarget } from "../src/client/guide-targets";
 import { readFileSync } from "node:fs";
+
+afterEach(() => vi.unstubAllGlobals());
 
 function snapshot() {
   const room = new Room("table", {
@@ -61,23 +60,24 @@ it("keeps the replay read only and hides firing controls and end-game actions", 
   expect(html).not.toContain('aria-label="发射函数"');
   expect(html).not.toContain("结束游戏");
 });
-it("bounds formula history and ignores malformed local input", () => {
-  let saved = "[]";
-  const store = {
-    getItem: () => saved,
-    setItem: (_key: string, value: string) => {
-      saved = value;
-    },
-  };
-  saveFormulaHistory(
-    store,
-    Array.from({ length: 20 }, (_, i) => `${i}*x`),
+it("keeps the system formula keyboard and removes templates, history and summary panels", () => {
+  const html = renderToStaticMarkup(
+    <OriginalGame snapshot={snapshot()} act={() => {}} end={() => {}} />,
   );
-  expect(readFormulaHistory(store)).toHaveLength(12);
-  saved = "{";
-  expect(readFormulaHistory(store)).toEqual([]);
-  saved = JSON.stringify([true, "x", "x".repeat(300)]);
-  expect(readFormulaHistory(store)).toEqual(["x"]);
+  expect(html).toContain('aria-label="发射函数"');
+  expect(html).toContain("gw-shot-panel");
+  expect(html).toContain("gw-preview-switch");
+  expect(html).not.toContain("数学键盘 · 模板 · 伤害明细");
+  expect(html).not.toContain("gw-tools");
+  expect(html).not.toContain("gw-keyboard");
+  expect(html).not.toContain("模板与历史");
+  const css = readFileSync("src/client/graphwar/graphwar.css", "utf8");
+  expect(css).toContain(".math-keyboard-hide");
+  expect(css).toContain('[data-math-keyboard="open"] .gw-controls');
+  expect(css).toContain(".gw-impact-badge");
+  expect(css).toContain("button:not(.ui-switch)");
+  expect(css).toContain(".gw-preview-switch");
+  expect(css).not.toContain(".gw-toolbar");
 });
 
 it("anchors every map soldier independently and excludes player status from effect targeting", () => {

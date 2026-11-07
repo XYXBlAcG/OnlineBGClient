@@ -33,7 +33,7 @@ export const graphwarGuide: BeginnerGuide = {
     },
     {
       title: "输入并检查函数",
-      text: "在 y= 后输入表达式，模板与数学键盘可以辅助输入；检查预览后再按发射，Enter 也可发射。",
+      text: "在 y= 后输入表达式，输入框内置键盘可以辅助输入；检查预览后再按发射，Enter 也可发射。",
       tip: "括号会改变计算顺序：1/x+2 和 1/(x+2) 是不同的函数。",
       focus: {
         target: "gw.formula",
@@ -65,8 +65,8 @@ export const graphwarGuide: BeginnerGuide = {
       text: "先选择士兵，再点移动。绿色区域可到达；点击目的地，查看路径与距离，再按确认移动。红色会显示非法原因，Escape 可以取消。",
       tip: "房间切换游戏、聊天和回放沿用客户端入口。",
       focus: {
-        target: "gw.controls",
-        caption: "发射与跳过操作，网络确认中会锁定重复提交。",
+        target: "gw.fire",
+        caption: "点这个发射按钮，网络确认中会锁定重复提交。",
       },
       details: [
         `防御将下一次受伤乘 ${balance.guard}，不叠加，至自己下一次行动结束时失效。移动最多 ${balance.moveDistance} 单位，会消耗本回合。`,

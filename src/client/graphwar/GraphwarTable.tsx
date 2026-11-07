@@ -3,39 +3,20 @@ import { Movement } from "../../domain/graphwar/movement";
 import { seatAvatar } from "../../domain/avatar";
 import { firingView, openingProtected } from "../../domain/graphwar/types";
 import { actionLimit, type Point } from "../../domain/graphwar/types";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { GameSnapshot } from "../OriginalGame";
 import { AvatarSurface, type AvatarSurfaceProps } from "../AvatarSurface";
 import type { Action } from "../../domain/types";
-import { compileFormula } from "../../domain/graphwar/expression";
+import {
+  compileFormula,
+  formulaFamily,
+} from "../../domain/graphwar/expression";
 import { graphwarModes, graphwarMaps } from "../../domain/graphwar/types";
 import { GraphwarBoard } from "./GraphwarBoard";
 import { usePreview } from "./use-preview";
-import { readFormulaHistory, saveFormulaHistory } from "./formula-history";
-import { Select } from "../ui/Controls";
+import { MathFormulaField } from "./MathFormulaField";
+import { Switch } from "../ui/Controls";
 import "./graphwar.css";
-const keys = [
-  "x",
-  "+",
-  "−",
-  "*",
-  "/",
-  "^",
-  "(",
-  ")",
-  "sin(",
-  "cos(",
-  "sqrt(",
-  "abs(",
-  "ln(",
-  "log(",
-];
-const templates = {
-  line: "0.2*x",
-  parabola: "x^2/60",
-  wave: "3*sin(x/4)",
-  arch: "sqrt(abs(x))",
-};
 function TurnClock({ snapshot }: { snapshot: GameSnapshot }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -80,12 +61,7 @@ export function GraphwarTable({
   animationRate: number;
 }) {
   const [formula, setFormula] = useState("0.2*x"),
-    [showPreview, setShowPreview] = useState(true),
-    [showKeys, setShowKeys] = useState(false);
-  const [history, setHistory] = useState<string[]>(() =>
-    typeof localStorage === "undefined" ? [] : readFormulaHistory(localStorage),
-  );
-  const input = useRef<HTMLInputElement>(null);
+    [showPreview, setShowPreview] = useState(true);
   const [moveSequence, setMoveSequence] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number>();
   const selected =
@@ -124,11 +100,18 @@ export function GraphwarTable({
   const validation = useMemo(() => {
     try {
       compileFormula(formula);
+      if (
+        view.options.scenario === "storm" &&
+        view.allowedFamily &&
+        view.allowedFamily !== "any" &&
+        formulaFamily(formula) !== view.allowedFamily
+      )
+        throw new Error(`本轮只允许 ${view.allowedFamily} 类函数`);
       return "";
     } catch (error) {
       return error instanceof Error ? error.message : String(error);
     }
-  }, [formula]);
+  }, [formula, view.allowedFamily, view.options.scenario]);
   const preview = usePreview(
     source,
     snapshot.actor,
@@ -151,21 +134,6 @@ export function GraphwarTable({
         : `${view.winner === 0 ? "蓝" : "橙"}队获胜`
       : "对局已结束"
     : `${snapshot.seats[view.turn].name}的回合`;
-  const insert = (key: string) => {
-    const text = key === "−" ? "-" : key;
-    const start = input.current?.selectionStart ?? formula.length,
-      end = input.current?.selectionEnd ?? start;
-    const next = formula.slice(0, start) + text + formula.slice(end);
-    if (next.length > 256) return;
-    setFormula(next);
-    requestAnimationFrame(() => {
-      input.current?.focus();
-      input.current?.setSelectionRange(
-        start + text.length,
-        start + text.length,
-      );
-    });
-  };
   const send = () => {
     if (!turn || validation) return;
     act({
@@ -173,16 +141,6 @@ export function GraphwarTable({
       soldier: selected?.id,
       formula: formula.trim(),
     });
-    const next = [
-      formula.trim(),
-      ...history.filter((item) => item !== formula.trim()),
-    ].slice(0, 12);
-    setHistory(next);
-    try {
-      saveFormulaHistory(localStorage, next);
-    } catch {
-      return;
-    }
   };
   return (
     <section
@@ -241,29 +199,78 @@ export function GraphwarTable({
         <span className="gw-team-blue">蓝队 {alive[0]}</span>
         <span className="gw-team-orange">橙队 {alive[1]}</span>
         {!replay && !snapshot.finished && <TurnClock snapshot={snapshot} />}
-        <small>
+        <small
+          data-guide-target={
+            view.options.scenario === "storm" ? "gw.storm" : undefined
+          }
+        >
           {graphwarModes[view.options.mode].name} ·{" "}
           {graphwarMaps[view.options.map]} · {view.sequence}/{actionLimit(view)}
+          {view.options.scenario === "storm"
+            ? ` · 风场 ${(view.wind ?? 0).toFixed(2)} · 函数限制 ${view.allowedFamily ?? "any"}`
+            : ""}
         </small>
       </header>
-      <GraphwarBoard
-        view={turn ? source : view}
-        snapshot={snapshot}
-        preview={preview.shot}
-        avatar={avatar}
-        active={animationActive}
-        rate={animationRate}
-        moveMode={turn && moveSequence === view.sequence}
-        selected={selected?.id}
-        onSelect={choose}
-        destination={draft}
-        onHover={(point) => {
-          if (!destination) setHover(point);
-        }}
-        onMove={(point) => {
-          if (turn && moveSequence === view.sequence) setDestination(point);
-        }}
-      />
+      <div className="gw-battlefield">
+        <GraphwarBoard
+          view={turn ? source : view}
+          snapshot={snapshot}
+          preview={preview.shot}
+          avatar={avatar}
+          active={animationActive}
+          rate={animationRate}
+          moveMode={turn && moveSequence === view.sequence}
+          selected={selected?.id}
+          onSelect={choose}
+          destination={draft}
+          onHover={(point) => {
+            if (!destination) setHover(point);
+          }}
+          onMove={(point) => {
+            if (turn && moveSequence === view.sequence) setDestination(point);
+          }}
+        />
+        <aside className="gw-shot-panel" aria-label="上一发射击">
+          <strong>上一发射击</strong>
+          {view.lastShot ? (
+            <>
+              <span className="gw-shot-actor">
+                {snapshot.seats[view.lastShot.actor].name}
+              </span>
+              <code>y = {view.lastShot.formula}</code>
+              <span className="gw-shot-summary">
+                {view.lastPass !== null
+                  ? `${snapshot.seats[view.lastPass].name}跳过回合`
+                  : view.lastAction === "move"
+                    ? "本回合移动"
+                    : view.lastAction === "guard"
+                      ? "本回合防御"
+                      : `命中 ${view.lastShot.impacts.length} 名 · 合计 ${view.lastShot.impacts.reduce((n, h) => n + h.damage, 0)} 伤害`}
+              </span>
+              <ul>
+                {view.lastShot.impacts.map((hit) => {
+                  const soldier = view.soldiers.find(
+                    (item) => item.id === hit.soldier,
+                  );
+                  return (
+                    <li key={hit.soldier}>
+                      <span>
+                        {soldier
+                          ? snapshot.seats[soldier.player].name
+                          : hit.soldier}
+                      </span>
+                      <b>-{hit.damage}</b>
+                      <small>{hit.hpAfter}</small>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : (
+            <span className="gw-shot-empty">还没有发射记录</span>
+          )}
+        </aside>
+      </div>
       <div className="gw-tactical-status" aria-live="polite">
         {moveSequence === view.sequence && turn
           ? verdict
@@ -308,30 +315,16 @@ export function GraphwarTable({
               send();
             }}
           >
-            <label htmlFor={`gw-formula-${snapshot.room}`}>y =</label>
-            <input
-              id={`gw-formula-${snapshot.room}`}
-              ref={input}
-              aria-label="发射函数"
-              data-guide-target="gw.formula"
+            <span className="gw-formula-label">y =</span>
+            <MathFormulaField
               value={formula}
-              maxLength={256}
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              onChange={(event) => setFormula(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && event.nativeEvent.isComposing)
-                  event.preventDefault();
-                if (event.key === "Escape") {
-                  setShowKeys(false);
-                  input.current?.blur();
-                }
-              }}
+              onChange={setFormula}
+              onSubmit={send}
             />
             <button
               className="primary-button"
               type="submit"
+              data-guide-target="gw.fire"
               disabled={!turn || !!validation}
             >
               {pending ? "确认中…" : "发射"}
@@ -412,108 +405,22 @@ export function GraphwarTable({
                   ? "函数会平移到当前士兵；常数项不会改变射击曲线"
                   : "可提前编辑函数，等待轮到自己")}
           </p>
-          <details className="gw-tools">
-            <summary>数学键盘 · 模板 · 伤害明细</summary>
-            <div className="gw-toolbar">
-              <button
-                type="button"
-                aria-expanded={showKeys}
-                onClick={() => setShowKeys(!showKeys)}
-              >
-                ƒ 数学键盘
-              </button>
-              <Select
-                aria-label="函数模板与历史"
-                value="choose"
-                onValueChange={(value) => {
-                  if (value.startsWith("history:"))
-                    setFormula(history[Number(value.slice(8))]);
-                  else if (Object.hasOwn(templates, value))
-                    setFormula(templates[value as keyof typeof templates]);
-                }}
-              >
-                <option value="choose">模板与历史</option>
-                <option value="line">直线 · 0.2x</option>
-                <option value="parabola">抛物线 · x²/60</option>
-                <option value="wave">波形 · 3sin(x/4)</option>
-                <option value="arch">根式 · √|x|</option>
-                {history.map((f, i) => (
-                  <option key={f} value={`history:${i}`}>
-                    {f}
-                  </option>
-                ))}
-              </Select>
-              {view.options.preview && (
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={showPreview}
-                    onChange={(event) => setShowPreview(event.target.checked)}
-                  />
-                  预览弹道
-                </label>
-              )}
-              <span className="gw-help">
-                {view.options.preview
-                  ? "虚线是预览；实线是实际射击"
-                  : "本房关闭弹道预览"}
-              </span>
-            </div>
-            {showKeys && (
-              <div className="gw-keyboard" aria-label="数学键盘">
-                {keys.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onPointerDown={(event) => event.preventDefault()}
-                    onClick={() => insert(key)}
-                  >
-                    {key}
-                  </button>
-                ))}
-              </div>
+          <div className="gw-control-row">
+            {view.options.preview && (
+              <Switch
+                className="gw-preview-switch"
+                label="预览弹道"
+                checked={showPreview}
+                onCheckedChange={setShowPreview}
+              />
             )}
-            {preview.shot && (
-              <details className="gw-impact-details">
-                <summary>
-                  预计伤害 · 弧长 {preview.shot.length.toFixed(1)} ·
-                  每次穿透保留
-                  {Math.round(balance.penetration * 100)}% 能量
-                </summary>
-                {preview.shot.impacts.map((hit) => {
-                  const s = view.soldiers.find((s) => s.id === hit.soldier)!;
-                  return (
-                    <p key={hit.soldier}>
-                      {snapshot.seats[s.player].name} · -{hit.damage} HP →{" "}
-                      {hit.hpAfter} HP · 弧长 {hit.length.toFixed(1)} ·{" "}
-                      {hit.guarded ? "防御减伤 · " : ""}
-                      {hit.openingProtected ? "首轮护阵 · " : ""}第{" "}
-                      {hit.penetration + 1} 次命中
-                    </p>
-                  );
-                })}
-              </details>
-            )}
-          </details>
+            <span className="gw-help">
+              {view.options.preview
+                ? "虚线是预览；实线是实际射击"
+                : "本房关闭弹道预览"}
+            </span>
+          </div>
         </div>
-      )}
-      {view.lastShot && (
-        <details className="gw-last-shot">
-          <summary>上一发射击</summary>
-          <span>
-            {snapshot.seats[view.lastShot.actor].name}：y ={" "}
-            <code>{view.lastShot.formula}</code>
-          </span>
-          <span>
-            {view.lastPass !== null
-              ? `${snapshot.seats[view.lastPass].name}跳过回合`
-              : view.lastAction === "move"
-                ? "本回合移动"
-                : view.lastAction === "guard"
-                  ? "本回合防御"
-                  : `命中 ${view.lastShot.impacts.length} 名 · 合计 ${view.lastShot.impacts.reduce((n, h) => n + h.damage, 0)} 伤害`}
-          </span>
-        </details>
       )}
     </section>
   );
