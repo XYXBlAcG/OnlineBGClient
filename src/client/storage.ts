@@ -1,9 +1,20 @@
-import {workshopPackSchema,workshopVersionCompare,type WorkshopInstallation,type WorkshopPack} from "../domain/workshop/model";
+import {
+  workshopPackSchema,
+  workshopVersionCompare,
+  type WorkshopInstallation,
+  type WorkshopPack,
+} from "../domain/workshop/model";
 import { v4 as randomId } from "uuid";
 import { attachmentLimits, type Attachment } from "../domain/attachments";
 import { openDB, type DBSchema } from "idb";
 import type { RoomArchive } from "../domain/room";
 import type { ReplayRecord } from "../domain/replay";
+import {
+  achievementById,
+  defaultAppStats,
+  type AchievementUnlock,
+  type AppStats,
+} from "../domain/achievements";
 
 export interface LocalSave {
   room: RoomArchive;
@@ -48,7 +59,7 @@ function publishHistory() {
     localStorage.setItem(historyRevision, randomId());
 }
 interface ClientDatabase extends DBSchema {
-  plugins:{key:string;value:WorkshopInstallation};
+  plugins: { key: string; value: WorkshopInstallation };
   recordSettings: { key: string; value: boolean };
   recordSeen: { key: string; value: boolean };
   stickers: { key: string; value: CachedImage };
@@ -65,12 +76,15 @@ interface ClientDatabase extends DBSchema {
   runLinks: { key: string; value: RunLink };
   local: { key: string; value: LocalSave };
   records: { key: string; value: ReplayRecord };
+  achievements: { key: string; value: AchievementUnlock };
+  appStats: { key: string; value: AppStats };
 }
 export class ClientStore {
   private observed = new Set<string>();
-  private database = openDB<ClientDatabase>("onlinebg-client", 6, {
+  private database = openDB<ClientDatabase>("onlinebg-client", 8, {
     upgrade(database) {
-      if(!database.objectStoreNames.contains("plugins"))database.createObjectStore("plugins");
+      if (!database.objectStoreNames.contains("plugins"))
+        database.createObjectStore("plugins");
       if (!database.objectStoreNames.contains("runs"))
         database.createObjectStore("runs");
       if (!database.objectStoreNames.contains("runLinks"))
@@ -85,19 +99,42 @@ export class ClientStore {
         database.createObjectStore("local");
       if (!database.objectStoreNames.contains("records"))
         database.createObjectStore("records");
+      if (!database.objectStoreNames.contains("achievements"))
+        database.createObjectStore("achievements");
+      if (!database.objectStoreNames.contains("appStats"))
+        database.createObjectStore("appStats");
     },
   });
-  async plugins():Promise<WorkshopInstallation[]>{return (await this.database).getAll("plugins");}
-  async installPlugin(input:WorkshopPack):Promise<void>{
-    const pack=workshopPackSchema.parse(input),db=await this.database,tx=db.transaction("plugins","readwrite"),previous=await tx.store.get(pack.id);
-    if(previous&&workshopVersionCompare(pack.version,previous.pack.version)<0)throw Error("不能用旧版覆盖已安装插件");
-    await tx.store.put({pack,enabled:previous?.enabled??true,installedAt:Date.now()},pack.id);await tx.done;
+  async plugins(): Promise<WorkshopInstallation[]> {
+    return (await this.database).getAll("plugins");
   }
-  async enablePlugin(id:string,enabled:boolean):Promise<void>{
-    const db=await this.database,tx=db.transaction("plugins","readwrite"),item=await tx.store.get(id);
-    if(!item)throw Error("插件未安装");await tx.store.put({...item,enabled},id);await tx.done;
+  async installPlugin(input: WorkshopPack): Promise<void> {
+    const pack = workshopPackSchema.parse(input),
+      db = await this.database,
+      tx = db.transaction("plugins", "readwrite"),
+      previous = await tx.store.get(pack.id);
+    if (
+      previous &&
+      workshopVersionCompare(pack.version, previous.pack.version) < 0
+    )
+      throw Error("不能用旧版覆盖已安装插件");
+    await tx.store.put(
+      { pack, enabled: previous?.enabled ?? true, installedAt: Date.now() },
+      pack.id,
+    );
+    await tx.done;
   }
-  async removePlugin(id:string):Promise<void>{await (await this.database).delete("plugins",id);}
+  async enablePlugin(id: string, enabled: boolean): Promise<void> {
+    const db = await this.database,
+      tx = db.transaction("plugins", "readwrite"),
+      item = await tx.store.get(id);
+    if (!item) throw Error("插件未安装");
+    await tx.store.put({ ...item, enabled }, id);
+    await tx.done;
+  }
+  async removePlugin(id: string): Promise<void> {
+    await (await this.database).delete("plugins", id);
+  }
   async saveImage(room: string, image: Attachment, bytes: Blob): Promise<void> {
     const database = await this.database;
     const transaction = database.transaction("attachments", "readwrite");
@@ -256,9 +293,9 @@ export class ClientStore {
     await (await this.database).put("recordSettings", enabled, "autoSave");
     publishHistory();
   }
-  async archiveRecords(records: ReplayRecord[]): Promise<void> {
+  async archiveRecords(records: ReplayRecord[]): Promise<ReplayRecord[]> {
     records = records.filter((record) => !this.observed.has(recordKey(record)));
-    if (!records.length) return;
+    if (!records.length) return [];
     const database = await this.database,
       transaction = database.transaction(
         ["records", "recordSeen", "recordSettings"],
@@ -280,6 +317,7 @@ export class ClientStore {
     await transaction.done;
     for (const record of records) this.observed.add(recordKey(record));
     if (changed) publishHistory();
+    return records;
   }
   async saveRecord(record: ReplayRecord): Promise<void> {
     const database = await this.database,
@@ -307,5 +345,84 @@ export class ClientStore {
     await transaction.objectStore("recordSeen").put(true, key);
     await transaction.done;
     publishHistory();
+  }
+  private achievementProfile: string | null = null;
+  achievementProfileId(): string {
+    if (this.achievementProfile) return this.achievementProfile;
+    const key = "onlinebg.achievement-profile";
+    const saved =
+      typeof localStorage === "undefined" ? "" : localStorage.getItem(key);
+    if (saved) {
+      this.achievementProfile = saved;
+      return saved;
+    }
+    const profile = randomId();
+    if (typeof localStorage !== "undefined") localStorage.setItem(key, profile);
+    this.achievementProfile = profile;
+    return profile;
+  }
+  async achievements(): Promise<AchievementUnlock[]> {
+    const profile = this.achievementProfileId();
+    const all = await (await this.database).getAll("achievements");
+    return all.filter((item) => item.profileId === profile);
+  }
+  async appStats(): Promise<AppStats> {
+    const profile = this.achievementProfileId();
+    return (
+      (await (await this.database).get("appStats", profile)) ??
+      defaultAppStats(profile)
+    );
+  }
+  async updateAppStats(
+    update: (stats: AppStats) => AppStats,
+  ): Promise<AppStats> {
+    const database = await this.database;
+    const transaction = database.transaction("appStats", "readwrite");
+    const profile = this.achievementProfileId();
+    const current =
+      (await transaction.store.get(profile)) ?? defaultAppStats(profile);
+    const next = { ...update(current), profileId: profile };
+    await transaction.store.put(next, profile);
+    await transaction.done;
+    if (typeof window !== "undefined")
+      window.dispatchEvent(new Event("onlinebg-app-stats"));
+    return next;
+  }
+  async unlockAchievements(
+    incoming: AchievementUnlock[],
+  ): Promise<AchievementUnlock[]> {
+    if (!incoming.length) return [];
+    const database = await this.database;
+    const transaction = database.transaction("achievements", "readwrite");
+    const store = transaction.objectStore("achievements");
+    const created: AchievementUnlock[] = [];
+    for (const item of incoming) {
+      if (!achievementById.has(item.achievementId)) continue;
+      const key = `${item.profileId}:${item.achievementId}`;
+      const previous = await store.get(key);
+      if (previous) {
+        if (
+          previous.evidence.replayFingerprint ===
+          item.evidence.replayFingerprint
+        )
+          continue;
+        await store.put(
+          {
+            ...previous,
+            lastAt: item.lastAt,
+            count: previous.count + 1,
+            evidence: item.evidence,
+          },
+          key,
+        );
+        continue;
+      }
+      await store.put(item, key);
+      created.push(item);
+    }
+    await transaction.done;
+    if (created.length && typeof window !== "undefined")
+      window.dispatchEvent(new Event("onlinebg-achievements"));
+    return created;
   }
 }
