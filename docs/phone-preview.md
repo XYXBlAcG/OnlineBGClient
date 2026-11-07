@@ -1,17 +1,14 @@
-# 手机网页预览
+# 开发态手机房间
 
-项目目录运行 `npm run preview:phone`，在电脑浏览器打开 [手机预览](http://127.0.0.1:1421/phone-preview.html)。可直接创建本地对局，也可在地址栏粘贴已经运行的房间邀请链接。
+运行 `npm run dev` 后打开 [手机房间](http://127.0.0.1:1420/?dev=phone)，或运行 `npm run dev:phone` 后打开 `http://127.0.0.1:1421/?dev=phone`。该入口只在开发模式存在，正式构建不会包含。
 
-切换预设或自定义宽高、旋转横竖屏，不重新加载牌桌；外框比例只调整电脑上的显示大小，不改变选定的网页逻辑尺寸。「重新载入」会重新加载网页，未保存的本地对局可能丢失。
+在电脑客户端开好局域网或公网房间后，把邀请链接粘贴到手机房间地址栏。带 `room` / `service` 的邀请会转到当前开发客户端并加上 `device-preview=phone`，因此手机框内运行最新代码、真实连接房间服务；普通网页按原地址加载。
 
-预览使用真实客户端，未复制游戏规则或牌桌。该页面通过 iframe 中的显式标记启用本项目的手机界面；外部网站不会因此获得触屏设备模拟，且可能禁止 iframe 加载。旧版已运行的服务需更新客户端资源，才支持这一标记。
-
-鼠标点击与滚轮用于人工检查布局、菜单、聊天及滚动。该工具不模拟设备引擎、触摸手势、软键盘、安全区、网络或手机性能；真实 iOS／Android 验收继续由用户执行。
+手机房间提供常用手机/平板尺寸、自定义宽高、旋转、适配缩放和重新载入。iframe 使用真实客户端，未复制规则或牌桌。不模拟触摸手势、软键盘、安全区、网络和手机性能；真实 iOS／Android 验收继续由用户执行。
 
 ## 实现入口
 
-- [预览页面](../public/phone-preview.html)、[交互](../public/phone-preview.mjs)、[尺寸和链接策略](../public/phone-preview-model.mjs)
+- [手机房间](../src/client/dev/PhoneRoom.tsx)、[样式](../src/client/ui/phone-room.css)
+- [尺寸、适配与链接改写](../src/shared/phone-preview.ts)
 - [手机预览标记](../src/client/phone-preview.ts)、[手机判断](../src/client/use-mobile.ts)、[横竖屏视口](../src/client/use-mobile-viewport.ts)
 - [定向测试](../tests/phone-preview.test.ts)
-
-图片收发跨域策略复用 [开发端口配置](../src/shared/development.ts)；服务入口见 [跨域处理](../src/server/cors.ts)，真实 HTTP 回归见 [图片预检与收发](../tests/media-cors.test.ts)。预览页面与房间服务需要使用同一版代码。

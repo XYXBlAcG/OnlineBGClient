@@ -148,7 +148,17 @@ Dominion 的隔离浏览器截图与布局尺寸检查入口见 [界面验证](d
 
 秘塔远征的首章固定种子实测、真实 Worker、重启后的 HTTP/WebSocket 恢复和手动审核见 [验证入口](expedition.md#非界面验证)。
 
-首领议程、部件、阶段与机制面板投影见[首领机制测试](../tests/expedition-boss-mechanics.test.tsx)。封牌、封口、金币与遗物掠夺、反制遗物、当铺、赌局、禁书库、追猎台及两个新职业见[高级机制测试](../tests/expedition-advanced-mechanics.test.tsx)。职业详情、起始牌组、流派关键词和完整职业牌池也由该测试覆盖。能力较强 AI 的真实 `decide` 分支见[困难 AI 测试](../tests/expedition-hard-ai.test.ts)。N0–N10 累积规则、路线分叉上限、曲线碰撞与不穿节点见[阶位与地图测试](../tests/expedition-ascension-map.test.ts)，复仇、汲取、超载、壁垒与随机词条组合见[敌人特性测试](../tests/expedition-enemy-traits.test.ts)。固定种子 N 阶抽样使用 `EXPEDITION_BENCHMARK_ASCENSIONS=0,5,10 EXPEDITION_BENCHMARK_SEEDS=4 npm run benchmark:expedition-chapter`。实际动画、触控、曲线观感和视觉层级仍由用户手动验收。
+大厅进入远征/麻将改为侧栏选项，准备页与全游戏开局/重开入口由房间界面统一；麻将手牌在选择阶段的可点击性由[麻将选择测试](../tests/mahjong-selection.test.tsx)覆盖。这些是静态/规则测试，实际视觉与触控仍需用户手动验收。
+
+首领议程、部件、阶段与机制面板投影见[首领机制测试](../tests/expedition-boss-mechanics.test.tsx)。封牌、封口、金币与遗物掠夺、反制遗物、当铺、赌局、禁书库、追猎台、深渊裂隙、56 件遗物及两个新职业见[高级机制测试](../tests/expedition-advanced-mechanics.test.tsx)。职业详情、起始牌组、流派关键词和完整职业牌池也由该测试覆盖。能力较强 AI 的真实 `decide` 分支、低血量路线偏好与未探索环路评估见[困难 AI 测试](../tests/expedition-hard-ai.test.ts)。N0–N10 累积规则、十一种路线、分叉上限、曲线碰撞与不穿节点见[阶位与地图测试](../tests/expedition-ascension-map.test.ts)，复仇、汲取、超载、壁垒与随机词条组合见[敌人特性测试](../tests/expedition-enemy-traits.test.ts)。固定种子 N 阶抽样使用 `EXPEDITION_BENCHMARK_ASCENSIONS=0,5,10 EXPEDITION_BENCHMARK_SEEDS=4 npm run benchmark:expedition-chapter`。实际动画、触控、曲线观感和视觉层级仍由用户手动验收。
+
+节点资源快照、六行支线归位、抢商店封店、AI 招募与三种队友存续规则见[节点系统测试](../tests/expedition-node-systems.test.ts)；结算卡内容见[节点结算测试](../tests/expedition-node-result.test.tsx)。自动代理断点、AI 路线风格与探索型裂隙选择见[演练逻辑测试](../tests/expedition-lab.test.ts)，开发态牌桌控制条见[开发控制测试](../tests/expedition-dev-controller.test.tsx)。`npm run build && npm run verify:expedition-dev-scope` 检查正式构建不存在开发控制标记。体验曲线、指标和目标区间见[体验量化方案](expedition-experience-design.md)，独立报告使用 `npm run analyze:expedition-experience` 生成到 `artifacts/expedition-experience/`。
+
+N0–N10 与三档难度扫描使用 `python3 scripts/run_expedition_difficulty.py`。用 `--games` 指定总运行数，或使用 `--seeds` 指定每个组合的运行数；`--seed-mode fixed|random` 切换固定与随机种子，`--workers` 控制 Python 并行线程数。固定种子三局、随机种子两局以及 33 个配置的单种子并行烟雾运行均已验证；完整结果写入 `artifacts/expedition-difficulty-python/` 的 Markdown、JSON 和 SVG。
+
+牌桌快照保留当前席位 `candidates` 的回归测试见[牌桌快照测试](../tests/game-snapshot.test.ts)。开发断点暂停、玩家合法操作覆盖以及房间确认后继续自动前进见[开发控制测试](../tests/expedition-dev-controller.test.tsx)。
+
+节点结算内容与独立遮罩层见[节点结算测试](../tests/expedition-node-result.test.tsx)，队友行装与卡牌服务布局由[呈现测试](../tests/expedition-presentation.test.tsx)和[卡牌服务测试](../tests/expedition-card-service.test.tsx)覆盖。实际视觉、滚动和触控仍需人工检查。
 
 专注模式、变化宽度路线、动效生命周期和语音控件结构的验证入口见 [体验清单](expedition-experience.md)。
 
@@ -158,8 +168,12 @@ Dominion 的隔离浏览器截图与布局尺寸检查入口见 [界面验证](d
 
 大厅、存档维护、快捷键与平台菜单的实现索引、非界面证据和人工步骤见 [房间体验审核](room-experience.md)。
 
+界面与显示批次：[视觉控件与文本字段摘要](../tests/visual-system.test.tsx)、[界面显示设置](../tests/display-settings.test.tsx)、[动画开关](../tests/motion-controls.test.tsx)、[大厅稳定与横幅/远征样式](../tests/visual-system.test.tsx)。远征抽屉、详情牌面、字体缩放、焦点缺口和大厅抽动仍需用户手动核对。
+
 文字选择范围、原生全选与场景过渡检查见 [审核入口](selection-and-scene-transitions.md)。
 
 开房／开局反馈、窗口就绪、隐藏复用及相关人工步骤见 [操作与窗口审核](action-feedback-and-windows.md)。
 
 正式更新的许可、代理、版本、官方签名与跨版本安装验收见 [软件更新](updating.md)。
+
+多游戏契约与模式定向检查：`.tmp/docs` 视觉样板、[视觉控件与文本字段摘要](../tests/visual-system.test.tsx)、[界面显示设置](../tests/display-settings.test.tsx)、[大厅模式配置](../tests/game-mode-config.test.tsx)、[完整模式对局](../tests/game-mode-play.test.tsx)、[独立练习场](../tests/practice.test.ts)、[练习场引导布局](../tests/practice-layout.test.tsx)、[飞行棋棋盘、天气层与状态面板](../tests/flight-renderer.test.tsx)、[引导目标精度](../tests/guide-targets.test.ts)、[引导与模式课程](../tests/beginner-guide.test.ts)、[关于与仓库链接](../tests/about.test.tsx)、[成就定义、回放判定与持久化](../tests/achievements.test.ts)、[成就陈列室与连接状态](../tests/achievements-ui.test.tsx)、[引导说明避让](../tests/guide-caption.test.ts)、[契约测试](../tests/challenges.test.ts)、[UNO 队伍](../tests/uno-team.test.ts)、[飞行棋风暴天气、侧风能量与移动预判](../tests/flight-storm.test.ts)、[跳棋据点攻防](../tests/checkers-siege.test.ts)、[Graphwar 风暴与数学函数](../tests/graphwar-rules.test.ts)、[Graphwar MathLive 输入、侧栏记录与键盘](../tests/graphwar-ui.test.tsx)、[日本立直东风战与透明麻将](../tests/mahjong-washizu.test.ts)、[模式回放](../tests/mode-replay.test.ts) 与 [素材校验](../tests/art-assets.test.ts)。开发态手机房间（`?dev=phone`）需由用户手动打开并粘贴邀请链接检查；不执行浏览器自动化。

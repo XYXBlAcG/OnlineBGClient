@@ -1,6 +1,5 @@
 # 文档索引
 
-
 - [第一次使用：开房、加入、手机与连麦](getting-started.md)
 - [项目运行](../README.md)
 - [架构与实现入口](architecture.md)
@@ -41,7 +40,9 @@
 - [秘塔远征：主题地图、联机、AI、存档与审核](expedition.md)
 - [DeepSeek 秘塔远征交付指南](expedition-delivery.md)
 - [秘塔远征：多层世界、职业与随机机制扩展](expedition-depth-plan.md)
+- [秘塔远征：体验量化、收益风险模型与独立报告](expedition-experience-design.md)
 - [秘塔远征：独立战斗样板](expedition-demo.md)
+- [其他游戏的可玩性扩展规划](multi-game-playability-plan.md)
 - [变声、输出设备、快捷键与横幅审核](voice-effects-and-input.md)
 - [客户端连麦：配置、实现与人工验收](client-voice.md)
 - [客户端连麦：技术、界面与验收方案](client-voice-plan.md)
@@ -59,9 +60,10 @@
 
 - [游戏元素大小与本机显示适配](game-display.md)
 
-- [电脑端手机网页预览](phone-preview.md)
+- [开发态手机房间](phone-preview.md)
 
 - [跨平台外观、局域网调试、代理与日志](platform-network-diagnostics.md)
+- [迁移到 OpenCode](opencode-migration.md)
 
 - [Apple 风格表情资源](emoji.md)
 - [各游戏手机牌桌审核](mobile-usability.md)
@@ -78,3 +80,5 @@
 - [本机使用统计](usage.md)
 
 - [界面设计与大厅](ui-design.md)
+- [成就系统](achievements.md)
+- [间距与展开规范](spacing.md)
