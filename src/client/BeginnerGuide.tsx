@@ -3,8 +3,9 @@ import { guideTarget } from "./guide-targets";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { gameCatalogue, type GameKind } from "../domain/catalogue";
-import { beginnerGuides, washizuGuide } from "./beginner-guides";
+import { guideFor } from "./beginner-guides";
 import { guidePosition, type GuideSnapshot } from "./guide-position";
+import { GuideVisualView } from "./GuideVisual";
 
 export function BeginnerGuide({
   kind,
@@ -19,8 +20,10 @@ export function BeginnerGuide({
   targetsOnly = false,
   readingOnly = false,
   showToggle = true,
+  showLocator = true,
   locateRequest = 0,
   onRequestLocate,
+  onPractice,
 }: {
   kind: GameKind;
   enabled: boolean;
@@ -34,13 +37,13 @@ export function BeginnerGuide({
   targetsOnly?: boolean;
   readingOnly?: boolean;
   showToggle?: boolean;
+  showLocator?: boolean;
   locateRequest?: number;
   onRequestLocate?: () => void;
+  onPractice?: () => void;
 }) {
   const [localIndex, setLocalIndex] = useState(0);
-  const washizu =
-    snapshot?.config?.mahjong.mode === "washizu" && kind === "scmj";
-  const guide = washizu ? washizuGuide : beginnerGuides[kind];
+  const guide = guideFor(kind, snapshot?.config);
   const index = Math.min(
     stepIndex ?? localIndex,
     Math.max(0, (guide?.steps.length ?? 1) - 1),
@@ -52,13 +55,17 @@ export function BeginnerGuide({
   const [targetCount, setTargetCount] = useState(0);
   const [rects, setRects] = useState<GuideRect[]>([]);
   const [located, setLocated] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLElement>(null);
   const targets = useRef<Element[]>([]);
   const scrollRequested = useRef(false);
+  const autoLocated = useRef("");
   const step = guide?.steps[index];
   const query = step ? guideTarget(step.focus.target, snapshot) : null;
   useEffect(() => {
+    autoLocated.current = "";
     setLocated(false);
+    setTargetCount(0);
     onLocate?.(false);
   }, [enabled, step, onLocate]);
   const seenRequest = useRef(locateRequest);
@@ -72,7 +79,9 @@ export function BeginnerGuide({
   }, [locateRequest, enabled, onLocate]);
   useEffect(() => {
     if (!enabled || !visible || !step || readingOnly) return;
-    const area = document.querySelector(".game-area");
+    const area =
+      root.current?.closest<HTMLElement>(".game-area") ??
+      document.querySelector<HTMLElement>(".game-area");
     if (!area) return;
     const query = guideTarget(step.focus.target, snapshot);
     let frame = 0;
@@ -80,13 +89,18 @@ export function BeginnerGuide({
       targets.current.forEach((node) =>
         node.removeAttribute("data-guide-focus"),
       );
-      const matches = [
-        ...area.querySelectorAll<HTMLElement | SVGElement>(
-          "[data-guide-target]",
-        ),
-      ]
+      const nodes = query.selector
+        ? [...area.querySelectorAll<HTMLElement | SVGElement>(query.selector)]
+        : [
+            ...area.querySelectorAll<HTMLElement | SVGElement>(
+              "[data-guide-target]",
+            ),
+          ];
+      const matches = nodes
         .filter((node) => {
-          if (
+          if (query.selector) {
+            if (node.getClientRects().length === 0) return false;
+          } else if (
             node.dataset.guideTarget !== query.key ||
             node.dataset.guideSmall === "true"
           )
@@ -188,14 +202,41 @@ export function BeginnerGuide({
       targets.current = [];
     };
   }, [enabled, visible, step, snapshot?.version, located, readingOnly]);
+  useEffect(() => {
+    if (
+      !enabled ||
+      !visible ||
+      readingOnly ||
+      !snapshot?.state ||
+      snapshot.actor < 0 ||
+      !targetCount
+    )
+      return;
+    const key = `${index}:${step?.focus.target ?? ""}`;
+    if (autoLocated.current === key) return;
+    autoLocated.current = key;
+    scrollRequested.current = true;
+    setLocated(true);
+    onLocate?.(true);
+  }, [
+    enabled,
+    visible,
+    readingOnly,
+    snapshot?.state,
+    snapshot?.actor,
+    targetCount,
+    index,
+    step?.focus.target,
+    onLocate,
+  ]);
   if (!guide || !step) return null;
   const current = snapshot?.state
     ? snapshot.finished
-      ? "本局已结束，可以结合牌桌回顾这些步骤。"
+      ? "本局已结束，可以回顾牌桌。"
       : snapshot.candidates.length
-        ? "下面是当前实际可执行的动作；先阅读，再在牌桌上自行选择。"
-        : "当前正在等待其他玩家或结算，先观察牌桌，轮到你时再操作。"
-    : "当前尚未开局。开始对局后，可以定位到真实的牌桌区域。";
+        ? "轮到你操作。"
+        : "等待其他玩家。"
+    : "开始对局后可定位真实牌桌。";
   const content = enabled && !targetsOnly && (
     <section
       ref={panel}
@@ -212,10 +253,59 @@ export function BeginnerGuide({
           ×
         </button>
       </div>
+      <div className="beginner-guide-progress" aria-hidden="true">
+        {guide.steps.map((item, step) => (
+          <i
+            key={item.title}
+            data-done={step < index || undefined}
+            data-current={step === index || undefined}
+          />
+        ))}
+      </div>
       <div className="guide-reading">
-        <p className="muted">{guide.goal}</p>
-        <div aria-live="polite" aria-atomic="true">
+        <div
+          className="beginner-guide-step"
+          key={`${index}:${step.title}`}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span className="beginner-guide-kicker">第 {index + 1} 步</span>
           <h3>{step.title}</h3>
+          <p className="beginner-guide-objective">{step.focus.caption}</p>
+          {step.visual && <GuideVisualView kind={step.visual} />}
+          <div className="beginner-guide-action-row">
+            <button
+              className="primary-button"
+              disabled={!snapshot?.state || snapshot.actor < 0}
+              onClick={() => {
+                if (readingOnly) {
+                  onRequestLocate?.();
+                  return;
+                }
+                scrollRequested.current = true;
+                document.dispatchEvent(
+                  new CustomEvent("room-reveal", {
+                    detail: step.focus.target,
+                  }),
+                );
+                setLocated(true);
+                onLocate?.(true);
+              }}
+            >
+              定位目标{query?.label ? ` · ${query.label}` : ""}
+            </button>
+            <span>{current}</span>
+            {onPractice && (
+              <button className="beginner-guide-practice" onClick={onPractice}>
+                练习核心操作
+              </button>
+            )}
+          </div>
+          {!readingOnly && !targetCount && <p role="status">{query?.wait}</p>}
+        </div>
+        <details className="beginner-guide-notes">
+          <summary>规则与提示</summary>
+          <p className="muted">{guide.goal}</p>
           <p>{step.text}</p>
           <ol className="beginner-guide-details">
             {step.details.map((detail) => (
@@ -223,29 +313,6 @@ export function BeginnerGuide({
             ))}
           </ol>
           <p className="beginner-guide-tip">{step.tip}</p>
-        </div>
-        <div className="beginner-guide-context">
-          <strong>看实际牌桌</strong>
-          <p>{step.focus.caption}</p>
-          <button
-            disabled={!snapshot?.state || snapshot.actor < 0}
-            onClick={() => {
-              if (readingOnly) {
-                onRequestLocate?.();
-                return;
-              }
-              scrollRequested.current = true;
-              document.dispatchEvent(
-                new CustomEvent("room-reveal", { detail: step.focus.target }),
-              );
-              setLocated(true);
-              onLocate?.(true);
-            }}
-          >
-            {query?.label}
-          </button>
-          {!readingOnly && !targetCount && <p role="status">{query?.wait}</p>}
-          <p>{current}</p>
           {snapshot && (
             <ul className="beginner-guide-actions">
               {guidePosition(snapshot).map((text) => (
@@ -257,12 +324,12 @@ export function BeginnerGuide({
             !snapshot.finished &&
             snapshot.candidates.length > 0 && (
               <ul className="beginner-guide-actions">
-                {snapshot.candidates.slice(0, 3).map((candidate, index) => (
-                  <li key={index}>{candidate.label}</li>
+                {snapshot.candidates.slice(0, 3).map((candidate, i) => (
+                  <li key={i}>{candidate.label}</li>
                 ))}
               </ul>
             )}
-        </div>
+        </details>
       </div>
       <div className="beginner-guide-navigation">
         <button disabled={index === 0} onClick={() => setIndex(index - 1)}>
@@ -277,7 +344,7 @@ export function BeginnerGuide({
     </section>
   );
   return (
-    <div className="beginner-guide">
+    <div className="beginner-guide" ref={root}>
       {showToggle && (
         <button
           aria-pressed={enabled}
@@ -295,7 +362,7 @@ export function BeginnerGuide({
       {enabled && visible && located && !readingOnly && (
         <GuideHighlight rects={rects} caption={step.focus.caption} />
       )}
-      {enabled && located && !readingOnly && (
+      {showLocator && enabled && located && !readingOnly && (
         <aside className="guide-locator" aria-label="牌桌引导定位">
           <span>{step.focus.caption}</span>
           <button

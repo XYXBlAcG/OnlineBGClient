@@ -11,14 +11,17 @@ import { Room } from "../src/domain/room";
 it("registers actionable guides for the supported games", () => {
   expect(Object.keys(beginnerGuides).sort()).toEqual([
     "ccbs",
+    "ddz",
     "dominion",
     "dy",
     "expedition",
+    "fxq",
     "graphwar",
     "ktd",
     "scmj",
     "sgs",
     "tq",
+    "uno",
   ]);
   for (const [kind, guide] of Object.entries(beginnerGuides)) {
     expect(gameCatalogue[kind as keyof typeof gameCatalogue]).toBeDefined();
@@ -57,11 +60,69 @@ it("registers actionable guides for the supported games", () => {
   }
 });
 
+it("renders graphical mahjong tile and hand examples", () => {
+  const tiles = renderToString(
+    createElement(BeginnerGuide, {
+      kind: "scmj",
+      enabled: true,
+      onChange: () => {},
+      stepIndex: 0,
+    }),
+  );
+  const hand = renderToString(
+    createElement(BeginnerGuide, {
+      kind: "scmj",
+      enabled: true,
+      onChange: () => {},
+      stepIndex: 1,
+    }),
+  );
+  expect(tiles).toContain("guide-tile-row");
+  expect(hand).toContain("guide-hand-groups");
+});
+
+it("selects mode-specific courses for special rules", async () => {
+  const { guideFor } = await import("../src/client/beginner-guides");
+  expect(
+    guideFor("fxq", { flight: { mode: "storm" } })!.steps.some((step) =>
+      step.title.includes("天气"),
+    ),
+  ).toBe(true);
+  expect(
+    guideFor("tq", { checkers: { mode: "siege" } })!.steps.some((step) =>
+      step.title.includes("攻方"),
+    ),
+  ).toBe(true);
+  expect(
+    guideFor("graphwar", { graphwar: { scenario: "storm" } })!.steps.some(
+      (step) => step.title.includes("风场"),
+    ),
+  ).toBe(true);
+  expect(
+    guideFor("uno", { team: true })!.steps.some((step) =>
+      step.title.includes("队友"),
+    ),
+  ).toBe(true);
+  expect(
+    guideFor("expedition", { expedition: { ascension: 5 } })!.steps.some(
+      (step) => step.title.includes("负面"),
+    ),
+  ).toBe(true);
+  expect(
+    guideFor("scmj", { mahjong: { mode: "riichi" } })!.steps.some((step) =>
+      step.title.includes("役"),
+    ),
+  ).toBe(true);
+  expect(
+    guideFor("scmj", { mahjong: { mode: "washizu" } })!.steps[0].title,
+  ).toContain("透明");
+});
+
 it("keeps games without a registered guide free of guide controls", () => {
   expect(
     renderToString(
       createElement(BeginnerGuide, {
-        kind: "uno",
+        kind: "unknown" as never,
         enabled: true,
         onChange: () => {},
       }),
@@ -106,7 +167,7 @@ it("uses the real projected game position and authoritative moves in teaching", 
         snapshot,
       }),
     );
-    expect(html).toContain("看实际牌桌");
+    expect(html).toContain("定位目标");
     for (const candidate of snapshot.candidates.slice(0, 3))
       expect(html).toContain(candidate.label);
     expect(guidePosition({ ...snapshot, actor: -1 })).toEqual([]);
