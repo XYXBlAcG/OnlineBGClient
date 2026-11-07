@@ -393,8 +393,9 @@
   padding: 10px 0;
 }
 .dominion-options legend {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
 }
 .dominion-options label {
   display: flex;
@@ -405,9 +406,6 @@
 .dominion-options input {
   width: 16px;
   height: 16px;
-}
-.dominion-options small {
-  color: var(--muted);
 }
 [data-game-motion="enhanced"] .dominion-hand > .dominion-card {
   animation: dominion-deal 230ms ease-out both;

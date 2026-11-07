@@ -1,6 +1,6 @@
 import type { BeginnerGuide } from "../beginner-guides";
 export const dominionGuide: BeginnerGuide = {
-  goal: "通过买牌改善自己的牌库，反复洗牌运转。终局比较全部牌的胜利分，不是比金币。",
+  goal: "通过买牌改善自己的牌库，反复洗牌运转。终局比较全部牌的胜利分。",
   steps: [
     {
       title: "先认清自己的五张手牌",
@@ -47,7 +47,7 @@ export const dominionGuide: BeginnerGuide = {
     {
       title: "攻击、反应与卡牌选择",
       text: "攻击按座位顺序处理。被民兵攻击时，要选择把手牌弃至三张；手中有护城河时，可以先展示它免受攻击。",
-      tip: "攻击反应期间，当前操作人可能不是正在进行回合的玩家。",
+      tip: "攻击反应期间，操作人可能是正在被攻击的玩家。",
       details: [
         "护城河只抵挡这一次攻击，仍留在手中；选择不用时照常承受攻击。",
         "礼拜堂把牌移出自己的牌库；地窖只是弃掉牌，之后仍会洗回来。两者作用不同。",

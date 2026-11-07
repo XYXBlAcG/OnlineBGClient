@@ -52,8 +52,7 @@ export function DominionOptionsControl({
                   })
                 }
               />
-              {cardDefinition(card).name}{" "}
-              <small>{cardDefinition(card).cost}</small>
+              {cardDefinition(card).name} · {cardDefinition(card).cost}
             </label>
           ))}
         </fieldset>
