@@ -55,6 +55,6 @@ it("renders the same labelled switch in a popover and gives its track a fixed in
   expect(html).toContain('role="switch"');
   expect(html).toContain('aria-checked="true"');
   const css = readFileSync("src/styles.css", "utf8");
-  expect(css).toContain(".ui-popover,.native-window-root) .ui-switch");
-  expect(css).toContain("flex:0 0 36px");
+  expect(css).toContain(".ui-popover, .native-window-root) .ui-switch");
+  expect(css).toMatch(/flex:\s*0 0 36px/);
 });

@@ -1,4 +1,5 @@
 import React from "react";
+import { act, create } from "react-test-renderer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { Room } from "../src/domain/room";
@@ -66,6 +67,7 @@ it("provides a single shared host end control for every game and hides it outsid
   const { gameKinds, gameCatalogue } = await import("../src/domain/catalogue");
   const { RoomToolbar } = await import("../src/client/RoomToolbar");
   const { CommandRegistry } = await import("../src/client/commands");
+    const { Panel } = await import("../src/client/ui/Controls");
   const preferences = preferencesSchema.parse({});
   for (const kind of gameKinds) {
     const room = new Room(`end-${kind}`, {
@@ -100,8 +102,18 @@ it("provides a single shared host end control for every game and hides it outsid
       guideShown: false,
       onGuide: () => {},
     };
-    const render = (snapshot: ReturnType<Room["snapshot"]>) =>
-      renderToStaticMarkup(<RoomToolbar {...props} snapshot={snapshot} />);
+    const render = (snapshot: ReturnType<Room["snapshot"]>) => {
+      let tree!: ReturnType<typeof create>;
+      act(() => {
+        tree = create(<RoomToolbar {...props} snapshot={snapshot} />);
+      });
+      const panel = tree.root
+        .findAllByType(Panel)
+        .find((item) => item.props.title === "房间菜单")!;
+      const html = renderToStaticMarkup(panel.props.children);
+      act(() => tree.unmount());
+      return html;
+    };
     expect(render(room.snapshot(tokens[0]))).not.toContain(
       'data-room-action="end"',
     );

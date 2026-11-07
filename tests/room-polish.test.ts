@@ -33,8 +33,12 @@ it("derives start blockers from real human seats and ignores AI seats", () => {
 });
 it("keeps catalogue icons and menu focus rules independent of upstream card styles", () => {
   const lobby = readFileSync("src/client/Lobby.tsx", "utf8"),
+    lobbyCss = readFileSync("src/client/lobby/lobby.css", "utf8"),
     css = readFileSync("src/styles.css", "utf8");
   expect(lobby).not.toContain("className={`game-symbol ${key}`}");
+  expect(lobby).toContain("LobbySetupTransition");
+  expect(lobbyCss).toContain("@keyframes lobby-content-in");
+  expect(lobbyCss).toContain(".lobby-setup-transition");
   expect(css).toContain(".ui-select-menu .ui-select-item:focus-visible");
   expect(css).toContain(".about-links a");
 });

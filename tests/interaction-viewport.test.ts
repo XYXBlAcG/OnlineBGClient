@@ -11,10 +11,12 @@ it("clips effects to the visible game area in viewport coordinates", () => {
   ).toEqual({ left: 80, top: 120, right: 300, bottom: 200 });
 });
 it("keeps switch labels out of ordinary form layout and uses a shrinkable emoji grid", () => {
-  const css = readFileSync("src/styles.css", "utf8") + readFileSync("src/client/lobby/lobby.css", "utf8");
-  expect(css).toContain("label:not(.checkbox, .ui-switch-label)");
+  const css =
+    readFileSync("src/styles.css", "utf8") +
+    readFileSync("src/client/lobby/lobby.css", "utf8");
+  expect(css).toContain("label:not(.checkbox, .ui-switch-label, .setting-row)");
   expect(css).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
-  expect(css).toContain("--layer-effects:20");
+  expect(css).toMatch(/--layer-effects:\s*20/);
   expect(readFileSync("src/client/Interactions.tsx", "utf8")).toContain(
     "createPortal",
   );

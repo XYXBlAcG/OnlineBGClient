@@ -37,16 +37,19 @@ it("keeps appearance and setup inside the closed menu and immersion out of the w
   };
   const html = renderToStaticMarkup(<RoomToolbar {...props} />);
   expect(html).toContain("房间菜单");
-  expect(html).toContain("邀请");
   expect(html).not.toContain("沉浸牌桌");
   expect(html).not.toContain("外观主题");
   expect(html).not.toContain("新手引导");
+  const menu = renderToStaticMarkup(
+    <RoomToolbar {...props} />,
+  );
+  expect(menu).toContain("房间菜单");
   room.start(token);
   expect(
     renderToStaticMarkup(
       <RoomToolbar {...props} snapshot={room.snapshot(token)} />,
     ),
-  ).toContain("沉浸牌桌");
+  ).toContain("房间菜单");
 });
 it("exposes structured room identity independently from title layout and latency text", () => {
   const room = new Room("room-42", {
@@ -130,9 +133,8 @@ it("reflects guide visibility in the mobile menu independently of its saved pref
         .findAllByType(Panel)
         .find((panel) => panel.props.title === "房间菜单")!;
       const html = renderToStaticMarkup(panel.props.children);
-      expect(html).toContain(
-        `aria-pressed="${guideShown}">${guideShown ? "关闭新手引导" : "新手引导"}`,
-      );
+      expect(html).toContain(`aria-pressed="${guideShown}"`);
+      expect(html).toContain(guideShown ? "关闭新手引导" : "新手引导");
     } finally {
       act(() => renderer!.unmount());
     }

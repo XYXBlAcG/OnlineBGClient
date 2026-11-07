@@ -5,6 +5,7 @@ import { KeyBindingEditor } from "../src/client/KeyBindingEditor";
 import { Lobby } from "../src/client/Lobby";
 import { defaultPreferences } from "../src/client/preferences";
 import { usePreferences } from "../src/client/use-preferences";
+import { Slider, Switch } from "../src/client/ui/Controls";
 const command = {
   id: "a",
   title: "操作",
@@ -120,7 +121,7 @@ it("keeps joining and creating mutually exclusive and retains invitation input",
   ).not.toBe(true);
   const inputs = tree.root.findAllByType("input");
   const invitation = inputs.find(
-    (input) => input.props.placeholder === "粘贴邀请链接",
+    (input) => input.props["aria-label"] === "邀请链接",
   )!;
   expect(invitation).toBeDefined();
   act(() =>
@@ -135,7 +136,7 @@ it("keeps joining and creating mutually exclusive and retains invitation input",
   expect(
     tree.root
       .findAllByType("input")
-      .some((input) => input.props.placeholder === "粘贴邀请链接"),
+      .some((input) => input.props["aria-label"] === "邀请链接"),
   ).toBe(false);
   click("加入", "tab");
   expect(
@@ -143,6 +144,50 @@ it("keeps joining and creating mutually exclusive and retains invitation input",
       .findAllByType("input")
       .some((input) => input.props.value === "https://example.test/?room=abc"),
   ).toBe(true);
+  act(() => tree.unmount());
+});
+it("从大厅直接进入远征与麻将的侧栏玩法选项，不再经过开局弹窗", () => {
+  vi.stubGlobal("window", { clearTimeout, setTimeout });
+  vi.stubGlobal("HTMLFormElement", class {});
+  vi.stubGlobal("localStorage", { getItem: () => null });
+  let tree!: ReturnType<typeof create>;
+  act(() => {
+    tree = create(
+      <Lobby
+        service="http://localhost:8787"
+        initialRoom=""
+        busy={false}
+        onCreate={() => {}}
+        onJoin={() => {}}
+        preferences={defaultPreferences}
+        onPreferencesChange={() => {}}
+      />,
+    );
+  });
+  for (const [game, option] of [
+    ["秘塔远征", "远征难度"],
+    ["麻将", "麻将模式"],
+  ]) {
+    act(() =>
+      tree.root
+        .findAllByType("button")
+        .find((button) => button.props["aria-label"] === `选择${game}`)!
+        .props.onClick(),
+    );
+    expect(
+      tree.root
+        .findAllByType("section")
+        .find((section) => section.props["aria-label"] === "玩法选项"),
+    ).toBeDefined();
+    expect(
+      tree.root
+        .findAll((node) => node.props["aria-label"] === option)
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      tree.root.findAll((node) => node.props.role === "dialog"),
+    ).toHaveLength(0);
+  }
   act(() => tree.unmount());
 });
 it("commits preference state only after storage succeeds", () => {
@@ -167,6 +212,47 @@ it("commits preference state only after storage succeeds", () => {
   act(() => current[1]((value) => ({ ...value, computeDetails: true })));
   expect(current[0].computeDetails).toBe(true);
   expect(JSON.parse(store.mock.calls.at(-1)![1]).computeDetails).toBe(true);
+  act(() => tree.unmount());
+});
+
+it("uses the spectator-style host-only switch and a continuous AI interval slider", () => {
+  vi.stubGlobal("window", { clearTimeout, setTimeout });
+  vi.stubGlobal("HTMLFormElement", class {});
+  vi.stubGlobal("localStorage", { getItem: () => null });
+  let tree!: ReturnType<typeof create>;
+  act(() => {
+    tree = create(
+      <Lobby
+        service="http://localhost:8787"
+        initialRoom=""
+        busy={false}
+        onCreate={() => {}}
+        onJoin={() => {}}
+        preferences={defaultPreferences}
+        onPreferencesChange={() => {}}
+      />,
+    );
+  });
+  act(() =>
+    tree.root
+      .findAllByType("button")
+      .find((button) => button.props.children === "跨网络联机")!
+      .props.onClick(),
+  );
+  act(() =>
+    tree.root
+      .findAllByType("button")
+      .find(
+        (button) =>
+          button.props.role === "tab" && button.props.children === "创建房间",
+      )!
+      .props.onClick(),
+  );
+  const hostOnly = tree.root
+    .findAllByType(Switch)
+    .find((item) => item.props.label === "只旁观，不占游戏席位")!;
+  expect(hostOnly).toBeDefined();
+  expect(tree.root.findByType(Slider).props.step).toBe(1);
   act(() => tree.unmount());
 });
 

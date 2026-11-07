@@ -1,7 +1,10 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import { focusPresentation } from "../src/client/focus-presentation";
+import {
+  focusPresentation,
+  focusToggleBinding,
+} from "../src/client/focus-presentation";
 import { FocusControls } from "../src/client/FocusControls";
 it("focus hides application chrome only while a live table is active and retains exit and chat", () => {
   expect(focusPresentation({ focused: true, playing: true, tab: "game" })).toBe(
@@ -13,10 +16,12 @@ it("focus hides application chrome only while a live table is active and retains
   expect(
     focusPresentation({ focused: true, playing: true, tab: "audit" }),
   ).toBe(false);
+  expect(focusToggleBinding).toBe("F");
   const html = renderToStaticMarkup(
     <FocusControls onExit={() => {}} onChat={() => {}} unread={3} />,
   );
   expect(html).toContain("退出专注");
+  expect(html).toContain("Esc");
   expect(html).toContain("聊天 · 3");
   expect(html).not.toContain("新手引导");
 });
