@@ -1,6 +1,12 @@
 # 麻将
 
-大厅选择「麻将」，再选择「四川血战」或「瓦西子透明麻将」。房间邀请使用房主选定的模式。四川血战规则与回归入口见 [四川麻将](sichuan-mahjong-plan.md)。
+大厅选择「麻将」，再选择「四川血战」「日本立直」或「瓦西子透明麻将」。房间邀请使用房主选定的模式。四川血战规则与回归入口见 [四川麻将](sichuan-mahjong-plan.md)。
+
+## 日本立直
+
+四人东风战、136 张牌、隐藏他家手牌，复用立直核心的吃碰杠、立直、振听、宝牌、里宝牌、抢杠、多家和牌与番符计分。每局结束显示下一局和本场信息；庄家和牌连庄，非庄家和牌轮庄，立直棒跨局保留，流局按听牌与庄家连庄规则推进，点到负数或东四局结束。模式选择、动作与投影见 [类型](../src/domain/mahjong/types.ts) 和 [立直规则](../src/domain/mahjong/washizu.ts)；牌桌与 AI 复用 [日本／透明牌桌](../src/client/mahjong/SichuanTable.tsx) 和 [策略](../src/domain/mahjong/strategy.ts)。[定向测试](../tests/mahjong-washizu.test.ts) 覆盖牌数、他家暗手牌遮蔽、立直计分与合法动作。
+
+[新手引导](../src/client/BeginnerGuide.tsx) 为四川、日本立直和透明模式分别提供图形化牌面、牌形、役、宝牌、立直、振听与副露步骤；[练习场](../src/client/Practice.tsx) 使用真实规则和本地教学 AI，不发送到真实房间。
 
 ## 瓦西子透明麻将
 

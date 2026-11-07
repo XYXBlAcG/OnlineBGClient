@@ -76,11 +76,12 @@ export function SichuanTable({
     turn = interactive && rules.actors(state).includes(me),
     phase = v.phase,
     hand = v.hands[me];
-  const transparent = !!v.riichi;
-  const PublicHand = transparent ? "button" : "div";
-  const modeName = mahjongModeNames[transparent ? "washizu" : "sichuan"];
+  const riichi = !!v.riichi;
+  const washizu = v.options.mode === "washizu";
+  const PublicHand = washizu ? "button" : "div";
+  const modeName = mahjongModeNames[v.options.mode ?? "sichuan"];
   const choices =
-    transparent && turn
+    riichi && turn
       ? (snapshot.candidates ?? []).flatMap(({ action, label }) =>
           action.type === "scmj-action" ? [{ move: action.move, label }] : [],
         )
@@ -93,7 +94,7 @@ export function SichuanTable({
     if (turn) act({ type: "scmj-action", move });
   };
   const response =
-    !transparent && turn && phase === "response" ? responseChoices(v, me) : [];
+    !riichi && turn && phase === "response" ? responseChoices(v, me) : [];
   const exchangeValid =
     selected.length === 3 && new Set(selected.map(tileSuit)).size === 1;
   const selectedTile = selected[0],
@@ -103,6 +104,9 @@ export function SichuanTable({
     phase === "play" &&
     selected.length === 1 &&
     (!mustLack || tileSuit(selectedTile) === v.lacks[me]);
+  const canSelectHand =
+    interactive &&
+    ((phase === "exchange" && !v.exchangeReady[me]) || phase === "play");
   const title =
     phase === "finished"
       ? v.finishedReason
@@ -120,11 +124,7 @@ export function SichuanTable({
               : "等待响应结算"
             : `${snapshot.seats[v.turn].name}出牌`;
   const seat = (id: number, position: string) => (
-    <section
-      className={`scmj-seat scmj-${position}`}
-      key={id}
-      data-guide-target={id === me ? "scmj.score" : undefined}
-    >
+    <section className={`scmj-seat scmj-${position}`} key={id}>
       <div className="scmj-player">
         <AvatarSurface
           {...avatar}
@@ -139,10 +139,10 @@ export function SichuanTable({
             {snapshot.seats[id].name}
             {id === v.dealer ? " · 庄" : ""}
           </strong>
-          <small>
+          <small data-guide-target="scmj.score" data-guide-player={id}>
             {v.wins.some((w) => w.player === id)
               ? `已胡 · 第${v.wins.findIndex((w) => w.player === id) + 1}家`
-              : transparent
+              : riichi
                 ? `${v.hands[id].length} 张${v.riichi?.ready[id] ? " · 立直" : ""}`
                 : `${v.hands[id].length} 张 · ${v.lacks[id] < 0 ? "待定缺" : `缺${suitNames[v.lacks[id]]}`}`}{" "}
             · {v.scores[id] > 0 ? "+" : ""}
@@ -153,15 +153,15 @@ export function SichuanTable({
       {id !== me && (
         <PublicHand
           className="scmj-hidden-hand"
-          type={transparent ? "button" : undefined}
-          onClick={transparent ? () => setInspectSeat(id) : undefined}
+          type={washizu ? "button" : undefined}
+          onClick={washizu ? () => setInspectSeat(id) : undefined}
           aria-label={`${snapshot.seats[id].name}的公开手牌`}
         >
           {v.hands[id].map((tile, i) => (
             <span key={tile < 0 ? i : tile}>
               <MahjongTile
                 tile={tile}
-                transparent={transparent && isTransparent(tile)}
+                transparent={washizu && isTransparent(tile)}
               />
             </span>
           ))}
@@ -175,6 +175,8 @@ export function SichuanTable({
           <div
             className="scmj-meld"
             key={i}
+            data-guide-target="scmj.meld"
+            data-guide-player={id}
             aria-label={
               meld.type === "chi"
                 ? "吃牌"
@@ -192,7 +194,7 @@ export function SichuanTable({
               >
                 <MahjongTile
                   tile={tile}
-                  transparent={transparent && isTransparent(tile)}
+                  transparent={washizu && isTransparent(tile)}
                 />
               </span>
             ))}
@@ -206,13 +208,15 @@ export function SichuanTable({
       >
         {v.rivers[id].map((tile) => (
           <span
-            className={v.pending?.tile === tile ? "is-last" : ""}
+            className={`scmj-river-tile ${v.pending?.tile === tile ? "is-last" : ""}`}
+            data-guide-target="scmj.river-tile"
+            data-guide-player={id}
             data-motion-key={`scmj-tile-${tile}`}
             key={tile}
           >
             <MahjongTile
               tile={tile}
-              transparent={transparent && isTransparent(tile)}
+              transparent={washizu && isTransparent(tile)}
             />
           </span>
         ))}
@@ -244,6 +248,19 @@ export function SichuanTable({
             余牌 <strong>{v.wall.length}</strong>
           </span>
           <strong role="status">{title}</strong>
+          {v.match && (
+            <div className="scmj-match" data-guide-target="scmj.match">
+              <strong>
+                {phase === "finished"
+                  ? v.match.over
+                    ? "东风战结束"
+                    : `下一局 · 东风 ${v.match.round} 局`
+                  : `东风 ${v.match.round} 局`}{" "}
+                · {v.match.honba} 本场
+              </strong>
+              <span>庄家 {snapshot.seats[v.dealer].name}</span>
+            </div>
+          )}
           {v.riichi && (
             <div className="scmj-dora">
               <span>宝牌指示</span>
@@ -297,6 +314,8 @@ export function SichuanTable({
                 <button
                   key={name}
                   className="primary-button"
+                  data-guide-target="scmj.lack-option"
+                  data-guide-id={suit}
                   onClick={() => send({ type: "lack", suit })}
                 >
                   定缺{name}
@@ -307,6 +326,7 @@ export function SichuanTable({
                 <span>{selected.length} / 3</span>
                 <button
                   className="primary-button"
+                  data-guide-target="scmj.exchange"
                   disabled={!exchangeValid}
                   onClick={() =>
                     send({
@@ -319,7 +339,20 @@ export function SichuanTable({
                 </button>
               </>
             )}
-            {transparent && turn && phase === "play" && (
+            {v.match &&
+              phase === "finished" &&
+              !v.match.over &&
+              interactive && (
+                <button
+                  className="primary-button"
+                  onClick={() =>
+                    act({ type: "scmj-action", move: { type: "next" } })
+                  }
+                >
+                  开始下一局
+                </button>
+              )}
+            {riichi && turn && phase === "play" && (
               <button
                 className="primary-button"
                 disabled={!discard}
@@ -341,10 +374,11 @@ export function SichuanTable({
                   {label}
                 </button>
               ))}
-            {!transparent && turn && phase === "play" && (
+            {!riichi && turn && phase === "play" && (
               <>
                 <button
                   className="primary-button"
+                  data-guide-target="scmj.discard"
                   disabled={!canDiscard}
                   onClick={() => send({ type: "discard", tile: selectedTile })}
                 >
@@ -353,6 +387,8 @@ export function SichuanTable({
                 {kongTiles(v, me).map((tile) => (
                   <button
                     key={tile}
+                    data-guide-target="scmj.action"
+                    data-guide-id={`kong-${tile}`}
                     onClick={() => send({ type: "kong", tile })}
                   >
                     杠 {tileName(tile)}
@@ -361,6 +397,8 @@ export function SichuanTable({
                 {winScore(v, me, true) && (
                   <button
                     className="primary-button"
+                    data-guide-target="scmj.action"
+                    data-guide-id="win"
                     onClick={() => send({ type: "win" })}
                   >
                     自摸胡牌
@@ -372,6 +410,8 @@ export function SichuanTable({
               <button
                 key={choice}
                 className={choice === "win" ? "primary-button" : ""}
+                data-guide-target="scmj.action"
+                data-guide-id={`respond-${choice}`}
                 onClick={() => send({ type: "respond", choice })}
               >
                 {{ pass: "过", pong: "碰", kong: "杠", win: "胡" }[choice]}
@@ -402,10 +442,9 @@ export function SichuanTable({
                 key={tile < 0 ? i : tile}
                 className={`scmj-tile ${selected.includes(tile) ? "is-selected" : ""} ${tile >= 0 && tileSuit(tile) === v.lacks[me] ? "is-lack" : ""}`}
                 disabled={
-                  !turn ||
-                  !["play", "exchange"].includes(phase) ||
+                  !canSelectHand ||
                   tile < 0 ||
-                  (transparent &&
+                  (riichi &&
                     !choices.some(
                       ({ move }) =>
                         move.type === "discard" && move.tile === tile,
@@ -413,7 +452,7 @@ export function SichuanTable({
                 }
                 aria-label={
                   tileName(tile) +
-                  (transparent && tile >= 0
+                  (washizu && tile >= 0
                     ? isTransparent(tile)
                       ? "，透明牌"
                       : "，暗牌"
@@ -443,7 +482,7 @@ export function SichuanTable({
               >
                 <MahjongTile
                   tile={tile}
-                  transparent={transparent && isTransparent(tile)}
+                  transparent={washizu && isTransparent(tile)}
                 />
                 {tile >= 0 && tileSuit(tile) === v.lacks[me] && (
                   <span className="scmj-lack-mark">缺</span>
@@ -452,7 +491,7 @@ export function SichuanTable({
             ))}
           </div>
           <footer className="scmj-footer">
-            {!transparent && (
+            {!riichi && (
               <span data-guide-target="scmj.lack">
                 定缺：{v.lacks[me] < 0 ? "未选" : suitNames[v.lacks[me]]}
               </span>
@@ -477,7 +516,7 @@ export function SichuanTable({
           </footer>
         </div>
       </div>
-      {transparent && inspectSeat !== null && (
+      {washizu && inspectSeat !== null && (
         <Panel
           open
           onOpenChange={(open) => {
@@ -506,7 +545,7 @@ export function SichuanTable({
               <p key={i}>
                 <strong>{seat.name}</strong> {v.scores[i] > 0 ? "+" : ""}
                 {v.scores[i]} 分{win && ` · ${win.labels.join("、")}`}
-                {transparent &&
+                {riichi &&
                   win &&
                   ` · ${win.fan} 番${win.fu ? ` ${win.fu} 符` : ""} · ${win.value} 点`}
               </p>
@@ -526,9 +565,14 @@ export function SichuanTable({
         onOpenChange={setHelp}
         title={`${modeName} · 本房规则`}
       >
-        {transparent ? (
+        {washizu ? (
           <p>
             四人透明立直单局。每种牌有三张透明牌、一张暗牌。他家只能看到你的透明手牌。支持吃、碰、杠、立直与振听，按番符计分。多人可荣和同一张牌，立直棒归顺位最接近的和家。流局按听牌结算并退还本局立直棒。
+          </p>
+        ) : riichi ? (
+          <p>
+            四人日本立直东风战。136
+            张牌，含赤五、宝牌、立直、振听、吃碰杠与番符计分。门清听牌且点数足够时可立直；无役不能荣和，振听只能自摸。每局结束显示下一局与本场，庄家和牌连庄、非庄家和牌轮庄，立直棒跨局保留，东四局结束或点数跌到负数时结束。
           </p>
         ) : (
           <>

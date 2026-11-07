@@ -202,6 +202,8 @@
   position: relative;
   cursor: pointer;
   border-radius: 6px;
+  touch-action: manipulation;
+  z-index: 1;
 }
 .scmj-tile:disabled {
   cursor: default;
@@ -501,6 +503,21 @@
   }
 }
 
+.scmj-match {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  font-size: 11px;
+}
+.scmj-match strong {
+  font-size: 12px;
+}
+.scmj-match span {
+  color: var(--muted);
+}
 .scmj-dora {
   display: flex;
   flex-wrap: wrap;

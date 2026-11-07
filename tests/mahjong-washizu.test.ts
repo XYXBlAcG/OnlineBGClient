@@ -150,6 +150,84 @@ describe("透明立直", () => {
         ),
     ).toBe(true);
   });
+  it("日本立直模式隐藏所有他家暗手牌并保留立直计分", () => {
+    const state = rules.create(4, false, {
+      mahjong: { mode: "riichi", cap: 3, selfDraw: "base" },
+    });
+    expect(state.view.options.mode).toBe("riichi");
+    expect(state.view.phase).toBe("play");
+    const projected = rules.project(state, 0).view;
+    expect(projected.hands[0]).toEqual(state.view.hands[0]);
+    for (const seat of [1, 2, 3])
+      expect(projected.hands[seat].every((tile) => tile === -1)).toBe(true);
+    expect(projected.riichi!.dora).toHaveLength(1);
+    expect(
+      rules
+        .candidates(state, 0)
+        .every(({ label }) => !label.includes("·透") && !label.includes("·暗")),
+    ).toBe(true);
+  });
+  it("日本立直单局可以推进至东风战跨局", () => {
+    let state = rules.create(4, false, {
+      mahjong: { mode: "riichi", cap: 3, selfDraw: "base" },
+    });
+    for (let step = 0; step < 320 && state.view.phase !== "finished"; step++) {
+      const actor = rules.actors(state)[0];
+      const moves = rules.candidates(state, actor);
+      const choice = moves.find((item) => {
+        if (item.action.type !== "scmj-action") return false;
+        return (
+          item.action.move.type === "win" ||
+          (item.action.move.type === "respond" &&
+            item.action.move.choice === "win")
+        );
+      }) ?? moves[0];
+      expect(choice).toBeDefined();
+      state = rules.apply(state, actor, choice.action);
+    }
+    expect(state.view.phase).toBe("finished");
+    expect(state.view.scores.reduce((a, b) => a + b, 0)).toBe(100000);
+    if (!state.view.match!.over) {
+      const scores = [...state.view.scores];
+      state = rules.apply(state, 0, {
+        type: "scmj-action",
+        move: { type: "next" },
+      });
+      expect(state.view.phase).toBe("play");
+      expect(state.view.scores).toEqual(scores);
+      expect(state.view.match!.round).toBeGreaterThanOrEqual(1);
+      expect(state.view.match!.over).toBe(false);
+    }
+  });
+  it("庄家连庄后仍可开始下一局并保留点数", () => {
+    let state = rules.create(4, false, {
+      mahjong: { mode: "riichi", cap: 3, selfDraw: "base" },
+    });
+    const types = [0, 4, 8, 9, 13, 18, 33];
+    const hand = types.flatMap((type) => [type * 4, type * 4 + 1]);
+    state.view.hands[0] = hand;
+    state.view.lastDraw = { actor: 0, tile: hand.at(-1)!, kong: false };
+    state.view.riichi!.ready[0] = true;
+    state = rules.apply(state, 0, {
+      type: "scmj-action",
+      move: { type: "win" },
+    });
+    expect(state.view.phase).toBe("finished");
+    expect(state.view.match).toMatchObject({
+      round: 1,
+      honba: 1,
+      dealer: 0,
+      over: false,
+    });
+    const scores = [...state.view.scores];
+    const next = rules.apply(state, 0, {
+      type: "scmj-action",
+      move: { type: "next" },
+    });
+    expect(next.view.phase).toBe("play");
+    expect(next.view.scores).toEqual(scores);
+    expect(next.view.match).toMatchObject({ round: 1, honba: 1, dealer: 0 });
+  });
   it("合法候选可以推进至单局结束且结算守恒", () => {
     let state = create();
     for (let step = 0; step < 320 && !rules.finished(state); step++) {
