@@ -1,0 +1,445 @@
+.flight-status-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
+.flight-mode-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 108px;
+  font-size: 12px;
+}
+.flight-mode-badge strong {
+  font-size: 13px;
+}
+.flight-mode-badge span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.flight-weather-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 190px;
+  padding: 7px 10px;
+  border-radius: 11px;
+  background: var(--field);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 55%, transparent);
+  animation: flight-weather-card-in 260ms var(--ease-emphasized);
+}
+.flight-weather-card > div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.flight-weather-card strong {
+  font-size: 13px;
+}
+.flight-weather-card small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.flight-weather-card > b {
+  margin-left: auto;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+.flight-weather-symbol {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  font-size: 20px;
+  font-weight: 700;
+  animation: flight-weather-symbol 1.8s var(--ease-standard) infinite;
+}
+.weather-tailwind .flight-weather-symbol,
+.weather-tailwind > b {
+  color: #b45309;
+}
+.weather-headwind .flight-weather-symbol,
+.weather-headwind > b {
+  color: #2563eb;
+}
+.weather-crosswind .flight-weather-symbol,
+.weather-crosswind > b {
+  color: #0f766e;
+}
+.weather-storm .flight-weather-symbol,
+.weather-storm > b {
+  color: #6d28d9;
+}
+.weather-storm {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #6d28d9 35%, transparent);
+}
+.flight-weather-change {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  font-size: 11px;
+  font-weight: 650;
+  animation: flight-weather-change-in 220ms var(--ease-emphasized);
+}
+.flight-player-toggle {
+  min-height: 28px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+.flight-special-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.flight-special-stats b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.flight-ability-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.flight-status-panel .flight-ability-row button {
+  min-height: 30px;
+  padding: 4px 9px;
+  font-size: 11px;
+}
+.flight-forecast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  width: 100%;
+  padding: 6px 9px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--field) 72%, var(--surface));
+  font-size: 12px;
+}
+.flight-forecast > strong {
+  font-size: 11px;
+  color: var(--muted);
+}
+.flight-forecast-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+.flight-forecast-row strong {
+  font-variant-numeric: tabular-nums;
+}
+.flight-delta {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--field) 82%, #000);
+  font-size: 11px;
+  font-weight: 650;
+}
+.flight-delta.is-up {
+  color: #166534;
+  background: color-mix(in srgb, #22c55e 16%, var(--surface));
+}
+.flight-delta.is-down {
+  color: #9a3412;
+  background: color-mix(in srgb, #f97316 16%, var(--surface));
+}
+.flight-feedback {
+  width: 100%;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  color: var(--muted);
+  font-size: 12px;
+  animation: flight-feedback-in 220ms var(--ease-emphasized);
+}
+.flight-board-overlay,
+.flight-board-overlay * {
+  pointer-events: none;
+}
+.flight-board-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+.flight-marker-layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.flight-checkpoint-marker circle {
+  fill: color-mix(in srgb, #f8d68a 55%, #fff);
+  stroke: #d48900;
+  stroke-width: 1;
+}
+.flight-checkpoint-marker text {
+  fill: #5b3600;
+  font-size: 4px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.flight-finish-marker circle {
+  fill: color-mix(in srgb, #fde68a 52%, #fff);
+  stroke: #b77900;
+  stroke-width: 1.2;
+}
+.flight-finish-marker text {
+  fill: #5b3600;
+  font-size: 4.2px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.flight-landing-marker circle {
+  fill: color-mix(in srgb, #22c55e 20%, transparent);
+  stroke: #15803d;
+  stroke-width: 1.1;
+  stroke-dasharray: 2 1.2;
+  animation: flight-landing-pulse 1.8s var(--ease-standard) infinite;
+}
+.flight-landing-marker text {
+  fill: #14532d;
+  font-size: 4px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.flight-landing-marker.is-returned circle {
+  fill: color-mix(in srgb, #ef4444 20%, transparent);
+  stroke: #b91c1c;
+}
+.flight-landing-marker.is-returned text {
+  fill: #7f1d1d;
+}
+.flight-landing-marker.is-finish circle {
+  fill: color-mix(in srgb, #f59e0b 26%, transparent);
+  stroke: #b45309;
+}
+.flight-landing-marker.is-finish text {
+  fill: #78350f;
+}
+.flight-weather-delta {
+  fill: #b45309;
+  font-size: 3.6px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.flight-boost-delta {
+  fill: #1d4ed8;
+  font-size: 3.4px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.flight-weather-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0.72;
+  pointer-events: none;
+}
+.flight-weather-layer i {
+  position: absolute;
+  left: -20%;
+  top: calc(7% + var(--index) * 8.2%);
+  width: 17%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #f59e0b);
+  animation: flight-wind-right 2.6s linear infinite;
+  animation-delay: calc(var(--index) * -0.24s);
+}
+.flight-weather-layer i::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: translateY(-50%) rotate(45deg);
+}
+.weather-tailwind i {
+  color: #d97706;
+  background: linear-gradient(90deg, transparent, #f59e0b);
+}
+.weather-headwind i {
+  color: #2563eb;
+  background: linear-gradient(270deg, transparent, #60a5fa);
+  animation-name: flight-wind-left;
+}
+.weather-crosswind i {
+  color: #0f766e;
+  width: 28%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #14b8a6);
+  transform: rotate(22deg);
+  animation-name: flight-wind-diagonal;
+  animation-duration: 3.1s;
+}
+.weather-storm i {
+  top: calc(2% + var(--index) * 9%);
+  width: 1px;
+  height: 14%;
+  left: calc(8% + var(--index) * 9%);
+  background: linear-gradient(180deg, transparent, #47658f);
+  border-radius: 0;
+  transform: rotate(12deg);
+  animation-name: flight-rain-fall;
+  animation-duration: 1.4s;
+}
+.weather-storm i::after {
+  display: none;
+}
+.weather-storm::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% -10%, #4c5e7d55, transparent 55%),
+    radial-gradient(ellipse at 75% 0%, #38496a44, transparent 50%);
+  animation: flight-storm-flash 4.5s linear infinite;
+}
+@keyframes flight-wind-right {
+  from {
+    transform: translateX(-10%);
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(760%);
+    opacity: 0;
+  }
+}
+@keyframes flight-wind-left {
+  from {
+    transform: translateX(700%);
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-10%);
+    opacity: 0;
+  }
+}
+@keyframes flight-wind-diagonal {
+  from {
+    transform: translate(-10%, -40%) rotate(22deg);
+    opacity: 0;
+  }
+  20%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(380%, 200%) rotate(22deg);
+    opacity: 0;
+  }
+}
+@keyframes flight-rain-fall {
+  from {
+    transform: translateY(-40%) rotate(12deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(760%) rotate(12deg);
+    opacity: 0;
+  }
+}
+@keyframes flight-storm-flash {
+  0%,
+  91%,
+  95%,
+  100% {
+    opacity: 0.35;
+  }
+  93% {
+    opacity: 0.72;
+  }
+  97% {
+    opacity: 0.52;
+  }
+}
+@keyframes flight-weather-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes flight-weather-change-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes flight-weather-symbol {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+@keyframes flight-landing-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes flight-feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flight-weather-layer i,
+  .flight-weather-layer::before,
+  .flight-weather-symbol,
+  .flight-weather-card,
+  .flight-weather-change,
+  .flight-landing-marker circle,
+  .flight-feedback {
+    animation: none !important;
+  }
+  .flight-weather-layer {
+    opacity: 0.3;
+  }
+}
