@@ -9,9 +9,11 @@ import { z } from "zod";
 import { actionSchema, configSchema } from "./protocol";
 import { gameCatalogue, gameRulesVersion } from "./catalogue";
 import { GameEngine } from "./engine";
+import { challengeBoardSchema } from "./challenges";
 
 export const replaySchema = z.object({
   format: z.literal(1),
+  challenges: challengeBoardSchema.optional(),
   graphwarInitial: graphwarInitialSchema.optional(),
   expeditionMap: expeditionMapSchema.optional(),
   expeditionTuning: z.union([z.literal(1), z.literal(2)]).optional(),
@@ -130,6 +132,8 @@ export class Replay {
             dominion: this.record.config.dominion,
             mahjong: this.record.config.mahjong,
             graphwar: this.record.config.graphwar,
+            flight: this.record.config.flight,
+            checkers: this.record.config.checkers,
             graphwarInitial:
               this.record.config.kind === "graphwar"
                 ? graphwarInitialSchema.parse(this.record.graphwarInitial)

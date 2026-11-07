@@ -8,6 +8,8 @@ import { graphwarOptionsSchema } from "./graphwar/types";
 import { bannerPolicySchema, type BannerPolicy } from "./banner";
 import { attachmentSchema } from "./attachments";
 import { mahjongOptionsSchema } from "./mahjong/types";
+import { flightOptionsSchema } from "./flight";
+import { checkersOptionsSchema } from "./checkers";
 import { avatarSchema } from "./avatar";
 import type { ComputeDiagnostic } from "./compute-diagnostics";
 import type { AiComputation } from "./performance";
@@ -17,6 +19,7 @@ import {
   interactionUnitsSchema,
   type InteractionEvent,
 } from "./social";
+import type { ChallengeBoard } from "./challenges";
 export type { ChatMessage } from "./social";
 import type { ChatMessage } from "./social";
 import { actionSchema } from "./actions";
@@ -56,6 +59,8 @@ export const configSchema = z
       expeditionOptionsSchema.parse({}),
     ),
     graphwar: graphwarOptionsSchema.default(graphwarOptionsSchema.parse({})),
+    flight: flightOptionsSchema.default(flightOptionsSchema.parse({})),
+    checkers: checkersOptionsSchema.default(checkersOptionsSchema.parse({})),
     dominion: dominionOptionsSchema.default(dominionOptionsSchema.parse({})),
     mahjong: mahjongOptionsSchema.default({ cap: 3, selfDraw: "base" }),
     catanTrades: z.boolean().default(true),
@@ -75,6 +80,21 @@ export const configSchema = z
   .refine(
     (value) => gameCatalogue[value.kind].ai || !value.ai.length,
     "该游戏 AI 尚未接入",
+  )
+  .refine(
+    (value) =>
+      value.kind !== "uno" ||
+      !value.team ||
+      value.humans + value.ai.length === 4 ||
+      value.humans + value.ai.length === 6,
+    "组队 UNO 仅支持 4 人或 6 人",
+  )
+  .refine(
+    (value) =>
+      value.kind !== "tq" ||
+      value.checkers.mode !== "siege" ||
+      value.humans + value.ai.length === 2,
+    "据点攻防跳棋仅支持 2 人",
   );
 export type RoomConfig = z.infer<typeof configSchema>;
 export const roomSetupSchema = z.object({
@@ -240,6 +260,7 @@ export interface Snapshot {
     avatar?: string;
     autoplay?: boolean;
     difficulty: Difficulty | null;
+    team?: number;
     online: boolean;
     ready: boolean;
   }[];
@@ -256,6 +277,7 @@ export interface Snapshot {
   chatTotals: Record<string, number>;
   decisions: Decision[];
   summaries: DecisionSummary[];
+  challenges?: ChallengeBoard | null;
   finished: boolean;
   resolving: boolean;
   turnDeadline?: number;

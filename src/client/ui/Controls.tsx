@@ -3,6 +3,9 @@ import React, {
   Children,
   isValidElement,
   type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
 } from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
@@ -126,22 +129,136 @@ export function Switch({
   checked,
   onCheckedChange,
   label,
+  disabled = false,
+  id,
+  className = "",
+  "aria-describedby": describedBy,
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   label: string;
+  disabled?: boolean;
+  id?: string;
+  className?: string;
+  "aria-describedby"?: string;
 }) {
+  const generatedId = React.useId();
+  const controlId = id ?? generatedId;
   return (
-    <label className="ui-switch-label">
+    <label className={`ui-switch-label ${className}`.trim()}>
       <SwitchPrimitive.Root
+        id={controlId}
         className="ui-switch"
         checked={checked}
         onCheckedChange={onCheckedChange}
+        disabled={disabled}
         aria-label={label}
+        aria-describedby={describedBy}
       >
         <SwitchPrimitive.Thumb className="ui-switch-thumb" />
       </SwitchPrimitive.Root>
       <span>{label}</span>
+    </label>
+  );
+}
+
+export function RadioChoice<T extends string>({
+  value,
+  onValueChange,
+  options,
+  label,
+}: {
+  value: T;
+  onValueChange: (value: T) => void;
+  options: readonly { value: T; label: string }[];
+  label: string;
+}) {
+  return (
+    <fieldset className="ui-radio-choice" aria-label={label}>
+      <legend>{label}</legend>
+      <div>
+        {options.map((option) => (
+          <label key={option.value} data-selected={value === option.value}>
+            <input
+              type="radio"
+              name={label}
+              value={option.value}
+              checked={value === option.value}
+              onChange={() => onValueChange(option.value)}
+            />
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+const useFieldLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+export function TextField({
+  label,
+  hint,
+  className = "",
+  value,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "placeholder"> & {
+  label: string;
+  hint?: string;
+}) {
+  const id = React.useId();
+  const field = useRef<HTMLLabelElement>(null);
+  const caption = useRef<HTMLSpanElement>(null);
+  const text = value === undefined ? "" : String(value);
+  const filled = text.length > 0;
+  const summary =
+    props.type === "password"
+      ? "•".repeat(Math.min(12, Array.from(text).length))
+      : text;
+  const syncNotch = () => {
+    const root = field.current,
+      text = caption.current;
+    if (!root || !text) return;
+    const start = Math.max(0, text.offsetLeft - 6);
+    const end = Math.min(
+      root.clientWidth,
+      text.offsetLeft + text.offsetWidth + 6,
+    );
+    root.style.setProperty("--ui-field-notch-start", `${start}px`);
+    root.style.setProperty("--ui-field-notch-end", `${end}px`);
+  };
+  useFieldLayoutEffect(() => {
+    syncNotch();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(syncNotch);
+    if (field.current) observer.observe(field.current);
+    if (caption.current) observer.observe(caption.current);
+    return () => observer.disconnect();
+  }, [label, value]);
+  return (
+    <label
+      ref={field}
+      className={`ui-field ${className}`.trim()}
+      data-filled={filled}
+      htmlFor={id}
+    >
+      <span ref={caption} className="ui-field-label">
+        {label}
+      </span>
+      <span className="ui-field-summary" aria-hidden="true">
+        <span className="ui-field-summary-label">{label}</span>
+        {filled && (
+          <span className="ui-field-summary-value"> · {summary}</span>
+        )}
+      </span>
+      <input
+        {...props}
+        id={id}
+        value={value}
+        aria-label={props["aria-label"] ?? label}
+      />
+      {hint && <small>{hint}</small>}
     </label>
   );
 }
@@ -216,20 +333,22 @@ export function Panel({
   );
 }
 
-export function Button({
-  variant = "secondary",
-  className = "",
-  type = "button",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "danger" | "quiet";
-}) {
+export const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "primary" | "secondary" | "danger";
+  }
+>(function Button(
+  { variant = "secondary", className = "", type = "button", ...props },
+  ref,
+) {
   return (
     <button
       {...props}
+      ref={ref}
       type={type}
       data-button-variant={variant}
       className={`${variant === "primary" ? "primary-button " : ""}${className}`.trim()}
     />
   );
-}
+});

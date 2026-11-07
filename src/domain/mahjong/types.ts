@@ -1,11 +1,12 @@
 import { z } from "zod";
 export const mahjongOptionsSchema = z.object({
-  mode: z.enum(["sichuan", "washizu"]).optional(),
+  mode: z.enum(["sichuan", "riichi", "washizu"]).optional(),
   cap: z.union([z.literal(3), z.literal(4), z.literal(5)]).default(3),
   selfDraw: z.enum(["base", "fan"]).default("base"),
 });
 export const mahjongModeNames = {
   sichuan: "四川血战",
+  riichi: "日本立直",
   washizu: "瓦西子透明麻将",
 } as const;
 export type MahjongMode = keyof typeof mahjongModeNames;
@@ -27,6 +28,7 @@ export const mahjongMoveSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("kong"), tile }),
   z.object({ type: z.literal("win") }),
+  z.object({ type: z.literal("next") }),
 ]);
 export type MahjongMove = z.infer<typeof mahjongMoveSchema>;
 export interface MahjongMeld {
@@ -62,6 +64,7 @@ export interface MahjongEvent {
 export interface MahjongView {
   sequence: number;
   riichi?: RiichiRound;
+  match?: RiichiMatch;
   options: MahjongOptions;
   phase: "exchange" | "lack" | "play" | "response" | "finished";
   dealer: number;
@@ -92,6 +95,13 @@ export interface MahjongView {
   finishedReason: string;
 }
 export type RiichiCall = Extract<MahjongMove, { type: "call" }>;
+export interface RiichiMatch {
+  round: number;
+  honba: number;
+  dealer: number;
+  over: boolean;
+  lastResult?: "win" | "draw";
+}
 export interface RiichiRound {
   deadWall: number[];
   dora: number[];

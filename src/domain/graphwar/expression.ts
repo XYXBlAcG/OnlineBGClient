@@ -6,8 +6,170 @@ import {
   type OperatorNode,
   type FunctionNode,
   type ParenthesisNode,
+  type SymbolNode,
 } from "mathjs/number";
 const { parse } = create({ parseDependencies });
+export type FormulaFamily = "linear" | "trig" | "root" | "power" | "other";
+export type GraphwarFunctionGroup = "function" | "advanced";
+export interface GraphwarFunctionSpec {
+  name: string;
+  group: GraphwarFunctionGroup;
+  arity: readonly number[];
+  family: FormulaFamily;
+  evaluate: (values: readonly number[]) => number;
+}
+export const graphwarFunctions: readonly GraphwarFunctionSpec[] = [
+  {
+    name: "sin",
+    group: "function",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.sin(v),
+  },
+  {
+    name: "cos",
+    group: "function",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.cos(v),
+  },
+  {
+    name: "tan",
+    group: "function",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.tan(v),
+  },
+  {
+    name: "sqrt",
+    group: "function",
+    arity: [1],
+    family: "root",
+    evaluate: ([v]) => Math.sqrt(v),
+  },
+  {
+    name: "abs",
+    group: "function",
+    arity: [1],
+    family: "root",
+    evaluate: ([v]) => Math.abs(v),
+  },
+  {
+    name: "exp",
+    group: "function",
+    arity: [1],
+    family: "other",
+    evaluate: ([v]) => Math.exp(v),
+  },
+  {
+    name: "ln",
+    group: "function",
+    arity: [1],
+    family: "other",
+    evaluate: ([v]) => Math.log(v),
+  },
+  {
+    name: "log",
+    group: "function",
+    arity: [1],
+    family: "other",
+    evaluate: ([v]) => Math.log10(v),
+  },
+  {
+    name: "asin",
+    group: "advanced",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.asin(v),
+  },
+  {
+    name: "acos",
+    group: "advanced",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.acos(v),
+  },
+  {
+    name: "atan",
+    group: "advanced",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.atan(v),
+  },
+  {
+    name: "sinh",
+    group: "advanced",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.sinh(v),
+  },
+  {
+    name: "cosh",
+    group: "advanced",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.cosh(v),
+  },
+  {
+    name: "tanh",
+    group: "advanced",
+    arity: [1],
+    family: "trig",
+    evaluate: ([v]) => Math.tanh(v),
+  },
+  {
+    name: "floor",
+    group: "advanced",
+    arity: [1],
+    family: "other",
+    evaluate: ([v]) => Math.floor(v),
+  },
+  {
+    name: "ceil",
+    group: "advanced",
+    arity: [1],
+    family: "other",
+    evaluate: ([v]) => Math.ceil(v),
+  },
+  {
+    name: "round",
+    group: "advanced",
+    arity: [1],
+    family: "other",
+    evaluate: ([v]) => Math.round(v),
+  },
+  {
+    name: "sign",
+    group: "advanced",
+    arity: [1],
+    family: "other",
+    evaluate: ([v]) => Math.sign(v),
+  },
+  {
+    name: "min",
+    group: "advanced",
+    arity: [1, 2, 3, 4],
+    family: "other",
+    evaluate: (values) => Math.min(...values),
+  },
+  {
+    name: "max",
+    group: "advanced",
+    arity: [1, 2, 3, 4],
+    family: "other",
+    evaluate: (values) => Math.max(...values),
+  },
+  {
+    name: "clamp",
+    group: "advanced",
+    arity: [3],
+    family: "other",
+    evaluate: ([value, low, high]) => Math.min(Math.max(value, low), high),
+  },
+];
+const functionSpecs = new Map(
+  graphwarFunctions.map((spec) => [spec.name, spec]),
+);
 const operators: Record<string, (...values: number[]) => number> = {
   add: (a, b) => a + b,
   subtract: (a, b) => a - b,
@@ -17,16 +179,7 @@ const operators: Record<string, (...values: number[]) => number> = {
   unaryMinus: (a) => -a,
   unaryPlus: (a) => a,
 };
-const functions: Record<string, (value: number) => number> = {
-  sin: Math.sin,
-  cos: Math.cos,
-  tan: Math.tan,
-  sqrt: Math.sqrt,
-  abs: Math.abs,
-  exp: Math.exp,
-  ln: Math.log,
-  log: Math.log10,
-};
+const constants: Record<string, number> = { pi: Math.PI, e: Math.E };
 export function compileFormula(input: string): {
   evaluate: (x: number) => number;
 } {
@@ -48,8 +201,11 @@ export function compileFormula(input: string): {
         throw new Error("只支持有限实数常量");
       return () => value;
     }
-    if (node.type === "SymbolNode" && "name" in node && node.name === "x")
-      return (x) => x;
+    if (node.type === "SymbolNode") {
+      const name = (node as SymbolNode).name;
+      if (name === "x") return (x) => x;
+      if (Object.hasOwn(constants, name)) return () => constants[name];
+    }
     if (node.type === "ParenthesisNode")
       return build((node as ParenthesisNode).content, depth + 1);
     if (node.type === "OperatorNode") {
@@ -66,16 +222,41 @@ export function compileFormula(input: string): {
     }
     if (node.type === "FunctionNode") {
       const fn = node as FunctionNode;
-      const operation =
-        fn.fn.type === "SymbolNode" && Object.hasOwn(functions, fn.fn.name)
-          ? functions[fn.fn.name]
-          : undefined;
-      if (operation && fn.args.length === 1) {
-        const argument = build(fn.args[0], depth + 1);
-        return (x) => operation(argument(x));
+      const name = fn.fn.type === "SymbolNode" ? fn.fn.name : "";
+      const spec = functionSpecs.get(name);
+      if (spec && spec.arity.includes(fn.args.length)) {
+        const argument = fn.args.map((arg) => build(arg, depth + 1));
+        return (x) => spec.evaluate(argument.map((evaluate) => evaluate(x)));
       }
+      if (spec)
+        throw new Error(
+          `${name} 需要 ${spec.arity.join("、")} 个参数，请检查括号`,
+        );
     }
-    throw new Error("仅支持变量 x、实数、四则运算、幂和常用数学函数");
+    throw new Error("仅支持变量 x、π、e、四则运算、幂和常用数学函数");
   };
   return { evaluate: build(tree, 0) };
+}
+
+export function formulaFamily(input: string): FormulaFamily {
+  const tree = parse(input.trim());
+  let family: FormulaFamily = "linear";
+  const visit = (node: MathNode) => {
+    if (node.type === "FunctionNode") {
+      const fn = node as FunctionNode;
+      family =
+        fn.fn.type === "SymbolNode"
+          ? (functionSpecs.get(fn.fn.name)?.family ?? "other")
+          : "other";
+      fn.args.forEach(visit);
+      return;
+    }
+    if (node.type === "OperatorNode") {
+      const op = node as OperatorNode;
+      if (op.fn === "pow") family = "power";
+      op.args.forEach(visit);
+    }
+  };
+  visit(tree);
+  return family;
 }

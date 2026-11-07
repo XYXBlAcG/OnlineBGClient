@@ -41,6 +41,11 @@ import {
   type SeatConfig,
 } from "./protocol";
 import type { Action, AiResult, Decision, GameState, Seat } from "./types";
+import {
+  advanceChallenges,
+  createChallengeBoard,
+  type ChallengeBoard,
+} from "./challenges";
 
 export class Room {
   readonly engine = new GameEngine();
@@ -87,6 +92,7 @@ export class Room {
   private simultaneousSince = 0;
   private lastMoveAt = 0;
   private replay: ReplayRecord | null = null;
+  private challenges: ChallengeBoard | null = null;
   private records: ReplayRecord[] = [];
   private queued: { decision: AiResult; version: number } | null = null;
 
@@ -199,6 +205,7 @@ export class Room {
       this.pendingResume = null;
       this.replay!.names = this.seats.map((seat) => seat.name);
       this.replay!.avatars = this.seats.map(seatAvatar);
+      this.challenges = this.replay!.challenges ?? null;
     } else {
       if (this.replay) {
         this.records.push(this.replay);
@@ -217,6 +224,8 @@ export class Room {
           dominion: this.config.dominion,
           mahjong: this.config.mahjong,
           graphwar: this.config.graphwar,
+            flight: this.config.flight,
+            checkers: this.config.checkers,
         },
       );
       this.replay = {
@@ -243,6 +252,13 @@ export class Room {
           : {}),
         events: [],
       };
+      this.challenges = createChallengeBoard(
+        this.config.kind,
+        roundSeed,
+        this.seats.length,
+      );
+      if (this.challenges)
+        this.replay.challenges = structuredClone(this.challenges);
     }
     this.version++;
     this.roundVersion = this.version;
@@ -327,6 +343,7 @@ export class Room {
     this.computation = null;
     this.aiPaused = false;
     this.replay = null;
+    this.challenges = null;
     this.decisions = [];
     this.summaries = [];
     this.queued = null;
@@ -628,6 +645,17 @@ export class Room {
       decision.chosen,
       `${this.seed}:move:${this.version}`,
     );
+    this.challenges = advanceChallenges(
+      this.challenges,
+      previous,
+      this.state,
+      decision.actor,
+      decision.chosen,
+      this.version + 1,
+      this.seats[decision.actor].difficulty === null,
+    );
+    if (this.challenges && this.replay)
+      this.replay.challenges = structuredClone(this.challenges);
     this.party.trigger(partySignals(previous,this.state,decision.actor,decision.chosen,this.engine),this.partyContext(),this.version+1);
     this.version++;
     if (oldWindow !== this.engine.actionWindow(this.state, decision.chosen))
@@ -752,6 +780,10 @@ export class Room {
         name: seatDisplayName(seat, index, this.state),
         avatar: seatAvatar(seat),
         difficulty: seat.difficulty,
+        team:
+          this.config.kind === "uno" && this.config.team
+            ? index % 2
+            : undefined,
         autoplay: seat.autoplay,
         online: seat.online,
         ready: seat.ready,
@@ -772,6 +804,7 @@ export class Room {
       replay: finished ? this.replay : null,
       records: this.records,
       summaries: this.summaries.slice(-30),
+      challenges: this.challenges,
       finished,
       resolving:
         !!this.state &&
@@ -1027,6 +1060,7 @@ export class Room {
     room.aiPaused = archive.aiPaused ?? false;
     room.simultaneousSince = archive.simultaneousSince ?? room.version;
     room.replay = archive.replay;
+    room.challenges = archive.replay?.challenges ?? null;
     room.records = archive.records;
     room.bannerPolicy = bannerPolicySchema.parse(
       archive.bannerPolicy ?? { mode: "host", members: [] },

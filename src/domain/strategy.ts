@@ -320,6 +320,9 @@ export class Strategy {
     }
     if (state.kind === "uno") {
       const view = state.view;
+      const teamMode = view.teamMode;
+      const teams = view.teams;
+      const teamWinner = view.teamWinner;
       const known = new Set([...view.playerCards[actor], ...view.playedCards]);
       const pool = shuffle(
         Array.from(
@@ -332,17 +335,24 @@ export class Strategy {
       view.cardList = Array(108).fill(15);
       for (const card of view.playedCards) view.cardList[card] = 0;
       view.playerCards = view.playerCards.map((cards, id) =>
-        id === actor ? cards : pool.splice(0, cards.length),
+        id === actor ||
+        (teamMode && teams?.[id] === teams?.[actor])
+          ? cards
+          : pool.splice(0, cards.length),
       );
       view.playerCards.forEach((cards, id) =>
         cards.forEach((card) => {
           view.cardList[card] = id + 1;
         }),
       );
-      return {
-        kind: "uno",
+      const sampled = {
+        kind: "uno" as const,
         view: this.engine.uno.my(this.engine.uno.qA(view)),
       };
+      sampled.view.teamMode = teamMode;
+      sampled.view.teams = teams;
+      sampled.view.teamWinner = teamWinner;
+      return sampled;
     }
     const view = state.view;
     const known = new Set(
@@ -737,11 +747,27 @@ export class Strategy {
       );
     }
     if (state.kind === "uno") {
-      if (state.view.playerFinish[actor]) return 100;
+      const view = state.view,
+        team = view.teamMode ? (view.teams?.[actor] ?? -1) : -1;
+      if (view.teamMode) {
+        if (this.engine.finished(state))
+          return view.teamWinner === team ? 100 : -100;
+        return view.playerCards.reduce(
+          (score, cards, id) =>
+            score +
+            (id === actor
+              ? -cards.length * 3
+              : view.teams?.[id] === team
+                ? cards.length * 0.5
+                : cards.length),
+          0,
+        );
+      }
+      if (view.playerFinish[actor]) return 100;
       if (this.engine.finished(state)) return -100;
       return (
-        -state.view.playerCards[actor].length * 3 +
-        state.view.playerCards.reduce(
+        -view.playerCards[actor].length * 3 +
+        view.playerCards.reduce(
           (sum, cards, id) => sum + (id === actor ? 0 : cards.length),
           0,
         )

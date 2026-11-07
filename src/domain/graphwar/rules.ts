@@ -1,7 +1,7 @@
 import { Movement } from "./movement";
 import type { GameOptions } from "../game-options";
 import type { Action, Candidate } from "../types";
-import { compileFormula } from "./expression";
+import { compileFormula, formulaFamily } from "./expression";
 import { balance } from "./balance";
 import { traceShot } from "./trajectory";
 import { generateBattlefield } from "./map";
@@ -57,6 +57,12 @@ export class GraphwarRules {
         lastAction: null,
         winner: null,
         finished: false,
+        ...(config.scenario === "storm"
+          ? {
+              wind: (this.random() * 2 - 1) * 0.9,
+              allowedFamily: "any" as const,
+            }
+          : {}),
       },
     };
   }
@@ -111,7 +117,16 @@ export class GraphwarRules {
       action.type === "graphwar-guard"
         ? firingView(state.view, actor, action.soldier)
         : state.view;
-    if (action.type === "graphwar-fire") compileFormula(action.formula);
+    if (action.type === "graphwar-fire") {
+      compileFormula(action.formula);
+      if (
+        state.view.options.scenario === "storm" &&
+        state.view.allowedFamily &&
+        state.view.allowedFamily !== "any" &&
+        formulaFamily(action.formula) !== state.view.allowedFamily
+      )
+        throw new Error(`本轮只允许${state.view.allowedFamily}类函数`);
+    }
     if (
       action.type === "graphwar-move" &&
       !new Movement(source, source.currentSoldier).check(action).allowed
@@ -163,6 +178,11 @@ export class GraphwarRules {
       unit.guardUntil = v.playerTurns[actor] + 1;
     v.playerTurns[actor]++;
     v.sequence++;
+    if (v.options.scenario === "storm" && v.sequence % 3 === 0) {
+      const families = ["linear", "trig", "root", "power", "any"] as const;
+      v.wind = (this.random() * 2 - 1) * 0.9;
+      v.allowedFamily = families[Math.floor(this.random() * families.length)];
+    }
     const survivors = [0, 1].map((team) =>
       v.soldiers.filter((s) => s.hp > 0 && v.teams[s.player] === team),
     );

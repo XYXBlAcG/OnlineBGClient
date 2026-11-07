@@ -17,6 +17,24 @@ import {
 const seats = [0, 1, 2, 3];
 const nextSeat = (actor: number) => (actor + 1) % 4;
 
+function completeMatch(
+  view: MahjongView,
+  result: "win" | "draw",
+  dealerRepeats: boolean,
+) {
+  const match = view.match;
+  if (!match) return;
+  match.lastResult = result;
+  if (dealerRepeats) match.honba++;
+  else if (match.dealer >= 3) match.over = true;
+  else {
+    match.dealer++;
+    match.round++;
+    match.honba = 0;
+  }
+  if (view.scores.some((score) => score < 0)) match.over = true;
+}
+
 function finishDraw(view: MahjongView) {
   const round = view.riichi!;
   const ready = seats.filter((actor) => riichiWaits(view, actor).length > 0);
@@ -36,17 +54,20 @@ function finishDraw(view: MahjongView) {
       }
     }
   }
-  for (const to of seats.filter((actor) => round.ready[actor])) {
-    view.scores[to] += 1000;
-    view.payments.push({
-      from: to,
-      to,
-      amount: 1000,
-      reason: "单局流局退还立直棒",
-      kind: "refund",
-    });
+  if (view.match) completeMatch(view, "draw", ready.includes(view.dealer));
+  else {
+    for (const to of seats.filter((actor) => round.ready[actor])) {
+      view.scores[to] += 1000;
+      view.payments.push({
+        from: to,
+        to,
+        amount: 1000,
+        reason: "单局流局退还立直棒",
+        kind: "refund",
+      });
+    }
+    round.sticks = 0;
   }
-  round.sticks = 0;
   view.phase = "finished";
   view.finishedReason = "流局";
 }
@@ -105,6 +126,7 @@ function settle(view: MahjongView, winners: number[], self: boolean) {
   if (winners.some((actor) => round.ready[actor]))
     round.ura = round.dora.map((_, index) => round.deadWall[5 + index * 2]);
   round.sticks = 0;
+  if (view.match) completeMatch(view, "win", winners.includes(view.dealer));
   view.phase = "finished";
   view.finishedReason = self ? "自摸" : "荣和";
   view.pending = null;
@@ -267,11 +289,12 @@ function openResponses(
   if (view.responses.every(Boolean)) resolveResponses(view);
 }
 
-export class WashizuRules implements Rules<"scmj"> {
+export class RiichiRules implements Rules<"scmj"> {
   constructor(private readonly random: () => number) {}
 
   create(players: number, _team: boolean, options?: GameOptions): MahjongState {
-    if (players !== 4) throw new Error("透明麻将需要四人");
+    if (players !== 4) throw new Error("立直麻将需要四人");
+    const mode = options?.mahjong?.mode === "riichi" ? "riichi" : "washizu";
     const wall = Array.from({ length: 136 }, (_, index) => index);
     for (let i = wall.length - 1; i > 0; i--) {
       const j = Math.floor(this.random() * (i + 1));
@@ -283,8 +306,11 @@ export class WashizuRules implements Rules<"scmj"> {
       sequence: 0,
       options: mahjongOptionsSchema.parse({
         ...options?.mahjong,
-        mode: "washizu",
+        mode,
       }),
+      ...(mode === "riichi"
+        ? { match: { round: 1, honba: 0, dealer: 0, over: false } }
+        : {}),
       phase: "play",
       dealer: 0,
       turn: 0,
@@ -325,7 +351,7 @@ export class WashizuRules implements Rules<"scmj"> {
   }
 
   finished({ view }: MahjongState) {
-    return view.phase === "finished";
+    return view.phase === "finished" && (!view.match || view.match.over);
   }
 
   actors({ view }: MahjongState) {
@@ -340,6 +366,7 @@ export class WashizuRules implements Rules<"scmj"> {
     if (!this.actors(state).includes(actor)) return [];
     const { view } = state;
     const round = view.riichi!;
+    const transparent = view.options.mode !== "riichi";
     const hand = view.hands[actor];
     const moves: { move: MahjongMove; label: string }[] = [];
     if (view.phase === "response") {
@@ -351,7 +378,12 @@ export class WashizuRules implements Rules<"scmj"> {
               ? `${{ chi: "吃", pong: "碰", kong: "杠" }[move.choice]} ${move.tiles
                   .map(
                     (tile) =>
-                      tileName(tile) + (isTransparent(tile) ? "·透" : "·暗"),
+                      tileName(tile) +
+                      (transparent
+                        ? isTransparent(tile)
+                          ? "·透"
+                          : "·暗"
+                        : ""),
                   )
                   .join("、")}`
               : move.type === "respond" && move.choice === "win"
@@ -443,6 +475,7 @@ export class WashizuRules implements Rules<"scmj"> {
   apply(state: MahjongState, actor: number, action: Action): MahjongState {
     if (action.type !== "scmj-action") throw new Error("不是麻将动作");
     const move = mahjongMoveSchema.parse(action.move);
+    if (move.type === "next") return this.nextHand(state);
     const next = structuredClone(state);
     const { view } = next;
     const round = view.riichi!;
@@ -509,14 +542,46 @@ export class WashizuRules implements Rules<"scmj"> {
     return next;
   }
 
+  private nextHand(state: MahjongState): MahjongState {
+    const previous = state.view;
+    const match = previous.match;
+    if (!match || match.over || previous.phase !== "finished")
+      throw new Error("当前不能开始下一局");
+    const next = this.create(4, false, { mahjong: previous.options });
+    const view = next.view;
+    view.scores = [...previous.scores];
+    view.riichi!.sticks = previous.riichi!.sticks;
+    view.dealer = match.dealer;
+    view.match = { ...match, lastResult: undefined };
+    if (match.dealer !== 0) {
+      const drawn = view.hands[0].pop();
+      if (drawn !== undefined) {
+        view.hands[match.dealer].push(drawn);
+        view.hands[match.dealer].sort((a, b) => a - b);
+        view.lastDraw = { actor: match.dealer, tile: drawn, kong: false };
+        view.events = view.events.map((event) =>
+          event.type === "draw" && event.actor === 0
+            ? { ...event, actor: match.dealer, tiles: [drawn] }
+            : event,
+        );
+      }
+      view.turn = match.dealer;
+    }
+    return next;
+  }
+
   project(state: MahjongState, actor: number): MahjongState {
     const next = structuredClone(state);
     const { view } = next;
     const round = view.riichi!;
-    const mask = (tiles: number[]) => [
-      ...tiles.filter(isTransparent).sort((a, b) => a - b),
-      ...tiles.filter((tile) => !isTransparent(tile)).map(() => -1),
-    ];
+    const transparent = view.options.mode !== "riichi";
+    const mask = (tiles: number[]) =>
+      transparent
+        ? [
+            ...tiles.filter(isTransparent).sort((a, b) => a - b),
+            ...tiles.filter((tile) => !isTransparent(tile)).map(() => -1),
+          ]
+        : tiles.map(() => -1);
     view.wall = view.wall.map(() => -1);
     view.hands = view.hands.map((tiles, seat) =>
       seat === actor || view.wins.some((win) => win.player === seat)
@@ -534,7 +599,7 @@ export class WashizuRules implements Rules<"scmj"> {
     if (
       view.lastDraw &&
       view.lastDraw.actor !== actor &&
-      !isTransparent(view.lastDraw.tile)
+      (!transparent || !isTransparent(view.lastDraw.tile))
     )
       view.lastDraw.tile = -1;
     view.events = view.events.map((event) =>

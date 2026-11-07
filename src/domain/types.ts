@@ -30,6 +30,9 @@ export interface UnoView {
     opCard: number;
     isShuffle: number;
   };
+  teamMode?: boolean;
+  teams?: number[];
+  teamWinner?: number | null;
 }
 
 export interface SgsEvent {
@@ -97,6 +100,41 @@ export interface FlightView {
   lastMove: number[];
   attack: number[];
   lastDicePlayer: number;
+  special?: FlightSpecialView;
+}
+
+export type FlightWeather = "tailwind" | "headwind" | "crosswind" | "storm";
+export interface FlightLastEffect {
+  actor: number;
+  plane: number;
+  weather: FlightWeather;
+  base: number;
+  weatherMove: number;
+  boost: number;
+  shielded: boolean;
+  energyGain: number;
+  checkpoint: boolean;
+  from: number;
+  baseTo: number;
+  to: number;
+}
+export interface FlightLastAbility {
+  actor: number;
+  ability: "boost" | "shield";
+  round: number;
+}
+export interface FlightSpecialView {
+  mode: "storm";
+  weather: FlightWeather;
+  round: number;
+  energy: number[];
+  maxEnergy: number;
+  shield: number[];
+  boost: number[];
+  checkpoints: number[];
+  checkpointHits: number[];
+  lastEffect?: FlightLastEffect;
+  lastAbility?: FlightLastAbility;
 }
 
 export interface CheckersView {
@@ -115,6 +153,16 @@ export interface CheckersView {
   recordList: { playerId: number; candidateId: number; route: number[] }[];
   finish: boolean;
   pos: number[];
+  special?: CheckersSiegeView;
+}
+export interface CheckersSiegeView {
+  mode: "siege";
+  rounds: number;
+  maxRounds: number;
+  settledGoal: number;
+  towers: number[];
+  starAwards: number[];
+  winner: number | null;
 }
 export interface DdzView {
   rule: number;

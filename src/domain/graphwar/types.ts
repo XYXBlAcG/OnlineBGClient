@@ -11,6 +11,7 @@ export const graphwarMaps = {
   open: "开阔战场",
 } as const;
 export const graphwarOptionsSchema = z.object({
+  scenario: z.enum(["classic", "storm"]).default("classic"),
   mode: z.enum(["classic", "demolition", "sniper"]).default("classic"),
   map: z.enum(["islands", "fortress", "open"]).default("islands"),
   size: z.enum(["standard", "large"]).default("standard"),
@@ -103,6 +104,8 @@ export interface GraphwarView {
   lastAction: "fire" | "move" | "guard" | "pass" | null;
   winner: number | null;
   finished: boolean;
+  wind?: number;
+  allowedFamily?: "linear" | "trig" | "root" | "power" | "any";
 }
 export interface GraphwarState {
   kind: "graphwar";

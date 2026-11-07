@@ -123,9 +123,9 @@ export const gameCatalogue = {
     minPlayers: 2,
     maxPlayers: 8,
     presentation: { kind: "upstream", module: 7707 },
-    team: false,
+    team: true,
     ai: true,
-    version: "1",
+    version: "2",
     symbol: "四色",
   },
   sgs: {
@@ -153,7 +153,7 @@ export const gameCatalogue = {
     presentation: { kind: "upstream", module: 7448 },
     team: false,
     ai: true,
-    version: "1",
+    version: "2",
     symbol: "✈",
   },
   tq: {
@@ -167,7 +167,7 @@ export const gameCatalogue = {
     presentation: { kind: "upstream", module: 1621 },
     team: false,
     ai: true,
-    version: "1",
+    version: "2",
     symbol: "跳",
   },
 } as const;
@@ -185,5 +185,7 @@ export const maxRoomSeats = Math.max(
 export function gameRulesVersion(kind: GameKind, mahjongMode?: MahjongMode) {
   return kind === "scmj" && mahjongMode === "washizu"
     ? "washizu-1"
-    : gameCatalogue[kind]?.version;
+    : kind === "scmj" && mahjongMode === "riichi"
+      ? "riichi-2"
+      : gameCatalogue[kind]?.version;
 }

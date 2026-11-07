@@ -1,5 +1,5 @@
 export const balance = {
-  version: "3",
+  version: "4",
   maxPlayers: 12,
   maxSoldiers: 6,
   hp: 100,

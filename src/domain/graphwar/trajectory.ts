@@ -230,7 +230,9 @@ export class TrajectorySolver {
         resolved = false;
       for (let attempt = 0; attempt < 14; attempt++) {
         const x = localX + step;
-        next = { x: x * direction, y: origin.y + evaluate(x) - base };
+        const wind =
+          (view.wind ?? 0) * Math.sin(Math.max(0, x - startX) * 0.12);
+        next = { x: x * direction, y: origin.y + evaluate(x) - base + wind };
         if (!Number.isFinite(next.y)) {
           shot.reason = "undefined";
           return shot;
@@ -244,7 +246,14 @@ export class TrajectorySolver {
           const point =
             fraction === 1
               ? next
-              : { x: x * direction, y: origin.y + evaluate(x) - base };
+              : {
+                  x: x * direction,
+                  y:
+                    origin.y +
+                    evaluate(x) -
+                    base +
+                    (view.wind ?? 0) * Math.sin(Math.max(0, x - startX) * 0.12),
+                };
           if (!Number.isFinite(point.y)) {
             shot.reason = "undefined";
             return shot;

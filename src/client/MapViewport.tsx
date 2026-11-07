@@ -14,6 +14,7 @@ import {
   useLayoutEffect,
   useState,
   type ReactElement,
+  type ReactNode,
   type HTMLAttributes,
 } from "react";
 
@@ -36,9 +37,11 @@ export function MapViewport({
   initialZoom,
   fitWidthOnMount = false,
   focusLabel = "当前士兵",
+  overlay,
   onMoveModeChange,
 }: {
   children: ReactElement<HTMLAttributes<HTMLDivElement>>;
+  overlay?: ReactNode;
   focusTarget?: string;
   compact?: boolean;
   naturalSize?: { width: number; height: number };
@@ -281,6 +284,7 @@ export function MapViewport({
               height: naturalSize ? "100%" : `${Math.min(1, zoom) * 100}%`,
             },
           })}
+          {overlay}
         </div>
       </div>
     </div>

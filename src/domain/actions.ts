@@ -38,6 +38,10 @@ export const actionSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("fxq-roll") }),
   z.object({
+    type: z.literal("fxq-special"),
+    ability: z.enum(["boost", "shield"]),
+  }),
+  z.object({
     type: z.literal("fxq-move"),
     plane: z.number().int().min(0).max(15),
   }),

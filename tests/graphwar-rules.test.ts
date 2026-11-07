@@ -42,6 +42,23 @@ describe("bounded scalar Graphwar expressions", () => {
       expect(() => compileFormula(text)).toThrow();
     expect(Number.isFinite(compileFormula("sqrt(x)").evaluate(-1))).toBe(false);
   });
+  it("supports the extended function catalog and named constants", () => {
+    expect(compileFormula("asin(1)+acos(1)").evaluate(0)).toBeCloseTo(
+      Math.PI / 2,
+    );
+    expect(compileFormula("atan(1)+tanh(0)").evaluate(0)).toBeCloseTo(
+      Math.PI / 4,
+    );
+    expect(compileFormula("floor(1.9)+ceil(1.1)+round(1.6)").evaluate(0)).toBe(
+      5,
+    );
+    expect(compileFormula("sign(-4)+abs(-2)").evaluate(0)).toBe(1);
+    expect(compileFormula("min(4,2,8)+max(4,2,8)").evaluate(0)).toBe(10);
+    expect(compileFormula("clamp(x, -1, 1)").evaluate(5)).toBe(1);
+    expect(compileFormula("pi+e").evaluate(0)).toBeCloseTo(Math.PI + Math.E);
+    expect(() => compileFormula("sin(1,2)")).toThrow("参数");
+    expect(() => compileFormula("clamp(1,2)")).toThrow("参数");
+  });
   it("translates through the firing soldier and ignores additive constants", () => {
     const v = fixture().view;
     const a = traceShot(v, 0, "x/5");
@@ -173,6 +190,7 @@ it("spreads full teams across the available battlefield without soldier overlap"
   for (const count of [2, 4, 8]) {
     const state = engine.create("graphwar", count, "spread", false, {
       graphwar: {
+        scenario: "classic",
         map: "islands",
         size: "standard",
         mode: "classic",

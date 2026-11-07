@@ -104,6 +104,7 @@ it("completes seeded obstacle matches with the same legal kernel and bounded act
   for (const map of ["islands", "fortress"] as const) {
     let state = engine.create("graphwar", 4, `match:${map}`, false, {
       graphwar: {
+        scenario: "classic",
         map,
         size: "standard",
         mode: "demolition",

@@ -6,19 +6,28 @@ export class UnoRules {
   constructor(runtime: UpstreamRuntime) {
     this.original = runtime.load(6435);
   }
-  create(players: number): UnoState {
+  create(players: number, team = false): UnoState {
+    const view = this.original.my(
+      this.original.Lq({ playerList: Array(players).fill({}) }),
+    );
     return {
       kind: "uno",
-      view: this.original.my(
-        this.original.Lq({ playerList: Array(players).fill({}) }),
-      ),
+      view: {
+        ...view,
+        teamMode: team,
+        teams: team ? Array.from({ length: players }, (_, index) => index % 2) : [],
+        teamWinner: null,
+      },
     };
   }
   finished(state: UnoState): boolean {
-    return state.view.isEnd;
+    return state.view.teamMode
+      ? this.winningTeam(state.view) !== null
+      : state.view.isEnd;
   }
   actors(state: UnoState): number[] {
-    return state.view.isEnd
+    if (state.view.teamMode && this.winningTeam(state.view) !== null) return [];
+    return state.view.isEnd && !state.view.teamMode
       ? []
       : [state.view.isStart ? state.view.waitFor : 0];
   }
@@ -47,13 +56,20 @@ export class UnoRules {
     else if (action.type === "uno-report")
       next = this.original.o7(state.view, actor);
     else throw new Error("游戏类型不匹配");
-    return { kind: "uno", view: this.original.my(this.original.qA(next)) };
+    const projected = this.original.my(this.original.qA(next));
+    const teams = state.view.teams ?? [];
+    projected.teamMode = state.view.teamMode;
+    projected.teams = teams;
+    projected.teamWinner = state.view.teamMode ? this.winningTeam(projected) : null;
+    return { kind: "uno", view: projected };
   }
   project(state: UnoState, actor: number): UnoState {
     const projected = structuredClone(state);
     const view = projected.view;
     view.playerCards = view.playerCards.map((cards, id) =>
-      id === actor ? cards : cards.map((_, index) => -index - 1),
+      id === actor || (view.teamMode && view.teams?.[id] === view.teams?.[actor])
+        ? cards
+        : cards.map((_, index) => -index - 1),
     );
     view.drawCards.fill(-1);
     view.cardList = view.cardList.map((position) =>
@@ -120,5 +136,15 @@ export class UnoRules {
       result.push({ action: { type: "uno-report" }, label: "举报未喊 UNO" });
     }
     return result;
+  }
+  private winningTeam(view: UnoView): number | null {
+    const teams = view.teams ?? [];
+    return (
+      [0, 1].find((team) =>
+        view.playerFinish.every(
+          (finish, index) => teams[index] !== team || finish > 0,
+        ),
+      ) ?? null
+    );
   }
 }

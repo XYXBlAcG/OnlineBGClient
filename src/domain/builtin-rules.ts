@@ -39,7 +39,10 @@ export function ddzPlugin(runtime: UpstreamRuntime) {
 export function checkersPlugin(runtime: UpstreamRuntime) {
   const rules = new CheckersRules(runtime);
   return new GameAdapter("tq", {
-    create: (players) => ({ kind: "tq", view: rules.create(players) }),
+    create: (players, team, options) => ({
+      kind: "tq",
+      view: rules.create(players, team, options),
+    }),
     finished: (state) => state.view.finish,
     actors: (state) => (state.view.finish ? [] : [state.view.waitFor]),
     candidates: (state, actor) => rules.candidates(state.view, actor),
@@ -53,7 +56,10 @@ export function checkersPlugin(runtime: UpstreamRuntime) {
 export function flightPlugin(runtime: UpstreamRuntime) {
   const rules = new FlightRules(runtime);
   return new GameAdapter("fxq", {
-    create: (players) => ({ kind: "fxq", view: rules.create(players) }),
+    create: (players, team, options) => ({
+      kind: "fxq",
+      view: rules.create(players, team, options),
+    }),
     finished: (state) => rules.finished(state.view),
     actors: (state) =>
       rules.finished(state.view) ? [] : [state.view.state & 3],
