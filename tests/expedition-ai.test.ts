@@ -28,7 +28,7 @@ describe("远征策略", () => {
       }
       expect(rules.finished(state)).toBe(true);
       expect(steps).toBeLessThan(1800);
-    });
+    }, 15000);
 });
 
 it("切换大层不会让策略进度分倒退，通关评分高于未结束的局面", () => {

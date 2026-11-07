@@ -8,6 +8,7 @@ import type {
 import { allCards, ExpeditionRules } from "../src/domain/expedition/rules";
 import { cards, type CardId } from "../src/domain/expedition/content";
 import { definition } from "../src/domain/expedition/content";
+import { relicValue } from "../src/domain/expedition/world";
 const rules = new ExpeditionAdventure();
 function apply(
   state: ExpeditionGameState,
@@ -35,6 +36,39 @@ it("商店购买扣本人金币并只获得一次；其他玩家行装不变化"
   expect(after.view.combat.heroes[1]).toEqual(before.view.combat.heroes[1]);
   expect(() => apply(after, 0, { type: "buy", item: item.id })).toThrow();
   expect(before.view.shop[0][0].sold).toBe(false);
+});
+it("商店按成长进度回收可升值遗物，并立即结算本人金币", () => {
+  const state = atNode("shop");
+  const hero = state.view.combat.heroes[0];
+  hero.relics = ["appraisalSeal", "battleMint"];
+  hero.gold = 40;
+  state.view.stats = {
+    nodesVisited: 9,
+    battlesWon: 4,
+    cardsPlayed: [230, 0],
+  };
+  const value = relicValue("appraisalSeal", {
+    nodes: state.view.stats.nodesVisited,
+    battles: state.view.stats.battlesWon,
+    cards: state.view.stats.cardsPlayed[0],
+  });
+  expect(value).toBeGreaterThan(120);
+  const after = apply(state, 0, { type: "sell-relic", relic: "appraisalSeal" });
+  expect(after.view.combat.heroes[0].gold).toBe(40 + value);
+  expect(after.view.combat.heroes[0].relics).toEqual(["battleMint"]);
+});
+it("金币遗物在每个回合按每 400 金币提供能量", () => {
+  const combat = new ExpeditionRules();
+  let state = combat.create("gold-relic", [0], []);
+  state.heroes[0].relics = ["goldReservoir"];
+  state.heroes[0].gold = 1250;
+  state.heroes[0].energy = 0;
+  state = {
+    ...state,
+    phase: "combat",
+  };
+  combat.relic(state, 0, "round");
+  expect(state.heroes[0].energy).toBe(3);
 });
 it("营地升级、移除、休息互斥且全员完成才离开", () => {
   let state = atNode("camp");

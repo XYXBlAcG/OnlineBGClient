@@ -5,6 +5,7 @@ import { ExpeditionAdventure } from "../src/domain/expedition/adventure";
 import { ballotOption, ballotPhase } from "../src/domain/expedition/ballot";
 import { ExpeditionMap } from "../src/client/expedition/ExpeditionMap";
 import { VoteStatus } from "../src/client/expedition/VoteStatus";
+import { nodeNames } from "../src/domain/expedition/map";
 
 it("同类型节点使用地图相对位置区分，不向玩家暴露节点 id 或字母代号", () => {
   const run = new ExpeditionAdventure().create(2).view;
@@ -64,7 +65,9 @@ it("最终路线记录历史票箱，重连后仍能解释裁决结果", () => {
     move: { type: "tie", choice: a.id },
   });
   expect(state.view.lastBallot?.votes).toEqual({ 0: a.id, 1: b.id });
-  expect(state.view.lastBallot?.label).toContain("战斗");
+  expect(state.view.lastBallot?.label).toContain(
+    nodeNames[state.view.map[0].find((node) => node.id === a.id)!.kind],
+  );
   expect(state.view.lastBallot?.choice).toBe(a.id);
   expect(state.view.votes).toEqual({});
 });

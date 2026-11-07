@@ -9,10 +9,10 @@ import {
 } from "../src/domain/expedition/content";
 import { creatures } from "../src/domain/expedition/world";
 
-it("当前内容包含八个职业、216 张可玩牌和五十一种敌人，卡池不重复", () => {
+it("当前内容包含八个职业、216 张可玩牌和五十四种敌人，卡池不重复", () => {
   expect(heroContent).toHaveLength(8);
   expect(Object.keys(cards)).toHaveLength(218);
-  expect(Object.keys(creatures)).toHaveLength(51);
+  expect(Object.keys(creatures)).toHaveLength(54);
   expect(cardPools.map((pool) => pool.length)).toEqual([
     24, 24, 24, 24, 24, 24, 24, 24,
   ]);

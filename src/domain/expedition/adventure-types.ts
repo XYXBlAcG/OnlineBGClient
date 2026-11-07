@@ -46,6 +46,15 @@ export const expeditionMoveSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("rest") }),
   z.object({ type: z.literal("done") }),
   z.object({ type: z.literal("reroll") }),
+  z.object({ type: z.literal("raid-shop") }),
+  z.object({
+    type: z.literal("sell-relic"),
+    relic: z.string().min(1).max(40),
+  }),
+  z.object({
+    type: z.literal("toggle-companion"),
+    enabled: z.boolean(),
+  }),
   z.object({
     type: z.literal("advance"),
     choice: z.enum(["vitality", "forge", "supplies"]),
@@ -81,7 +90,10 @@ export type NodeKind =
   | "pawnshop"
   | "gamble"
   | "library"
-  | "hunt";
+  | "hunt"
+  | "rift"
+  | "recruit"
+  | "empty";
 export const expeditionMapSchema = z
   .array(
     z
@@ -114,6 +126,9 @@ export const expeditionMapSchema = z
             "gamble",
             "library",
             "hunt",
+            "rift",
+            "recruit",
+            "empty",
           ]),
           route: z
             .enum([
@@ -125,6 +140,9 @@ export const expeditionMapSchema = z
               "blackmarket",
               "slayer",
               "forbidden",
+              "descent",
+              "gambit",
+              "companionship",
             ])
             .optional(),
           next: z
@@ -143,6 +161,47 @@ export type ShopItem = { id: string; price: number; sold: boolean } & (
   | { kind: "relic"; relic: RelicId }
   | { kind: "potion"; potion: PotionId }
 );
+export type CompanionMode = "fragile" | "limited" | "eternal";
+export interface Companion {
+  id: string;
+  name: string;
+  profession: number;
+  mode: CompanionMode;
+  relic: RelicId;
+  deck: CardId[];
+  hp: number;
+  maxHp: number;
+  battlesLeft: number | null;
+  active: boolean;
+  dead: boolean;
+}
+export type CompanionOffer = Omit<Companion, "battlesLeft" | "active" | "dead">;
+export interface ExpeditionResourceSnapshot {
+  compass: number;
+  heroes: {
+    actor: number;
+    name: string;
+    hp: number;
+    maxHp: number;
+    gold: number;
+    cards: number;
+    relics: RelicId[];
+    potions: PotionId[];
+  }[];
+  companions: {
+    id: string;
+    name: string;
+    hp: number;
+    status: "active" | "dead" | "left";
+  }[];
+}
+export interface ExpeditionNodeResult {
+  sequence: number;
+  nodeId: string | null;
+  nodeKind: NodeKind;
+  before: ExpeditionResourceSnapshot;
+  after: ExpeditionResourceSnapshot;
+}
 export interface ExpeditionRun {
   rulesVersion: 1;
   contentVersion: 1;
@@ -174,6 +233,8 @@ export interface ExpeditionRun {
     | "gamble"
     | "library"
     | "hunt"
+    | "rift"
+    | "recruit"
     | "holder"
     | "tie"
     | "won"
@@ -201,13 +262,24 @@ export interface ExpeditionRun {
     | "holder"
     | "oracle"
     | "contract"
+    | "rift"
     | "pawnshop"
     | "gamble"
     | "library"
-    | "hunt";
+    | "hunt"
+    | "recruit";
   nodeReady: boolean[];
   shop: ShopItem[][];
   shopRemoved: boolean[];
+  shopsSealed: boolean;
+  shopRaidActive: boolean;
+  shopRaidFailed: boolean;
+  shopRaidDeadlineRound: number | null;
+  stats: {
+    nodesVisited: number;
+    battlesWon: number;
+    cardsPlayed: number[];
+  };
   offers: CardId[][];
   event: StoryEventId | null;
   treasure: RelicId[];
@@ -216,6 +288,33 @@ export interface ExpeditionRun {
   rewardElite: boolean;
   contract: "brood" | null;
   hunt: boolean;
+  side: boolean;
+  sideReturn: {
+    map: MapNode[][];
+    current: string | null;
+    floor: number;
+    path: string[];
+    nodeStart: {
+      nodeId: string;
+      nodeKind: NodeKind;
+      resources: ExpeditionResourceSnapshot;
+    } | null;
+  } | null;
+  companions: Companion[];
+  companionOffers: CompanionOffer[];
+  companionBattle: {
+    companionId: string | null;
+    chosen: boolean;
+    actedRound: number;
+    settled: boolean;
+    healthLostStart: number;
+  } | null;
+  nodeStart: {
+    nodeId: string;
+    nodeKind: NodeKind;
+    resources: ExpeditionResourceSnapshot;
+  } | null;
+  lastNodeResult: ExpeditionNodeResult | null;
   compass: number;
   sequence: number;
   marks: {

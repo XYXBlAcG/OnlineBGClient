@@ -15,6 +15,34 @@ export function migrateExpedition(run: ExpeditionRun): void {
   }
   if (run.contract === undefined) run.contract = null;
   if (typeof run.hunt !== "boolean") run.hunt = false;
+  if (typeof run.side !== "boolean") run.side = false;
+  if (run.sideReturn === undefined) run.sideReturn = null;
+  if (run.sideReturn && run.sideReturn.nodeStart === undefined)
+    run.sideReturn.nodeStart = null;
+  if (typeof run.shopsSealed !== "boolean") run.shopsSealed = false;
+  if (typeof run.shopRaidActive !== "boolean") run.shopRaidActive = false;
+  if (typeof run.shopRaidFailed !== "boolean") run.shopRaidFailed = false;
+  if (
+    run.shopRaidDeadlineRound !== null &&
+    (!Number.isInteger(run.shopRaidDeadlineRound) ||
+      run.shopRaidDeadlineRound < 1)
+  )
+    run.shopRaidDeadlineRound = null;
+  if (run.stats === undefined)
+    run.stats = {
+      nodesVisited: 0,
+      battlesWon: 0,
+      cardsPlayed: run.combat.heroes.map(() => 0),
+    };
+  if (run.stats.cardsPlayed.length !== run.combat.heroes.length)
+    run.stats.cardsPlayed = run.combat.heroes.map(
+      (_, index) => run.stats.cardsPlayed[index] ?? 0,
+    );
+  if (!Array.isArray(run.companions)) run.companions = [];
+  if (!Array.isArray(run.companionOffers)) run.companionOffers = [];
+  if (run.companionBattle === undefined) run.companionBattle = null;
+  if (run.nodeStart === undefined) run.nodeStart = null;
+  if (run.lastNodeResult === undefined) run.lastNodeResult = null;
   if (!Number.isInteger(run.compass) || run.compass < 0) run.compass = 2;
   if (
     !Number.isInteger(run.ascension) ||

@@ -16,6 +16,8 @@ export function ballotPhase(run: ExpeditionRun): BallotPhase | undefined {
     "gamble",
     "library",
     "hunt",
+    "rift",
+    "recruit",
   ].includes(phase)
     ? (phase as BallotPhase)
     : undefined;
@@ -135,6 +137,25 @@ export function ballotOption(
           ? "下一次精英获得额外词条，胜利后每人多得 50 金币"
           : "不改变下一场精英",
     };
+  if (phase === "rift")
+    return {
+      label: choice === "enter" ? "进入深渊裂隙" : "离开裂隙",
+      node: undefined,
+      detail:
+        choice === "enter"
+          ? "随机消耗队伍 2 张牌与 1 件遗物，进入短支线层；归来时全队获得 80 金币与 1 罗盘"
+          : "不进入深层",
+    };
+  if (phase === "recruit") {
+    const offer = run.companionOffers.find((candidate) => candidate.id === choice);
+    return {
+      label: offer ? `招募${offer.name}` : "不招募，继续前进",
+      node: undefined,
+      detail: offer
+        ? `${offer.mode === "fragile" ? "阵亡后永久离队" : offer.mode === "limited" ? "仅能出战 1–3 场，阵亡时全队恢复 6 生命" : "每场战斗后可复起"} · ${offer.deck.length} 张简易牌`
+        : "保留当前队伍",
+    };
+  }
   const label =
     phase === "event"
       ? choice === "leave"

@@ -20,6 +20,7 @@ import {
 import {
   potions,
   relics,
+  relicValue,
   storyEvents,
   type RelicId,
   type PotionId,
@@ -31,12 +32,19 @@ import {
   type ExpeditionRun,
   type ExpeditionGameState,
   type ExpeditionMove,
+  type NodeKind,
   type ShopItem,
+  type Companion,
+  type CompanionOffer,
+  type ExpeditionResourceSnapshot,
 } from "./adventure-types";
 import {
   generateMap,
+  generateSideMap,
   mapChoices,
   encounterFor,
+  shopRaidBalance,
+  shopRaidEncounter,
   nodeNames,
   travelCost,
 } from "./map";
@@ -52,6 +60,10 @@ const startingRelics: readonly RelicId[] = [
   "lockpick",
   "secondFate",
 ];
+export function combatGoldReward(kind: NodeKind, floor: number) {
+  const base = kind === "elite" ? 75 : kind === "boss" ? 120 : 35;
+  return base + Math.max(0, floor) * 4;
+}
 export class ExpeditionAdventure implements Rules<"expedition"> {
   constructor(private readonly random: () => number = () => 0.5) {}
   create(
@@ -99,6 +111,15 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       nodeReady: Array(players).fill(false),
       shop: [],
       shopRemoved: Array(players).fill(false),
+      shopsSealed: false,
+      shopRaidActive: false,
+      shopRaidFailed: false,
+      shopRaidDeadlineRound: null,
+      stats: {
+        nodesVisited: 0,
+        battlesWon: 0,
+        cardsPlayed: Array(players).fill(0),
+      },
       offers: [],
       event: null,
       treasure: [],
@@ -107,6 +128,13 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       rewardElite: false,
       contract: null,
       hunt: false,
+      side: false,
+      sideReturn: null,
+      companions: [],
+      companionOffers: [],
+      companionBattle: null,
+      nodeStart: null,
+      lastNodeResult: null,
       compass: 2 + ascension.startCompass,
       sequence: 0,
       marks: [],
@@ -138,6 +166,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           "gamble",
           "library",
           "hunt",
+          "rift",
+          "recruit",
         ].includes(run.phase) &&
         run.votes[actor] !== undefined
       )
@@ -167,6 +197,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         "gamble",
         "library",
         "hunt",
+        "rift",
+        "recruit",
       ].includes(run.phase) &&
       run.votes[actor] !== undefined
     )
@@ -204,6 +236,20 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         add({ type: "tie", choice }, `领队决定：${label}`);
       });
     if (run.phase === "battle") {
+      if (
+        run.companionBattle &&
+        !run.companionBattle.chosen &&
+        run.companions.some((companion) => companion.active && !companion.dead)
+      ) {
+        add(
+          { type: "toggle-companion", enabled: true },
+          "让 AI 队友上场",
+        );
+        add(
+          { type: "toggle-companion", enabled: false },
+          "本场让 AI 队友待命",
+        );
+      }
       for (const action of combat.candidates(run.combat, actor)) {
         if (action.type === "play")
           add(
@@ -299,6 +345,23 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
             { type: "remove", instance: card.id },
             `移除${definition(card).name} · ${removalPrice} 金币`,
           );
+      for (const relic of new Set(hero.relics)) {
+        const value = relicValue(relic, {
+          nodes: run.stats.nodesVisited,
+          battles: run.stats.battlesWon,
+          cards: run.stats.cardsPlayed[actor],
+        });
+        if (value > 0)
+          add(
+            { type: "sell-relic", relic },
+            `向老板出售${relics[relic].name} · ${value} 金币`,
+          );
+      }
+      if (!run.shopsSealed)
+        add(
+          { type: "raid-shop" },
+          `抢走商店 · ${shopRaidBalance.roundLimit} 回合内击败老板，商品全免费；超时老板带走商品`,
+        );
       add({ type: "done" }, "离开商店");
     }
     if (run.phase === "camp" && !run.nodeReady[actor]) {
@@ -368,6 +431,24 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         "接下悬赏：下一精英增加词条，胜利后每人获得 50 金币",
       );
       add({ type: "vote", choice: "leave" }, "离开追猎台");
+    }
+    if (run.phase === "rift") {
+      add(
+        { type: "vote", choice: "enter" },
+        "进入深层：随机消耗队伍牌与遗物，完成短层后高额返回",
+      );
+      add({ type: "vote", choice: "leave" }, "不进入裂隙");
+    }
+    if (run.phase === "recruit") {
+      if (
+        run.companions.filter((companion) => companion.active && !companion.dead)
+          .length < 2
+      ) {
+        run.companionOffers.forEach((offer) =>
+          add({ type: "vote", choice: offer.id }, `招募${offer.name}`),
+        );
+        add({ type: "vote", choice: "leave" }, "不招募，继续前进");
+      } else add({ type: "vote", choice: "leave" }, "队伍已满，继续前进");
     }
     if (run.phase === "event") {
       const event = storyEvents[run.event!];
@@ -442,6 +523,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run = next.view,
       move = action.move,
       hero = run.combat.heroes[actor];
+    const cardsBefore = run.combat.metrics.cards;
     run.sequence++;
     if (move.type === "advance") {
       if (move.choice === "vitality") hero.maxHp += 4;
@@ -459,6 +541,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           2,
           run.chapter,
         );
+        if (run.shopsSealed) this.sealShops(run);
         run.current = null;
         run.floor = -1;
         run.path = [];
@@ -475,6 +558,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           ? "recovery"
           : "map";
         run.nodeReady = run.pending.map((pending) => !pending.length);
+        this.recordNodeResult(run);
       }
     }
     if (move.type === "profession") {
@@ -528,11 +612,30 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.phase = run.votePhase;
       this.decide(run, move.choice);
     }
+    if (move.type === "toggle-companion" && run.phase === "battle") {
+      const companion = run.companions.find(
+        (candidate) => candidate.active && !candidate.dead,
+      );
+      if (run.companionBattle && !run.companionBattle.chosen && companion) {
+        run.companionBattle = {
+          ...run.companionBattle,
+          companionId: move.enabled ? companion.id : null,
+          chosen: true,
+        };
+        if (move.enabled) {
+          this.companionAction(run, companion, 1);
+          run.companionBattle.actedRound = run.combat.round;
+        }
+      }
+    }
     if (
       move.type === "card" ||
       move.type === "ready" ||
       move.type === "unready"
     ) {
+      const round = run.combat.round;
+      if (run.companionBattle && !run.companionBattle.chosen)
+        run.companionBattle.chosen = true;
       run.combat = combat.apply(
         run.combat,
         move.type === "card"
@@ -544,6 +647,22 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
             }
           : { type: move.type, actor },
       );
+      if (
+        run.combat.round > round &&
+        run.companionBattle?.companionId &&
+        run.companionBattle.actedRound < run.combat.round
+      ) {
+        const companion = run.companions.find(
+          (candidate) =>
+            candidate.id === run.companionBattle?.companionId &&
+            candidate.active &&
+            !candidate.dead,
+        );
+        if (companion) {
+          this.companionAction(run, companion, run.combat.round);
+          run.companionBattle.actedRound = run.combat.round;
+        }
+      }
       this.afterCombat(run);
     }
     if (move.type === "potion") {
@@ -573,6 +692,39 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         this.gainCard(run, actor, move.choice as CardId);
       run.nodeReady[actor] = true;
       this.nodeDone(run);
+    }
+    if (move.type === "raid-shop" && run.phase === "shop") {
+      const node = run.map.flat().find((candidate) => candidate.id === run.current);
+      if (node && !run.shopsSealed) {
+        run.shopRaidActive = true;
+        run.shopRaidFailed = false;
+        run.shopRaidDeadlineRound = shopRaidBalance.roundLimit;
+        run.combat = combat.begin(run.combat, shopRaidEncounter(run, node));
+        run.phase = "battle";
+        run.rewardElite = false;
+        run.nodeReady.fill(false);
+        run.votes = {};
+        run.companionBattle = {
+          companionId: null,
+          chosen: false,
+          actedRound: 0,
+          settled: false,
+          healthLostStart: run.combat.metrics.healthLost,
+        };
+      }
+    }
+    if (move.type === "sell-relic" && run.phase === "shop") {
+      const relic = move.relic as RelicId,
+        index = hero.relics.indexOf(relic),
+        value = relicValue(relic, {
+          nodes: run.stats.nodesVisited,
+          battles: run.stats.battlesWon,
+          cards: run.stats.cardsPlayed[actor],
+        });
+      if (index >= 0 && value > 0) {
+        hero.relics.splice(index, 1);
+        hero.gold += value;
+      }
     }
     if (move.type === "buy") {
       const item = run.shop[actor].find((item) => item.id === move.item)!;
@@ -627,6 +779,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.nodeReady[actor] = true;
       this.nodeDone(run);
     }
+    if (run.combat.metrics.cards > cardsBefore)
+      run.stats.cardsPlayed[actor] += run.combat.metrics.cards - cardsBefore;
     return next;
   }
   private heal(run: ExpeditionRun, actor: number, amount: number) {
@@ -658,10 +812,44 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
   }
   private afterCombat(run: ExpeditionRun) {
     if (run.combat.phase === "lost") {
+      this.settleCompanions(run);
       run.phase = "lost";
       return;
     }
+    if (
+      run.combat.phase !== "won" &&
+      run.shopRaidActive &&
+      run.shopRaidDeadlineRound !== null &&
+      run.combat.round > run.shopRaidDeadlineRound
+    ) {
+      this.settleCompanions(run);
+      run.shopRaidActive = false;
+      run.shopRaidFailed = true;
+      run.shopRaidDeadlineRound = null;
+      run.shop.forEach((items) => items.forEach((item) => (item.sold = true)));
+      run.phase = "shop";
+      run.nodeReady.fill(false);
+      run.votes = {};
+      return;
+    }
     if (run.combat.phase !== "won") return;
+    this.settleCompanions(run);
+    run.stats.battlesWon = Math.max(
+      run.stats.battlesWon,
+      run.combat.metrics.battlesWon,
+    );
+    if (run.shopRaidActive) {
+      run.shopRaidActive = false;
+      run.shopRaidFailed = false;
+      run.shopRaidDeadlineRound = null;
+      run.shopsSealed = true;
+      this.sealShops(run);
+      run.shop.forEach((items) => items.forEach((item) => (item.price = 0)));
+      run.phase = "shop";
+      run.nodeReady.fill(false);
+      run.votes = {};
+      return;
+    }
     const currentNode = run.map.flat().find((node) => node.id === run.current);
     if (currentNode?.kind === "elite" && run.hunt) {
       run.combat.heroes.forEach((hero) => (hero.gold += 50));
@@ -676,7 +864,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     run.phase = "reward";
     run.nodeReady.fill(false);
     run.offers = run.combat.heroes.map((hero, actor) => {
-      hero.gold += 25 + run.floor * 3;
+      hero.gold += combatGoldReward(currentNode!.kind, run.floor);
       if (
         hero.potions.length < 3 &&
         shuffled([0, 1, 2], `${run.seed}:potion:${run.current}:${actor}`)[0] ===
@@ -702,15 +890,20 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.campaignVersion === 2 &&
       run.chapter < chapters.length - 1
     ) {
+      this.recordNodeResult(run);
       run.phase = "waystation";
       run.nodeReady.fill(false);
       run.pending = run.combat.heroes.map(() => []);
+      run.nodeStart = {
+        nodeId: `waystation-${run.chapter + 1}`,
+        nodeKind: "camp",
+        resources: this.resourceSnapshot(run),
+      };
     } else if (run.phase === "reward" && run.rewardElite) {
       run.rewardElite = false;
       this.treasure(run);
     } else {
-      run.phase = "map";
-      run.votes = {};
+      this.finishNode(run);
     }
   }
   private treasure(run: ExpeditionRun) {
@@ -724,7 +917,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         run.combat.heroes.some((hero) => !hero.relics.includes(id)),
       )
       .slice(0, 3);
-    if (!run.treasure.length) run.phase = "map";
+    if (!run.treasure.length) this.finishNode(run);
   }
   private decide(run: ExpeditionRun, choice: string) {
     run.votes = {};
@@ -736,12 +929,34 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.current = node.id;
       run.floor = node.floor;
       run.path.push(node.id);
+      if (!travel.visited) run.stats.nodesVisited++;
+      run.lastNodeResult = null;
+      run.nodeStart = travel.visited
+        ? null
+        : {
+            nodeId: node.id,
+            nodeKind: node.kind,
+            resources: this.resourceSnapshot(run),
+          };
       run.nodeReady.fill(false);
       run.pending = run.combat.heroes.map(() => []);
       run.marks = [];
       if (travel.visited) {
         run.phase = "map";
         run.votes = {};
+        return;
+      }
+      if (node.kind === "rift") {
+        if (run.side && node.floor === run.map.length - 1) {
+          this.returnFromRift(run);
+        } else {
+          run.phase = "rift";
+          run.votes = {};
+        }
+        return;
+      }
+      if (node.kind === "empty") {
+        this.finishNode(run);
         return;
       }
       if (["battle", "elite", "boss"].includes(node.kind)) {
@@ -751,6 +966,13 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           node.kind === "boss" && run.campaignVersion === 2 ? 0 : 0.25;
         run.phase = "battle";
         run.rewardElite = node.kind === "elite";
+        run.companionBattle = {
+          companionId: null,
+          chosen: false,
+          actedRound: 0,
+          settled: false,
+          healthLostStart: run.combat.metrics.healthLost,
+        };
       }
       if (node.kind === "camp") run.phase = "camp";
       if (node.kind === "forge") {
@@ -771,6 +993,10 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       }
       if (node.kind === "oracle" || node.kind === "contract")
         run.phase = node.kind;
+      if (node.kind === "recruit") {
+        run.companionOffers = this.rollCompanionOffers(run);
+        run.phase = "recruit";
+      }
       if (
         node.kind === "pawnshop" ||
         node.kind === "gamble" ||
@@ -780,6 +1006,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         run.phase = node.kind;
       if (node.kind === "shop") {
         run.phase = "shop";
+        run.shopRaidFailed = false;
+        run.shopRaidDeadlineRound = null;
         run.shopRemoved.fill(false);
         run.shop = run.combat.heroes.map((hero, actor) => {
           const items: ShopItem[] = shuffled(
@@ -843,7 +1071,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.phase = "recovery";
       run.nodeReady = run.pending.map((p) => !p.length);
       if (run.nodeReady.every(Boolean)) {
-        run.phase = "map";
+        this.finishNode(run);
       }
     } else if (run.phase === "oracle") {
       run.combat.heroes.forEach((_, actor) => {
@@ -851,15 +1079,13 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         if (choice === "heal") this.heal(run, actor, 8);
       });
       if (choice === "compass") run.compass = Math.min(4, run.compass + 1);
-      run.phase = "map";
-      run.votes = {};
+      this.finishNode(run);
     } else if (run.phase === "contract") {
       if (choice === "accept") {
         run.contract = "brood";
         run.combat.heroes.forEach((hero) => (hero.gold += 80));
       }
-      run.phase = "map";
-      run.votes = {};
+      this.finishNode(run);
     } else if (run.phase === "pawnshop") {
       if (choice === "sell")
         run.combat.heroes.forEach((hero, actor) => {
@@ -875,8 +1101,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           hero.gold -= 45;
           this.gainRelic(run, actor, "pawn-buy");
         });
-      run.phase = "map";
-      run.votes = {};
+      this.finishNode(run);
     } else if (run.phase === "gamble") {
       if (choice === "safe")
         run.combat.heroes.forEach((hero) => (hero.gold += 15));
@@ -894,8 +1119,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           }
         });
       }
-      run.phase = "map";
-      run.votes = {};
+      this.finishNode(run);
     } else if (run.phase === "library") {
       if (choice === "bargain")
         run.combat.heroes.forEach((hero, actor) => {
@@ -903,20 +1127,298 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           this.gainRelic(run, actor, "library");
           this.gainCard(run, actor, "black_debt");
         });
-      run.phase = "map";
-      run.votes = {};
+      this.finishNode(run);
     } else if (run.phase === "hunt") {
       if (choice === "accept") run.hunt = true;
-      run.phase = "map";
-      run.votes = {};
+      this.finishNode(run);
+    } else if (run.phase === "rift") {
+      if (choice === "enter") this.enterRift(run);
+      else this.finishNode(run);
+    } else if (run.phase === "recruit") {
+      if (choice !== "leave") {
+        const offer = run.companionOffers.find(
+          (candidate) => candidate.id === choice,
+        );
+        if (offer)
+          run.companions.push({
+            ...offer,
+            battlesLeft:
+              offer.mode === "limited"
+                ? 1 + Math.floor(this.random() * 3)
+                : null,
+            active: true,
+            dead: false,
+          });
+      }
+      this.finishNode(run);
     } else if (run.phase === "treasure") {
       run.selectedRelic = choice as RelicId;
       run.phase = "holder";
     } else if (run.phase === "holder") {
       run.combat.heroes[Number(choice)].relics.push(run.selectedRelic!);
       run.selectedRelic = null;
-      run.phase = "map";
+      this.finishNode(run);
     }
+  }
+  private enterRift(run: ExpeditionRun) {
+    run.sideReturn = {
+      map: run.map,
+      current: run.current,
+      floor: run.floor,
+      path: [...run.path],
+      nodeStart: null,
+    };
+    run.side = true;
+    run.map = generateSideMap(
+      `${run.seed}:side:${run.chapter}:${run.current}`,
+      run.chapter,
+    );
+    if (run.shopsSealed) this.sealShops(run);
+    run.current = null;
+    run.floor = -1;
+    run.path = [];
+    run.votes = {};
+    run.nodeReady.fill(false);
+    run.pending = run.combat.heroes.map(() => []);
+    const cardsToConsume = shuffled(
+      run.combat.heroes.flatMap((hero, actor) =>
+        allCards(hero).map((card) => ({ actor, card })),
+      ),
+      `${run.seed}:side-cost:${run.current}`,
+    ).slice(0, 2);
+    for (const { actor, card } of cardsToConsume) {
+      const hero = run.combat.heroes[actor];
+      for (const pile of [
+        hero.hand,
+        hero.deck,
+        hero.discard,
+        hero.played,
+        hero.exhaust,
+      ]) {
+        const index = pile.findIndex((candidate) => candidate.id === card.id);
+        if (index >= 0) {
+          pile.splice(index, 1);
+          break;
+        }
+      }
+    }
+    const relicHolder = shuffled(
+      run.combat.heroes.flatMap((hero, actor) =>
+        hero.relics.map((relic) => ({ actor, relic })),
+      ),
+      `${run.seed}:side-relic-cost:${run.current}`,
+    )[0];
+    if (relicHolder) {
+      const { actor, relic } = relicHolder,
+        index = run.combat.heroes[actor].relics.indexOf(relic);
+      if (index >= 0) run.combat.heroes[actor].relics.splice(index, 1);
+    }
+    this.finishNode(run);
+  }
+  private returnFromRift(run: ExpeditionRun) {
+    const parent = run.sideReturn;
+    if (!parent) {
+      run.side = false;
+      run.phase = "map";
+      return;
+    }
+    run.map = parent.map;
+    run.current = parent.current;
+    run.floor = parent.floor;
+    run.path = parent.path;
+    run.sideReturn = null;
+    run.side = false;
+    run.votes = {};
+    run.compass = Math.min(4, run.compass + 1);
+    run.combat.heroes.forEach((hero) => (hero.gold += 80));
+    this.finishNode(run);
+  }
+  private resourceSnapshot(run: ExpeditionRun): ExpeditionResourceSnapshot {
+    return {
+      compass: run.compass,
+      heroes: run.combat.heroes.map((hero, actor) => ({
+        actor,
+        name: hero.name,
+        hp: hero.hp,
+        maxHp: hero.maxHp,
+        gold: hero.gold,
+        cards: allCards(hero).length,
+        relics: [...hero.relics],
+        potions: [...hero.potions],
+      })),
+      companions: run.companions.map((companion) => ({
+        id: companion.id,
+        name: companion.name,
+        hp: companion.hp,
+        status: companion.active
+          ? "active"
+          : companion.dead
+            ? "dead"
+            : "left",
+      })),
+    };
+  }
+  private finishNode(run: ExpeditionRun) {
+    this.recordNodeResult(run);
+    run.companionOffers = [];
+    run.phase = "map";
+    run.votes = {};
+  }
+  private recordNodeResult(run: ExpeditionRun) {
+    if (!run.nodeStart) return;
+    run.lastNodeResult = {
+      sequence: run.sequence,
+      nodeId: run.nodeStart.nodeId,
+      nodeKind: run.nodeStart.nodeKind,
+      before: run.nodeStart.resources,
+      after: this.resourceSnapshot(run),
+    };
+    run.nodeStart = null;
+  }
+  private sealShops(run: ExpeditionRun) {
+    run.map.flat().forEach((node) => {
+      if (node.kind === "shop") node.kind = "empty";
+    });
+  }
+  private companionAction(
+    run: ExpeditionRun,
+    companion: Companion,
+    round: number,
+  ) {
+    if (run.combat.phase !== "combat") return;
+    const card =
+        companion.deck[
+          (round + companion.profession + companion.id.length) %
+            companion.deck.length
+        ],
+      cardDefinition = definition({
+        id: `${companion.id}-${round}`,
+        card,
+        upgradeLevel: 0,
+      }),
+      livingEnemies = run.combat.enemies.flatMap((enemy, index) =>
+        enemy.hp > 0 ? [index] : [],
+      );
+    if (!livingEnemies.length) return;
+    const targets =
+      cardDefinition.target === "all-enemies"
+        ? livingEnemies.map((index) => ({
+            side: "enemy" as const,
+            index,
+          }))
+        : cardDefinition.target === "enemy"
+          ? [
+              {
+                side: "enemy" as const,
+                index: [...livingEnemies].sort(
+                  (left, right) =>
+                    run.combat.enemies[left].hp - run.combat.enemies[right].hp,
+                )[0],
+              },
+            ]
+          : [
+              {
+                side: "hero" as const,
+                index: run.combat.heroes.reduce(
+                  (lowest, hero, index, heroes) =>
+                    hero.hp / hero.maxHp <
+                    heroes[lowest].hp / heroes[lowest].maxHp
+                      ? index
+                      : lowest,
+                  0,
+                ),
+              },
+            ];
+    combat.effects(run.combat, 0, cardDefinition.effects, targets);
+    if (round === 1)
+      combat.effects(run.combat, 0, relics[companion.relic].effects, [
+        { side: "hero", index: 0 },
+      ]);
+    run.combat.log.push({
+      id: run.combat.nextId++,
+      text: `${companion.name}使用${cardDefinition.name}`,
+    });
+    run.combat.visuals.push({
+      kind: "status",
+      target: targets[0],
+      amount: 1,
+      label: `${companion.name} · ${cardDefinition.name}`,
+    });
+  }
+  private settleCompanions(run: ExpeditionRun) {
+    const battle = run.companionBattle;
+    if (!battle || battle.settled) return;
+    battle.settled = true;
+    const companion = run.companions.find(
+      (candidate) => candidate.id === battle.companionId,
+    );
+    if (!companion || !companion.active) return;
+    companion.hp = Math.max(
+      0,
+      companion.hp -
+        Math.ceil(
+          Math.max(0, run.combat.metrics.healthLost - battle.healthLostStart) *
+            0.18,
+        ),
+    );
+    if (companion.mode === "limited" && companion.battlesLeft !== null)
+      companion.battlesLeft = Math.max(0, companion.battlesLeft - 1);
+    if (companion.hp <= 0) {
+      if (companion.mode === "eternal")
+        companion.hp = Math.max(1, Math.ceil(companion.maxHp * 0.5));
+      else {
+        companion.dead = true;
+        companion.active = false;
+        if (companion.mode === "limited")
+          run.combat.heroes.forEach((_, actor) => this.heal(run, actor, 6));
+      }
+    }
+    if (companion.mode === "limited" && companion.battlesLeft === 0)
+      companion.active = false;
+  }
+  private rollCompanionOffers(run: ExpeditionRun): CompanionOffer[] {
+    const names = ["苔灯", "折羽", "雾铃", "青铜仆从", "拾荒客", "白噪"],
+      modes = ["fragile", "limited", "eternal"] as const,
+      cards = [
+        "strike",
+        "defend",
+        "quick",
+        "protect",
+        "bash",
+        "heal",
+      ] as const;
+    const offerModes = shuffled(
+      [...modes],
+      `${run.seed}:companion-modes:${run.current}`,
+    );
+    return Array.from({ length: 3 }, (_, index) => {
+      const profession = Math.floor(this.random() * heroContent.length),
+        mode = offerModes[index],
+        relic = shuffled(
+          Object.keys(relics) as RelicId[],
+          `${run.seed}:companion-relic:${run.current}:${index}`,
+        )[0],
+        deck = shuffled(
+          [...cards],
+          `${run.seed}:companion-deck:${run.current}:${index}`,
+        ).slice(0, 3),
+        hpScale =
+          mode === "fragile" ? 0.45 : mode === "limited" ? 0.65 : 0.55,
+        maxHp = Math.max(
+          8,
+          Math.ceil(heroContent[profession].maxHp * hpScale),
+        );
+      return {
+        id: `companion-${run.sequence}-${index}`,
+        name: `${names[(run.sequence + index) % names.length]}·${heroContent[profession].name}`,
+        profession,
+        mode,
+        relic,
+        deck: [...deck],
+        hp: maxHp,
+        maxHp,
+      };
+    });
   }
   private eventEffects(
     run: ExpeditionRun,

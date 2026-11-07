@@ -9,8 +9,14 @@ import type {
   ShopItem,
 } from "../../domain/expedition/adventure-types";
 import { effectsText } from "../../domain/expedition/content";
+import { shopRaidBalance } from "../../domain/expedition/map";
 import type { Hero } from "../../domain/expedition/types";
-import { potions, relics, relicText } from "../../domain/expedition/world";
+import {
+  potions,
+  relics,
+  relicText,
+  relicValue,
+} from "../../domain/expedition/world";
 import { CardService } from "./CardService";
 import { ExpeditionCard } from "./ExpeditionCard";
 
@@ -100,20 +106,42 @@ export function Shop({
   moves,
   send,
   removalPrice = cardServices.removalPrice,
+  onRaid,
+  shopRaidFailed = false,
+  progress,
 }: {
   hero: Hero;
   items: ShopItem[];
   moves: ExpeditionMove[];
   send: (move: ExpeditionMove) => void;
   removalPrice?: number;
+  onRaid?: () => void;
+  shopRaidFailed?: boolean;
+  progress: { nodes: number; battles: number; cards: number };
 }) {
   const [tab, setTab] = useState("goods");
+  const tradable = [...new Set(hero.relics)].filter(
+    (id) => relicValue(id, progress) > 0,
+  );
   return (
     <section className="exp-shop-scene" data-guide-target="expedition.shop">
       <header>
         <h2>旅途商店</h2>
         <strong>{hero.gold} 金币</strong>
       </header>
+      {shopRaidFailed && (
+        <p className="exp-shop-failed" role="status">
+          老板带着商品逃走了。本店已经关门，但后续商店仍会出现。
+        </p>
+      )}
+      {onRaid && (
+        <button className="exp-shop-raid" onClick={onRaid}>
+          抢走商店
+          <small>
+            {shopRaidBalance.roundLimit} 回合内击败老板；胜利后本店免费但本局不再出现商店，超时老板会带走全部商品
+          </small>
+        </button>
+      )}
       <div className="exp-inventory-tabs" role="tablist" aria-label="商店服务">
         <button
           role="tab"
@@ -131,6 +159,16 @@ export function Shop({
         >
           移除服务 · {removalPrice} 金币
         </button>
+        {tradable.length > 0 && (
+          <button
+            role="tab"
+            aria-selected={tab === "trade"}
+            aria-controls="exp-shop-trade"
+            onClick={() => setTab("trade")}
+          >
+            交易遗物 · {tradable.length}
+          </button>
+        )}
       </div>
       {tab === "goods" ? (
         <div
@@ -183,7 +221,7 @@ export function Shop({
             </article>
           ))}
         </div>
-      ) : (
+      ) : tab === "remove" ? (
         <div id="exp-shop-remove" role="tabpanel" aria-label="移除服务">
           <CardService
             mode="remove"
@@ -192,6 +230,38 @@ export function Shop({
             onChoose={send}
             price={removalPrice}
           />
+        </div>
+      ) : (
+        <div id="exp-shop-trade" role="tabpanel" aria-label="交易遗物">
+          <p className="muted">老板按当前成长进度回收可升值遗物。</p>
+          <div className="exp-shop-trade">
+            {tradable.map((id) => {
+              const value = relicValue(id, progress);
+              return (
+                <article key={id}>
+                  <div>
+                    <h3>{relics[id].name}</h3>
+                    <p>{relicText(id)}</p>
+                    <small>
+                      估值 {value} 金币 · 节点 {progress.nodes} · 战斗{" "}
+                      {progress.battles} · 已打出 {progress.cards} 张牌
+                    </small>
+                  </div>
+                  <button
+                    disabled={
+                      !moves.some(
+                        (move) =>
+                          move.type === "sell-relic" && move.relic === id,
+                      )
+                    }
+                    onClick={() => send({ type: "sell-relic", relic: id })}
+                  >
+                    卖给老板 · {value} 金币
+                  </button>
+                </article>
+              );
+            })}
+          </div>
         </div>
       )}
       {moves.some((move) => move.type === "done") && (

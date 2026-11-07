@@ -11,7 +11,7 @@ const rules = new ExpeditionAdventure();
 it("defines the complete chapter content without duplicate identifiers", () => {
   expect(Object.keys(cards)).toHaveLength(218);
   expect(heroContent).toHaveLength(8);
-  expect(Object.keys(relics)).toHaveLength(26);
+  expect(Object.keys(relics)).toHaveLength(60);
   expect(Object.keys(potions)).toHaveLength(8);
   expect(Object.keys(storyEvents)).toHaveLength(10);
   expect(
@@ -19,7 +19,7 @@ it("defines the complete chapter content without duplicate identifiers", () => {
   ).toHaveLength(28);
   expect(
     Object.values(creatures).filter((e) => e.rank === "elite"),
-  ).toHaveLength(12);
+  ).toHaveLength(15);
   expect(
     Object.values(creatures).filter((e) => e.rank === "boss"),
   ).toHaveLength(11);

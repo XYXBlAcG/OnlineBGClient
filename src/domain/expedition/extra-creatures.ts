@@ -614,4 +614,43 @@ export const extraCreatures = {
       },
     ],
   },
+  marketReaver: {
+    name: "熔金掠夺者",
+    hp: 60,
+    icon: "warden",
+    rank: "elite",
+    biome: "ruins",
+    pattern: [
+      { kind: "steal-gold", amount: 25, target: 0 },
+      { kind: "block", amount: 10, target: 0 },
+      { kind: "attack", amount: 8, target: 0 },
+      { kind: "strength", amount: 2, target: 0 },
+    ],
+  },
+  riftSiren: {
+    name: "裂隙塞壬",
+    hp: 52,
+    icon: "alchemist",
+    rank: "elite",
+    biome: "mirror",
+    pattern: [
+      { kind: "silence", amount: 1, target: 0 },
+      { kind: "poison", amount: 2, target: "all" },
+      { kind: "heal", amount: 5, target: "all" },
+      { kind: "attack", amount: 7, target: "all" },
+    ],
+  },
+  bondBreaker: {
+    name: "断契者",
+    hp: 55,
+    icon: "sentinel",
+    rank: "elite",
+    biome: "garden",
+    pattern: [
+      { kind: "steal-relic", amount: 1, target: 0 },
+      { kind: "weak", amount: 1, target: "all" },
+      { kind: "attack", amount: 5, hits: 2, target: 0 },
+      { kind: "thorns", amount: 2, target: 0 },
+    ],
+  },
 } as const satisfies Record<string, Creature>;

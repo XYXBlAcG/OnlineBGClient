@@ -85,6 +85,20 @@ export function generateMap(
       };
     });
   });
+  if (!map[0].some((node) => node.kind === "battle")) {
+    map[0][0].kind = "battle";
+    map[0][0].route = "vanguard";
+  }
+  for (const floor of [3, 7, 10]) {
+    if (
+      floor >= map.length - 1 ||
+      map[floor].some((node) => node.kind === "camp")
+    )
+      continue;
+    const camp = map[floor][0];
+    camp.kind = "camp";
+    camp.route = "pilgrimage";
+  }
   for (let floor = 0; floor < map.length - 1; floor++) {
     const layer = map[floor],
       next = map[floor + 1];
@@ -199,6 +213,72 @@ export function generateMap(
     backSource.next.push(backTarget.id);
   return map;
 }
+export function generateSideMap(seed: string, chapter: number): MapNode[][] {
+  const widths = [3, 2, 4, 3, 2, 1],
+    pools: NodeKind[][] = [
+      ["battle", "event", "gamble"],
+      ["event", "shop", "treasure", "library", "recruit"],
+      ["battle", "elite", "oracle", "pawnshop"],
+      ["event", "gamble", "forge", "camp"],
+      ["battle", "elite", "library", "hunt", "treasure"],
+      ["rift"],
+    ];
+  const map: MapNode[][] = widths.map((width, floor) =>
+    Array.from({ length: width }, (_, lane) => ({
+      id: `side-${chapter}-f${floor}-${lane}`,
+      floor,
+      lane,
+      kind:
+        floor === widths.length - 1
+          ? "rift"
+          : shuffled(pools[floor], `${seed}:side-kind:${floor}:${lane}`)[0],
+      route: shuffled(
+        routeProfileIds,
+        `${seed}:side-route:${floor}:${lane}`,
+      )[0],
+      next: [],
+    })),
+  );
+  for (let floor = 0; floor < map.length - 1; floor++) {
+    const layer = map[floor],
+      next = map[floor + 1];
+    for (const node of layer) {
+      const position = (node.lane + 0.5) / layer.length,
+        ordered = [...next].sort(
+          (a, b) =>
+            Math.abs((a.lane + 0.5) / next.length - position) -
+            Math.abs((b.lane + 0.5) / next.length - position),
+        );
+      node.next = ordered
+        .slice(
+          0,
+          1 +
+            Number(
+              shuffled([false, false, true], `${seed}:side-edge:${node.id}`)[0],
+            ),
+        )
+        .map((target) => target.id);
+    }
+    for (const target of next)
+      if (!layer.some((node) => node.next.includes(target.id))) {
+        const source = [...layer]
+          .filter((node) => node.next.length < 2)
+          .sort(
+            (a, b) =>
+              Math.abs(
+                (a.lane + 0.5) / layer.length -
+                  (target.lane + 0.5) / next.length,
+              ) -
+              Math.abs(
+                (b.lane + 0.5) / layer.length -
+                  (target.lane + 0.5) / next.length,
+              ),
+          )[0];
+        source?.next.push(target.id);
+      }
+  }
+  return map;
+}
 export function mapChoices(run: ExpeditionRun): MapNode[] {
   if (!run.current) return run.map[0];
   const current = run.map.flat().find((node) => node.id === run.current)!;
@@ -238,12 +318,25 @@ export function encounterFor(
         : ((creatures[id] as Creature).biome ?? "ruins") ===
           chapters[run.chapter].biome),
   );
+  const routeElite: Partial<Record<RouteProfileId, CreatureId>> = {
+    gambit: "marketReaver",
+    descent: "riftSiren",
+    companionship: "bondBreaker",
+  };
+  if (
+    rank === "elite" &&
+    node.route &&
+    routeElite[node.route] &&
+    !pool.includes(routeElite[node.route]!)
+  )
+    pool.push(routeElite[node.route]!);
   const players = run.combat.heroes.length,
     count = rank === "boss" ? 1 : Math.min(3, Math.ceil(players * 0.75));
   const choices = shuffled(pool, `${run.seed}:${node.id}:creatures`);
   const ascension = ascensionProfile(run.ascension),
     profile = expeditionDifficulties[run.difficulty],
-    multiplier = run.tuning === 2 ? profile.multiplier : profile.legacyMultiplier,
+    multiplier =
+      run.tuning === 2 ? profile.multiplier : profile.legacyMultiplier,
     difficulty = multiplier * ascension.enemyHealth,
     attackDifficulty = multiplier * ascension.enemyAttack;
   const boss = creatures[choices[0]] as Creature;
@@ -424,6 +517,55 @@ export function encounterFor(
   };
 }
 
+export const shopRaidBalance = {
+  roundLimit: 24,
+  healthMultiplier: 1.58,
+  attackMultiplier: 1.36,
+} as const;
+
+export function shopRaidEncounter(
+  run: ExpeditionRun,
+  node: MapNode,
+): EncounterDefinition {
+  const encounter = encounterFor(run, {
+      ...node,
+      kind: "elite",
+      floor: Math.min(run.map.length - 1, node.floor + 2),
+    }),
+    guard = creatures.marketReaver as Creature,
+    party = encounter.enemies[0];
+  return {
+    ...encounter,
+    name: guard.name,
+    subtitle: `抢劫商店 · ${shopRaidBalance.roundLimit} 回合内击败守卫，否则老板带走全部商品`,
+    enemies: [
+      {
+        ...party,
+        name: guard.name,
+        icon: guard.icon,
+        hp: Math.round(party.hp * shopRaidBalance.healthMultiplier),
+        pattern: guard.pattern.map((intent, step) => ({
+          ...intent,
+          amount:
+            intent.kind === "attack"
+              ? Math.max(
+                  1,
+                  Math.round(
+                    intent.amount * shopRaidBalance.attackMultiplier,
+                  ),
+                )
+              : intent.amount,
+          target:
+            intent.target === "all"
+              ? ("all" as const)
+              : (step + node.floor) % run.combat.heroes.length,
+        })),
+      },
+      ...encounter.enemies.slice(1),
+    ],
+  };
+}
+
 export const nodeNames: Record<NodeKind, string> = {
   battle: "战斗",
   elite: "精英",
@@ -440,6 +582,9 @@ export const nodeNames: Record<NodeKind, string> = {
   gamble: "赌局",
   library: "禁书库",
   hunt: "追猎台",
+  rift: "深渊裂隙",
+  recruit: "旅伴营地",
+  empty: "空商店",
 };
 export const nodeIcons: Record<NodeKind, string> = {
   battle: "⚔",
@@ -457,4 +602,7 @@ export const nodeIcons: Record<NodeKind, string> = {
   gamble: "⚄",
   library: "▥",
   hunt: "⌖",
+  rift: "◈",
+  recruit: "☺",
+  empty: "·",
 };

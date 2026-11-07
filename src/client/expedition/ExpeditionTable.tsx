@@ -8,7 +8,7 @@ import { RestSite, Shop } from "./CardNodes";
 import { EnemyIntentStrip } from "./BattleScene";
 import { ExpeditionMap } from "./ExpeditionMap";
 import { useGameCommands } from "../use-game-commands";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import type { GameSnapshot } from "../OriginalGame";
 import { AvatarSurface, type AvatarSurfaceProps } from "../AvatarSurface";
 import type { Action } from "../../domain/types";
@@ -18,7 +18,11 @@ import type {
   ExpeditionMove,
 } from "../../domain/expedition/adventure-types";
 import { ExpeditionRules } from "../../domain/expedition/rules";
-import { heroContent, effectsText } from "../../domain/expedition/content";
+import {
+  cards,
+  heroContent,
+  effectsText,
+} from "../../domain/expedition/content";
 import {
   potions,
   relics,
@@ -30,8 +34,17 @@ import type { Target } from "../../domain/expedition/types";
 import { ExpeditionCard } from "./ExpeditionCard";
 import { BattleScene } from "./BattleScene";
 import { ProfessionDetail } from "./ProfessionDetail";
+import { NodeResultCard } from "./NodeResultCard";
+import { CompanionRoster } from "./CompanionRoster";
 import "./expedition.css";
 import "./table.css";
+const DevExpeditionController = import.meta.env.DEV
+  ? lazy(() =>
+      import("./DevExpeditionController").then((module) => ({
+        default: module.DevExpeditionController,
+      })),
+    )
+  : null;
 const rules = new ExpeditionAdventure(),
   combat = new ExpeditionRules();
 const phaseNames = {
@@ -49,6 +62,8 @@ const phaseNames = {
   gamble: "赌局",
   library: "禁书库",
   hunt: "追猎台",
+  rift: "深渊裂隙",
+  recruit: "旅伴营地",
   recovery: "整理牌组",
   treasure: "选择遗物",
   holder: "分配遗物",
@@ -72,6 +87,10 @@ const optionalNodeText = {
   hunt: {
     name: "追猎台",
     text: "用下一场精英的额外词条换取队伍赏金。",
+  },
+  rift: {
+    name: "深渊裂隙",
+    text: "随机献出牌与遗物，进入短而高度随机的深层；归来时获得额外资源。",
   },
 } as const;
 export function ExpeditionTable({
@@ -99,7 +118,12 @@ export function ExpeditionTable({
     [inspect, setInspect] = useState<number | null>(null),
     [markMode, setMarkMode] = useState(false),
     [professionPreview, setProfessionPreview] = useState(0),
-    [professionOpen, setProfessionOpen] = useState(false);
+    [professionOpen, setProfessionOpen] = useState(false),
+    [dismissedResult, setDismissedResult] = useState<number | null>(null),
+    [manualAction, setManualAction] = useState({
+      token: 0,
+      version: snapshot.version,
+    });
   useEffect(() => {
     setSelected(null);
     setHover(null);
@@ -132,6 +156,10 @@ export function ExpeditionTable({
     );
     if (candidate) {
       act(candidate.action);
+      setManualAction((value) => ({
+        token: value.token + 1,
+        version: snapshot.version,
+      }));
     }
   };
   const cardActions = moves.filter(
@@ -176,7 +204,10 @@ export function ExpeditionTable({
         "upgrade",
         "remove",
       ].includes(c.move.type) &&
-      !(run.phase === "shop" && c.move.type === "buy") &&
+      !(
+        run.phase === "shop" &&
+        ["buy", "sell-relic"].includes(c.move.type)
+      ) &&
       !(
         run.phase === "reward" &&
         c.move.type === "reward" &&
@@ -265,6 +296,9 @@ export function ExpeditionTable({
   const waiting = run.combat.heroes.filter(
     (_, i) => run.nodeReady[i] || run.votes[i] !== undefined,
   ).length;
+  const shopRaidRemaining = run.shopRaidDeadlineRound
+    ? Math.max(0, run.shopRaidDeadlineRound - run.combat.round + 1)
+    : null;
   return (
     <section
       className={`expedition-table exp-chapter-${run.chapter}`}
@@ -289,6 +323,12 @@ export function ExpeditionTable({
           </strong>
         </div>
         <span className="exp-ascension-badge">N{run.ascension}</span>
+        {run.side && <span className="exp-side-badge">深层裂隙</span>}
+        {shopRaidRemaining !== null && (
+          <span className="exp-shop-raid-countdown" role="status">
+            抢店剩余 <strong>{shopRaidRemaining}</strong> 回合
+          </span>
+        )}
         {hero && run.phase === "battle" && (
           <span className="exp-resource" aria-label={`剩余能量 ${hero.energy}`}>
             能量 <strong>{hero.energy}</strong>
@@ -336,6 +376,24 @@ export function ExpeditionTable({
           </>
         )}
       </header>
+      {DevExpeditionController && !replay && (
+        <Suspense fallback={null}>
+          <DevExpeditionController
+            snapshot={snapshot}
+            act={act}
+            pending={pending}
+            manualActionToken={manualAction.token}
+            manualActionVersion={manualAction.version}
+          />
+        </Suspense>
+      )}
+      {run.lastNodeResult &&
+        dismissedResult !== run.lastNodeResult.sequence && (
+          <NodeResultCard
+            result={run.lastNodeResult}
+            onClose={() => setDismissedResult(run.lastNodeResult!.sequence)}
+          />
+        )}
       {professionOpen && hero && (
         <div className="exp-inline-profession">
           <ProfessionDetail profession={hero.profession} />
@@ -458,6 +516,11 @@ export function ExpeditionTable({
       )}
       {run.phase === "battle" && (
         <>
+          <CompanionRoster
+            companions={run.companions}
+            moves={moves.map((candidate) => candidate.move)}
+            send={send}
+          />
           <EnemyIntentStrip
             state={run.combat}
             names={snapshot.seats.map((seat) => seat.name)}
@@ -610,6 +673,7 @@ export function ExpeditionTable({
           <div
             className="exp-table-hand"
             data-guide-target="expedition.hand"
+            data-room-region="expedition.hand"
             data-motion-zone="expedition.hand"
           >
             {hero?.hand.map((card) => (
@@ -660,6 +724,17 @@ export function ExpeditionTable({
           removalPrice={Math.ceil(
             cardServices.removalPrice * ascension.shopPrice,
           )}
+          onRaid={
+            moves.some((candidate) => candidate.move.type === "raid-shop")
+              ? () => send({ type: "raid-shop" })
+              : undefined
+          }
+          shopRaidFailed={run.shopRaidFailed}
+          progress={{
+            nodes: run.stats.nodesVisited,
+            battles: run.stats.battlesWon,
+            cards: run.stats.cardsPlayed[actor] ?? 0,
+          }}
         />
       )}
       {run.phase === "event" && (
@@ -708,6 +783,59 @@ export function ExpeditionTable({
             )}
           </div>
           <p className="muted">选择对全队生效；支出由每人分别承担。</p>
+        </div>
+      )}
+      {run.phase === "recruit" && (
+        <div className="exp-node-content exp-recruit">
+          <h2>旅伴营地</h2>
+          <p>选择一名临时 AI 队友，或保留当前阵容。</p>
+          <div className="exp-recruit-offers">
+            {run.companionOffers.map((offer) => (
+              <button
+                key={offer.id}
+                onClick={() => vote(offer.id)}
+                disabled={
+                  !moves.some(
+                    (candidate) =>
+                      candidate.move.type === "vote" &&
+                      candidate.move.choice === offer.id,
+                  )
+                }
+              >
+                <span>{heroContent[offer.profession].icon}</span>
+                <strong>{offer.name}</strong>
+                <small>
+                  {heroContent[offer.profession].name} ·{" "}
+                  {offer.mode === "fragile"
+                    ? "阵亡后永久离队"
+                    : offer.mode === "limited"
+                      ? "仅可出战 1–3 场，阵亡时全队恢复 6 生命"
+                      : "每战可复起"}
+                </small>
+                <p>
+                  {offer.deck
+                    .map((card) => cards[card]?.name ?? card)
+                    .join(" / ")}
+                </p>
+                <p>
+                  {relics[offer.relic].icon} {relics[offer.relic].name}
+                </p>
+              </button>
+            ))}
+          </div>
+          <button
+            className="primary"
+            disabled={
+              !moves.some(
+                (candidate) =>
+                  candidate.move.type === "vote" &&
+                  candidate.move.choice === "leave",
+              )
+            }
+            onClick={() => vote("leave")}
+          >
+            不招募，继续前进
+          </button>
         </div>
       )}
       {run.phase in optionalNodeText && (
@@ -768,6 +896,7 @@ export function ExpeditionTable({
           "recovery",
           "shop",
           "event",
+          "recruit",
         ].includes(run.phase) && (
           <div
             className="exp-node-actions"
@@ -800,6 +929,8 @@ export function ExpeditionTable({
         "gamble",
         "library",
         "hunt",
+        "rift",
+        "recruit",
       ].includes(run.phase) && (
         <small className="exp-progress">
           {waiting}/{run.combat.heroes.length} 人已确认

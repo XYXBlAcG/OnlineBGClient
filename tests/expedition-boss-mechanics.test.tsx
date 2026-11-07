@@ -40,7 +40,7 @@ function neutralEnemy(
   };
 }
 
-it("九个首领都有独立机制，部件与双生身体进入统一敌人列表", () => {
+it("十一个首领都有独立机制，部件与双生身体进入统一敌人列表", () => {
   const bosses = Object.values(creatures).filter(
     (creature) => creature.rank === "boss",
   ) as Creature[];

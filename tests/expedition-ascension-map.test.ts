@@ -147,7 +147,7 @@ it("N4 让普通战斗出现词条，N8 叠加第二词条", () => {
 });
 
 it("开局提供更多独立路线原型和节点选择", () => {
-  expect(Object.keys(routeProfiles)).toHaveLength(8);
+  expect(Object.keys(routeProfiles)).toHaveLength(11);
   for (let seed = 0; seed < 48; seed++) {
     const map = generateMap(String(seed), 2, 0);
     expect(map[0].length).toBeGreaterThanOrEqual(3);

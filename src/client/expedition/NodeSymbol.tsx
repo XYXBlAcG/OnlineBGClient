@@ -16,6 +16,10 @@ const shapes: Record<NodeKind, string> = {
   gamble: "M8 8h16v16H8Zm4 4h8v8h-8ZM11 20h.01M21 12h.01",
   library: "M7 5h7v22H7Zm9 0h9v22h-9Zm3 5h3m-3 4h3m-3 4h3",
   hunt: "M16 4v8m0 8v8M4 16h8m8 0h8M16 12a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
+  rift: "M16 3 8 12l5 4-4 4 7 9 5-9-5-4 5-5Z",
+  recruit:
+    "M16 6a5 5 0 1 0 0 10 5 5 0 0 0 0-10ZM7 27c0-5 4-8 9-8s9 3 9 8M24 8h5m-2.5-2.5v5",
+  empty: "M8 8h16v16H8Zm4 4 8 8m0-8-8 8",
 };
 export function NodeSymbol({ kind }: { kind: NodeKind }) {
   return (

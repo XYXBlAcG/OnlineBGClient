@@ -1322,6 +1322,14 @@ export class ExpeditionRules {
       const n = (hero.relicUses[id] ?? 0) + 1;
       hero.relicUses[id] = n;
       if (n % (relic.every ?? 1)) continue;
+      if (relic.goldEnergyPer) {
+        const amount = Math.floor(hero.gold / relic.goldEnergyPer);
+        if (amount > 0)
+          this.effects(state, actor, [{ kind: "energy", amount }], [
+            { side: "hero", index: actor },
+          ]);
+        continue;
+      }
       this.effects(state, actor, relic.effects, [
         { side: "hero", index: actor },
       ]);

@@ -17,6 +17,13 @@ export interface RelicDefinition {
   effects: Effect[];
   every?: number;
   cardType?: "attack" | "skill";
+  goldEnergyPer?: number;
+  appraisal?: {
+    base: number;
+    perNode: number;
+    perBattle: number;
+    per100Cards: number;
+  };
 }
 export const relics = {
   ember: {
@@ -183,8 +190,296 @@ export const relics = {
     trigger: "victory",
     effects: [{ kind: "heal", amount: 6 }],
   },
+  thornHalo: {
+    name: "荆棘光环",
+    icon: "♠",
+    trigger: "start",
+    effects: [{ kind: "thorns", amount: 3 }],
+  },
+  glassHour: {
+    name: "玻璃沙漏",
+    icon: "◷",
+    trigger: "start",
+    effects: [{ kind: "draw", amount: 1 }],
+  },
+  ironWill: {
+    name: "铁意徽章",
+    icon: "⬢",
+    trigger: "start",
+    effects: [{ kind: "block", amount: 9 }],
+  },
+  duelist: {
+    name: "决斗者徽记",
+    icon: "⚔",
+    trigger: "round",
+    effects: [{ kind: "strength", amount: 1 }],
+  },
+  merchantSeal: {
+    name: "商旅印章",
+    icon: "▣",
+    trigger: "victory",
+    effects: [{ kind: "heal", amount: 5 }],
+  },
+  scavenger: {
+    name: "拾荒者钩",
+    icon: "⌁",
+    trigger: "kill",
+    effects: [{ kind: "block", amount: 3 }],
+  },
+  echoCharm: {
+    name: "回声符",
+    icon: "◎",
+    trigger: "round",
+    every: 3,
+    effects: [{ kind: "draw", amount: 1 }],
+  },
+  bloodTithe: {
+    name: "血税杯",
+    icon: "◒",
+    trigger: "card",
+    every: 4,
+    effects: [{ kind: "heal", amount: 2 }],
+  },
+  curseLantern: {
+    name: "禁咒灯",
+    icon: "▥",
+    trigger: "start",
+    effects: [{ kind: "dexterity", amount: 2 }],
+  },
+  quickLash: {
+    name: "快攻鞭",
+    icon: "╱",
+    trigger: "card",
+    every: 3,
+    cardType: "attack",
+    effects: [{ kind: "energy", amount: 1 }],
+  },
+  wardenEye: {
+    name: "守门者之眼",
+    icon: "◉",
+    trigger: "round",
+    every: 4,
+    effects: [{ kind: "block", amount: 4 }],
+  },
+  secondWind: {
+    name: "第二口气",
+    icon: "↻",
+    trigger: "victory",
+    effects: [{ kind: "regen", amount: 2 }],
+  },
+  prismVeil: {
+    name: "棱光面纱",
+    icon: "✧",
+    trigger: "start",
+    effects: [
+      { kind: "focus", amount: 2 },
+      { kind: "echo", amount: 8 },
+    ],
+  },
+  diceCrown: {
+    name: "骰骨王冠",
+    icon: "⬡",
+    trigger: "start",
+    effects: [
+      { kind: "dice", amount: 2 },
+      { kind: "echo", amount: 6 },
+    ],
+  },
+  turretCore: {
+    name: "自律炮芯",
+    icon: "⌖",
+    trigger: "start",
+    effects: [
+      { kind: "device", amount: 2 },
+      { kind: "focus", amount: 1 },
+    ],
+  },
+  ventCharm: {
+    name: "排热护符",
+    icon: "≋",
+    trigger: "round",
+    every: 2,
+    effects: [
+      { kind: "cool", amount: 3 },
+      { kind: "block", amount: 4 },
+    ],
+  },
+  volatileHeart: {
+    name: "沸血核心",
+    icon: "♨",
+    trigger: "start",
+    effects: [
+      { kind: "strength", amount: 2 },
+      { kind: "heat", amount: 3 },
+    ],
+  },
+  sporeVial: {
+    name: "净孢瓶",
+    icon: "✚",
+    trigger: "round",
+    every: 3,
+    effects: [
+      { kind: "cleanse", amount: 1 },
+      { kind: "block", amount: 5 },
+    ],
+  },
+  redThread: {
+    name: "赤线结",
+    icon: "∞",
+    trigger: "kill",
+    every: 3,
+    effects: [
+      { kind: "strength", amount: 1 },
+      { kind: "draw", amount: 1 },
+    ],
+  },
+  boneWheel: {
+    name: "白骨轮",
+    icon: "◉",
+    trigger: "round",
+    every: 4,
+    effects: [
+      { kind: "dice", amount: 1 },
+      { kind: "draw", amount: 1 },
+    ],
+  },
+  oathSigil: {
+    name: "守誓印",
+    icon: "⚑",
+    trigger: "victory",
+    effects: [{ kind: "blessing", amount: 3 }],
+  },
+  crystalChoir: {
+    name: "晶歌匣",
+    icon: "♫",
+    trigger: "victory",
+    effects: [{ kind: "echo", amount: 10 }],
+  },
+  pilgrimCharm: {
+    name: "远行者结",
+    icon: "⌂",
+    trigger: "round",
+    every: 5,
+    effects: [{ kind: "heal", amount: 5, target: "party" }],
+  },
+  woundEtcher: {
+    name: "伤痕刻刀",
+    icon: "╱",
+    trigger: "card",
+    every: 4,
+    cardType: "attack",
+    effects: [{ kind: "strength", amount: 1 }],
+  },
+  mirrorPact: {
+    name: "镜中契约",
+    icon: "◫",
+    trigger: "sealed",
+    effects: [{ kind: "draw", amount: 2 }],
+  },
+  lastWord: {
+    name: "未竟遗言",
+    icon: "◌",
+    trigger: "silenced",
+    effects: [
+      { kind: "block", amount: 12 },
+      { kind: "energy", amount: 1 },
+    ],
+  },
+  lootCrown: {
+    name: "失而复得冠",
+    icon: "♛",
+    trigger: "loot",
+    effects: [
+      { kind: "energy", amount: 1 },
+      { kind: "draw", amount: 1 },
+    ],
+  },
+  sunDial: {
+    name: "逆日晷",
+    icon: "◷",
+    trigger: "round",
+    every: 6,
+    effects: [{ kind: "energy", amount: 2 }],
+  },
+  cinderPact: {
+    name: "余烬契约",
+    icon: "☄",
+    trigger: "start",
+    effects: [
+      { kind: "draw", amount: 2 },
+      { kind: "heat", amount: 3 },
+    ],
+  },
+  blackMass: {
+    name: "黑弥撒",
+    icon: "♜",
+    trigger: "start",
+    effects: [
+      { kind: "strength", amount: 2 },
+      { kind: "heat", amount: 2 },
+    ],
+  },
+  goldReservoir: {
+    name: "黄金蓄能池",
+    icon: "◉",
+    trigger: "round",
+    effects: [],
+    goldEnergyPer: 400,
+  },
+  appraisalSeal: {
+    name: "逐利商印",
+    icon: "◈",
+    trigger: "start",
+    effects: [{ kind: "block", amount: 6 }],
+    appraisal: {
+      base: 120,
+      perNode: 20,
+      perBattle: 35,
+      per100Cards: 25,
+    },
+  },
+  wanderingLedger: {
+    name: "漂泊账簿",
+    icon: "▤",
+    trigger: "round",
+    every: 3,
+    effects: [{ kind: "draw", amount: 1 }],
+    appraisal: {
+      base: 100,
+      perNode: 16,
+      perBattle: 20,
+      per100Cards: 12,
+    },
+  },
+  battleMint: {
+    name: "战利铸币",
+    icon: "◉",
+    trigger: "kill",
+    effects: [{ kind: "strength", amount: 1 }],
+    appraisal: {
+      base: 80,
+      perNode: 8,
+      perBattle: 28,
+      per100Cards: 20,
+    },
+  },
 } as const satisfies Record<string, RelicDefinition>;
 export type RelicId = keyof typeof relics;
+export interface RelicValueProgress {
+  nodes: number;
+  battles: number;
+  cards: number;
+}
+export function relicValue(id: RelicId, progress: RelicValueProgress): number {
+  const appraisal = (relics[id] as RelicDefinition).appraisal;
+  if (!appraisal) return 0;
+  return (
+    appraisal.base +
+    progress.nodes * appraisal.perNode +
+    progress.battles * appraisal.perBattle +
+    Math.floor(progress.cards / 100) * appraisal.per100Cards
+  );
+}
 export const potions = {
   tonic: {
     name: "生命药水",
@@ -546,6 +841,8 @@ export type StoryEventId = keyof typeof storyEvents;
 
 export function relicText(id: RelicId): string {
   const relic: RelicDefinition = relics[id];
+  if (relic.goldEnergyPer)
+    return `每轮开始：每有 ${relic.goldEnergyPer} 金币，获得 1 能量`;
   const trigger = {
     start: "每场战斗开始",
     round: "每轮开始",
@@ -556,7 +853,7 @@ export function relicText(id: RelicId): string {
     silenced: "被封口时",
     loot: "金币或遗物被夺时",
   }[relic.trigger];
-  return `${trigger}${relic.every ? `，每 ${relic.every} 次触发` : ""}${relic.cardType ? `（仅${relic.cardType === "attack" ? "攻击" : "技能"}牌）` : ""}：${effectsText(relic.effects)}`;
+  return `${trigger}${relic.every ? `，每 ${relic.every} 次触发` : ""}${relic.cardType ? `（仅${relic.cardType === "attack" ? "攻击" : "技能"}牌）` : ""}：${effectsText(relic.effects)}${relic.appraisal ? `；可在商店按当前估值出售，基础价值 ${relic.appraisal.base} 金币` : ""}`;
 }
 export function eventText(effects: readonly EventEffect[]): string {
   return effects

@@ -8,9 +8,20 @@ import { relics, potions, storyEvents } from "./world";
 import { mapChoices, travelCost } from "./map";
 import { shuffled } from "./random";
 const combat = new ExpeditionRules();
+export type ExpeditionRouteStyle =
+  | "balanced"
+  | "explorer"
+  | "aggressive"
+  | "cautious"
+  | "gambler"
+  | "recruiter"
+  | "adaptive";
 export class ExpeditionStrategy extends Strategy {
-  static readonly version = "expedition-team-3";
+  static readonly version = "expedition-team-5";
   readonly version = ExpeditionStrategy.version;
+  constructor(private readonly routeStyle: ExpeditionRouteStyle = "adaptive") {
+    super();
+  }
   budget(request: SearchRequest) {
     return {
       easy: { samples: 0, depth: 0, shortlist: 0 },
@@ -24,6 +35,7 @@ export class ExpeditionStrategy extends Strategy {
     candidate: Candidate,
     seed: string,
     audit = true,
+    difficulty: SearchRequest["difficulty"] = "normal",
   ): DecisionCandidate {
     if (
       observation.kind !== "expedition" ||
@@ -97,6 +109,14 @@ export class ExpeditionStrategy extends Strategy {
         mechanic && pace > 0 && mechanic.track + pace >= mechanic.max ? -16 : 4;
     }
     if (move.type === "done") score = 0;
+    if (move.type === "toggle-companion")
+      score = move.enabled ? (hero.hp < hero.maxHp * 0.55 ? 16 : 9) : 1;
+    if (move.type === "raid-shop")
+      score =
+        hero.hp > hero.maxHp * 0.7 &&
+        run.combat.heroes.every((member) => member.hp > member.maxHp * 0.65)
+          ? 12
+          : -18;
     if (move.type === "advance")
       score =
         move.choice === "forge"
@@ -306,7 +326,85 @@ export class ExpeditionStrategy extends Strategy {
           gamble: 12,
           library: 8,
           hunt: 19,
+          rift: 38,
+          recruit: 31,
+          empty: -40,
         }[node.kind];
+        if (travel.backward && !travel.visited)
+          score += node.kind === "rift" ? 18 : 10;
+        if (difficulty !== "easy") {
+          const focus = difficulty === "hard" ? 1 : 0.45,
+            cards = run.combat.heroes.reduce(
+              (sum, member) => sum + allCards(member).length,
+              0,
+            ),
+            relicCount = run.combat.heroes.reduce(
+              (sum, member) => sum + member.relics.length,
+              0,
+            );
+          if (node.kind === "camp")
+            score += Math.max(0, 0.68 - health) * 34 * focus;
+          if (node.kind === "elite")
+            score += Math.max(0, health - 0.72) * 22 * focus;
+          if (node.kind === "rift")
+            score +=
+              (cards >= run.combat.heroes.length * 11 && relicCount >= 2
+                ? 12
+                : -24) * focus;
+          if (travel.backward && !travel.visited)
+            score += (node.kind === "rift" ? 16 : 8) * focus;
+        }
+        if (this.routeStyle === "explorer") {
+          if (node.kind === "rift") score += 24;
+          if (node.kind === "recruit") score += 12;
+          if (node.kind === "event" || node.kind === "treasure") score += 6;
+          if (travel.backward && !travel.visited) score += 14;
+        }
+        if (this.routeStyle === "aggressive") {
+          if (node.kind === "elite") score += 18;
+          if (node.kind === "boss") score += 14;
+          if (node.kind === "camp") score -= 10;
+        }
+        if (this.routeStyle === "cautious") {
+          if (node.kind === "camp") score += 18;
+          if (node.kind === "shop") score += 6;
+          if (node.kind === "elite") score -= 16;
+          if (node.kind === "rift") score -= 18;
+        }
+        if (this.routeStyle === "gambler") {
+          if (node.kind === "gamble") score += 26;
+          if (node.kind === "rift" || node.kind === "secret") score += 16;
+          if (node.kind === "library") score += 10;
+          if (node.kind === "camp") score -= 10;
+        }
+        if (this.routeStyle === "recruiter") {
+          if (node.kind === "recruit") score += 24;
+          if (node.kind === "camp" || node.kind === "shop") score += 6;
+          if (node.kind === "elite") score += 5;
+        }
+        if (this.routeStyle === "adaptive") {
+          if (run.floor < 4) {
+            if (node.kind === "rift" || node.kind === "recruit") score += 12;
+            if (node.kind === "elite") score += 6;
+            if (node.kind === "gamble") score += 10;
+          } else if (run.floor < 8) {
+            if (node.kind === "recruit") score += 10;
+            if (node.kind === "shop") score += 7;
+            if (node.kind === "camp") score += 5;
+          }
+          if (health < 0.62) {
+            if (node.kind === "camp") score += 30;
+            if (node.kind === "shop") score += 8;
+            if (node.kind === "elite") score -= 14;
+            if (node.kind === "rift") score -= 20;
+          } else if (health > 0.82) {
+            if (node.kind === "elite") score += 10;
+            if (node.kind === "rift") score += 8;
+          }
+          if (run.floor > run.map.length - 5) {
+            if (node.kind === "camp" || node.kind === "forge") score += 15;
+          }
+        }
         score -= travel.cost * 8;
         if (travel.visited) score -= 60;
       } else if (phase === "event") {
@@ -362,20 +460,33 @@ export class ExpeditionStrategy extends Strategy {
       else if (phase === "gamble")
         score =
           move.choice === "safe"
-            ? 10
+            ? this.routeStyle === "gambler"
+              ? 5
+              : 10
             : move.choice === "risk"
-              ? hero.hp > hero.maxHp * 0.65
-                ? 14
-                : -8
+              ? (hero.hp > hero.maxHp * 0.65 ? 14 : -8) +
+                (this.routeStyle === "gambler" ? 9 : 0)
               : 0;
       else if (phase === "library") score = move.choice === "bargain" ? 9 : 0;
       else if (phase === "hunt")
         score = move.choice === "accept" ? (hero.gold < 60 ? 15 : 8) : 1;
+      else if (phase === "recruit") {
+        const offer = run.companionOffers.find(
+          (candidate) => candidate.id === move.choice,
+        );
+        score = offer
+          ? 18 +
+            (offer.mode === "limited" ? 6 : offer.mode === "eternal" ? 4 : 0)
+          : 3;
+      }
       else if (phase === "holder")
         score = 20 - run.combat.heroes[Number(move.choice)].relics.length * 3;
       else if (phase === "treasure")
         score = relics[move.choice as keyof typeof relics].effects.reduce(
-          (sum, e) => sum + e.amount * 3,
+          (sum, effect) =>
+            sum +
+            effect.amount *
+              (effect.kind === "heat" ? (difficulty === "hard" ? -2 : -1) : 3),
           10,
         );
       score += this.engine.seed(`${seed}:${move.choice}`)() * 0.01;
@@ -405,6 +516,7 @@ export class ExpeditionStrategy extends Strategy {
         candidate,
         request.seed,
         request.audit,
+        request.difficulty,
       );
       if (request.difficulty === "easy")
         result.score +=

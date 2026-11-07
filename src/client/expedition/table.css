@@ -123,6 +123,364 @@
   font-size: 42px;
   color: var(--accent);
 }
+
+.exp-node-result-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.exp-node-result-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(7 16 24 / 55%);
+  backdrop-filter: blur(4px);
+}
+
+.exp-node-result {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 16px;
+  width: min(700px, 100%);
+  max-height: min(78dvh, 720px);
+  padding: 22px;
+  overflow: auto;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow:
+    0 24px 70px rgb(0 0 0 / 32%),
+    inset 0 0 0 1px var(--line);
+}
+
+.exp-node-result > header,
+.exp-node-result > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.exp-companions,
+.exp-recruit {
+  display: grid;
+  gap: 12px;
+}
+
+.exp-companions > header,
+.exp-companions > footer,
+.exp-companions > footer > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.exp-companion-list,
+.exp-recruit-offers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.exp-companion-list article,
+.exp-recruit-offers > button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--canvas) 88%, transparent);
+  text-align: left;
+}
+
+.exp-companion-list article > span,
+.exp-recruit-offers > button > span {
+  grid-row: 1 / 3;
+  font-size: 28px;
+}
+
+.exp-companion-list article > div,
+.exp-recruit-offers > button {
+  min-width: 0;
+}
+
+.exp-companion-list article > div {
+  display: grid;
+  gap: 3px;
+}
+
+.exp-companion-list article p,
+.exp-recruit-offers > button p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.exp-companion-list article[data-dead="true"] {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.exp-companions > footer {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.exp-companions > footer > small {
+  flex: 1;
+  min-width: 220px;
+}
+
+.exp-shop-raid {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  background: color-mix(in srgb, var(--exp-red) 14%, var(--surface));
+  color: var(--text);
+}
+
+.exp-shop-raid small {
+  color: var(--muted);
+}
+
+.exp-shop-failed {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--exp-red) 12%, var(--surface));
+  color: var(--exp-red);
+  line-height: 1.55;
+}
+
+.exp-shop-raid-countdown {
+  align-self: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--exp-red) 14%, transparent);
+  color: var(--exp-red);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.exp-shop-trade {
+  display: grid;
+  gap: 10px;
+  padding: 12px 0;
+}
+
+.exp-shop-trade > article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--canvas);
+}
+
+.exp-shop-trade h3,
+.exp-shop-trade p,
+.exp-shop-trade small {
+  margin: 0;
+}
+
+.exp-shop-trade p,
+.exp-shop-trade small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.exp-shop-trade > article > button {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.exp-dev-controls {
+  display: grid;
+  grid-template-columns:
+    minmax(150px, 1fr)
+    repeat(3, minmax(118px, auto))
+    auto;
+  align-items: center;
+  gap: 7px 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: color-mix(in srgb, #2c7a68 9%, var(--canvas));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #2c7a68 22%, transparent);
+}
+
+.exp-dev-title,
+.exp-dev-controls > label,
+.exp-dev-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.exp-dev-title strong {
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: #2c7a68;
+  color: #fff;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.exp-dev-title span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exp-dev-title small {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.exp-dev-controls > label {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.exp-dev-controls .ui-select {
+  width: 112px;
+  min-width: 0;
+  padding: 5px 7px;
+}
+
+.exp-dev-actions {
+  justify-content: flex-end;
+}
+
+.exp-dev-actions button {
+  min-height: 30px;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .exp-dev-controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .exp-dev-title {
+    grid-column: 1 / -1;
+  }
+
+  .exp-dev-controls > label {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 560px) {
+  .exp-dev-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .exp-dev-controls > label {
+    display: grid;
+    justify-content: stretch;
+  }
+
+  .exp-dev-controls .ui-select {
+    width: 100%;
+  }
+
+  .exp-dev-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+.exp-node-result h2,
+.exp-node-result h3,
+.exp-node-result p {
+  margin: 0;
+}
+
+.exp-node-result-heroes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.exp-node-result-heroes article {
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--canvas) 82%, var(--surface));
+}
+
+.exp-node-result-heroes article > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.exp-node-result-heroes article > div span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--field);
+  font-size: 12px;
+}
+
+.exp-node-result-heroes article p,
+.exp-node-result-companions {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.exp-node-result-companions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exp-node-result .is-gain {
+  color: color-mix(in srgb, var(--exp-green) 82%, var(--text));
+}
+
+.exp-node-result .is-loss {
+  color: color-mix(in srgb, var(--exp-red) 86%, var(--text));
+}
+
+.exp-node-result > footer {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 620px) {
+  .exp-node-result-layer {
+    place-items: end center;
+    padding: 8px;
+  }
+
+  .exp-node-result {
+    width: 100%;
+    max-height: 82dvh;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .exp-node-result > footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
 .exp-profession-browser {
   grid-column: 1 / -1;
   padding: 12px;
@@ -640,14 +998,27 @@
 .exp-node-content {
   padding: 12px 0;
 }
+.exp-node-content > h2 {
+  margin: 0 0 10px;
+}
 .exp-node-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 .exp-node-actions button {
+  flex: 1 1 220px;
   white-space: normal;
-  min-height: 40px;
+  min-height: 52px;
+  padding: 13px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.exp-node-content > button,
+.exp-recruit > button {
+  min-height: 48px;
+  padding: 11px 16px;
+  font-size: 14px;
 }
 .exp-reward-cards {
   --exp-card-height: 218px;
@@ -678,6 +1049,18 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+.exp-shop > article > button {
+  min-height: 46px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.exp-shop-scene > button,
+.exp-rest-site > button {
+  min-height: 48px;
+  margin-top: 12px;
+  padding: 11px 16px;
+  font-size: 14px;
 }
 .exp-shop .exp-card {
   height: 230px;
@@ -724,6 +1107,9 @@
   padding: 18px;
   white-space: normal;
   background: var(--canvas);
+  min-height: 94px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 .exp-rest-options small,
 .exp-event-options span {
@@ -753,11 +1139,15 @@
   background: var(--canvas);
   border-radius: 16px;
 }
-.exp-service-preview > .exp-card,
-.exp-inventory-detail .exp-card {
+.exp-service-preview > .exp-card {
   max-width: 240px;
   height: auto;
   min-height: 260px;
+}
+.exp-inventory-detail .exp-card {
+  max-width: none;
+  height: auto;
+  min-height: 0;
 }
 .exp-upgrade-comparison {
   display: grid;
@@ -776,23 +1166,55 @@
 }
 .exp-service-preview .exp-card-text,
 .exp-inventory-detail .exp-card-text {
+  font-size: 13px;
+  line-height: 1.7;
   overflow: visible;
+}
+.exp-inventory-detail .exp-card-main {
+  height: auto;
+  min-height: 300px;
+}
+.exp-inventory-detail .exp-card-art svg {
+  height: 72px;
+  max-height: none;
 }
 .exp-service-preview > button {
   width: 100%;
   margin-top: 12px;
+  min-height: 48px;
+  padding: 11px 16px;
+  font-size: 14px;
 }
 .exp-inventory-panel.ui-panel {
-  width: min(960px, calc(100vw - 32px));
-  max-height: calc(100dvh - 40px);
-  padding: 24px;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  left: auto;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  width: min(680px, calc(100vw - 16px));
+  max-height: none;
+  padding: 18px;
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: -18px 0 48px #17252e24;
+  animation: room-drawer-in 220ms var(--ease-emphasized);
+  isolation: isolate;
 }
 .exp-inventory-overlay.ui-overlay {
-  background: #0003;
+  background: transparent;
   backdrop-filter: none;
 }
 .exp-inventory-content {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  flex: 1;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 .exp-inventory-content > header > span {
   color: var(--muted);
@@ -802,7 +1224,8 @@
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding: 14px 0;
+  padding: 4px 0 10px;
+  margin: 0;
 }
 .exp-inventory-tabs > button {
   flex: none;
@@ -813,22 +1236,41 @@
   background: var(--hover);
 }
 .exp-inventory-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
   align-items: start;
   gap: 18px;
+  min-height: 0;
 }
 .exp-inventory-layout .exp-inspect-cards {
-  flex: 1;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  align-content: start;
+  gap: 12px;
   min-width: 0;
+  overflow: visible;
+  padding: 12px;
+  background: color-mix(in srgb, var(--canvas) 72%, var(--surface));
+  scroll-snap-type: none;
 }
 .exp-inventory-layout .exp-inspect-cards .exp-card {
-  height: 200px;
+  width: 100%;
+  height: 220px;
+  min-width: 0;
+  scroll-snap-align: none;
+}
+.exp-inventory-panel [role="tabpanel"] {
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
 }
 .exp-inventory-detail {
-  flex: 0 0 230px;
+  width: 100%;
   position: sticky;
   top: 0;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--canvas);
 }
 .exp-inventory-detail .exp-card-top strong {
   font-size: 15px;
@@ -922,7 +1364,7 @@
     padding: 16px;
   }
   .exp-inventory-layout {
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
   }
   .exp-inventory-detail {
     flex: auto;
@@ -931,6 +1373,14 @@
   }
   .exp-inventory-detail .exp-card {
     max-width: none;
+  }
+  .exp-inventory-layout .exp-inspect-cards {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 9px;
+    padding: 9px;
+  }
+  .exp-inventory-layout .exp-inspect-cards .exp-card {
+    height: 200px;
   }
 }
 @media (max-height: 600px) {
@@ -1191,6 +1641,9 @@
 .exp-route-node[data-route="forbidden"] {
   border-top: 2px solid color-mix(in srgb, #7c6cff 78%, transparent);
 }
+.exp-route-node[data-route="descent"] {
+  border-top: 2px solid color-mix(in srgb, #c28b13 82%, var(--exp-red));
+}
 .exp-route-node:disabled {
   cursor: default;
 }
@@ -1317,6 +1770,15 @@
   color: var(--exp-red);
   font-size: 11px;
   font-weight: 700;
+}
+.exp-side-badge {
+  align-self: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #7c6cff 18%, transparent);
+  color: #6b5ce7;
+  font-size: 11px;
+  font-weight: 750;
 }
 .expedition-table .exp-statuses .is-trait {
   color: var(--exp-blue);

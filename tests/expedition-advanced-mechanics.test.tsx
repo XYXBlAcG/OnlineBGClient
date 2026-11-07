@@ -12,9 +12,13 @@ import { creatures, relics } from "../src/domain/expedition/world";
 import type { Creature } from "../src/domain/expedition/extra-creatures";
 import { nodeNames } from "../src/domain/expedition/map";
 import { routeProfiles } from "../src/domain/expedition/route-profiles";
-import { ExpeditionAdventure } from "../src/domain/expedition/adventure";
+import {
+  combatGoldReward,
+  ExpeditionAdventure,
+} from "../src/domain/expedition/adventure";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ProfessionDetail } from "../src/client/expedition/ProfessionDetail";
+import { ExpeditionStrategy } from "../src/domain/expedition/ai";
 
 function encounter(
   pattern: EncounterDefinition["enemies"][number]["pattern"],
@@ -183,6 +187,11 @@ it("新增掠夺、封牌、封口敌人与两个主题首领", () => {
   expect(
     all.find((creature) => creature.name === "熔金暴君")?.mechanic?.id,
   ).toBe("tribute");
+  expect(
+    all.find((creature) => creature.name === "熔金掠夺者"),
+  ).toBeDefined();
+  expect(all.find((creature) => creature.name === "裂隙塞壬")).toBeDefined();
+  expect(all.find((creature) => creature.name === "断契者")).toBeDefined();
 });
 
 it("新节点、路线和反制遗物进入唯一注册表", () => {
@@ -191,9 +200,13 @@ it("新节点、路线和反制遗物进入唯一注册表", () => {
     gamble: "赌局",
     library: "禁书库",
     hunt: "追猎台",
+    rift: "深渊裂隙",
   });
   expect(routeProfiles.provision.sequence).toContain("pawnshop");
   expect(routeProfiles.ritual.sequence).toContain("library");
+  expect(routeProfiles.descent.sequence).toContain("rift");
+  expect(routeProfiles.gambit.sequence).toContain("gamble");
+  expect(routeProfiles.companionship.sequence).toContain("recruit");
   expect(Object.keys(relics)).toEqual(
     expect.arrayContaining([
       "lockpick",
@@ -206,9 +219,38 @@ it("新节点、路线和反制遗物进入唯一注册表", () => {
       "blackLedger",
     ]),
   );
+  expect(Object.keys(relics)).toEqual(
+    expect.arrayContaining([
+      "prismVeil",
+      "diceCrown",
+      "turretCore",
+      "ventCharm",
+      "volatileHeart",
+      "sporeVial",
+      "redThread",
+      "boneWheel",
+      "oathSigil",
+      "crystalChoir",
+      "pilgrimCharm",
+      "woundEtcher",
+      "mirrorPact",
+      "lastWord",
+      "lootCrown",
+      "sunDial",
+      "cinderPact",
+      "blackMass",
+    ]),
+  );
+  expect(
+    new Set(
+      Object.values(relics).flatMap((relic) =>
+        relic.effects.map((effect) => effect.kind),
+      ),
+    ).size,
+  ).toBeGreaterThanOrEqual(16);
 });
 
-it("当铺、赌局、禁书库与追猎台通过真实冒险动作结算", () => {
+it("当铺、赌局、禁书库、追猎台与深渊裂隙通过真实冒险动作结算", () => {
   const adventure = new ExpeditionAdventure(() => 0.37);
   let state = adventure.create(1);
   state = adventure.apply(state, 0, {
@@ -258,6 +300,45 @@ it("当铺、赌局、禁书库与追猎台通过真实冒险动作结算", () =
     move: { type: "vote", choice: "accept" },
   });
   expect(state.view.hunt).toBe(true);
+
+  let riftState = adventure.create(1);
+  riftState = adventure.apply(riftState, 0, {
+    type: "expedition-action",
+    move: { type: "profession", profession: 0 },
+  });
+  const parentMap = riftState.view.map,
+    rift = parentMap[0][0];
+  rift.kind = "rift";
+  riftState.view.phase = "map";
+  riftState.view.current = null;
+  riftState.view.path = [];
+  riftState.view.votes = {};
+  riftState = adventure.apply(riftState, 0, {
+    type: "expedition-action",
+    move: { type: "vote", choice: rift.id },
+  });
+  expect(riftState.view.phase).toBe("rift");
+  riftState = adventure.apply(riftState, 0, {
+    type: "expedition-action",
+    move: { type: "vote", choice: "enter" },
+  });
+  expect(riftState.view.side).toBe(true);
+  expect(riftState.view.map).toHaveLength(6);
+  const sideExit = riftState.view.map.at(-1)![0],
+    sideBeforeExit = riftState.view.map.at(-2)![0];
+  riftState.view.current = sideBeforeExit.id;
+  riftState.view.floor = sideBeforeExit.floor;
+  riftState.view.path = [sideBeforeExit.id];
+  riftState.view.votes = {};
+  riftState.view.phase = "map";
+  riftState = adventure.apply(riftState, 0, {
+    type: "expedition-action",
+    move: { type: "vote", choice: sideExit.id },
+  });
+  expect(riftState.view.side).toBe(false);
+  expect(riftState.view.map).toEqual(parentMap);
+  expect(riftState.view.phase).toBe("map");
+  expect(riftState.view.combat.heroes[0].gold).toBe(130);
 });
 
 it("两个新职业各有 24 张独立职业牌并进入统一卡池", () => {
@@ -315,4 +396,55 @@ it("职业详情展示定位、资源提示、起始牌组和完整职业牌池"
     expect(html).toContain("查看全部 24 张职业牌");
     expect(html.match(/data-card=/g)?.length).toBeGreaterThanOrEqual(33);
   }
+});
+
+it("精英战斗收益高于普通战斗，首领收益最高", () => {
+  expect(combatGoldReward("battle", 2)).toBe(43);
+  expect(combatGoldReward("elite", 2)).toBe(83);
+  expect(combatGoldReward("boss", 2)).toBe(128);
+  expect(combatGoldReward("elite", 2)).toBeGreaterThan(
+    combatGoldReward("battle", 2),
+  );
+});
+
+it("困难 AI 会评估未探索的回溯节点作为主动路线", () => {
+  const adventure = new ExpeditionAdventure(() => 0.37);
+  let state = adventure.create(1);
+  state = adventure.apply(state, 0, {
+    type: "expedition-action",
+    move: { type: "profession", profession: 0 },
+  });
+  const nodes = state.view.map.flat(),
+    source = nodes.find((node) =>
+      node.next.some(
+        (id) => nodes.find((target) => target.id === id)!.floor < node.floor,
+      ),
+    )!,
+    target = nodes.find(
+      (node) => source.next.includes(node.id) && node.floor < source.floor,
+    )!;
+  target.kind = "camp";
+  source.next = [target.id];
+  state.view.current = source.id;
+  state.view.floor = source.floor;
+  state.view.path = [source.id];
+  state.view.votes = {};
+  const ai = new ExpeditionStrategy(),
+    request = {
+      observation: adventure.project(state, 0),
+      actor: 0,
+      difficulty: "hard" as const,
+      seed: "backtrack-test",
+      audit: false,
+    },
+    candidate = ai
+      .candidates(request)
+      .find(
+        (item) =>
+          item.action.type === "expedition-action" &&
+          item.action.move.type === "vote" &&
+          item.action.move.choice === target.id,
+      );
+  expect(candidate).toBeDefined();
+  expect(ai.score(request, [candidate!])[0].score).toBeGreaterThan(0);
 });
