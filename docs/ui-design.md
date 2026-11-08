@@ -16,7 +16,7 @@
 | 独立练习场与本地教学 AI                                 | [练习场](../src/client/Practice.tsx)、[练习房间](../src/client/practice-room.ts)                                                                                |
 | 远征行装抽屉与详情牌面                                  | [行装](../src/client/expedition/Inventory.tsx)、[远征样式](../src/client/expedition/table.css)                                                                  |
 | 固定高度设置面板                                        | [设置样式](../src/client/ui/experience.css)                                                                                                                     |
-| GraphWar MathLive 数学编辑、内置收起键盘与侧栏射击记录  | [数学编辑](../src/client/graphwar/MathFormulaField.tsx)、[牌桌](../src/client/graphwar/GraphwarTable.tsx)                                                       |
+| GraphWar MathLive 数学编辑与侧栏射击记录                | [数学编辑](../src/client/graphwar/MathFormulaField.tsx)、[牌桌](../src/client/graphwar/GraphwarTable.tsx)                                                       |
 | 开发态手机房间                                          | [手机房间](../src/client/dev/PhoneRoom.tsx)、[尺寸与链接](../src/shared/phone-preview.ts)                                                                       |
 | 游戏目录、搜索、收藏、常玩                              | [目录展示](../src/client/lobby/GameLibrary.tsx)，游戏数据仍取领域目录                                                                                           |
 | 封面                                                    | [游戏封面](../src/client/lobby/GameCover.tsx)，复用既有游戏图标                                                                                                 |

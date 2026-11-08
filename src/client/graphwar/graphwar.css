@@ -131,15 +131,12 @@
   pointer-events: none;
 }
 .gw-controls {
-  position: relative;
-  z-index: 4;
   padding: 6px 12px;
   display: flex;
   flex-direction: column;
   flex: none;
   gap: 6px;
   background: var(--surface);
-  transition: transform var(--motion-control) var(--ease-standard);
 }
 .gw-input-row {
   display: flex;
@@ -338,37 +335,8 @@
 .gw-impact-badge small {
   color: var(--muted);
 }
-body[data-math-keyboard="open"] .gw-controls {
-  transform: translateY(calc(-1 * var(--math-keyboard-height, 0px)));
-}
-body > .ML__keyboard {
-  --keycap-height: 48px;
-  --keycap-gap: 6px;
-  --keycap-font-size: clamp(15px, 3.6cqw, 21px);
-}
-.math-keyboard-hide {
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  height: 30px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--_keycap-background, var(--surface));
-  color: var(--_keycap-text, var(--text));
-  box-shadow:
-    0 1px 3px #0003,
-    inset 0 0 0 1px #00000012;
-  font: 600 12px var(--font-ui);
-  cursor: pointer;
-  pointer-events: auto;
-}
-.math-keyboard-hide:active {
-  transform: translateY(1px);
+.math-formula-host math-field::part(virtual-keyboard-toggle) {
+  display: none;
 }
 .gw-validation {
   margin: 0;
@@ -380,10 +348,6 @@ body > .ML__keyboard {
   color: #c84727;
 }
 @media (max-width: 760px) {
-  body > .ML__keyboard {
-    --keycap-height: 40px;
-    --keycap-gap: 5px;
-  }
   .gw-heading {
     padding: 5px 8px;
     gap: 5px 10px;

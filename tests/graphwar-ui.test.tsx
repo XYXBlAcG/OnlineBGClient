@@ -72,16 +72,13 @@ it("keeps the system formula keyboard and removes templates, history and summary
   expect(html).not.toContain("gw-keyboard");
   expect(html).not.toContain("模板与历史");
   const css = readFileSync("src/client/graphwar/graphwar.css", "utf8");
-  expect(css).toContain(".math-keyboard-hide");
-  expect(css).toContain('[data-math-keyboard="open"] .gw-controls');
+  expect(css).not.toContain(".math-keyboard-hide");
+  expect(css).not.toContain('[data-math-keyboard="open"]');
+  expect(css).toContain("::part(virtual-keyboard-toggle)");
   expect(css).toContain(".gw-impact-badge");
   expect(css).toContain("button:not(.ui-switch)");
   expect(css).toContain(".gw-preview-switch");
   expect(css).toContain("inset 0 0 0 3px #3489ef66");
-  expect(css).toContain("--keycap-height: 48px");
-  expect(css).toContain(
-    "transform: translateY(calc(-1 * var(--math-keyboard-height",
-  );
   expect(css).toContain("min-height: 200px");
   expect(css).not.toContain(".gw-toolbar");
   const formula = readFileSync(
@@ -90,8 +87,8 @@ it("keeps the system formula keyboard and removes templates, history and summary
   );
   expect(formula).toContain("insertMultiply");
   expect(formula).toContain("\\times ");
-  expect(formula).toContain("clearKeyboardState");
   expect(formula).toContain("inlineShortcuts = {}");
+  expect(formula).not.toContain("mathVirtualKeyboard");
   expect(formula).not.toContain("scrollIntoView");
 });
 
