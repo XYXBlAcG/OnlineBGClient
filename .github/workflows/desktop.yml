@@ -61,6 +61,24 @@ jobs:
           workspaces: src-tauri
           cache-on-failure: true
           cache-workspace-crates: true
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tools = Join-Path $env:LOCALAPPDATA 'tauri'
+          $nsis = Join-Path $tools 'NSIS'
+          $download = Join-Path $env:RUNNER_TEMP 'nsis'
+          Remove-Item $nsis -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force $tools, $download | Out-Null
+          gh release download nsis-3.11 --repo tauri-apps/binary-releases --pattern nsis-3.11.zip --dir $download --clobber
+          Expand-Archive (Join-Path $download 'nsis-3.11.zip') -DestinationPath $tools -Force
+          Move-Item (Join-Path $tools 'nsis-3.11') $nsis
+          gh release download nsis_tauri_utils-v0.5.3 --repo tauri-apps/nsis-tauri-utils --pattern nsis_tauri_utils.dll --dir $download --clobber
+          $additional = Join-Path $nsis 'Plugins\x86-unicode\additional'
+          New-Item -ItemType Directory -Force $additional | Out-Null
+          Copy-Item (Join-Path $download 'nsis_tauri_utils.dll') $additional -Force
+          if (!(Test-Path (Join-Path $nsis 'makensis.exe'))) { throw 'NSIS preload failed' }
       - if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.platform == 'windows')
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
         env:
