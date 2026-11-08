@@ -44,6 +44,9 @@ it("renders a real game surface, soldier targets, formula controls and meaningfu
   expect(html).toContain('data-game-unit="0"');
   expect(html).toContain("选择此士兵");
   expect(html).toContain('class="gw-player-status"');
+  expect(html).toContain('data-relation="ally"');
+  expect(html).toContain('data-relation="enemy"');
+  expect(html).toContain("gw-relation-legend");
   expect(html).not.toContain('class="gw-roster"');
   expect(beginnerGuides.graphwar!.steps.length).toBeGreaterThanOrEqual(4);
   expect(guidePosition(s).length).toBeGreaterThan(0);
@@ -60,12 +63,15 @@ it("keeps the replay read only and hides firing controls and end-game actions", 
   expect(html).not.toContain('aria-label="发射函数"');
   expect(html).not.toContain("结束游戏");
 });
-it("keeps the system formula keyboard and removes templates, history and summary panels", () => {
+it("keeps the system formula keyboard and shows the full shot log", () => {
   const html = renderToStaticMarkup(
     <OriginalGame snapshot={snapshot()} act={() => {}} end={() => {}} />,
   );
   expect(html).toContain('aria-label="发射函数"');
   expect(html).toContain("gw-shot-panel");
+  expect(html).toContain("射击日志");
+  expect(html).toContain("还没有操作记录");
+  expect(html).not.toContain("上一发射击");
   expect(html).toContain("gw-preview-switch");
   expect(html).not.toContain("数学键盘 · 模板 · 伤害明细");
   expect(html).not.toContain("gw-tools");
@@ -79,6 +85,8 @@ it("keeps the system formula keyboard and removes templates, history and summary
   expect(css).toContain("button:not(.ui-switch)");
   expect(css).toContain(".gw-preview-switch");
   expect(css).toContain("inset 0 0 0 3px #3489ef66");
+  expect(css).toContain(".gw-relation-badge");
+  expect(css).toContain('.gw-soldier[data-relation="enemy"]');
   expect(css).toContain("min-height: 200px");
   expect(css).not.toContain(".gw-toolbar");
   const formula = readFileSync(

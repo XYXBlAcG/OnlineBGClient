@@ -39,4 +39,10 @@ it("validates auxiliary intents before the main window changes game or settings 
       preferences: { theme: "dark" },
     }).success,
   ).toBe(true);
+  expect(
+    auxiliaryIntentSchema.safeParse({
+      view: "settings",
+      type: "achievement-test",
+    }).success,
+  ).toBe(true);
 });

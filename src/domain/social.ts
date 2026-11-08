@@ -179,7 +179,8 @@ export type ChatContent =
   | ChatEvent
   | { type: "text"; text: string }
   | { type: "banner"; text: string; banner: Banner }
-  | { type: "image"; text: string; attachment: Attachment };
+  | { type: "image"; text: string; attachment: Attachment }
+  | { type: "system"; text: string };
 export type ChatMessage = ChatContent & {
   id: string;
   sequence: number;

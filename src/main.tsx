@@ -1,3 +1,4 @@
+import { FontAssets } from "./client/fonts";
 import { useUsageContext } from "./client/usage/context";
 import "./client/ui/art-experience.css";
 import { AnimatedSidebar } from "./client/AnimatedSidebar";
@@ -18,7 +19,7 @@ import {
 } from "./client/focus-presentation";
 import "./client/ui/focus.css";
 import { GameCommandProvider } from "./client/use-game-commands";
-import { RunShelf } from "./client/expedition/RunShelf";
+import { ResumeDrawer } from "./client/lobby/ResumeDrawer";
 import type { RunLink } from "./client/storage";
 import { voicePushBinding } from "./client/voice/shortcuts";
 import { VoiceProvider, useVoiceActions } from "./client/voice/VoiceProvider";
@@ -58,11 +59,23 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { About } from "./client/About";
 import { Records } from "./client/Records";
 import { ClientStore } from "./client/storage";
-import { evaluateReplay, type AchievementUnlock } from "./domain/achievements";
-import { AchievementToasts } from "./client/Achievements";
+import {
+  achievementById,
+  evaluateReplay,
+  type AchievementUnlock,
+} from "./domain/achievements";
+import {
+  AchievementToasts,
+  previewAchievementUnlock,
+} from "./client/Achievements";
+import { FpsMeter } from "./client/ui/FpsMeter";
 import { useAppProgress } from "./client/app-progress";
 import { Settings } from "./client/Settings";
-import { CommandRegistry, platformModifier } from "./client/commands";
+import {
+  CommandRegistry,
+  platformModifier,
+  resolveCommandBinding,
+} from "./client/commands";
 import { Shortcut } from "./client/ui/Shortcut";
 import { loadPreferences, type Preferences } from "./client/preferences";
 import { Select } from "./client/ui/Controls";
@@ -303,13 +316,24 @@ function App() {
   const [achievementToasts, setAchievementToasts] = useState<
     AchievementUnlock[]
   >([]);
+  const pushAchievementToasts = (items: AchievementUnlock[]) => {
+    if (!items.length) return;
+    void cuePlayer
+      .unlock()
+      .then(() => cuePlayer.play("achievement"))
+      .catch(() => {});
+    setAchievementToasts((value) => [...value, ...items].slice(-4));
+  };
+  const showAchievementPreview = () => {
+    const preview = previewAchievementUnlock();
+    if (preview) pushAchievementToasts([preview]);
+  };
   const [recordsOpen, setRecordsOpen] = useState(false);
   const appProgress = useAppProgress({
     store,
     snapshot,
     network: mode === "network",
-    onUnlocked: (items) =>
-      setAchievementToasts((value) => [...value, ...items].slice(-4)),
+    onUnlocked: pushAchievementToasts,
     onError: (error) => setNotice(String(error)),
   });
   const unlockAchievements = async (
@@ -370,8 +394,19 @@ function App() {
     }
     if (unlocks.length) {
       const created = await store.unlockAchievements(unlocks);
-      if (created.length)
-        setAchievementToasts((value) => [...value, ...created].slice(-4));
+      if (created.length) {
+        pushAchievementToasts(created);
+        for (const item of created) {
+          const definition = achievementById.get(item.achievementId);
+          if (definition?.game !== current.kind || !session.current) continue;
+          connection.current?.send({
+            type: "achievement-chat",
+            token: session.current.token,
+            id: randomId(),
+            achievementId: item.achievementId,
+          });
+        }
+      }
     }
     await appProgress.recordCompletion(completed);
   };
@@ -1039,7 +1074,11 @@ function App() {
           (command.id !== "app.invite" || (!!snapshot && mode === "network")) &&
           (!command.id.startsWith("voice.") ||
             (nativeMain() && !!snapshot && mode === "network")),
-        binding: preferences.bindings[command.id] ?? command.binding,
+        binding: resolveCommandBinding(
+          command.id,
+          command.binding,
+          preferences.bindings,
+        ),
       }),
     );
     const handle = (event: KeyboardEvent) => {
@@ -1207,7 +1246,11 @@ function App() {
       registry.register({
         ...command,
         scope: "global",
-        binding: preferences.bindings[command.id] ?? "",
+        binding: resolveCommandBinding(
+          command.id,
+          command.binding,
+          preferences.bindings,
+        ),
       }),
     );
     return () => stop.forEach((dispose) => dispose());
@@ -1375,11 +1418,24 @@ function App() {
             voiceActive ||
             /连接中|重连|正在准备/.test(status)
           }
+          onAttention={() => {
+            setSettingsSection("软件更新");
+            setSettingsOpen(true);
+          }}
         />
         <div
           className={`app-shell ${mobile ? "mobile-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
         >
           <Confirmation />
+          <FpsMeter visible={preferences.showFps} />
+          <AchievementToasts
+            items={achievementToasts}
+            onDismiss={(achievementId) =>
+              setAchievementToasts((value) =>
+                value.filter((item) => item.achievementId !== achievementId),
+              )
+            }
+          />
           {!nativeMain() && (
             <Panel
               open={!!closeIntent}
@@ -1438,6 +1494,7 @@ function App() {
             onChange={changePreferences}
             commands={registeredCommands}
             onBind={bind}
+            onTestAchievement={showAchievementPreview}
           />
           <header className="app-toolbar" hidden={tableFocused}>
             <div>
@@ -1456,6 +1513,23 @@ function App() {
               )}
             </div>
             <div>
+              {!snapshot && (
+                <ResumeDrawer
+                  busy={busy}
+                  hosted={
+                    isTauri() && !!localStorage.getItem("onlinebg.hosted-room")
+                  }
+                  localSave={hasLocalSave}
+                  lastRoom={localStorage.getItem("onlinebg.last-room")}
+                  onRestoreHosted={() => void restoreHosted()}
+                  onRestoreLocal={restoreLocal}
+                  onRestoreNetwork={(room) =>
+                    join(localStorage.getItem("player-name") || "我", room)
+                  }
+                  onRestoreRun={(link) => void restoreRun(link)}
+                  onAbandonRun={abandonRun}
+                />
+              )}
               {!mobile && (
                 <Button onClick={() => setAboutOpen(true)}>关于</Button>
               )}
@@ -1547,37 +1621,6 @@ function App() {
                     changePreferences({ ...preferences, quickStartOpen })
                   }
                   onVoiceSettings={() => voice.send({ type: "settings" })}
-                />
-                <div className="recent-rooms">
-                  {isTauri() &&
-                    localStorage.getItem("onlinebg.hosted-room") && (
-                      <button
-                        disabled={busy}
-                        onClick={() => void restoreHosted()}
-                      >
-                        恢复我创建的公网房间
-                      </button>
-                    )}
-                  {hasLocalSave && (
-                    <button onClick={restoreLocal}>恢复本地对局</button>
-                  )}
-                  {localStorage.getItem("onlinebg.last-room") && (
-                    <button
-                      onClick={() =>
-                        join(
-                          localStorage.getItem("player-name") || "我",
-                          localStorage.getItem("onlinebg.last-room")!,
-                        )
-                      }
-                    >
-                      恢复联机房间
-                    </button>
-                  )}
-                </div>
-                <RunShelf
-                  busy={busy}
-                  onRestore={(link) => void restoreRun(link)}
-                  onAbandon={abandonRun}
                 />
                 <Lobby
                   service={service}
@@ -2079,6 +2122,7 @@ applyTheme(initialPreferences.theme);
 applyDisplayScale(initialPreferences);
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
+    <FontAssets />
     <VoiceProvider>
       {auxiliaryView ? (
         <AuxiliaryRoot />

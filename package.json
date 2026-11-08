@@ -1,7 +1,7 @@
 {
   "name": "online-bg-client",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -15,6 +15,7 @@
     "desktop:build": "node scripts/build-desktop.mjs",
     "upstream:build": "node scripts/build-upstream.mjs",
     "hosting:build": "node scripts/build-hosting.mjs",
+    "fonts:pack": "node scripts/build-font-pack.mjs",
     "verify:client": "node scripts/verify-client.mjs",
     "demo:expedition": "node scripts/build-expedition-demo.mjs",
     "benchmark:expedition": "node scripts/benchmark-expedition.mjs",

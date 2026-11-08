@@ -9,7 +9,7 @@
   flex-wrap: wrap;
   align-items: center;
 }
-.workshop-tools input {
+.workshop-tools .ui-search-field {
   flex: 1;
   min-width: 120px;
 }

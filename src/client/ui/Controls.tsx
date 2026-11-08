@@ -197,6 +197,28 @@ export function RadioChoice<T extends string>({
 const useFieldLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+export function SearchField({
+  label,
+  className = "",
+  value,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "placeholder"> & {
+  label: string;
+}) {
+  const id = React.useId();
+  return (
+    <label className={`ui-search-field ${className}`.trim()} htmlFor={id}>
+      <input
+        {...props}
+        id={id}
+        type={props.type ?? "search"}
+        value={value}
+        placeholder={label}
+        aria-label={props["aria-label"] ?? label}
+      />
+    </label>
+  );
+}
 export function TextField({
   label,
   hint,
@@ -248,9 +270,7 @@ export function TextField({
       </span>
       <span className="ui-field-summary" aria-hidden="true">
         <span className="ui-field-summary-label">{label}</span>
-        {filled && (
-          <span className="ui-field-summary-value"> · {summary}</span>
-        )}
+        {filled && <span className="ui-field-summary-value"> · {summary}</span>}
       </span>
       <input
         {...props}

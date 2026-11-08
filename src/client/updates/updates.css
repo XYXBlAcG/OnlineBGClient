@@ -1,0 +1,81 @@
+.update-download {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 16%, var(--line));
+}
+.update-download-heading,
+.update-download-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.update-download-heading strong {
+  color: var(--accent);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.update-download-heading span,
+.update-download-meta {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.update-progress {
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--progress-track);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 48%, transparent);
+}
+.update-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 66%, #fff),
+    var(--accent),
+    color-mix(in srgb, var(--accent) 72%, #fff)
+  );
+  background-size: 180% 100%;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 42%, transparent);
+  transition: width 220ms var(--ease-standard);
+  animation: update-progress-sheen 2.2s linear infinite;
+}
+.update-progress.is-indeterminate > span {
+  position: absolute;
+  width: 38%;
+  animation: update-progress-indeterminate 1.3s var(--ease-standard) infinite;
+}
+@keyframes update-progress-sheen {
+  to {
+    background-position: -180% 0;
+  }
+}
+@keyframes update-progress-indeterminate {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .update-progress > span,
+  .update-progress.is-indeterminate > span {
+    animation: none;
+    transition: none;
+  }
+  .update-progress.is-indeterminate > span {
+    width: 38%;
+    transform: none;
+  }
+}

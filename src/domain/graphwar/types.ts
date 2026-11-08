@@ -87,6 +87,16 @@ export const graphwarShotSchema = z.object({
   reason: z.enum(["terrain", "boundary", "undefined", "limit", "penetration"]),
 });
 export type Shot = z.infer<typeof graphwarShotSchema>;
+export type GraphwarLogAction = "fire" | "move" | "guard" | "pass";
+export interface GraphwarLogEntry {
+  sequence: number;
+  actor: number;
+  action: GraphwarLogAction;
+  formula?: string;
+  hits?: number;
+  damage?: number;
+  point?: Point;
+}
 export interface GraphwarView {
   solver: 2;
   options: GraphwarOptions;
@@ -101,7 +111,8 @@ export interface GraphwarView {
   craters: Circle[];
   lastShot: Shot | null;
   lastPass: number | null;
-  lastAction: "fire" | "move" | "guard" | "pass" | null;
+  lastAction: GraphwarLogAction | null;
+  log?: GraphwarLogEntry[];
   winner: number | null;
   finished: boolean;
   wind?: number;

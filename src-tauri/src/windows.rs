@@ -158,7 +158,7 @@ pub async fn present_auxiliary(
 }
 fn watch_ready(handle: tauri::AppHandle, view: AuxiliaryView, opened: u64) {
     std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_secs(10));
+        std::thread::sleep(std::time::Duration::from_secs(30));
         let state = handle.state::<Windows>();
         let pending = state
             .frames
@@ -198,22 +198,21 @@ pub fn auxiliary_ready(
     revision: u64,
     background: String,
 ) -> Result<(), String> {
-    let background = background.parse::<tauri::window::Color>()?;
+    let background = background.parse::<tauri::window::Color>().ok();
     if window.label() != view.label() {
         return Err("窗口身份不匹配".into());
     }
     if let Some(frame) = state.ready(view, revision) {
         if frame.focus {
-            #[cfg(target_os = "macos")]
-            window
-                .as_ref()
-                .window()
-                .set_background_color(Some(background))
-                .map_err(|e| e.to_string())?;
-            #[cfg(not(target_os = "macos"))]
-            window
-                .set_background_color(Some(background))
-                .map_err(|e| e.to_string())?;
+            if let Some(background) = background {
+                #[cfg(target_os = "macos")]
+                let _ = window
+                    .as_ref()
+                    .window()
+                    .set_background_color(Some(background));
+                #[cfg(not(target_os = "macos"))]
+                let _ = window.set_background_color(Some(background));
+            }
             window.show().map_err(|e| e.to_string())?;
             window.set_focus().map_err(|e| e.to_string())?;
         }

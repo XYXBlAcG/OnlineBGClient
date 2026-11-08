@@ -64,6 +64,10 @@ export const auxiliaryIntentSchema = z.discriminatedUnion("type", [
     preferences: preferencesSchema,
   }),
   z.object({
+    type: z.literal("achievement-test"),
+    view: z.literal("settings"),
+  }),
+  z.object({
     type: z.literal("binding"),
     request: z.string().min(1),
     view: z.literal("settings"),

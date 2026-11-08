@@ -23,12 +23,6 @@ export function useGameFeedback(
     cuePlayer.setVolume(preferences.soundVolume);
   }, [preferences.soundVolume]);
   useEffect(() => {
-    if (
-      !preferences.messageSound &&
-      !preferences.turnSound &&
-      !preferences.interactionSound
-    )
-      return;
     const unlock = () => {
       void cuePlayer.unlock().catch(() => {});
     };
@@ -38,11 +32,7 @@ export function useGameFeedback(
       document.removeEventListener("pointerdown", unlock);
       document.removeEventListener("keydown", unlock);
     };
-  }, [
-    preferences.messageSound,
-    preferences.turnSound,
-    preferences.interactionSound,
-  ]);
+  }, []);
   useEffect(() => {
     if (!snapshot) {
       previous.current = null;

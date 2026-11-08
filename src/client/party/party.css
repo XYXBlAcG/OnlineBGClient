@@ -432,3 +432,12 @@
   transform-box: view-box;
   transform-origin: 500px 330px;
 }
+
+.party-participants {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #0b1520b8;
+  color: #dcecff;
+  font-size: 12px;
+  font-weight: 650;
+}

@@ -38,6 +38,9 @@ export class PartyScene {
   private owned = new Set<Texture>();
   private icons = new Map<string, HTMLCanvasElement>();
   private anchors = new Map<string, { x: number; y: number }>();
+  private anchorAt = 0;
+  private viewport = { width: 0, height: 0 };
+  private resizeObserver: ResizeObserver | undefined;
   private clock = () => Date.now();
   private rate = 1;
   private wake: ReturnType<typeof setTimeout> | undefined;
@@ -60,6 +63,15 @@ export class PartyScene {
     private onStatus: (message: string) => void = () => {},
   ) {
     this.cinema = new PartyCinema(host);
+    if (typeof ResizeObserver !== "undefined") {
+      this.resizeObserver = new ResizeObserver(([entry]) => {
+        this.viewport = {
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        };
+      });
+      this.resizeObserver.observe(host);
+    }
   }
   async init(): Promise<void> {
     const app = new Application(),
@@ -210,8 +222,10 @@ export class PartyScene {
   }
   private frame(): void {
     const now = this.clock(),
-      width = this.host.clientWidth,
-      height = this.host.clientHeight;
+      width = this.viewport.width || this.host.clientWidth,
+      height = this.viewport.height || this.host.clientHeight;
+    const sampleAnchors = now - this.anchorAt > 200;
+    if (sampleAnchors) this.anchorAt = now;
     const pending = this.events.filter((e) => now < e.time + e.duration),
       live = pending.filter((e) => now >= e.time);
     this.cinema.update(live, now);
@@ -317,15 +331,17 @@ export class PartyScene {
         selector = event.units
           ? `.original-game[data-game="graphwar"] [data-game-unit="${event.units.target}"]`
           : `.original-game [data-game-avatar="${index}"]`;
-      const bounds =
-        index >= 0
-          ? document.querySelector(selector)?.getBoundingClientRect()
-          : undefined;
-      if (bounds)
-        this.anchors.set(event.target, {
-          x: bounds.x + bounds.width / 2,
-          y: bounds.y + bounds.height / 2,
-        });
+      if (sampleAnchors || !this.anchors.has(event.target)) {
+        const bounds =
+          index >= 0
+            ? document.querySelector(selector)?.getBoundingClientRect()
+            : undefined;
+        if (bounds)
+          this.anchors.set(event.target, {
+            x: bounds.x + bounds.width / 2,
+            y: bounds.y + bounds.height / 2,
+          });
+      }
       const frame = partyFrame(
         event,
         now,
@@ -376,6 +392,7 @@ export class PartyScene {
   destroy(): void {
     this.destroyed = true;
     this.cinema.destroy();
+    this.resizeObserver?.disconnect();
     for (const emitter of this.emitters.values()) emitter.filter?.destroy();
     clearTimeout(this.wake);
     this.ticker.destroy();

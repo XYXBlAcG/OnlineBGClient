@@ -72,7 +72,9 @@ export function ChatPanel({
     } else onUnread(unread);
     const incoming = snapshot.chat.filter(
       (message) =>
-        message.sequence > lastSeen.current && message.sender !== ownId,
+        message.sequence > lastSeen.current &&
+        message.sender !== ownId &&
+        message.type !== "system",
     );
     lastSeen.current = sequence;
     if (!incoming.length) return;

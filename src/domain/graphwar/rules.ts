@@ -13,6 +13,7 @@ import {
   actionLimit,
   type GraphwarState,
   type Shot,
+  type GraphwarLogEntry,
   type GraphwarView,
   type Point,
 } from "./types";
@@ -55,6 +56,7 @@ export class GraphwarRules {
         lastShot: null,
         lastPass: null,
         lastAction: null,
+        log: [],
         winner: null,
         finished: false,
         ...(config.scenario === "storm"
@@ -138,7 +140,7 @@ export class GraphwarRules {
       v = next.view,
       unit = v.soldiers.find((s) => s.id === v.currentSoldier)!;
     v.lastPass = action.type === "graphwar-pass" ? actor : null;
-    v.lastAction =
+    const actionKind =
       action.type === "graphwar-fire"
         ? "fire"
         : action.type === "graphwar-move"
@@ -146,6 +148,7 @@ export class GraphwarRules {
           : action.type === "graphwar-guard"
             ? "guard"
             : "pass";
+    v.lastAction = actionKind;
     if (action.type === "graphwar-fire") {
       if (
         recorded &&
@@ -176,6 +179,19 @@ export class GraphwarRules {
       unit.y = action.y;
     } else if (action.type === "graphwar-guard")
       unit.guardUntil = v.playerTurns[actor] + 1;
+    const entry: GraphwarLogEntry = {
+      sequence: v.sequence + 1,
+      actor,
+      action: actionKind,
+    };
+    if (action.type === "graphwar-fire" && v.lastShot) {
+      entry.formula = v.lastShot.formula;
+      entry.hits = v.lastShot.impacts.length;
+      entry.damage = v.lastShot.impacts.reduce((n, hit) => n + hit.damage, 0);
+    } else if (action.type === "graphwar-move") {
+      entry.point = { x: action.x, y: action.y };
+    }
+    (v.log ??= []).push(entry);
     v.playerTurns[actor]++;
     v.sequence++;
     if (v.options.scenario === "storm" && v.sequence % 3 === 0) {

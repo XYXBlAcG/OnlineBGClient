@@ -207,6 +207,12 @@ export const commandSchema = z.discriminatedUnion("type", [
     text: z.string().trim().min(1).max(500),
   }),
   z.object({
+    type: z.literal("achievement-chat"),
+    token: z.string(),
+    id: z.string().min(1).max(100),
+    achievementId: z.string().min(1).max(100),
+  }),
+  z.object({
     type: z.literal("interaction"),
     token: z.string(),
     id: z.string().min(1).max(100),

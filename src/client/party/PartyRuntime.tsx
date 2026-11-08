@@ -109,7 +109,7 @@ function ActivePartyRuntime({
   }, [active, preferences.interactionSound, running, rate, now]);
   useEffect(() => {
     if (!running || rate === 0) return;
-    const timer = setInterval(() => tick((v) => v + 1), 100);
+    const timer = setInterval(() => tick((v) => v + 1), 200);
     return () => clearInterval(timer);
   }, [running, clock, rate]);
   useEffect(() => {
@@ -154,19 +154,32 @@ function ActivePartyRuntime({
     preferences.party.fps,
     mobile,
   ]);
+  const eventKey = events.map((event) => `${event.id}:${event.time}`).join("|");
+  const memberKey = snapshot.seats.map((seat) => seat.id).join("|");
   useEffect(() => {
     scene.current?.update(
       events,
-      snapshot.seats.map((s) => s.id),
+      snapshot.seats.map((seat) => seat.id),
       clock.now,
       clock.rate,
     );
+  }, [eventKey, memberKey, clock, sourceTime, rate, ready]);
+  useEffect(() => {
     scene.current?.visibility(!document.hidden && !folded);
-  }, [events, snapshot.seats, clock, sourceTime, rate, folded, ready]);
+  }, [folded, ready]);
   if (typeof document === "undefined") return null;
-  const own = [...snapshot.seats, ...(snapshot.spectators ?? [])][
-    snapshot.partyActor ?? snapshot.actor
-  ]?.id;
+  const participants = [...snapshot.seats, ...(snapshot.spectators ?? [])];
+  const own = participants[snapshot.partyActor ?? snapshot.actor]?.id;
+  const nameOf = (id: string) =>
+    participants.find((member) => member.id === id)?.name ??
+    {
+      "team:0": "蓝队",
+      "team:1": "橙队",
+      rebel: "反贼",
+      spy: "内奸",
+      lord: "主公与忠臣",
+    }[id] ??
+    id;
   return (
     <>
       {!playback &&
@@ -208,6 +221,8 @@ function ActivePartyRuntime({
                     event={caption ? { ...event, caption } : event}
                     now={now}
                     reduced={reduced}
+                    fromName={nameOf(event.from)}
+                    targetName={nameOf(event.target)}
                   />
                 );
               })}
@@ -242,10 +257,14 @@ function Caption({
   event,
   now,
   reduced,
+  fromName,
+  targetName,
 }: {
   event: PartyEvent;
   now: number;
   reduced: boolean;
+  fromName: string;
+  targetName: string;
 }) {
   const item = partyAppearance(event),
     phase = partyElapsed(event, now) / item.duration;
@@ -265,6 +284,11 @@ function Caption({
           ? event.caption.split("！")[0]
           : item.name}
       </strong>
+      {(fromName || targetName) && (
+        <small className="party-participants">
+          {fromName} → {targetName}
+        </small>
+      )}
       {event.caption !== item.name && (
         <p className="party-taunt">{event.caption}</p>
       )}

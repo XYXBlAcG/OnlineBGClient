@@ -8,7 +8,7 @@ import {
 } from "../../domain/workshop/model";
 import { workshopVisualSchema } from "../../domain/workshop/model";
 import { readWorkshopPackage, writeWorkshopPackage } from "./package";
-import { Switch } from "../ui/Controls";
+import { SearchField, Switch } from "../ui/Controls";
 import { Emoji } from "../Emoji";
 import { PartyRuntime, type PartyPresentation } from "../party/PartyRuntime";
 import type { Preferences } from "../preferences";
@@ -95,9 +95,8 @@ export function Workshop({ preferences }: { preferences: Preferences }) {
   return (
     <div className="workshop">
       <header className="workshop-tools">
-        <input
-          aria-label="搜索插件"
-          placeholder="搜索插件"
+        <SearchField
+          label="搜索插件"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />

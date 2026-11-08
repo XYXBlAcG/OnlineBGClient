@@ -147,7 +147,8 @@ export class Gateway {
       response:
         command.type === "action" ||
         command.type === "chat" ||
-        command.type === "chat-image"
+        command.type === "chat-image" ||
+        command.type === "achievement-chat"
           ? { type: "ack", id: command.id }
           : undefined,
     };
@@ -187,5 +188,7 @@ export class Gateway {
       room.chatImage(command.token, command.id, command.attachment);
     if (command.type === "chat")
       room.chat(command.token, command.id, command.text);
+    if (command.type === "achievement-chat")
+      room.achievementChat(command.token, command.id, command.achievementId);
   }
 }

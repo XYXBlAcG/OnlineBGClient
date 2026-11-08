@@ -63,6 +63,16 @@ export async function prepareRelease(input, output, version, tag, repo) {
       url: `https://github.com/${repo}/releases/download/${tag}/${name}`,
     };
   }
+  if (version === "0.4.1") {
+    const name = "OnlineBGClient-fonts-0.4.1.zip";
+    const source = resolve("artifacts/fonts", name);
+    const bytes = await readFile(source);
+    if (bytes.length < 1024 * 1024) throw Error("字体包内容不完整");
+    const target = join(out, name);
+    await copyFile(source, target);
+    assets.push(target);
+    checks.push(`${createHash("sha256").update(bytes).digest("hex")}  ${name}`);
+  }
   const latest = join(out, "latest.json");
   await writeFile(
     latest,

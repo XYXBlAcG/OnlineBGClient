@@ -34,7 +34,7 @@ import type { Target } from "../../domain/expedition/types";
 import { ExpeditionCard } from "./ExpeditionCard";
 import { BattleScene } from "./BattleScene";
 import { ProfessionDetail } from "./ProfessionDetail";
-import { NodeResultCard } from "./NodeResultCard";
+import { RelicGainedOverlay } from "./RelicGainedOverlay";
 import { CompanionRoster } from "./CompanionRoster";
 import "./expedition.css";
 import "./table.css";
@@ -204,10 +204,7 @@ export function ExpeditionTable({
         "upgrade",
         "remove",
       ].includes(c.move.type) &&
-      !(
-        run.phase === "shop" &&
-        ["buy", "sell-relic"].includes(c.move.type)
-      ) &&
+      !(run.phase === "shop" && ["buy", "sell-relic"].includes(c.move.type)) &&
       !(
         run.phase === "reward" &&
         c.move.type === "reward" &&
@@ -329,14 +326,25 @@ export function ExpeditionTable({
             抢店剩余 <strong>{shopRaidRemaining}</strong> 回合
           </span>
         )}
+        {hero && (
+          <span
+            className="exp-resource exp-health"
+            aria-label={`生命 ${hero.hp}/${hero.maxHp}`}
+          >
+            ♥ <strong>{hero.hp}</strong>/{hero.maxHp}
+          </span>
+        )}
+        {hero && (
+          <span
+            className="exp-resource exp-gold"
+            aria-label={`金币 ${hero.gold}`}
+          >
+            ◈ <strong>{hero.gold}</strong>
+          </span>
+        )}
         {hero && run.phase === "battle" && (
           <span className="exp-resource" aria-label={`剩余能量 ${hero.energy}`}>
             能量 <strong>{hero.energy}</strong>
-          </span>
-        )}
-        {hero && run.phase === "shop" && (
-          <span className="exp-resource">
-            金币 <strong>{hero.gold}</strong>
           </span>
         )}
         {hero && (
@@ -389,8 +397,9 @@ export function ExpeditionTable({
       )}
       {run.lastNodeResult &&
         dismissedResult !== run.lastNodeResult.sequence && (
-          <NodeResultCard
+          <RelicGainedOverlay
             result={run.lastNodeResult}
+            actor={actor}
             onClose={() => setDismissedResult(run.lastNodeResult!.sequence)}
           />
         )}

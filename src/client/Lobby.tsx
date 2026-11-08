@@ -28,7 +28,7 @@ import {
 import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
 import { Button, Select, Slider, Switch, TextField } from "./ui/Controls";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { gameCatalogue, gameKinds, type GameKind } from "../domain/catalogue";
 import { configSchema, type RoomConfig } from "../domain/protocol";
@@ -87,6 +87,31 @@ export function Lobby({
   const [mahjong, setMahjong] = useState(mahjongOptionsSchema.parse({}));
   const [catanTrades, setCatanTrades] = useState(true);
   const [team, setTeam] = useState(false);
+  const [liteMotion, setLiteMotion] = useState(false);
+  useEffect(() => {
+    if (!preferences.lobbySwitchMotion) {
+      setLiteMotion(false);
+      return;
+    }
+    if (typeof requestAnimationFrame === "undefined") return;
+    let active = true;
+    let frame = 0;
+    let frames = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      frames++;
+      if (now - start < 600) {
+        if (active) frame = requestAnimationFrame(tick);
+        return;
+      }
+      if (active) setLiteMotion((frames * 1000) / (now - start) < 48);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => {
+      active = false;
+      cancelAnimationFrame(frame);
+    };
+  }, [preferences.lobbySwitchMotion]);
 
   const endpoint = preferences.network.service || service;
   const [invitation, setInvitation] = useState(
@@ -178,6 +203,8 @@ export function Lobby({
       <section className="room-setup">
         <LobbySetupTransition
           panelKey={creating ? `heading:${kind}` : "heading:join"}
+          reduced={liteMotion || !preferences.lobbySwitchMotion}
+          variant="heading"
         >
           <div className="club-setup-heading">
             {creating && <GameCover kind={kind} />}
@@ -343,7 +370,11 @@ export function Lobby({
                   )}
                 </Select>
               </div>
-              <LobbySetupTransition panelKey={`options:${kind}`}>
+              <LobbySetupTransition
+                panelKey={`options:${kind}`}
+                reduced={liteMotion || !preferences.lobbySwitchMotion}
+                variant="options"
+              >
                 {[
                   "graphwar",
                   "expedition",

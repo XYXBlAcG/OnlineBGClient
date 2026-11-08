@@ -71,6 +71,14 @@ export function GraphwarBoard({
   }, []);
   const arena = battlefield(view);
   const impacts = preview?.impacts ?? view.lastShot?.impacts ?? [];
+  const localTeam =
+    snapshot.actor >= 0 ? view.teams[snapshot.actor] : undefined;
+  const relation = (player: number) =>
+    localTeam === undefined
+      ? undefined
+      : view.teams[player] === localTeam
+        ? "ally"
+        : "enemy";
   const scale = Math.min(size.width / arena.width, size.height / arena.height);
   const width = scale * arena.width,
     height = scale * arena.height;
@@ -311,6 +319,8 @@ export function GraphwarBoard({
             <div
               key={soldier.id}
               className={`gw-soldier ${soldier.hp > 0 ? "" : "is-out"} ${view.currentSoldier === soldier.id && !view.finished ? "is-current" : ""}`}
+              data-team={view.teams[soldier.player]}
+              data-relation={relation(soldier.player)}
               style={
                 {
                   left: `${((soldier.x + arena.width / 2) / arena.width) * 100}%`,
@@ -354,6 +364,11 @@ export function GraphwarBoard({
               >
                 <span className="gw-unit">{soldier.hp > 0 ? "●" : "×"}</span>
               </AvatarSurface>
+              {relation(soldier.player) && (
+                <span className="gw-relation-badge" aria-hidden="true">
+                  {relation(soldier.player) === "ally" ? "友" : "敌"}
+                </span>
+              )}
               <span
                 className="gw-health"
                 role="meter"

@@ -1,5 +1,11 @@
 export type Cue =
-  "message" | "turn" | "phase" | "finish" | "reject" | "interaction";
+  | "message"
+  | "turn"
+  | "phase"
+  | "finish"
+  | "reject"
+  | "interaction"
+  | "achievement";
 const notes: Record<Cue, number[]> = {
   message: [680],
   turn: [523, 784],
@@ -7,6 +13,7 @@ const notes: Record<Cue, number[]> = {
   finish: [523, 659, 784],
   reject: [220, 165],
   interaction: [740],
+  achievement: [784, 1047, 1319, 1568],
 };
 export class CuePlayer {
   private context: AudioContext | null = null;

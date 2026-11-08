@@ -8,6 +8,8 @@ mod diagnostics;
 #[cfg(not(mobile))]
 mod emoji;
 #[cfg(not(mobile))]
+mod fonts;
+#[cfg(not(mobile))]
 pub mod hosting;
 #[cfg(not(mobile))]
 mod hosting_probe;
@@ -45,6 +47,9 @@ pub fn run() {
         .register_uri_scheme_protocol("emoji", |_context, request| {
             emoji::resource(request.uri().path())
         })
+        .register_uri_scheme_protocol("fonts", |_context, request| {
+            fonts::resource(request.uri().path())
+        })
         .manage(desktop::Desktop::default())
         .manage(usage::Usage::default())
         .manage(windows::Windows::default())
@@ -68,6 +73,7 @@ pub fn run() {
             usage::usage_reset,
             emoji::emoji_status,
             emoji::emoji_install,
+            fonts::ensure_fonts,
             emoji::emoji_enabled,
             emoji::emoji_remove,
             emoji::emoji_cancel,

@@ -37,7 +37,7 @@ export function RunShelf({
   if (!visible && !Object.keys(errors).length) return null;
   return (
     <section className="run-shelf">
-      <h3>继续秘塔远征</h3>
+      <h3>秘塔远征</h3>
       {errors.load && <p role="alert">{errors.load}</p>}
       {!links.length && visible && (
         <div className="run-shelf-status muted">没有待继续的远征</div>

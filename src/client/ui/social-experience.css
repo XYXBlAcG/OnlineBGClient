@@ -487,6 +487,19 @@
   font-style: italic;
   color: var(--muted);
 }
+.chat-system-message {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 5px 10px;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+}
+.chat-system-message p {
+  color: var(--muted);
+  font-size: 12px;
+}
 .image-viewer {
   display: flex;
   flex-direction: column;

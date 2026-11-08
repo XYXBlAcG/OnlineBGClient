@@ -11,12 +11,22 @@ import {
   compileFormula,
   formulaFamily,
 } from "../../domain/graphwar/expression";
-import { graphwarModes, graphwarMaps } from "../../domain/graphwar/types";
+import {
+  graphwarModes,
+  graphwarMaps,
+  type GraphwarLogAction,
+} from "../../domain/graphwar/types";
 import { GraphwarBoard } from "./GraphwarBoard";
 import { usePreview } from "./use-preview";
 import { MathFormulaField } from "./MathFormulaField";
 import { Switch } from "../ui/Controls";
 import "./graphwar.css";
+const logActions: Record<GraphwarLogAction, string> = {
+  fire: "射击",
+  move: "移动",
+  guard: "防御",
+  pass: "跳过",
+};
 function TurnClock({ snapshot }: { snapshot: GameSnapshot }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -198,6 +208,12 @@ export function GraphwarTable({
         <strong role="status">{roundTitle}</strong>
         <span className="gw-team-blue">蓝队 {alive[0]}</span>
         <span className="gw-team-orange">橙队 {alive[1]}</span>
+        <span className="gw-relation-legend" aria-label="友军与敌军标记">
+          <i data-relation="ally" />
+          友军
+          <i data-relation="enemy" />
+          敌军
+        </span>
         {!replay && !snapshot.finished && <TurnClock snapshot={snapshot} />}
         <small
           data-guide-target={
@@ -230,44 +246,38 @@ export function GraphwarTable({
             if (turn && moveSequence === view.sequence) setDestination(point);
           }}
         />
-        <aside className="gw-shot-panel" aria-label="上一发射击">
-          <strong>上一发射击</strong>
-          {view.lastShot ? (
-            <>
-              <span className="gw-shot-actor">
-                {snapshot.seats[view.lastShot.actor].name}
-              </span>
-              <code>y = {view.lastShot.formula}</code>
-              <span className="gw-shot-summary">
-                {view.lastPass !== null
-                  ? `${snapshot.seats[view.lastPass].name}跳过回合`
-                  : view.lastAction === "move"
-                    ? "本回合移动"
-                    : view.lastAction === "guard"
-                      ? "本回合防御"
-                      : `命中 ${view.lastShot.impacts.length} 名 · 合计 ${view.lastShot.impacts.reduce((n, h) => n + h.damage, 0)} 伤害`}
-              </span>
-              <ul>
-                {view.lastShot.impacts.map((hit) => {
-                  const soldier = view.soldiers.find(
-                    (item) => item.id === hit.soldier,
-                  );
-                  return (
-                    <li key={hit.soldier}>
-                      <span>
-                        {soldier
-                          ? snapshot.seats[soldier.player].name
-                          : hit.soldier}
-                      </span>
-                      <b>-{hit.damage}</b>
-                      <small>{hit.hpAfter}</small>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
+        <aside className="gw-shot-panel" aria-label="射击日志">
+          <strong>射击日志</strong>
+          {view.log?.length ? (
+            <ol className="gw-shot-log">
+              {[...view.log].reverse().map((entry) => (
+                <li
+                  className="gw-shot-log-entry"
+                  data-action={entry.action}
+                  key={entry.sequence}
+                >
+                  <div className="gw-shot-log-heading">
+                    <span>#{entry.sequence}</span>
+                    <strong>{snapshot.seats[entry.actor]?.name}</strong>
+                    <small>{logActions[entry.action]}</small>
+                  </div>
+                  {entry.formula && <code>y = {entry.formula}</code>}
+                  {entry.action === "fire" && (
+                    <span className="gw-shot-summary">
+                      命中 {entry.hits} 名 · 合计 {entry.damage} 伤害
+                    </span>
+                  )}
+                  {entry.point && (
+                    <span className="gw-shot-summary">
+                      移动至 ({entry.point.x.toFixed(1)},{" "}
+                      {entry.point.y.toFixed(1)})
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
           ) : (
-            <span className="gw-shot-empty">还没有发射记录</span>
+            <span className="gw-shot-empty">还没有操作记录</span>
           )}
         </aside>
       </div>
@@ -283,6 +293,13 @@ export function GraphwarTable({
           <div
             key={player}
             className={`gw-player-item ${view.teams[player] === 0 ? "gw-team-blue" : "gw-team-orange"} ${view.turn === player ? "is-turn" : ""}`}
+            data-relation={
+              snapshot.actor < 0
+                ? undefined
+                : view.teams[player] === view.teams[snapshot.actor]
+                  ? "ally"
+                  : "enemy"
+            }
           >
             <span>{seatAvatar(seat)}</span>
             <span className="gw-player-name">{seat.name}</span>

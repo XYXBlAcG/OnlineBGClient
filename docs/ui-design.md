@@ -10,13 +10,14 @@
 | 选择、双击确认与提交状态                                | [确认控件](../src/client/ui/ConfirmedChoice.tsx)                                                                                                                |
 | 快捷键与阶段生命周期                                    | [命令桥接](../src/client/use-game-commands.tsx)、[常用动作](../src/client/game-quick-actions.ts)                                                                |
 | 按钮、失焦摘要字段、焦点缺口、单选胶囊与既有 Radix 控件 | [控件](../src/client/ui/Controls.tsx)、[设计变量](../src/client/ui/design-tokens.css)                                                                           |
-| 字体角色、界面字体与控件尺寸                            | [设计变量](../src/client/ui/design-tokens.css)、[显示比例](../src/client/display-scale.ts)                                                                      |
+| 字体角色、界面字体与控件尺寸                            | [设计变量](../src/client/ui/design-tokens.css)、[字体加载](../src/client/fonts.tsx)、[显示比例](../src/client/display-scale.ts)                                 |
 | 界面字体、界面元素与牌桌元素设置                        | [界面显示](../src/client/game-sizing/DisplaySettings.tsx)                                                                                                       |
+| 设置分组搜索                                            | [搜索索引](../src/client/settings-search.ts)、[设置面板](../src/client/Settings.tsx)                                                                            |
 | 图形化新手引导、牌面示意、目标定位与规则折叠            | [新手引导](../src/client/BeginnerGuide.tsx)、[牌面示意](../src/client/GuideVisual.tsx)                                                                          |
 | 独立练习场与本地教学 AI                                 | [练习场](../src/client/Practice.tsx)、[练习房间](../src/client/practice-room.ts)                                                                                |
 | 远征行装抽屉与详情牌面                                  | [行装](../src/client/expedition/Inventory.tsx)、[远征样式](../src/client/expedition/table.css)                                                                  |
 | 固定高度设置面板                                        | [设置样式](../src/client/ui/experience.css)                                                                                                                     |
-| GraphWar MathLive 数学编辑与侧栏射击记录                | [数学编辑](../src/client/graphwar/MathFormulaField.tsx)、[牌桌](../src/client/graphwar/GraphwarTable.tsx)                                                       |
+| GraphWar MathLive 数学编辑与完整射击日志                | [数学编辑](../src/client/graphwar/MathFormulaField.tsx)、[牌桌](../src/client/graphwar/GraphwarTable.tsx)                                                       |
 | 开发态手机房间                                          | [手机房间](../src/client/dev/PhoneRoom.tsx)、[尺寸与链接](../src/shared/phone-preview.ts)                                                                       |
 | 游戏目录、搜索、收藏、常玩                              | [目录展示](../src/client/lobby/GameLibrary.tsx)，游戏数据仍取领域目录                                                                                           |
 | 封面                                                    | [游戏封面](../src/client/lobby/GameCover.tsx)，复用既有游戏图标                                                                                                 |
@@ -30,7 +31,7 @@
 | 秘塔地图、侧边投票与节点图形                            | [地图](../src/client/expedition/ExpeditionMap.tsx)、[节点图形](../src/client/expedition/NodeSymbol.tsx)                                                         |
 | 大厅布局与响应式                                        | [大厅样式](../src/client/lobby/lobby.css)                                                                                                                       |
 
-头像、AI 参数与玩法选项按需展开；收起不销毁配置。创建与链接加入沿用现有协议。原有浅深外观选择、用户主题、自定义头像及对局设置保留。文本框失焦时显示「标签 · 值」，聚焦后标签上浮到焦点缺口，值进入输入框编辑；焦点轮廓在标签左右留出真实缺口，不使用色块盖线。默认控件 14px / 600 / 20px，正文 14px，辅助 12px，分组标题 16px；输入框使用独立 16px 字体角色，下拉触发器、选项和按钮共享同一字体角色。界面字体 90%–120%、界面元素 100%–125% 可按本机调整，牌桌元素单独设置。二值设置统一使用 Switch，多选列表保留 checkbox。玩法单选使用无描述、无图标、无小字的胶囊选项；除主操作与危险操作外，顶栏和房间菜单共用中性按钮样式，房间菜单只用间距分组。新手引导主屏只保留当前步骤标题、短目标、定位按钮、牌面示意和进度，长规则与策略折叠在「规则与提示」中，步骤卡与提示区之间固定留出间距。特殊模式按游戏模式追加课程；练习场复用房间的新手引导、侧栏槽位、焦点高亮与真实规则，教学 AI 动作不写入真实房间。引导目标按元素选择器定位，优先控制、单张牌/棋子/飞机、状态数字和同类叶子集合，不使用整张牌桌作为兜底。飞行棋风暴航线显示天气动画、本回合公式、预计落点、补给点与终点标记。折叠块展开高度、标题与内容间距按[间距规范](spacing.md)统一。远征行装使用右侧抽屉，手机为底部抽屉，详情牌面不再使用窄小固定尺寸。
+大厅切换动画默认关闭，可在设置 → 外观中开启。搜索框统一使用独立搜索字段，保留占位文字和左侧图标，不使用浮动标签或摘要。头像、AI 参数与玩法选项按需展开；收起不销毁配置。创建与链接加入沿用现有协议。原有浅深外观选择、用户主题、自定义头像及对局设置保留。文本框失焦时显示「标签 · 值」，聚焦后标签上浮到焦点缺口，值进入输入框编辑；焦点轮廓在标签左右留出真实缺口，不使用色块盖线。默认控件 14px / 600 / 20px，正文 14px，辅助 12px，分组标题 16px；输入框使用独立 16px 字体角色，下拉触发器、选项和按钮共享同一字体角色。界面字体 90%–120%、界面元素 100%–125% 可按本机调整，牌桌元素单独设置。二值设置统一使用 Switch，多选列表保留 checkbox。玩法单选使用无描述、无图标、无小字的胶囊选项；除主操作与危险操作外，顶栏和房间菜单共用中性按钮样式，房间菜单只用间距分组。新手引导主屏只保留当前步骤标题、短目标、定位按钮、牌面示意和进度，长规则与策略折叠在「规则与提示」中，步骤卡与提示区之间固定留出间距。特殊模式按游戏模式追加课程；练习场复用房间的新手引导、侧栏槽位、焦点高亮与真实规则，教学 AI 动作不写入真实房间。引导目标按元素选择器定位，优先控制、单张牌/棋子/飞机、状态数字和同类叶子集合，不使用整张牌桌作为兜底。飞行棋风暴航线显示天气动画、本回合公式、预计落点、补给点与终点标记。折叠块展开高度、标题与内容间距按[间距规范](spacing.md)统一。远征行装使用右侧抽屉，手机为底部抽屉，详情牌面不再使用窄小固定尺寸。
 
 人工审核：浅深大厅、搜索无结果、收藏与常玩、各游戏选中状态、AI 命名/难度/速度、真人与总席位、本地创建、邀请加入、公网创建、手机横竖屏及键盘焦点。八人等待室与高密度牌面仅在独立样板中评估视觉密度，不代表已改造真实等待室或游戏规则。
 

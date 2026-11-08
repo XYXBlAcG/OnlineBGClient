@@ -22,7 +22,8 @@ import { CacheSettings } from "./CacheSettings";
 import { AchievementGallery } from "./Achievements";
 import { enableNotifications } from "./notifications";
 import { ThemeControl } from "./ThemeControl";
-import { Panel, Select, Slider, Switch } from "./ui/Controls";
+import { Panel, SearchField, Select, Slider, Switch } from "./ui/Controls";
+import { searchSettingsSections } from "./settings-search";
 import type { Preferences } from "./preferences";
 import type { AppCommand } from "./commands";
 
@@ -39,6 +40,7 @@ export function Settings({
   mediaSession,
   initialSection = "外观",
   sizing: suppliedSizing,
+  onTestAchievement,
 }: {
   sizing?: GameSizing;
   initialSection?: string;
@@ -52,12 +54,17 @@ export function Settings({
   mediaSession?: MediaSession;
   onError: (message: string) => void;
   onBind: (id: string, binding: string) => Promise<void>;
+  onTestAchievement?: () => void;
 }) {
   const localSizing = useGameSizing();
   const sizing = suppliedSizing ?? localSizing;
   const [section, setSection] = useState(initialSection);
+  const [search, setSearch] = useState("");
   useEffect(() => {
-    if (open) setSection(initialSection);
+    if (open) {
+      setSection(initialSection);
+      setSearch("");
+    }
   }, [open, initialSection]);
   const detached = useNativeWindow(
     "settings",
@@ -80,6 +87,7 @@ export function Settings({
     (intent) => {
       if (intent.type === "close") onOpenChange(false);
       if (intent.type === "preferences") onChange(intent.preferences);
+      if (intent.type === "achievement-test") onTestAchievement?.();
       if (intent.type === "binding")
         void onBind(intent.id, intent.binding)
           .then(() =>
@@ -101,6 +109,19 @@ export function Settings({
   const performance = canConfigureAI
     ? preferences.performance
     : roomPerformance || preferences.performance;
+  const desktop = isTauri();
+  const visibleSections = searchSettingsSections(search, desktop);
+  const searchEmpty = !!search.trim() && !visibleSections.length;
+  const changeSearch = (value: string) => {
+    setSearch(value);
+    const matches = searchSettingsSections(value, desktop);
+    if (
+      value.trim() &&
+      matches.length &&
+      !matches.some((item) => item.label === section)
+    )
+      setSection(matches[0].label);
+  };
   return (
     <Panel
       className="settings-panel"
@@ -108,22 +129,17 @@ export function Settings({
       open={open}
       onOpenChange={onOpenChange}
     >
+      <div className="settings-search" role="search">
+        <SearchField
+          label="搜索设置"
+          type="search"
+          value={search}
+          onChange={(event) => changeSearch(event.target.value)}
+        />
+      </div>
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="设置分组">
-          {[
-            "外观",
-            "界面显示",
-            "消息与互动",
-            ...(isTauri()
-              ? ["声音与语音", "软件更新", "软件日志", "使用统计"]
-              : []),
-            "联机",
-            "AI 计算",
-            "常用语",
-            "数据",
-            "成就",
-            "快捷键",
-          ].map((label) => (
+          {visibleSections.map(({ label }) => (
             <button
               key={label}
               aria-pressed={section === label}
@@ -133,7 +149,15 @@ export function Settings({
             </button>
           ))}
         </nav>
-        <div className="settings-body">
+        <div
+          className={`settings-body ${section === "成就" ? "achievement-settings-body" : ""}`}
+          data-search-empty={searchEmpty ? "true" : "false"}
+        >
+          {searchEmpty && (
+            <div className="settings-search-empty" role="status">
+              没有匹配的设置
+            </div>
+          )}
           {section === "使用统计" && isTauri() && <UsageSettings />}
           {section === "声音与语音" && isTauri() && (
             <VoiceSettings
@@ -171,6 +195,13 @@ export function Settings({
             <MotionControls
               preferences={preferences}
               onChange={(motion) => onChange({ ...preferences, ...motion })}
+            />
+            <Switch
+              label="大厅切换动画"
+              checked={preferences.lobbySwitchMotion}
+              onCheckedChange={(lobbySwitchMotion) =>
+                onChange({ ...preferences, lobbySwitchMotion })
+              }
             />
             <EmojiSettings proxy={preferences.network.proxyUrl} />
             <AvatarPicker
@@ -420,7 +451,9 @@ export function Settings({
               onError={onError}
             />
           </div>
-          {section === "成就" && <AchievementGallery />}
+          {section === "成就" && (
+            <AchievementGallery onTestToast={onTestAchievement} />
+          )}
           <div hidden={section !== "数据"}>
             {mediaSession?.endpoint && (
               <MediaCacheControls session={mediaSession} onError={onError} />

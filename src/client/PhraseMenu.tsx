@@ -18,7 +18,7 @@ export function PhraseMenu({
               {group.items.map((text, item) => (
                 <Popover.Close asChild key={item}>
                   <button type="button" onClick={() => onSend(text)}>
-                    {text}
+                    <span>{text}</span>
                   </button>
                 </Popover.Close>
               ))}

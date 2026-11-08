@@ -27,6 +27,13 @@ export interface AppCommand {
   enabled: () => boolean;
   run: () => void;
 }
+export function resolveCommandBinding(
+  id: string,
+  fallback: string | undefined,
+  overrides: Record<string, string>,
+): string {
+  return overrides[id] ?? fallback ?? "";
+}
 export class CommandRegistry {
   private commands = new Map<string, AppCommand>();
   private entries: AppCommand[] = [];
@@ -54,7 +61,9 @@ export class CommandRegistry {
   bind(id: string, binding: string): void {
     const command = this.commands.get(id);
     if (!command) throw new Error("命令不存在");
-    if (/^(Meta\+Q|Alt\+F4|Control\+W|Meta\+W|Meta\+A|Control\+A)$/i.test(binding))
+    if (
+      /^(Meta\+Q|Alt\+F4|Control\+W|Meta\+W|Meta\+A|Control\+A)$/i.test(binding)
+    )
       throw new Error("该组合键由系统保留");
     if (
       binding &&

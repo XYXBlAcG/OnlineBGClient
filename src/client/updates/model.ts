@@ -76,3 +76,29 @@ export const updateLabels: Record<UpdateStatus["phase"], string> = {
   installing: "正在安装，即将重启…",
   error: "更新失败，可重试",
 };
+
+export function updateAttention(status: UpdateStatus): string | null {
+  return (status.phase === "available" || status.phase === "downloading") &&
+    status.version
+    ? status.version
+    : null;
+}
+export function downloadPercent(status: UpdateStatus): number | null {
+  if (!status.total || status.total <= 0) return null;
+  return Math.max(0, Math.min(100, (status.received / status.total) * 100));
+}
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  if (bytes < 1024) return `${Math.round(bytes)} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+export function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "0 秒";
+  if (seconds < 60) return `${Math.ceil(seconds)} 秒`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} 分 ${Math.ceil(seconds % 60)} 秒`;
+  return `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分`;
+}

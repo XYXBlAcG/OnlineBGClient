@@ -2,7 +2,9 @@
 
 「设置 → 界面显示」同时提供界面字体、界面元素和牌桌元素三组缩放。
 
+- 所有平台统一使用 SF Pro 界面字体与 PingFang SC 中文字体。macOS 直接使用系统字体；其他平台缺少字体时从 0.4.1 Release 的字体包下载并缓存到本机，不随应用安装包分发。
 - 界面字体 90%–120%，默认 100%，影响正文、按钮、下拉菜单和输入框。
+- 设置面板自身保持标准比例，不受界面字体和界面元素缩放影响，避免调整时设置窗口变形。
 - 界面元素 100%–125%，默认 100%，影响控件高度、间距与常用界面元素。
 - 牌桌元素只影响本机牌桌，范围由当前窗口和牌桌可用空间决定；大厅、聊天、设置与退出专注不跟随牌桌比例。
 - 提供标准、舒适、大预设和恢复默认。偏好按显示配置保存。窗口缩小或聊天展开时，超出范围的牌桌偏好暂时收回，空间恢复后再使用保存值。
@@ -10,7 +12,7 @@
 ## 实现索引
 
 - [显示比例应用](../src/client/display-scale.ts)、[偏好](../src/client/preferences.ts)
-- [界面字体与控件尺寸令牌](../src/client/ui/design-tokens.css)
+- [界面字体与控件尺寸令牌](../src/client/ui/design-tokens.css)、[字体加载](../src/client/fonts.tsx)、[字体下载](../src-tauri/src/fonts.rs)
 - [牌桌比例与显示配置策略](../src/client/game-sizing/model.ts)
 - [窗口、显示缩放与牌桌尺寸订阅](../src/client/game-sizing/GameSizing.tsx)
 - [界面显示设置](../src/client/game-sizing/DisplaySettings.tsx)

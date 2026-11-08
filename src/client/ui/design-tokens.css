@@ -1,8 +1,9 @@
 :root {
-  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
-    "Liberation Mono", monospace;
+  --font-ui:
+    "OnlineBG UI", "OnlineBG CJK", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --ui-font-scale: 1;
   --ui-scale: 1;
   --font-size-control: calc(14px * var(--ui-font-scale));
@@ -59,8 +60,7 @@
   --action-danger: #ffaaa1;
   --link: #9bbdff;
 }
-:is(.app-shell, .native-window-root, .ui-panel)
-  button[data-button-variant] {
+:is(.app-shell, .native-window-root, .ui-panel) button[data-button-variant] {
   border-radius: var(--radius-control);
   font-family: var(--font-ui);
   font-size: var(--font-size-control);

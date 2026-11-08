@@ -17,9 +17,13 @@ const motionDisabled = () => {
 
 export function LobbySetupTransition({
   panelKey,
+  reduced = false,
+  variant,
   children,
 }: {
   panelKey: string;
+  reduced?: boolean;
+  variant: "heading" | "options";
   children: ReactNode;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -37,7 +41,7 @@ export function LobbySetupTransition({
       setPhase("idle");
       return;
     }
-    if (motionDisabled()) {
+    if (reduced || motionDisabled()) {
       box.style.height = "auto";
       setDisplayedKey(panelKey);
       setPhase("idle");
@@ -50,7 +54,7 @@ export function LobbySetupTransition({
       setPhase("in");
     }, 150);
     return () => window.clearTimeout(swap);
-  }, [panelKey, displayedKey]);
+  }, [panelKey, displayedKey, reduced]);
   useLayoutEffect(() => {
     if (phase !== "in") return;
     const box = container.current;
@@ -60,7 +64,7 @@ export function LobbySetupTransition({
     const finish = window.setTimeout(() => {
       box.style.height = "auto";
       setPhase("idle");
-    }, 260);
+    }, 300);
     return () => window.clearTimeout(finish);
   }, [phase, displayedKey]);
   return (
@@ -70,6 +74,29 @@ export function LobbySetupTransition({
       data-phase={phase}
       data-animating={phase !== "idle" ? "true" : "false"}
     >
+      <div
+        className="lobby-setup-skeleton"
+        data-variant={variant}
+        aria-hidden="true"
+      >
+        {variant === "heading" ? (
+          <>
+            <span className="lobby-skeleton-cover" />
+            <span className="lobby-skeleton-line lobby-skeleton-title" />
+            <span className="lobby-skeleton-line lobby-skeleton-caption" />
+          </>
+        ) : (
+          <>
+            <span className="lobby-skeleton-label" />
+            <span className="lobby-skeleton-field" />
+            <div className="lobby-skeleton-row">
+              <span />
+              <span />
+            </div>
+            <span className="lobby-skeleton-field" />
+          </>
+        )}
+      </div>
       <div ref={content} className="lobby-setup-transition-content">
         {displayedKey === panelKey ? children : shown.current.node}
       </div>

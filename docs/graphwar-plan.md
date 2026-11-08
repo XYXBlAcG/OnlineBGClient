@@ -4,26 +4,26 @@
 
 ## 实现索引
 
-| 职责                                         | 唯一入口                                                                                                  |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 注册、人数与能力                             | [游戏目录](../src/domain/catalogue.ts)                                                                    |
-| 选项、动作、弹道记录                         | [类型与校验](../src/domain/graphwar/types.ts)、[动作](../src/domain/actions.ts)                           |
-| 有界标量表达式、函数目录、常量与风暴函数分类 | [表达式](../src/domain/graphwar/expression.ts)                                                            |
-| 坐标镜像、平移、连续碰撞、爆破               | [轨迹](../src/domain/graphwar/trajectory.ts)                                                              |
-| 随机地图、通路与部署                         | [地图](../src/domain/graphwar/map.ts)                                                                     |
-| 生命值、弧长伤害与战术参数                   | [平衡](../src/domain/graphwar/balance.ts)、[伤害](../src/domain/graphwar/damage.ts)                       |
-| 士兵轮换、移动、防御、友伤与胜负             | [规则](../src/domain/graphwar/rules.ts)                                                                   |
-| 可复用游戏配置与延时结算契约                 | [选项](../src/domain/game-options.ts)、[插件](../src/domain/plugin.ts)、[引擎](../src/domain/engine.ts)   |
-| 计时、去重、暂停与恢复                       | [房间](../src/domain/room.ts)、[协议](../src/domain/protocol.ts)                                          |
-| 权威弹道保存与只读重放                       | [回放](../src/domain/replay.ts)                                                                           |
-| 三档候选搜索、友伤与开路评分                 | [策略](../src/domain/graphwar/strategy.ts)、[CPU 工作线程](../src/domain/compute.ts)                      |
-| 游戏选项                                     | [共享控件](../src/client/graphwar/GraphwarOptionsControl.tsx)                                             |
-| 战场、MathLive 输入与侧栏射击记录            | [牌桌](../src/client/graphwar/GraphwarTable.tsx)、[数学输入](../src/client/graphwar/MathFormulaField.tsx) |
-| 士兵头像、单位选择与精确互动落点             | [共享头像](../src/client/AvatarSurface.tsx)、[牌桌](../src/client/graphwar/GraphwarTable.tsx)             |
-| Canvas 动画、主题与播放控制                  | [战场表现](../src/client/graphwar/GraphwarBoard.tsx)                                                      |
-| 防抖、过期取消与预览预算                     | [预览](../src/client/graphwar/use-preview.ts)、[Worker](../src/client/graphwar/preview-worker.ts)         |
-| 桌面、竖屏与横屏                             | [基础样式](../src/client/graphwar/graphwar.css)、[共享横屏](../src/client/ui/mobile-landscape.css)        |
-| 结合坐标、士兵、输入框和障碍的引导           | [教学内容](../src/client/graphwar/guide.ts)、[定位](../src/client/guide-targets.ts)                       |
+| 职责                                         | 唯一入口                                                                                                                                        |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 注册、人数与能力                             | [游戏目录](../src/domain/catalogue.ts)                                                                                                          |
+| 选项、动作、弹道记录                         | [类型与校验](../src/domain/graphwar/types.ts)、[动作](../src/domain/actions.ts)                                                                 |
+| 有界标量表达式、函数目录、常量与风暴函数分类 | [表达式](../src/domain/graphwar/expression.ts)                                                                                                  |
+| 坐标镜像、平移、连续碰撞、爆破               | [轨迹](../src/domain/graphwar/trajectory.ts)                                                                                                    |
+| 随机地图、通路与部署                         | [地图](../src/domain/graphwar/map.ts)                                                                                                           |
+| 生命值、弧长伤害与战术参数                   | [平衡](../src/domain/graphwar/balance.ts)、[伤害](../src/domain/graphwar/damage.ts)                                                             |
+| 士兵轮换、移动、防御、友伤与胜负             | [规则](../src/domain/graphwar/rules.ts)                                                                                                         |
+| 可复用游戏配置与延时结算契约                 | [选项](../src/domain/game-options.ts)、[插件](../src/domain/plugin.ts)、[引擎](../src/domain/engine.ts)                                         |
+| 计时、去重、暂停与恢复                       | [房间](../src/domain/room.ts)、[协议](../src/domain/protocol.ts)                                                                                |
+| 权威弹道保存与只读重放                       | [回放](../src/domain/replay.ts)                                                                                                                 |
+| 三档候选搜索、友伤与开路评分                 | [策略](../src/domain/graphwar/strategy.ts)、[CPU 工作线程](../src/domain/compute.ts)                                                            |
+| 游戏选项                                     | [共享控件](../src/client/graphwar/GraphwarOptionsControl.tsx)                                                                                   |
+| 战场、MathLive 输入与完整射击日志            | [牌桌](../src/client/graphwar/GraphwarTable.tsx)、[数学输入](../src/client/graphwar/MathFormulaField.tsx)                                       |
+| 士兵头像、友敌关系色、单位选择与精确互动落点 | [共享头像](../src/client/AvatarSurface.tsx)、[牌桌](../src/client/graphwar/GraphwarTable.tsx)、[战场](../src/client/graphwar/GraphwarBoard.tsx) |
+| Canvas 动画、主题与播放控制                  | [战场表现](../src/client/graphwar/GraphwarBoard.tsx)                                                                                            |
+| 防抖、过期取消与预览预算                     | [预览](../src/client/graphwar/use-preview.ts)、[Worker](../src/client/graphwar/preview-worker.ts)                                               |
+| 桌面、竖屏与横屏                             | [基础样式](../src/client/graphwar/graphwar.css)、[共享横屏](../src/client/ui/mobile-landscape.css)                                              |
+| 结合坐标、士兵、输入框和障碍的引导           | [教学内容](../src/client/graphwar/guide.ts)、[定位](../src/client/guide-targets.ts)                                                             |
 
 公式输入使用按需加载的 [MathLive 编辑器](../src/client/graphwar/MathFormulaField.tsx)，支持分式、根式、幂和数学排版；正文数值解析、预览、服务器弹道和回放仍由 [mathjs 受限表达式](../src/domain/graphwar/expression.ts) 单一入口计算。公式输入只接受物理键盘，不显示任何数学虚拟键盘。编辑动作不自动发射。
 
@@ -41,7 +41,7 @@
 
 使用 [当前 macOS 审核应用](review-and-submit.md#本地-macos-审核应用)。新协议需要退出旧客户端、重启公网服务并刷新手机页面。
 
-1. 大厅选择 Graphwar，以一名真人和一名 AI 开局；检查蓝橙分队、当前士兵高亮、倒计时与双方剩余兵力。再以多人配置检查头像是否可互动、名字能否识别。
+1. 大厅选择 Graphwar，以一名真人和一名 AI 开局；检查蓝橙分队、当前士兵高亮、友军/敌军关系色与徽记、倒计时、双方剩余兵力，以及从开局起记录全部操作并倒序展示的射击日志。再以多人配置检查头像是否可互动、名字能否识别。
 2. 先选开阔战场，比较 `0.2*x` 和 `0.2*x+10` 的预览；两者应重合。输入 `sin(` 应禁止发射；输入 `sqrt(x)` 可以发射，但负半轴起点会提前终止。
 3. 在 MathLive 编辑器输入分式、根式和幂，确认没有数学虚拟键盘；输入 `x` 是未知数，输入 `*` 是乘号。编辑后由「发射」确认，连点不重复出招，网络失败后可重新操作。
 4. 检查经典、爆破开路与精准狙击在浮岛、堡垒地图中的效果；灰色实体阻挡弹道，爆破后的缺口可再次穿过，友军也会受伤。

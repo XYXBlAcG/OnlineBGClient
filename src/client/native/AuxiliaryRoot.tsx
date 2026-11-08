@@ -23,6 +23,7 @@ import {
   type AuxiliaryIntent,
 } from "./contract";
 import { sendAuxiliary } from "./windows";
+import { FpsMeter } from "../ui/FpsMeter";
 export function AuxiliaryRoot() {
   const [frame, setFrame] = useState<AuxiliaryFrame>();
   const [preferences, setPreferences] = useState(loadPreferences);
@@ -105,6 +106,7 @@ export function AuxiliaryRoot() {
           className="native-window-root"
           data-window-visible={frame?.visible ?? false}
         >
+          <FpsMeter visible={preferences.showFps} />
           {error && <p role="alert">{error}</p>}
           {!payload && !error && <p role="status">正在打开…</p>}
           {payload?.view === "chat" && (
@@ -175,6 +177,9 @@ export function AuxiliaryRoot() {
               }
               onBind={bindAuxiliary}
               onError={onError}
+              onTestAchievement={() =>
+                send({ view: "settings", type: "achievement-test" })
+              }
             />
           )}
           {payload?.view === "roomsetup" && (

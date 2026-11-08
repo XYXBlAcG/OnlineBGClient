@@ -1,5 +1,5 @@
 import type { Preferences } from "../preferences";
-import { Button, Slider } from "../ui/Controls";
+import { Button, Slider, Switch } from "../ui/Controls";
 import type { GameSizing } from "./model";
 
 export function DisplaySettings({
@@ -73,6 +73,11 @@ export function DisplaySettings({
           大
         </Button>
       </div>
+      <Switch
+        label="显示帧率"
+        checked={preferences.showFps}
+        onCheckedChange={(showFps) => update({ showFps })}
+      />
       <h4>牌桌元素</h4>
       <label>
         牌桌元素大小 · {Math.round(info.scale * 100)}%

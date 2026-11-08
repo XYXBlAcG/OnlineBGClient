@@ -1,9 +1,77 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { Switch } from "../ui/Controls";
 import { useUpdater, checkUpdate, downloadUpdate } from "./client";
-import { updateLabels, type UpdatePreferences } from "./model";
+import {
+  downloadPercent,
+  formatBytes,
+  formatDuration,
+  updateLabels,
+  type UpdatePreferences,
+  type UpdateStatus,
+} from "./model";
+import "./updates.css";
+function downloadSpeed(status: UpdateStatus, speed: number): string {
+  if (status.phase !== "downloading" || speed <= 0) return "准备下载";
+  return `${formatBytes(speed)}/s`;
+}
+function downloadEta(status: UpdateStatus, speed: number): number | null {
+  if (!status.total || speed <= 0) return null;
+  return Math.max(0, (status.total - status.received) / speed);
+}
+function UpdateProgress({ status }: { status: UpdateStatus }) {
+  const [speed, setSpeed] = useState(0);
+  const sample = useRef<{ received: number; at: number } | null>(null);
+  useEffect(() => {
+    if (status.phase !== "downloading") {
+      sample.current = null;
+      setSpeed(0);
+      return;
+    }
+    const at = performance.now();
+    const previous = sample.current;
+    if (!previous) {
+      sample.current = { received: status.received, at };
+      return;
+    }
+    const elapsed = (at - previous.at) / 1000;
+    if (elapsed < 0.4) return;
+    setSpeed(Math.max(0, (status.received - previous.received) / elapsed));
+    sample.current = { received: status.received, at };
+  }, [status.phase, status.received]);
+  if (status.phase !== "downloading") return null;
+  const percent = downloadPercent(status);
+  const eta = downloadEta(status, speed);
+  return (
+    <div className="update-download">
+      <div className="update-download-heading">
+        <strong>
+          {percent === null ? "正在下载" : `${Math.round(percent)}%`}
+        </strong>
+        <span>
+          {formatBytes(status.received)}
+          {status.total ? ` / ${formatBytes(status.total)}` : ""}
+        </span>
+      </div>
+      <div
+        className={`update-progress${percent === null ? " is-indeterminate" : ""}`}
+        role="progressbar"
+        aria-label="更新下载进度"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent === null ? undefined : Math.round(percent)}
+      >
+        <span style={percent === null ? undefined : { width: `${percent}%` }} />
+      </div>
+      <div className="update-download-meta">
+        <span>{downloadSpeed(status, speed)}</span>
+        {eta !== null && <span>剩余 {formatDuration(eta)}</span>}
+        {status.total === null && <span>正在获取文件大小</span>}
+      </div>
+    </div>
+  );
+}
 export function UpdateSettings({
   preferences,
   onChange,
@@ -74,19 +142,7 @@ export function UpdateSettings({
           ? ` · ${status.version}`
           : ""}
       </p>
-      {status.phase === "downloading" && (
-        <>
-          <progress
-            aria-label="更新下载进度"
-            value={status.total ? status.received : undefined}
-            max={status.total ?? undefined}
-          />
-          <small>
-            {(status.received / 1048576).toFixed(1)} MB
-            {status.total ? ` / ${(status.total / 1048576).toFixed(1)} MB` : ""}
-          </small>
-        </>
-      )}
+      <UpdateProgress status={status} />
       {status.notes && (
         <p data-copyable tabIndex={0} className="update-notes">
           {status.notes}

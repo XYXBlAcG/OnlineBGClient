@@ -1,0 +1,62 @@
+.ui-panel.resume-drawer {
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  left: auto;
+  width: min(430px, calc(100vw - 16px));
+  height: auto;
+  max-height: none;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 18px;
+  border-radius: 18px;
+  animation: resume-drawer-in 220ms var(--ease-emphasized);
+}
+.resume-drawer .ui-panel-heading {
+  flex: none;
+  margin-bottom: 12px;
+}
+.resume-drawer-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.resume-other {
+  display: grid;
+  gap: 8px;
+}
+.resume-other h3 {
+  margin: 0 0 2px;
+}
+.resume-other > button {
+  justify-content: flex-start;
+  text-align: left;
+}
+.resume-other .muted {
+  margin: 0;
+}
+@keyframes resume-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 600px) {
+  .ui-panel.resume-drawer {
+    top: auto;
+    left: 8px;
+    width: auto;
+    max-height: min(78dvh, 680px);
+    border-radius: 18px;
+  }
+}

@@ -1,3 +1,4 @@
+import { achievementById } from "./achievements";
 import { gameRulesVersion } from "./catalogue";
 import { migrateExpedition } from "./expedition/migration";
 import { partyResults, partySignals } from "./party/facts";
@@ -476,6 +477,35 @@ export class Room {
       text: "[图片]",
       attachment: attachmentSchema.parse(attachment),
     });
+  }
+  achievementChat(token: string, id: string, achievementId: string): void {
+    const definition = achievementById.get(achievementId);
+    if (!definition || definition.game !== this.config.kind)
+      throw new Error("成就不属于当前游戏");
+    const actor = this.identity(token);
+    const member = this.member(token);
+    const name =
+      actor < 0
+        ? member.name
+        : seatDisplayName(this.seats[actor], actor, this.state);
+    this.addSystemMessage(id, `${name} 达成了「${definition.title}」成就`);
+  }
+  private addSystemMessage(id: string, text: string): void {
+    const key = `system:${id}`;
+    if (this.accepted.has(key)) return;
+    this.messages.push({
+      type: "system",
+      text,
+      id,
+      sequence: ++this.messageSequence,
+      sender: "system",
+      name: "系统",
+      time: Date.now(),
+    });
+    if (this.messages.length > 200) this.messages.shift();
+    this.accepted.add(key);
+    if (this.accepted.size > 2048)
+      this.accepted.delete(this.accepted.values().next().value!);
   }
   private addMessage(token: string, id: string, content: ChatContent): void {
     const actor = this.identity(token);

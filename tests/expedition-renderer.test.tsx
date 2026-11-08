@@ -22,6 +22,8 @@ it("正式远征使用职业、路线、场景和本人手牌，回放不提供�
         replay={replay}
       />,
     );
+  expect(render()).toContain("exp-health");
+  expect(render()).toContain("exp-gold");
   expect(render()).toContain('data-guide-target="expedition.profession"');
   room.act(token, "class", room.version, {
     type: "expedition-action",

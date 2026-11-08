@@ -1,0 +1,17 @@
+.fps-meter {
+  position: fixed;
+  z-index: var(--layer-notice);
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  box-shadow: var(--shadow-soft);
+  font: 600 11px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.fps-meter[data-low="true"] {
+  color: var(--accent);
+}

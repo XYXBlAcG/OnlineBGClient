@@ -56,6 +56,8 @@ body {
 }
 .app-shell *,
 .ui-panel *,
+.ui-popover *,
+.ui-tooltip *,
 .ui-select-menu *,
 .native-window-root * {
   box-sizing: border-box;
@@ -1070,14 +1072,6 @@ kbd {
   display: block;
   margin-top: 5px;
 }
-.recent-rooms {
-  display: flex;
-  gap: 10px;
-  max-width: 1240px;
-  margin: 18px auto 0;
-  padding: 0 24px;
-}
-
 :where(.app-shell, .ui-panel) input::placeholder {
   color: var(--muted);
   opacity: 1;
@@ -1250,9 +1244,6 @@ kbd {
 }
 .mobile-shell .app-mark {
   font-size: 15px;
-}
-.mobile-shell .recent-rooms {
-  display: none;
 }
 .mobile-shell .room-layout {
   display: flex;
@@ -1501,13 +1492,38 @@ kbd {
   margin-top: 10px;
 }
 .quick-phrases button {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  background: transparent;
   text-align: left;
+}
+.quick-phrases button > span {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: inherit;
+  background: var(--field);
   white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  transition: background 140ms;
+}
+.quick-phrases button:hover > span {
+  background: var(--interactive-hover);
+}
+.quick-phrases button:active > span {
+  background: var(--interactive-pressed);
 }
 .quick-phrase-menu {
   width: 250px;
+  max-width: calc(100vw - 24px);
   max-height: 60dvh;
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 @media (prefers-reduced-motion: reduce) {
   .notification,
@@ -2796,6 +2812,43 @@ kbd {
   font-size: var(--font-size-aux);
   color: var(--accent);
   opacity: 1;
+}
+.ui-search-field {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.ui-search-field::before {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  left: 13px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  background: var(--muted);
+  pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m16 16 5 5'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m16 16 5 5'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  .ui-search-field
+  > input {
+  width: 100%;
+  min-height: var(--control-height-compact);
+  padding: 8px 36px;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-control);
+  line-height: var(--line-height-control);
+}
+.mobile-shell .ui-search-field > input {
+  min-height: 44px;
+}
+.ui-search-field > input::-webkit-search-cancel-button {
+  margin-left: 8px;
 }
 .ui-field-summary {
   position: absolute;

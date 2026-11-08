@@ -5,7 +5,7 @@ import {
   type GameKind,
 } from "../../domain/catalogue";
 import { GameCover } from "./GameCover";
-import { TextField } from "../ui/Controls";
+import { SearchField } from "../ui/Controls";
 export function GameLibrary({
   selected,
   favorites,
@@ -47,7 +47,7 @@ export function GameLibrary({
         <div>
           <h1>今晚玩什么？</h1>
         </div>
-        <TextField
+        <SearchField
           label="搜索游戏"
           type="search"
           aria-label="搜索游戏"

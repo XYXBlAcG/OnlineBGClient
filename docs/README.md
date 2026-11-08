@@ -8,6 +8,7 @@
 - [验证入口与覆盖](verification.md)
 - [原站资源](../upstream/README.md)
 - [审核与自行提交](review-and-submit.md)
+- [提交、推送与发布构建规范](release-workflow.md)
 - [卡坦岛 AI 入口](catan-ai-plan.md)
 - [游戏、AI 与 Release 入口](game-ai-release-plan.md)
 - [后续体验功能待审核方案](product-next-plan.md)

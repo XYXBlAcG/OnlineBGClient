@@ -44,6 +44,68 @@ it("uses an explicitly selected own soldier and rejects another owner or an elim
     engine.apply(s, 0, { type: "graphwar-guard", soldier: chosen.id }, "a"),
   ).toThrow("自己的存活士兵");
 });
+it("keeps every action in the shot log from the start of the game", () => {
+  const engine = new GameEngine(),
+    start = create();
+  const fired = engine.apply(
+    start,
+    0,
+    { type: "graphwar-fire", formula: "0" },
+    "fire",
+  ) as GraphwarState;
+  expect(fired.view.log).toHaveLength(1);
+  expect(fired.view.log?.[0]).toMatchObject({
+    sequence: 1,
+    actor: 0,
+    action: "fire",
+    formula: "0",
+  });
+  const passed = engine.apply(
+    start,
+    0,
+    { type: "graphwar-pass" },
+    "pass",
+  ) as GraphwarState;
+  const next = engine.apply(
+    passed,
+    1,
+    { type: "graphwar-pass" },
+    "pass-2",
+  ) as GraphwarState;
+  expect(next.view.log).toEqual([
+    { sequence: 1, actor: 0, action: "pass" },
+    { sequence: 2, actor: 1, action: "pass" },
+  ]);
+  const guarded = engine.apply(
+    start,
+    0,
+    { type: "graphwar-guard" },
+    "guard",
+  ) as GraphwarState;
+  expect(guarded.view.log?.[0].action).toBe("guard");
+  const unit = start.view.soldiers.find(
+    (soldier) => soldier.id === start.view.currentSoldier,
+  )!;
+  const movement = new Movement(start.view, unit.id);
+  const destination = Array.from({ length: 8 }, (_, index) => {
+    const angle = (index * Math.PI) / 4;
+    return {
+      x: unit.x + Math.cos(angle) * 1.5,
+      y: unit.y + Math.sin(angle) * 1.5,
+    };
+  }).find((point) => movement.check(point).allowed)!;
+  const moved = engine.apply(
+    start,
+    0,
+    { type: "graphwar-move", soldier: unit.id, ...destination },
+    "move",
+  ) as GraphwarState;
+  expect(moved.view.log?.[0]).toMatchObject({
+    action: "move",
+    point: destination,
+  });
+});
+
 it("returns a single shared movement verdict for preview and rules", () => {
   const s = create(),
     u = s.view.soldiers[0];

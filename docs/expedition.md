@@ -4,35 +4,35 @@
 
 ## 实现入口
 
-| 内容                               | 单一入口                                                                                                                                                                                                           |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 职业、卡牌与说明                   | [内容注册](../src/domain/expedition/content.ts)、[效果类型](../src/domain/expedition/card-types.ts)、[职业卡池](../src/domain/expedition/extra-cards.ts)                                                           |
-| 契刃客与骰术师职业牌               | [契刃客卡池](../src/domain/expedition/covenant-cards.ts)、[骰术师卡池](../src/domain/expedition/dice-cards.ts)                                                                                                     |
-| 多层主题与进阶                     | [主题](../src/domain/expedition/chapters.ts)                                                                                                                                                                       |
-| 远征 N0–N10 阶位                   | [进阶规则](../src/domain/expedition/ascension.ts)                                                                                                                                                                  |
-| 炮台、热量、蓄能、回响、祝福与骰子 | [资源规则](../src/domain/expedition/resources.ts)                                                                                                                                                                  |
-| 多级强化与预览                     | [强化规则](../src/domain/expedition/content.ts)、[服务界面](../src/client/expedition/CardService.tsx)                                                                                                              |
-| 旧存档读入                         | [迁移入口](../src/domain/expedition/migration.ts)、[房间恢复](../src/domain/room.ts)                                                                                                                               |
-| 遗物、药水、敌人和奇遇             | [世界内容](../src/domain/expedition/world.ts)                                                                                                                                                                      |
-| 首领议程、阶段与机制文案           | [首领机制](../src/domain/expedition/boss-mechanics.ts)                                                                                                                                                             |
-| 敌人特性与触发数据                 | [敌人特性](../src/domain/expedition/enemy-traits.ts)                                                                                                                                                               |
-| 战斗、意图和效果预览               | [战斗执行器](../src/domain/expedition/rules.ts)                                                                                                                                                                    |
-| 小兵孵化、爆裂与首领死亡继承       | [战斗执行器](../src/domain/expedition/rules.ts)                                                                                                                                                                    |
-| 随机遭遇词条                       | [遭遇词条](../src/domain/expedition/modifiers.ts)                                                                                                                                                                  |
-| 深渊裂隙支线层                     | [地图生成](../src/domain/expedition/map.ts)、[冒险推进](../src/domain/expedition/adventure.ts)                                                                                                                     |
-| 节点资源结算、抢商店与 AI 队友     | [冒险推进](../src/domain/expedition/adventure.ts)、[结算卡](../src/client/expedition/NodeResultCard.tsx)、[队友面板](../src/client/expedition/CompanionRoster.tsx)                                                     |
-| 开发态自动代理、断点与 AI 路线风格 | [演练逻辑](../src/domain/expedition/lab.ts)、[开发控制条](../src/client/expedition/DevExpeditionController.tsx)、[量化模型](../analysis/expedition-experience/model.ts)                                                       |
-| 废牌、永久诅咒与临时状态           | [状态牌注册](../src/domain/expedition/status-cards.ts)                                                                                                                                                             |
-| 路线原型与地图                     | [路线原型](../src/domain/expedition/route-profiles.ts)、[地图生成](../src/domain/expedition/map.ts)、[曲线布局](../src/client/expedition/map-layout.ts)、[选项与动作](../src/domain/expedition/adventure-types.ts) |
-| 职业详情与完整职业牌池             | [职业详情组件](../src/client/expedition/ProfessionDetail.tsx)                                                                                                                                                      |
-| 个人奖励、商店、投票与冒险推进     | [冒险规则](../src/domain/expedition/adventure.ts)                                                                                                                                                                  |
-| AI 评分、抽样和预算                | [策略](../src/domain/expedition/ai.ts)                                                                                                                                                                             |
-| 牌桌与自适应布局                   | [牌桌](../src/client/expedition/ExpeditionTable.tsx)、[样式](../src/client/expedition/table.css)                                                                                                                   |
-| 可改键的牌桌命令                   | [命令上下文](../src/client/use-game-commands.tsx)、[快捷动作](../src/client/game-quick-actions.ts)                                                                                                                 |
-| 引导与实时局面讲解                 | [引导](../src/client/expedition/guide.ts)、[局面](../src/client/guide-position.ts)                                                                                                                                 |
-| 继续和放弃入口                     | [存档列表](../src/client/expedition/RunShelf.tsx)                                                                                                                                                                  |
-| 权威存档与恢复身份                 | [房间](../src/domain/room.ts)、[网关](../src/domain/gateway.ts)、[SQLite](../src/server/storage.ts)、[本机存储](../src/client/storage.ts)                                                                          |
-| 按需回放与检查点                   | [回放](../src/domain/replay.ts)、[后台取帧](../src/client/replay-worker.ts)                                                                                                                                        |
+| 内容                                     | 单一入口                                                                                                                                                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 职业、卡牌与说明                         | [内容注册](../src/domain/expedition/content.ts)、[效果类型](../src/domain/expedition/card-types.ts)、[职业卡池](../src/domain/expedition/extra-cards.ts)                                                           |
+| 契刃客与骰术师职业牌                     | [契刃客卡池](../src/domain/expedition/covenant-cards.ts)、[骰术师卡池](../src/domain/expedition/dice-cards.ts)                                                                                                     |
+| 多层主题与进阶                           | [主题](../src/domain/expedition/chapters.ts)                                                                                                                                                                       |
+| 远征 N0–N10 阶位                         | [进阶规则](../src/domain/expedition/ascension.ts)                                                                                                                                                                  |
+| 炮台、热量、蓄能、回响、祝福与骰子       | [资源规则](../src/domain/expedition/resources.ts)                                                                                                                                                                  |
+| 多级强化与预览                           | [强化规则](../src/domain/expedition/content.ts)、[服务界面](../src/client/expedition/CardService.tsx)                                                                                                              |
+| 旧存档读入                               | [迁移入口](../src/domain/expedition/migration.ts)、[房间恢复](../src/domain/room.ts)                                                                                                                               |
+| 遗物、药水、敌人和奇遇                   | [世界内容](../src/domain/expedition/world.ts)                                                                                                                                                                      |
+| 首领议程、阶段与机制文案                 | [首领机制](../src/domain/expedition/boss-mechanics.ts)                                                                                                                                                             |
+| 敌人特性与触发数据                       | [敌人特性](../src/domain/expedition/enemy-traits.ts)                                                                                                                                                               |
+| 战斗、意图和效果预览                     | [战斗执行器](../src/domain/expedition/rules.ts)                                                                                                                                                                    |
+| 小兵孵化、爆裂与首领死亡继承             | [战斗执行器](../src/domain/expedition/rules.ts)                                                                                                                                                                    |
+| 随机遭遇词条                             | [遭遇词条](../src/domain/expedition/modifiers.ts)                                                                                                                                                                  |
+| 深渊裂隙支线层                           | [地图生成](../src/domain/expedition/map.ts)、[冒险推进](../src/domain/expedition/adventure.ts)                                                                                                                     |
+| 节点资源变化、遗物获得、抢商店与 AI 队友 | [冒险推进](../src/domain/expedition/adventure.ts)、[遗物获得层](../src/client/expedition/RelicGainedOverlay.tsx)、[队友面板](../src/client/expedition/CompanionRoster.tsx)                                         |
+| 开发态自动代理、断点与 AI 路线风格       | [演练逻辑](../src/domain/expedition/lab.ts)、[开发控制条](../src/client/expedition/DevExpeditionController.tsx)、[量化模型](../analysis/expedition-experience/model.ts)                                            |
+| 废牌、永久诅咒与临时状态                 | [状态牌注册](../src/domain/expedition/status-cards.ts)                                                                                                                                                             |
+| 路线原型与地图                           | [路线原型](../src/domain/expedition/route-profiles.ts)、[地图生成](../src/domain/expedition/map.ts)、[曲线布局](../src/client/expedition/map-layout.ts)、[选项与动作](../src/domain/expedition/adventure-types.ts) |
+| 职业详情与完整职业牌池                   | [职业详情组件](../src/client/expedition/ProfessionDetail.tsx)                                                                                                                                                      |
+| 个人奖励、商店、投票与冒险推进           | [冒险规则](../src/domain/expedition/adventure.ts)                                                                                                                                                                  |
+| AI 评分、抽样和预算                      | [策略](../src/domain/expedition/ai.ts)                                                                                                                                                                             |
+| 牌桌与自适应布局                         | [牌桌](../src/client/expedition/ExpeditionTable.tsx)、[样式](../src/client/expedition/table.css)                                                                                                                   |
+| 可改键的牌桌命令                         | [命令上下文](../src/client/use-game-commands.tsx)、[快捷动作](../src/client/game-quick-actions.ts)                                                                                                                 |
+| 引导与实时局面讲解                       | [引导](../src/client/expedition/guide.ts)、[局面](../src/client/guide-position.ts)                                                                                                                                 |
+| 继续和放弃入口                           | [恢复抽屉](../src/client/lobby/ResumeDrawer.tsx)、[存档列表](../src/client/expedition/RunShelf.tsx)                                                                                                                |
+| 权威存档与恢复身份                       | [房间](../src/domain/room.ts)、[网关](../src/domain/gateway.ts)、[SQLite](../src/server/storage.ts)、[本机存储](../src/client/storage.ts)                                                                          |
+| 按需回放与检查点                         | [回放](../src/domain/replay.ts)、[后台取帧](../src/client/replay-worker.ts)                                                                                                                                        |
 
 ## 保存与继续
 
@@ -68,13 +68,13 @@
 2. 在大厅侧栏直接选择秘塔远征与麻将，确认不再出现开局弹窗；切换游戏、开始下一局和结束后重开都从统一房间入口进入。切换 N0–N10，核对放大的负面加成摘要；检查远征 AI 显示为“能力较弱／能力中等／能力较强”。进入战斗后检查 N 阶标识、遭遇词条、敌人特性、小兵成员、首领议程起点和敌人属性是否按阶位变化。
 3. 战斗中选牌、选高亮目标、确认自身牌，查看敌方意图和出牌预览；用数字键、上下箭头、Enter、Esc 和 E，并在设置里改键。
 4. 邀请手机加入，分别检查横竖屏、低高度窗口、聊天，以及多人同时出牌、全员结束、标记目标、暂停和托管。
-5. 在路线、奇遇、营地、锻造所、商店、观星台、誓约碑、当铺、赌局、禁书库、追猎台、深渊裂隙、旅伴营地与遗物分配中确认选择；每次离开节点先查看生命、金币、牌组、遗物、药水、罗盘与队友变化，再继续路线。检查开局至少三类独立路线、曲线不穿过节点、选中节点只高亮相关连接、分叉数量受控、罗盘消耗、反向环边、已探索节点仅通行、观星收益和誓约后的首领幼体；进入深渊裂隙后确认六行支线逐层推进、只在最后一行归位；关闭房间后从大厅继续，确认接管角色及行装未重置。
+5. 在路线、奇遇、营地、锻造所、商店、观星台、誓约碑、当铺、赌局、禁书库、追猎台、深渊裂隙、旅伴营地与遗物分配中确认选择；节点结束不再显示完整结算页，仅在获得新遗物时弹出遗物说明，点击任意位置关闭。顶栏在任意阶段常显生命、金币、罗盘，战斗阶段显示能量。检查开局至少三类独立路线、曲线不穿过节点、选中节点只高亮相关连接、分叉数量受控、罗盘消耗、反向环边、已探索节点仅通行、观星收益和誓约后的首领幼体；进入深渊裂隙后确认六行支线逐层推进、只在最后一行归位；关闭房间后从大厅继续，确认接管角色及行装未重置。
 6. 开关增强游戏动画，检查命中、格挡、治疗与投掷落点；关闭策略审核后检查数据面板。回放检查播放、暂停、倍速和跳转。
 7. 抽查所有首领战，核对机制面板、议程增长、阶段切换、部件受击与破碎反馈；检查失语圣像的封牌与封口、熔金暴君的夺金与贡赋，以及裂巢母兽的小兵孵化及首领死亡连锁消散。
 8. 在缄默抄写员、禁言祭司、熔金税吏和遗物贪食者的战斗中确认废牌不可出、封口可由净化解除、赃金和赃物显示在敌人身上且击杀后归还；分别用断锁钳、静默耳塞、当票和赃物天平检查触发效果。
 9. 在商店点击抢商店，确认进入 24 回合高难战斗；胜利后本店商品全为免费，当前地图与后续大层不再生成商店，原商店节点变为空节点。超时后确认老板带走全部商品、当前商店关闭但后续商店保留。检查活动遗物估值随节点、战斗和打牌数增长，并可在商店交易页按估值出售。分别招募易逝、限次和轮回队友，在战斗开始前选择上场或待命，确认阵亡、次数耗尽和复起规则。
 10. 仅在 `npm run dev` 中使用牌桌内开发控制条，选择路线策略，在指定节点开始前或结算后停止并直接在正式地图、战斗和手牌界面接管；确认生产构建不包含开发标记。
-9. 选择契刃客与骰术师，检查生命费用、骰子消耗、下一轮骰子补充、全部职业牌与浅深色牌面；展开职业详细信息，核对起始牌组、流派关键词和全部 24 张职业牌。
+11. 选择契刃客与骰术师，检查生命费用、骰子消耗、下一轮骰子补充、全部职业牌与浅深色牌面；展开职业详细信息，核对起始牌组、流派关键词和全部 24 张职业牌。
 
 实际界面、截图、音效、Windows 与手机触控由用户手动验收；本轮不运行界面自动化。
 

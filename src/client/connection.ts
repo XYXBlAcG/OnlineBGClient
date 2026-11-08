@@ -107,7 +107,8 @@ export class NetworkConnection implements Connection {
     if (
       command.type === "action" ||
       command.type === "chat" ||
-      command.type === "chat-image"
+      command.type === "chat-image" ||
+      command.type === "achievement-chat"
     )
       this.pending.set(command.id, command);
     if (this.socket?.readyState === WebSocket.OPEN)
@@ -115,7 +116,8 @@ export class NetworkConnection implements Connection {
     else if (
       command.type !== "action" &&
       command.type !== "chat" &&
-      command.type !== "chat-image"
+      command.type !== "chat-image" &&
+      command.type !== "achievement-chat"
     )
       this.receive({ type: "error", message: "连接尚未恢复，请稍后操作" });
   }

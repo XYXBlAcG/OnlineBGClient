@@ -39,8 +39,18 @@ it("keeps catalogue icons and menu focus rules independent of upstream card styl
   expect(lobby.match(/<LobbySetupTransition/g)).toHaveLength(2);
   expect(lobby).toContain("heading:${kind}");
   expect(lobby).toContain("options:${kind}");
+  expect(lobby).toContain('variant="heading"');
+  expect(lobby).toContain('variant="options"');
+  expect(lobby).toContain("!preferences.lobbySwitchMotion");
   expect(lobbyCss).toContain("@keyframes lobby-content-in");
+  expect(lobbyCss).toContain("@keyframes lobby-skeleton-pulse");
+  expect(lobbyCss).toContain(".lobby-setup-skeleton");
   expect(lobbyCss).toContain(".lobby-setup-transition");
+  expect(lobbyCss).toContain("transition-duration: 60ms");
+  expect(lobbyCss).toContain("200ms var(--ease-emphasized) 60ms forwards");
+  expect(
+    readFileSync("src/client/lobby/LobbySetupTransition.tsx", "utf8"),
+  ).toContain("}, 300);");
   expect(css).toContain(".ui-select-menu .ui-select-item:focus-visible");
   expect(css).toContain(".about-links a");
 });

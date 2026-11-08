@@ -36,9 +36,18 @@
   color: color-mix(in srgb, var(--rarity-color) 74%, var(--text));
   font-size: 23px;
 }
-.achievement-toast > strong {
+.achievement-toast-copy {
+  display: grid;
+  gap: 3px;
   min-width: 0;
+}
+.achievement-toast-copy strong {
   font-size: 14px;
+}
+.achievement-toast-copy small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
 }
 .achievement-toast[data-rarity="common"],
 .achievement-card[data-rarity="common"],
@@ -65,9 +74,27 @@
 .achievement-detail[data-rarity="mythic"] {
   --rarity-color: #8957c6;
 }
+.settings-body.achievement-settings-body {
+  display: flex;
+  min-height: 0;
+  overflow: visible;
+  flex-direction: column;
+}
 .achievement-gallery {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+.achievement-list {
   display: grid;
+  align-content: start;
   gap: var(--space-5);
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  padding-bottom: var(--achievement-detail-space, 180px);
 }
 .achievement-overview {
   display: grid;
@@ -93,9 +120,17 @@
   margin: 0;
   font-size: var(--font-size-page);
 }
-.achievement-overview-title strong {
+.achievement-overview-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.achievement-overview-actions strong {
   font-size: 20px;
   font-variant-numeric: tabular-nums;
+}
+.achievement-gallery .achievement-test-button {
+  font-size: 12px;
 }
 .achievement-metrics {
   display: grid;
@@ -128,6 +163,11 @@
 }
 .achievement-filters .ui-select {
   min-width: 128px;
+}
+.achievement-search {
+  flex: 1 1 210px;
+  min-width: 160px;
+  max-width: 300px;
 }
 .achievement-state-filter {
   margin-left: auto;
@@ -211,6 +251,15 @@
   background: var(--field);
   box-shadow: inset 0 0 0 1px var(--line);
 }
+.achievement-gallery .achievement-card[data-selected="true"] {
+  outline: 2px solid color-mix(in srgb, var(--rarity-color) 78%, var(--text));
+  outline-offset: 2px;
+  background: color-mix(in srgb, var(--rarity-color) 12%, var(--surface));
+}
+.achievement-gallery
+  .achievement-card[data-unlocked="false"][data-selected="true"] {
+  background: color-mix(in srgb, var(--rarity-color) 7%, var(--field));
+}
 .achievement-gallery
   .achievement-card[data-unlocked="false"]
   .achievement-card-symbol {
@@ -257,9 +306,12 @@
   font-size: 9px;
 }
 .achievement-detail {
-  position: sticky;
-  bottom: 8px;
+  position: absolute;
+  right: 4px;
+  bottom: 0;
+  left: 0;
   display: flex;
+  flex: none;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
@@ -359,7 +411,6 @@
     margin-left: 0;
   }
   .achievement-detail {
-    position: static;
     flex-direction: column;
   }
   .achievement-shelf progress {

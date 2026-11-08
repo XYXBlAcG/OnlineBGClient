@@ -2,19 +2,29 @@ import { useEffect, useRef } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { confirm, message } from "@tauri-apps/plugin-dialog";
 import { useUpdater, checkUpdate, downloadUpdate } from "./client";
-import { updateAction, type UpdatePreferences } from "./model";
+import { updateAction, updateAttention, type UpdatePreferences } from "./model";
 export function UpdaterController({
   preferences,
   busy,
+  onAttention,
 }: {
   preferences: UpdatePreferences;
   busy: boolean;
+  onAttention?: () => void;
 }) {
   const status = useUpdater(),
     decisions = useRef(new Set<string>()),
     completion = useRef(false),
+    announced = useRef<string | null>(null),
     latest = useRef(preferences);
   latest.current = preferences;
+  useEffect(() => {
+    if (!isTauri() || !onAttention) return;
+    const key = updateAttention(status);
+    if (!key || announced.current === key) return;
+    announced.current = key;
+    onAttention();
+  }, [status.phase, status.version, onAttention]);
   useEffect(() => {
     if (isTauri())
       void invoke("updater_activity", { busy }).catch(console.error);
@@ -61,14 +71,15 @@ export function UpdaterController({
       if (decisions.current.has(key)) return;
       decisions.current.add(key);
       void (async () => {
-        if (
-          action === "download" ||
+        if (action === "download") await downloadUpdate(latest.current, true);
+        else if (
+          !onAttention &&
           (await confirm(
             `发现新版本 ${status.version}。\n${status.notes}\n\n下载后将在退出房间和连麦后自动安装并重启。`,
             { title: "软件更新", okLabel: "下载并安装", cancelLabel: "稍后" },
           ))
         )
-          await downloadUpdate(latest.current, action === "download");
+          await downloadUpdate(latest.current, false);
       })().catch(console.error);
     }
     if (action !== "install") return;
@@ -98,6 +109,7 @@ export function UpdaterController({
     preferences.automatic,
     preferences.notify,
     busy,
+    onAttention,
   ]);
   return null;
 }

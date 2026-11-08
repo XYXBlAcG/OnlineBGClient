@@ -4,6 +4,10 @@ import {
   updatePreferencesSchema,
   proxyOption,
   updateAction,
+  updateAttention,
+  downloadPercent,
+  formatBytes,
+  formatDuration,
 } from "../src/client/updates/model";
 it("checks and asks by default, without requiring every player to run a proxy", () => {
   const prefs = updatePreferencesSchema.parse({});
@@ -87,4 +91,23 @@ it("shows manual check results in settings without duplicating the startup remin
       false,
     ),
   ).toBe(null);
+});
+
+it("announces one update surface per version and formats download progress", () => {
+  const available = {
+    ...initialUpdate,
+    phase: "available" as const,
+    version: "0.4.1",
+  };
+  expect(updateAttention(available)).toBe("0.4.1");
+  expect(updateAttention({ ...available, phase: "current" })).toBe(null);
+  const downloading = {
+    ...available,
+    phase: "downloading" as const,
+    received: 2 * 1024 * 1024,
+    total: 8 * 1024 * 1024,
+  };
+  expect(downloadPercent(downloading)).toBe(25);
+  expect(formatBytes(downloading.received)).toBe("2.0 MB");
+  expect(formatDuration(65)).toContain("1 分");
 });

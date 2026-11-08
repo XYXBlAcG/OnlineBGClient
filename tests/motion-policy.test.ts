@@ -25,4 +25,5 @@ it("keeps game baseline independent of the interface Boolean", () => {
       });
     }
   expect(preferencesSchema.parse({}).enhancedGameMotion).toBe(false);
+  expect(preferencesSchema.parse({}).lobbySwitchMotion).toBe(false);
 });

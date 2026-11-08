@@ -14,6 +14,12 @@ export function ChatMessageView({
   session?: MediaSession;
   serverTime: number;
 }) {
+  if (message.type === "system")
+    return (
+      <div className="chat-message chat-system-message" data-content="system">
+        <p>{message.text}</p>
+      </div>
+    );
   return (
     <div
       data-content={message.type}
