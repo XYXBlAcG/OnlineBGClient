@@ -7,7 +7,8 @@ import {
 } from "react";
 
 const motionDisabled = () => {
-  if (typeof window === "undefined") return true;
+  if (typeof window === "undefined" || typeof document === "undefined")
+    return true;
   return (
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ||
     document.documentElement.dataset.motion === "false"
@@ -31,7 +32,11 @@ export function LobbySetupTransition({
   useEffect(() => {
     if (panelKey === displayedKey) return;
     const box = container.current;
-    if (!box) return;
+    if (!box) {
+      setDisplayedKey(panelKey);
+      setPhase("idle");
+      return;
+    }
     if (motionDisabled()) {
       box.style.height = "auto";
       setDisplayedKey(panelKey);
