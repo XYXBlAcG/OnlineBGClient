@@ -38,7 +38,7 @@ it("keeps catalogue icons and menu focus rules independent of upstream card styl
   expect(lobby).not.toContain("className={`game-symbol ${key}`}");
   expect(lobby.match(/<LobbySetupTransition/g)).toHaveLength(2);
   expect(lobby).toContain("heading:${kind}");
-  expect(lobby).toContain("body:${kind}:${mode}");
+  expect(lobby).toContain("options:${kind}");
   expect(lobbyCss).toContain("@keyframes lobby-content-in");
   expect(lobbyCss).toContain(".lobby-setup-transition");
   expect(css).toContain(".ui-select-menu .ui-select-item:focus-visible");
