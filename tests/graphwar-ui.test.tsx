@@ -78,6 +78,11 @@ it("keeps the system formula keyboard and removes templates, history and summary
   expect(css).toContain("button:not(.ui-switch)");
   expect(css).toContain(".gw-preview-switch");
   expect(css).toContain("inset 0 0 0 3px #3489ef66");
+  expect(css).toContain("--keycap-height: 48px");
+  expect(css).toContain(
+    "transform: translateY(calc(-1 * var(--math-keyboard-height",
+  );
+  expect(css).toContain("min-height: 200px");
   expect(css).not.toContain(".gw-toolbar");
   const formula = readFileSync(
     "src/client/graphwar/MathFormulaField.tsx",
@@ -86,6 +91,8 @@ it("keeps the system formula keyboard and removes templates, history and summary
   expect(formula).toContain("insertMultiply");
   expect(formula).toContain("\\times ");
   expect(formula).toContain("clearKeyboardState");
+  expect(formula).toContain("inlineShortcuts = {}");
+  expect(formula).not.toContain("scrollIntoView");
 });
 
 it("anchors every map soldier independently and excludes player status from effect targeting", () => {

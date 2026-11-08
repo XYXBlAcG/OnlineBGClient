@@ -131,12 +131,15 @@
   pointer-events: none;
 }
 .gw-controls {
+  position: relative;
+  z-index: 4;
   padding: 6px 12px;
   display: flex;
   flex-direction: column;
   flex: none;
   gap: 6px;
   background: var(--surface);
+  transition: transform var(--motion-control) var(--ease-standard);
 }
 .gw-input-row {
   display: flex;
@@ -253,8 +256,9 @@
   display: flex;
   flex: 0 0 208px;
   flex-direction: column;
+  align-self: stretch;
   gap: 6px;
-  min-height: 0;
+  min-height: 200px;
   overflow: auto;
   padding: 10px;
   border-radius: 12px;
@@ -334,11 +338,13 @@
 .gw-impact-badge small {
   color: var(--muted);
 }
-.math-formula-field {
-  scroll-margin-bottom: calc(var(--math-keyboard-height, 0px) + 12px);
-}
 body[data-math-keyboard="open"] .gw-controls {
-  padding-bottom: calc(var(--math-keyboard-height, 0px) + 8px);
+  transform: translateY(calc(-1 * var(--math-keyboard-height, 0px)));
+}
+body > .ML__keyboard {
+  --keycap-height: 48px;
+  --keycap-gap: 6px;
+  --keycap-font-size: clamp(15px, 3.6cqw, 21px);
 }
 .math-keyboard-hide {
   position: absolute;
@@ -374,6 +380,10 @@ body[data-math-keyboard="open"] .gw-controls {
   color: #c84727;
 }
 @media (max-width: 760px) {
+  body > .ML__keyboard {
+    --keycap-height: 40px;
+    --keycap-gap: 5px;
+  }
   .gw-heading {
     padding: 5px 8px;
     gap: 5px 10px;
@@ -393,7 +403,8 @@ body[data-math-keyboard="open"] .gw-controls {
   }
   .gw-shot-panel {
     flex: none;
-    max-height: 118px;
+    min-height: 160px;
+    max-height: none;
   }
   .gw-input-row {
     gap: 5px;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 interface MathFieldElement extends HTMLElement {
+  inlineShortcuts: Record<string, string>;
   setValue(value: string, options?: { format?: string }): void;
   getValue(format?: string): string;
   insert(
@@ -20,7 +21,7 @@ const clean = (value: string) =>
   value
     .replace(/\\placeholder\{?\}?/g, "")
     .replace(/[−]/g, "-")
-    .replace(/[×]/g, "*")
+    .replace(/[×·⋅]/g, "*")
     .replace(/[÷]/g, "/")
     .replace(/-:/g, "/")
     .replace(/[π]/g, "pi")
@@ -50,13 +51,12 @@ export function MathFormulaField({
   latest.current = { value, onChange, onSubmit, disabled };
   const [ready, setReady] = useState(false);
   useEffect(() => {
+    const originalBodyPadding = document.body.style.paddingBottom;
     let disposed = false;
     let keyboard: HTMLElement | null = null;
     let keyboardObserver: MutationObserver | null = null;
     let bodyObserver: MutationObserver | null = null;
     let hideButton: HTMLButtonElement | null = null;
-    let scrollFrame = 0;
-    let scrollTimer = 0;
     void Promise.all([import("mathlive"), import("mathlive/static.css")]).then(
       () => {
         if (disposed || !host.current) return;
@@ -100,14 +100,7 @@ export function MathFormulaField({
               "--math-keyboard-height",
               `${height}px`,
             );
-            cancelAnimationFrame(scrollFrame);
-            scrollFrame = requestAnimationFrame(() => {
-              element.scrollIntoView({ block: "nearest", behavior: "smooth" });
-            });
-            clearTimeout(scrollTimer);
-            scrollTimer = window.setTimeout(() => {
-              element.scrollIntoView({ block: "nearest", behavior: "smooth" });
-            }, 320);
+            document.body.style.paddingBottom = originalBodyPadding;
             return;
           }
           clearKeyboardState();
@@ -184,6 +177,7 @@ export function MathFormulaField({
           syncKeyboard();
           return true;
         };
+        element.inlineShortcuts = {};
         element.setAttribute("aria-label", "发射函数");
         element.setAttribute("data-guide-target", "gw.formula");
         element.setAttribute("math-virtual-keyboard-policy", "manual");
@@ -241,8 +235,6 @@ export function MathFormulaField({
     );
     return () => {
       disposed = true;
-      cancelAnimationFrame(scrollFrame);
-      clearTimeout(scrollTimer);
       bodyObserver?.disconnect();
       keyboardObserver?.disconnect();
       hideButton?.remove();
@@ -256,6 +248,7 @@ export function MathFormulaField({
       }
       delete document.body.dataset.mathKeyboard;
       document.documentElement.style.removeProperty("--math-keyboard-height");
+      document.body.style.paddingBottom = originalBodyPadding;
       field.current?.remove();
       field.current = null;
     };
