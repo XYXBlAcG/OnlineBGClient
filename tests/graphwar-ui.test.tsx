@@ -77,7 +77,15 @@ it("keeps the system formula keyboard and removes templates, history and summary
   expect(css).toContain(".gw-impact-badge");
   expect(css).toContain("button:not(.ui-switch)");
   expect(css).toContain(".gw-preview-switch");
+  expect(css).toContain("inset 0 0 0 3px #3489ef66");
   expect(css).not.toContain(".gw-toolbar");
+  const formula = readFileSync(
+    "src/client/graphwar/MathFormulaField.tsx",
+    "utf8",
+  );
+  expect(formula).toContain("insertMultiply");
+  expect(formula).toContain("\\times ");
+  expect(formula).toContain("clearKeyboardState");
 });
 
 it("anchors every map soldier independently and excludes player status from effect targeting", () => {

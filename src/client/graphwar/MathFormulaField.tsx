@@ -41,6 +41,10 @@ export function MathFormulaField({
   const host = useRef<HTMLDivElement>(null);
   const fallback = useRef<HTMLInputElement>(null);
   const field = useRef<MathFieldElement | null>(null);
+  const multiplyBinding = useRef<{
+    target: HTMLElement;
+    handler: (event: Event) => void;
+  } | null>(null);
   const emitted = useRef(value);
   const latest = useRef({ value, onChange, onSubmit, disabled });
   latest.current = { value, onChange, onSubmit, disabled };
@@ -59,6 +63,30 @@ export function MathFormulaField({
         const element = document.createElement(
           "math-field",
         ) as MathFieldElement;
+        const emitValue = () => {
+          const next = clean(element.getValue("ascii-math"));
+          emitted.current = next;
+          latest.current.onChange(next);
+        };
+        const insertMultiply = () => {
+          element.insert("\\times ", {
+            format: "latex",
+            focus: true,
+          });
+          emitValue();
+        };
+        const multiplyKey = (event: Event) => {
+          const target = event.target as HTMLElement | null;
+          if (!target?.closest(".MLK__keycap")?.textContent?.includes("×"))
+            return;
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          insertMultiply();
+        };
+        const clearKeyboardState = () => {
+          clearKeyboardState();
+        };
         const syncKeyboard = () => {
           if (!element.isConnected) return;
           const open = keyboard?.classList.contains("is-visible") ?? false;
@@ -82,11 +110,7 @@ export function MathFormulaField({
             }, 320);
             return;
           }
-          delete document.body.dataset.mathKeyboard;
-          document.documentElement.style.removeProperty(
-            "--math-keyboard-height",
-          );
-          clearTimeout(scrollTimer);
+          clearKeyboardState();
         };
         const bindKeyboard = () => {
           const found = document.querySelector<HTMLElement>(
@@ -94,11 +118,31 @@ export function MathFormulaField({
           );
           if (!found) {
             keyboardObserver?.disconnect();
+            if (multiplyBinding.current) {
+              multiplyBinding.current.target.removeEventListener(
+                "pointerdown",
+                multiplyBinding.current.handler,
+                true,
+              );
+              multiplyBinding.current = null;
+            }
+            if (keyboard || document.body.dataset.mathKeyboard)
+              clearKeyboardState();
             keyboard = null;
             return false;
           }
           const same = keyboard === found;
           keyboard = found;
+          if (!same) {
+            if (multiplyBinding.current)
+              multiplyBinding.current.target.removeEventListener(
+                "pointerdown",
+                multiplyBinding.current.handler,
+                true,
+              );
+            found.addEventListener("pointerdown", multiplyKey, true);
+            multiplyBinding.current = { target: found, handler: multiplyKey };
+          }
           const backdrop = found.querySelector<HTMLElement>(".MLK__backdrop");
           if (backdrop && !backdrop.querySelector(".math-keyboard-hide")) {
             hideButton = document.createElement("button");
@@ -148,17 +192,32 @@ export function MathFormulaField({
           emitted.current = next;
           latest.current.onChange(next);
         });
-        element.addEventListener("keydown", (event) => {
-          const keyboard = event as KeyboardEvent;
-          if (
-            keyboard.key === "Enter" &&
-            !keyboard.isComposing &&
-            !keyboard.shiftKey
-          ) {
-            keyboard.preventDefault();
-            latest.current.onSubmit?.();
-          }
-        });
+        element.addEventListener(
+          "keydown",
+          (event) => {
+            const keyboard = event as KeyboardEvent;
+            if (
+              keyboard.key === "*" &&
+              !keyboard.altKey &&
+              !keyboard.ctrlKey &&
+              !keyboard.metaKey
+            ) {
+              keyboard.preventDefault();
+              keyboard.stopPropagation();
+              insertMultiply();
+              return;
+            }
+            if (
+              keyboard.key === "Enter" &&
+              !keyboard.isComposing &&
+              !keyboard.shiftKey
+            ) {
+              keyboard.preventDefault();
+              latest.current.onSubmit?.();
+            }
+          },
+          true,
+        );
         element.addEventListener("focus", () => {
           syncKeyboard();
         });
@@ -187,6 +246,14 @@ export function MathFormulaField({
       bodyObserver?.disconnect();
       keyboardObserver?.disconnect();
       hideButton?.remove();
+      if (multiplyBinding.current) {
+        multiplyBinding.current.target.removeEventListener(
+          "pointerdown",
+          multiplyBinding.current.handler,
+          true,
+        );
+        multiplyBinding.current = null;
+      }
       delete document.body.dataset.mathKeyboard;
       document.documentElement.style.removeProperty("--math-keyboard-height");
       field.current?.remove();
