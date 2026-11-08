@@ -177,7 +177,7 @@ export function Lobby({
       />
       <section className="room-setup">
         <LobbySetupTransition
-          panelKey={creating ? `${kind}:${mode}` : `join:${mode}`}
+          panelKey={creating ? `heading:${kind}` : "heading:join"}
         >
           <div className="club-setup-heading">
             {creating && <GameCover kind={kind} />}
@@ -192,61 +192,65 @@ export function Lobby({
               </p>
             </div>
           </div>
-          <div className="segmented">
+        </LobbySetupTransition>
+        <div className="segmented">
+          <button
+            className={mode === "local" ? "active" : ""}
+            onClick={() => setMode("local")}
+          >
+            本地对局
+          </button>
+          <button
+            className={mode === "network" ? "active" : ""}
+            onClick={() => {
+              setMode("network");
+              setNetworkPage("join");
+            }}
+          >
+            跨网络联机
+          </button>
+        </div>
+        {mode === "network" && (
+          <div className="segmented" role="tablist" aria-label="联机方式">
             <button
-              className={mode === "local" ? "active" : ""}
-              onClick={() => setMode("local")}
+              role="tab"
+              aria-selected={networkPage === "join"}
+              className={networkPage === "join" ? "active" : ""}
+              disabled={busy}
+              onClick={() => setNetworkPage("join")}
             >
-              本地对局
+              加入
             </button>
             <button
-              className={mode === "network" ? "active" : ""}
-              onClick={() => {
-                setMode("network");
-                setNetworkPage("join");
-              }}
+              role="tab"
+              aria-selected={networkPage === "create"}
+              className={networkPage === "create" ? "active" : ""}
+              disabled={busy}
+              onClick={() => setNetworkPage("create")}
             >
-              跨网络联机
+              创建房间
             </button>
           </div>
-          {mode === "network" && (
-            <div className="segmented" role="tablist" aria-label="联机方式">
-              <button
-                role="tab"
-                aria-selected={networkPage === "join"}
-                className={networkPage === "join" ? "active" : ""}
-                disabled={busy}
-                onClick={() => setNetworkPage("join")}
-              >
-                加入
-              </button>
-              <button
-                role="tab"
-                aria-selected={networkPage === "create"}
-                className={networkPage === "create" ? "active" : ""}
-                disabled={busy}
-                onClick={() => setNetworkPage("create")}
-              >
-                创建房间
-              </button>
-            </div>
-          )}
-          <TextField
-            label="昵称"
-            value={name}
-            maxLength={24}
-            onChange={(event) => setName(event.target.value)}
+        )}
+        <TextField
+          label="昵称"
+          value={name}
+          maxLength={24}
+          onChange={(event) => setName(event.target.value)}
+        />
+        <details className="lobby-options club-avatar">
+          <summary>我的头像 · {preferences.avatar}</summary>
+          <AvatarPicker
+            value={preferences.avatar}
+            onChange={(avatar) =>
+              onPreferencesChange({ ...preferences, avatar })
+            }
           />
-          <details className="lobby-options club-avatar">
-            <summary>我的头像 · {preferences.avatar}</summary>
-            <AvatarPicker
-              value={preferences.avatar}
-              onChange={(avatar) =>
-                onPreferencesChange({ ...preferences, avatar })
-              }
-            />
-          </details>
-          <div className="lobby-body" data-scene-enter>
+        </details>
+        <div className="lobby-body" data-scene-enter>
+          <LobbySetupTransition
+            panelKey={creating ? `body:${kind}:${mode}` : `body:join:${mode}`}
+          >
             {mode === "network" && !creating && (
               <div className="invite-entry">
                 <Switch
@@ -583,8 +587,8 @@ export function Lobby({
                 </Button>
               </>
             )}
-          </div>
-        </LobbySetupTransition>
+          </LobbySetupTransition>
+        </div>
       </section>
     </main>
   );

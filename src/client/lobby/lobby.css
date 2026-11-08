@@ -303,7 +303,7 @@
   min-width: 0;
 }
 .lobby-setup-transition > .lobby-setup-transition-content > .ui-field,
-.lobby-body > label:not(.checkbox, .ui-switch-label, .setting-row) {
+.lobby-body .ui-field {
   display: flex;
   flex-direction: column;
   gap: 7px;
