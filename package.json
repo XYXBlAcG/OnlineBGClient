@@ -15,7 +15,7 @@
     "desktop:build": "node scripts/build-desktop.mjs",
     "ios:init": "tauri ios init",
     "ios:dev": "tauri ios dev",
-    "ios:prepare": "npm run upstream:build && npm run build",
+    "ios:prepare": "node scripts/prepare-ios.mjs && npm run upstream:build && npm run build",
     "ios:build": "tauri ios build --no-sign --ci --target aarch64 --export-method debugging",
     "upstream:build": "node scripts/build-upstream.mjs",
     "hosting:build": "node scripts/build-hosting.mjs",

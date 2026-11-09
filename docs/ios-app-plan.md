@@ -201,6 +201,7 @@
 - 语音令牌请求复用房间服务的 `/voice`，不新增云端账号或公共令牌服务。
 - Web 层负责获取短期令牌并调用 `NativeVoiceTransport`；原生层不读取 LiveKit API Secret。
 - 原生层使用 LiveKit Swift SDK、`AVAudioSession`、麦克风权限、输出路由、系统中断和后台音频；目标覆盖锁屏与切后台通话。
+- LiveKit Swift 作为 Xcode 工程依赖在 app target 中编译，由 Xcode 处理 WebRTC 动态框架链接与嵌入；Rust 插件只持有原生插件句柄。
 - Web 层继续负责 `VoiceSession` 状态机、成员列表、静音、耳机静音、个人音量、房主禁言和移出。
 - 麦克风输入测试和设备枚举改为可注入探针；iOS 使用原生探针，不复用 Web 的 `MicrophoneProbe`，输出路由由原生层处理。
 - 原生事件通过 Tauri 事件回传：成员说话状态、连接阶段、播放阻塞、权限变化、设备丢失和处理错误。
@@ -361,7 +362,7 @@ M0 只验证路线 B，不再比较 A／C：
 | 邀请二维码 | [加入页](../src/client/MobileJoin.tsx)、[移动权限](../src-tauri/capabilities/mobile.json) |
 | 移动大厅与本地开局 | `src/client/mobile/MobileLobby.tsx`、[大厅](../src/client/Lobby.tsx)、[本地连接](../src/client/connection.ts) |
 | 移动设置 | [设置](../src/client/Settings.tsx)、平台能力层 |
-| 语音会话与原生桥 | [语音会话](../src/client/voice/session.ts)、[原生传输](../src/client/voice/native-transport.ts)、[原生插件](../src-tauri/plugins/voice-native/)、[移动命令](../src-tauri/src/mobile.rs) |
+| 语音会话与原生桥 | [语音会话](../src/client/voice/session.ts)、[原生传输](../src/client/voice/native-transport.ts)、[Rust 插件](../src-tauri/plugins/voice-native/)、[Swift 原生层](../src-tauri/mobile/ios/)、[移动命令](../src-tauri/src/mobile.rs) |
 | iOS 工程与权限 | [Xcode 工程](../src-tauri/gen/apple/)、[iOS 配置](../src-tauri/tauri.ios.conf.json)、[权限说明](../src-tauri/Info.ios.plist) |
 | iOS 构建与 GitHub IPA | [包脚本](../package.json)、[工作流](../.github/workflows/ios.yml) |
 | 验证 | [平台测试](../tests/platform.test.ts)、[原生传输测试](../tests/voice-native-transport.test.ts)、真机清单见本页 |

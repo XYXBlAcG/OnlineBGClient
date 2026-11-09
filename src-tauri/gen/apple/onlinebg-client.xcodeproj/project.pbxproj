@@ -15,9 +15,12 @@
 		6136138F13E6265B4A9A83B5 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = D93C7E4274462D96AAF39FEF /* main.mm */; };
 		932C30FD3C7A388F6B16EC91 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A9709C383A26868EB18F452 /* UIKit.framework */; };
 		93EEE523E8FB2A4884D0DFA6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D46ACCB29E65F541FC50F00 /* Assets.xcassets */; };
+		978431CA0B4554A0746C2F3A /* VoiceNativePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46973BC92E16A6ACE15AB87D /* VoiceNativePlugin.swift */; };
 		CE436070A634348E33B86ED0 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A12310614A0FB7727A8689ED /* Security.framework */; };
+		D38C070003651DA3A7BF19D6 /* Tauri in Frameworks */ = {isa = PBXBuildFile; productRef = 28C87FDBDD1931CA4D806B7B /* Tauri */; };
 		E1B7743CB562387C525BEDB8 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D5462C8E6289A94F998C62F /* Metal.framework */; };
 		E50F8EE7338F1E6236E218C1 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 648B8DFDF64861F38AB6A8A3 /* WebKit.framework */; };
+		F58E51F3C57491F2BC371E90 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 06F6681EA7AFE78813B83E50 /* LiveKit */; };
 		FD1D930426C21A0885E090C1 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 483C65F4B6AFFD9E309D106F /* assets */; };
 /* End PBXBuildFile section */
 
@@ -26,6 +29,7 @@
 		2DDDFB4673AFB4B4BA05E235 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
 		327F7276C9FB8BB54F2609C9 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		427FD29101FB19E456CA6C76 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
+		46973BC92E16A6ACE15AB87D /* VoiceNativePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceNativePlugin.swift; sourceTree = "<group>"; };
 		483C65F4B6AFFD9E309D106F /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
 		4D5462C8E6289A94F998C62F /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		5A9709C383A26868EB18F452 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -36,6 +40,7 @@
 		7D46ACCB29E65F541FC50F00 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7F1F2237784D36E2810F8935 /* usage.rs */ = {isa = PBXFileReference; path = usage.rs; sourceTree = "<group>"; };
 		808A3FDE7C9EA8A9EDC1D14F /* onlinebg-client_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "onlinebg-client_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		82852CD4789A2E21293FC49A /* tauri-api */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tauri-api"; path = ".tauri/tauri-api"; sourceTree = SOURCE_ROOT; };
 		83DB67355703796B657B2CB1 /* onlinebg-client_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "onlinebg-client_iOS.entitlements"; sourceTree = "<group>"; };
 		8498DE7EB8A8840670688825 /* identity.rs */ = {isa = PBXFileReference; path = identity.rs; sourceTree = "<group>"; };
 		8FA06485A47B32182E2647A0 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
@@ -64,6 +69,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D38C070003651DA3A7BF19D6 /* Tauri in Frameworks */,
+				F58E51F3C57491F2BC371E90 /* LiveKit in Frameworks */,
 				39B5B1DF0F47C2CEAA9BF2B3 /* libapp.a in Frameworks */,
 				3A7CB043018D9CBC38CE57A5 /* CoreGraphics.framework in Frameworks */,
 				E1B7743CB562387C525BEDB8 /* Metal.framework in Frameworks */,
@@ -128,7 +135,9 @@
 				7D46ACCB29E65F541FC50F00 /* Assets.xcassets */,
 				327F7276C9FB8BB54F2609C9 /* LaunchScreen.storyboard */,
 				30BBE8AAEB4C774551540AF2 /* Externals */,
+				7EBD32C32C3F399831EEA8F2 /* ios */,
 				9F91472F7BD029FEBE5FC62D /* onlinebg-client_iOS */,
+				905FAC6E963D74D86636C0EF /* Packages */,
 				90B8F5A3482D2099D8711790 /* Sources */,
 				0604473115D9A4BA4699ACBA /* src */,
 				C005ED58E394FB6895D20E44 /* Frameworks */,
@@ -144,12 +153,29 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		7EBD32C32C3F399831EEA8F2 /* ios */ = {
+			isa = PBXGroup;
+			children = (
+				46973BC92E16A6ACE15AB87D /* VoiceNativePlugin.swift */,
+			);
+			name = ios;
+			path = ../../mobile/ios;
+			sourceTree = "<group>";
+		};
 		853C944D98C1E77B17B8B98F /* bindings */ = {
 			isa = PBXGroup;
 			children = (
 				427FD29101FB19E456CA6C76 /* bindings.h */,
 			);
 			path = bindings;
+			sourceTree = "<group>";
+		};
+		905FAC6E963D74D86636C0EF /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				82852CD4789A2E21293FC49A /* tauri-api */,
+			);
+			name = Packages;
 			sourceTree = "<group>";
 		};
 		90B8F5A3482D2099D8711790 /* Sources */ = {
@@ -202,6 +228,8 @@
 			);
 			name = "onlinebg-client_iOS";
 			packageProductDependencies = (
+				28C87FDBDD1931CA4D806B7B /* Tauri */,
+				06F6681EA7AFE78813B83E50 /* LiveKit */,
 			);
 			productName = "onlinebg-client_iOS";
 			productReference = 808A3FDE7C9EA8A9EDC1D14F /* onlinebg-client_iOS.app */;
@@ -227,6 +255,10 @@
 			);
 			mainGroup = 66D894CAC4BD50D7B2CEF810;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				45964C2258C13BB91BFC4FD3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
+				324F088536D13F0F3B9CC872 /* XCLocalSwiftPackageReference ".tauri/tauri-api" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 69B4F2EE42611E212DC17D84 /* Products */;
 			projectDirPath = "";
@@ -279,6 +311,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				978431CA0B4554A0746C2F3A /* VoiceNativePlugin.swift in Sources */,
 				6136138F13E6265B4A9A83B5 /* main.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -489,6 +522,36 @@
 			defaultConfigurationName = debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		324F088536D13F0F3B9CC872 /* XCLocalSwiftPackageReference ".tauri/tauri-api" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ".tauri/tauri-api";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		45964C2258C13BB91BFC4FD3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/livekit/client-sdk-swift.git";
+			requirement = {
+				kind = exactVersion;
+				version = 2.19.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		06F6681EA7AFE78813B83E50 /* LiveKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45964C2258C13BB91BFC4FD3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
+			productName = LiveKit;
+		};
+		28C87FDBDD1931CA4D806B7B /* Tauri */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Tauri;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2DA7F232C09390612D85A22D /* Project object */;
 }
