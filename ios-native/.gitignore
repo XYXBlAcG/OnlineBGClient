@@ -1,0 +1,5 @@
+.build/
+OnlineBGShell.xcodeproj/
+OnlineBGShell/Info.plist
+xcuserdata/
+DerivedData/

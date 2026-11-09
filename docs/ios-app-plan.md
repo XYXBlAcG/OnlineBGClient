@@ -108,6 +108,12 @@
 - 第一版注册自定义 scheme 作为后续深链接预留，不承诺临时 HTTPS 邀请链接直接唤起 App。
 - 最低系统版本 iOS 17.0；开发与验收基线为 iOS 27、iPhone 18 Pro。
 
+### SwiftUI 外壳原型
+
+第一版原生外壳原型位于 [ios-native](../ios-native/)，独立于 Tauri 工程。它用 SwiftUI 渲染首页、大厅、加入、设置和手牌托盘，牌桌仍由 Web 引擎承担。生成与启动见 `npm run native:preview`；界面审核规则见 [界面评审](ui-review-workflow.md)。原型通过前不替换现有 Tauri 外壳，也不触发 iOS Release。
+
+原型阶段使用静态 Swift 游戏目录和手牌数据；正式接入时由 TypeScript 目录生成 JSON 和图标资源，避免长期维护两套数据源。
+
 ### 构建与分发
 
 - 生成并维护 `src-tauri/gen/apple`，不把桌面窗口配置当成 iOS 配置。
@@ -366,4 +372,5 @@ M0 只验证路线 B，不再比较 A／C：
 | 语音会话与原生桥 | [语音会话](../src/client/voice/session.ts)、[原生传输](../src/client/voice/native-transport.ts)、[Rust 插件](../src-tauri/plugins/voice-native/)、[Swift 原生层](../src-tauri/mobile/ios/)、[移动命令](../src-tauri/src/mobile.rs) |
 | iOS 工程与权限 | [Xcode 工程](../src-tauri/gen/apple/)、[iOS 配置](../src-tauri/tauri.ios.conf.json)、[权限说明](../src-tauri/Info.ios.plist)、[图标脚本](../scripts/build-ios-icons.mjs) |
 | iOS 构建与 GitHub IPA | [准备脚本](../scripts/prepare-ios.mjs)、[包脚本](../package.json)、[iOS 工作流](../.github/workflows/ios.yml)、[统一发布](../.github/workflows/desktop.yml) |
+| SwiftUI 外壳原型 | [原生工程](../ios-native/)、[启动脚本](../scripts/run-native-shell.mjs)、[界面评审](ui-review-workflow.md) |
 | 验证 | [平台测试](../tests/platform.test.ts)、[原生传输测试](../tests/voice-native-transport.test.ts)、[本地配置测试](../tests/mobile-local-room.test.ts)、真机清单见本页 |

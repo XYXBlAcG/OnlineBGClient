@@ -15,6 +15,8 @@
     "desktop:build": "node scripts/build-desktop.mjs",
     "ios:init": "tauri ios init",
     "icons:ios": "node scripts/build-ios-icons.mjs",
+    "native:generate": "cd ios-native && xcodegen generate",
+    "native:preview": "node scripts/run-native-shell.mjs",
     "ios:dev": "tauri ios dev",
     "ios:prepare": "node scripts/prepare-ios.mjs && npm run upstream:build && npm run build",
     "ios:build": "tauri ios build --no-sign --ci --target aarch64 --export-method debugging",

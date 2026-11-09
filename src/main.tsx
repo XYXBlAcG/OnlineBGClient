@@ -122,10 +122,15 @@ const invited = new URLSearchParams(location.search);
 const DevPhoneRoom = import.meta.env.DEV
   ? React.lazy(() => import("./client/dev/PhoneRoom"))
   : null;
+const DevNativeShell = import.meta.env.DEV
+  ? React.lazy(() => import("./client/dev/NativeShellPreview"))
+  : null;
 const Practice = React.lazy(() =>
   import("./client/Practice").then((module) => ({ default: module.Practice })),
 );
 const devPhoneRoom = import.meta.env.DEV && invited.get("dev") === "phone";
+const devNativeShell =
+  import.meta.env.DEV && invited.get("dev") === "native-shell";
 const initialService =
   invited.get("service") ||
   (!isTauri() &&
@@ -2155,6 +2160,10 @@ createRoot(document.getElementById("root")!).render(
     <VoiceProvider>
       {auxiliaryView ? (
         <AuxiliaryRoot />
+      ) : devNativeShell && DevNativeShell ? (
+        <React.Suspense fallback={null}>
+          <DevNativeShell />
+        </React.Suspense>
       ) : devPhoneRoom && DevPhoneRoom ? (
         <React.Suspense fallback={null}>
           <DevPhoneRoom />
