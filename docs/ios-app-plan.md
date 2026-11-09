@@ -1,6 +1,6 @@
 # iOS 客户端：加入、语音与移动大厅
 
-状态：M0 基础已落地，等待 iOS 27 真机与 GitHub Actions 构建验证。已确认：语音优先采用原生 Swift LiveKit + Web 桥；只支持 iPhone；通过 GitHub Actions 生成 IPA 自行安装；本地开局为第一版必达。手机浏览器继续作为免安装入口，边界见 [手机浏览器](mobile-browser-plan.md)；桌面语音见 [客户端房间语音](client-voice.md)。
+状态：M0 基础已落地，GitHub Actions 已生成未签名 IPA；等待 iOS 27 真机语音、相机与触屏验证。已确认：语音优先采用原生 Swift LiveKit + Web 桥；只支持 iPhone；通过 GitHub Actions 生成 IPA 自行安装；本地开局为第一版必达。手机浏览器继续作为免安装入口，边界见 [手机浏览器](mobile-browser-plan.md)；桌面语音见 [客户端房间语音](client-voice.md)。
 
 当前 M0 已有：平台能力层、Tauri iOS 工程与权限、原生 Swift LiveKit 桥、二维码扫描入口、GitHub IPA 工作流、移动首页、本地开局与移动大厅。宿主机仍需 Xcode/iOS SDK；真机语音、相机和触屏验收待用户执行。
 
