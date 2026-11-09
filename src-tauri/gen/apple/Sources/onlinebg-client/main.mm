@@ -1,6 +1,8 @@
 #include "bindings/bindings.h"
+#import <Foundation/Foundation.h>
 
-@class OnlineBGVoiceNativePlugin;
+@interface OnlineBGVoiceNativePlugin : NSObject
+@end
 
 static OnlineBGVoiceNativePlugin *voiceNativePlugin;
 

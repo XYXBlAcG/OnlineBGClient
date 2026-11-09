@@ -37,6 +37,12 @@ jobs:
           IPA=$(find src-tauri/gen/apple src-tauri/target -name '*.ipa' -type f | head -1)
           test -n "$IPA"
           cp "$IPA" OnlineBGClient-unsigned.ipa
+      - name: Verify voice plugin export
+        run: |
+          rm -rf /tmp/onlinebg-ipa-check
+          unzip -q OnlineBGClient-unsigned.ipa -d /tmp/onlinebg-ipa-check
+          nm -gU /tmp/onlinebg-ipa-check/Payload/OnlineBGClient.app/OnlineBGClient | grep _init_plugin_voice_native
+          test -d /tmp/onlinebg-ipa-check/Payload/OnlineBGClient.app/Frameworks/LiveKitWebRTC.framework
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: OnlineBGClient-unsigned-ipa
