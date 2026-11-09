@@ -21,6 +21,7 @@ const source = resolve(dirname(tauri.manifest_path), "mobile/ios-api");
 const target = resolve("src-tauri/gen/apple/.tauri/tauri-api");
 await rm(target, { recursive: true, force: true });
 await mkdir(dirname(target), { recursive: true });
+await mkdir(resolve("src-tauri/gen/apple/Externals"), { recursive: true });
 await cp(source, target, {
   recursive: true,
   filter: (path) =>
