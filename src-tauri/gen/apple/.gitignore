@@ -2,3 +2,4 @@ xcuserdata/
 build/
 Externals/
 .tauri/
+.livekit/

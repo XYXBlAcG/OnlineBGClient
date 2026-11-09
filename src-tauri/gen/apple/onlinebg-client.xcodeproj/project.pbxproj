@@ -57,6 +57,7 @@
 		C36372E284842B465BA52894 /* cache.rs */ = {isa = PBXFileReference; path = cache.rs; sourceTree = "<group>"; };
 		D73DFA7FF13ED90F7C11A453 /* emoji.rs */ = {isa = PBXFileReference; path = emoji.rs; sourceTree = "<group>"; };
 		D93C7E4274462D96AAF39FEF /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+		DF333D84A5B2F8371FEF2A44 /* client-sdk-swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "client-sdk-swift"; path = ".livekit/client-sdk-swift"; sourceTree = SOURCE_ROOT; };
 		E538778FB5DA621B3DA8A3A8 /* usage_model.rs */ = {isa = PBXFileReference; path = usage_model.rs; sourceTree = "<group>"; };
 		E6D0A6795C9D9A631FB3A05A /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		F051D53FE116551989F92229 /* diagnostics.rs */ = {isa = PBXFileReference; path = diagnostics.rs; sourceTree = "<group>"; };
@@ -173,6 +174,7 @@
 		905FAC6E963D74D86636C0EF /* Packages */ = {
 			isa = PBXGroup;
 			children = (
+				DF333D84A5B2F8371FEF2A44 /* client-sdk-swift */,
 				82852CD4789A2E21293FC49A /* tauri-api */,
 			);
 			name = Packages;
@@ -256,7 +258,7 @@
 			mainGroup = 66D894CAC4BD50D7B2CEF810;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				45964C2258C13BB91BFC4FD3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
+				EEFEF1430CD26F41AE173D38 /* XCLocalSwiftPackageReference ".livekit/client-sdk-swift" */,
 				324F088536D13F0F3B9CC872 /* XCLocalSwiftPackageReference ".tauri/tauri-api" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -530,23 +532,15 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ".tauri/tauri-api";
 		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		45964C2258C13BB91BFC4FD3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/livekit/client-sdk-swift.git";
-			requirement = {
-				kind = exactVersion;
-				version = 2.19.0;
-			};
+		EEFEF1430CD26F41AE173D38 /* XCLocalSwiftPackageReference ".livekit/client-sdk-swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ".livekit/client-sdk-swift";
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		06F6681EA7AFE78813B83E50 /* LiveKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 45964C2258C13BB91BFC4FD3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
 			productName = LiveKit;
 		};
 		28C87FDBDD1931CA4D806B7B /* Tauri */ = {

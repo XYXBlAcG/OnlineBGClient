@@ -34,13 +34,16 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: |
+            src-tauri/gen/apple/.livekit
             ~/Library/Caches/org.swift.swiftpm
             ~/Library/Developer/Xcode/DerivedData/*/SourcePackages
-          key: ios-swiftpm-livekit-2.19.0-v1
+          key: ios-livekit-2.9.0-137.7151.10-v1
           restore-keys: |
-            ios-swiftpm-livekit-
+            ios-livekit-
       - name: Build unsigned IPA
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -o pipefail
           for attempt in 1 2 3; do
@@ -64,7 +67,6 @@ jobs:
           rm -rf /tmp/onlinebg-ipa-check
           unzip -q OnlineBGClient-unsigned.ipa -d /tmp/onlinebg-ipa-check
           test -d /tmp/onlinebg-ipa-check/Payload/OnlineBGClient.app/Frameworks/LiveKitWebRTC.framework
-          test -d /tmp/onlinebg-ipa-check/Payload/OnlineBGClient.app/Frameworks/RustLiveKitFFI.framework
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: OnlineBGClient-unsigned-ipa

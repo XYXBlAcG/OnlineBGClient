@@ -8,8 +8,7 @@ packages:
   Tauri:
     path: .tauri/tauri-api
   LiveKit:
-    url: https://github.com/livekit/client-sdk-swift.git
-    exactVersion: 2.19.0
+    path: .livekit/client-sdk-swift
 configs:
   debug: debug
   release: release
