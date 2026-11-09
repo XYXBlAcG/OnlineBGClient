@@ -229,6 +229,7 @@ class VoiceNativePlugin: Plugin, RoomDelegate, @unchecked Sendable {
   }
 }
 
+@_used
 @_cdecl("init_plugin_voice_native")
 func initPlugin() -> Plugin {
   VoiceNativePlugin()
