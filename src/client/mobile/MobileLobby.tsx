@@ -101,7 +101,7 @@ export function MobileLobby({
         )}
         <p className="mobile-local-note">
           {game.ai
-            ? `其余席位由 AI 补足，共 ${Math.max(game.minPlayers, humans)} 人开局。`
+            ? `共 ${Math.max(game.minPlayers, humans)} 人开局，不足最低人数时由 AI 补足。`
             : "同屏轮流操作，不加入 AI。"}
         </p>
         <Button

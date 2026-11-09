@@ -334,7 +334,7 @@ M0 只验证路线 B，不再比较 A／C：
 | 风险 | 影响 | 处理 |
 | --- | --- | --- |
 | 原生 LiveKit 与 Web 状态不同步 | 成员、静音或连接状态不一致 | 单一 `VoiceSession` 状态源；`NativeVoiceTransport` 契约测试与真机回归 |
-| LiveKit WebRTC 动态框架 | 静态插件链接后运行时缺少 framework | M0 真实构建验证；必要时改为 Xcode 级 Swift Package 或 CocoaPods 集成，并在 app target 嵌入 |
+| LiveKit WebRTC 动态框架 | 静态插件链接后运行时缺少 framework | 已改为 Xcode app target Swift Package，IPA 内含 `LiveKitWebRTC.framework` 与 `RustLiveKitFFI.framework`；真机启动待验 |
 | iOS 后台音频被系统中断 | 锁屏或切后台通话中断 | M0 实测 `AVAudioSession`、后台模式和中断恢复；失败时明确边界，不伪造状态 |
 | 原生 LiveKit / Tauri iOS 版本兼容 | 编译或运行失败 | M0 锁定版本并记录最低 iOS；不把桌面依赖带进 iOS |
 | `isTauri` 桌面假设分散 | iOS 误开辅助窗口、更新、文件命令 | M1 平台能力层统一修复，逐项测试 |
