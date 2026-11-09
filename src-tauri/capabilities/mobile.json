@@ -1,0 +1,7 @@
+{
+  "identifier": "mobile",
+  "description": "iOS camera and barcode capabilities",
+  "platforms": ["iOS"],
+  "windows": ["main"],
+  "permissions": ["barcode-scanner:default"]
+}

@@ -1,6 +1,7 @@
 import { VoiceEffectControls } from "./VoiceEffectControls";
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
+import { capabilities } from "../platform";
 import { confirmation } from "../confirmation-controller";
 import { Slider } from "../ui/Controls";
 import { Shortcut } from "../ui/Shortcut";
@@ -37,7 +38,9 @@ export function VoiceToolbar({
           onClick={() => send({ type: "mute" })}
         >
           {view.muted ? "麦克风已静音" : "麦克风开启"}{" "}
-          {muteBinding && <Shortcut binding={muteBinding} />}
+          {capabilities.keyboardShortcuts && muteBinding && (
+            <Shortcut binding={muteBinding} />
+          )}
         </button>
       )}
     </span>
@@ -134,11 +137,13 @@ export function VoiceDock() {
           )}
         </>
       )}
-      <VoiceEffectControls
-        compact
-        value={view.effect}
-        onChange={(effect) => send({ type: "effect", effect })}
-      />
+      {capabilities.desktop && (
+        <VoiceEffectControls
+          compact
+          value={view.effect}
+          onChange={(effect) => send({ type: "effect", effect })}
+        />
+      )}
       {view.playbackBlocked && (
         <button type="button" onClick={() => send({ type: "playback" })}>
           点击恢复语音播放

@@ -10,6 +10,7 @@ import {
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { emit, emitTo, listen } from "@tauri-apps/api/event";
 import { nativeMain } from "../native/windows";
+import { capabilities } from "../platform";
 import { keyboardBinding } from "../commands";
 import { voicePushBinding } from "./shortcuts";
 import { loadPreferences } from "../preferences";
@@ -17,14 +18,13 @@ import { cuePlayer } from "../sound";
 import {
   initialVoice,
   voiceIntentSchema,
-  type VoiceGrant,
   type VoiceIntent,
   type VoicePreferences,
   type VoiceRoom,
-  type VoiceStatus,
   type VoiceView,
 } from "../../domain/voice";
 import { VoiceSession } from "./session";
+import { requestVoice } from "./request";
 const State = createContext<VoiceView>(initialVoice);
 const Actions = createContext<{
   send: (intent: VoiceIntent) => void;
@@ -43,17 +43,15 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
   const owner = useMemo(
     () =>
       nativeMain()
-        ? new VoiceSession(
-            (operation, room) =>
-              invoke<VoiceGrant | VoiceStatus>("voice_request", {
-                ...room,
-                operation,
-              }),
-            async () => {
-              const { LiveKitTransport } = await import("./livekit");
-              return new LiveKitTransport();
-            },
-          )
+        ? new VoiceSession(requestVoice, async () => {
+            if (capabilities.runtime === "ios") {
+              const { NativeVoiceTransport } =
+                await import("./native-transport");
+              return new NativeVoiceTransport();
+            }
+            const { LiveKitTransport } = await import("./livekit");
+            return new LiveKitTransport();
+          })
         : null,
     [],
   );
@@ -105,7 +103,8 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
           next.testing;
         if (busy !== wasActive) {
           wasActive = busy;
-          void invoke("voice_active", { active: busy });
+          if (capabilities.auxiliaryWindows)
+            void invoke("voice_active", { active: busy });
           window.dispatchEvent(
             new CustomEvent("voice-active", { detail: busy }),
           );
@@ -181,7 +180,8 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
       if (owner) {
         void owner.leave();
         cuePlayer.setDucked(false);
-        void invoke("voice_active", { active: false });
+        if (capabilities.auxiliaryWindows)
+          void invoke("voice_active", { active: false });
       }
     };
   }, [owner, actions]);

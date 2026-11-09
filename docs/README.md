@@ -16,6 +16,7 @@
 - [后续规划](roadmap.md)
 - [社交体验与实现入口](social-experience-plan.md)
 - [手机浏览器与实现入口](mobile-browser-plan.md)
+- [iOS 客户端：加入、语音与移动大厅](ios-app-plan.md)
 - [桌面牌桌与原生窗口](workspace-and-windows-ai-plan.md)
 - [牌桌布局审核入口](table-layout-review-plan.md)
 

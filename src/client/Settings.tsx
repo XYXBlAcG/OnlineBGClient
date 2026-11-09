@@ -9,7 +9,7 @@ import { emitTo } from "@tauri-apps/api/event";
 import { bannerContrast } from "./social/banner-color";
 import { KeyBindingEditor } from "./KeyBindingEditor";
 import { VoiceSettings } from "./voice/VoiceSettings";
-import { isTauri } from "@tauri-apps/api/core";
+import { capabilities } from "./platform";
 import { MediaCacheControls } from "./social/MediaCacheControls";
 import type { MediaSession } from "./social/media";
 import { MotionControls } from "./MotionControls";
@@ -109,12 +109,16 @@ export function Settings({
   const performance = canConfigureAI
     ? preferences.performance
     : roomPerformance || preferences.performance;
-  const desktop = isTauri();
-  const visibleSections = searchSettingsSections(search, desktop);
+  const desktop = capabilities.desktop;
+  const visibleSections = searchSettingsSections(
+    search,
+    desktop,
+    capabilities.voice,
+  );
   const searchEmpty = !!search.trim() && !visibleSections.length;
   const changeSearch = (value: string) => {
     setSearch(value);
-    const matches = searchSettingsSections(value, desktop);
+    const matches = searchSettingsSections(value, desktop, capabilities.voice);
     if (
       value.trim() &&
       matches.length &&
@@ -158,8 +162,8 @@ export function Settings({
               没有匹配的设置
             </div>
           )}
-          {section === "使用统计" && isTauri() && <UsageSettings />}
-          {section === "声音与语音" && isTauri() && (
+          {section === "使用统计" && capabilities.desktop && <UsageSettings />}
+          {section === "声音与语音" && capabilities.voice && (
             <VoiceSettings
               value={preferences.voice}
               onChange={(voice) => onChange({ ...preferences, voice })}
@@ -203,7 +207,9 @@ export function Settings({
                 onChange({ ...preferences, lobbySwitchMotion })
               }
             />
-            <EmojiSettings proxy={preferences.network.proxyUrl} />
+            {capabilities.desktop && (
+              <EmojiSettings proxy={preferences.network.proxyUrl} />
+            )}
             <AvatarPicker
               value={preferences.avatar}
               onChange={(avatar) => onChange({ ...preferences, avatar })}
@@ -298,16 +304,18 @@ export function Settings({
               }
             />
           </section>
-          {isTauri() && section === "软件更新" && (
+          {capabilities.updater && section === "软件更新" && (
             <UpdateSettings
               preferences={preferences.updates}
               onChange={(updates) => onChange({ ...preferences, updates })}
             />
           )}
-          {isTauri() && section === "软件日志" && <DiagnosticsSettings />}
+          {capabilities.desktop && section === "软件日志" && (
+            <DiagnosticsSettings />
+          )}
           <section hidden={section !== "联机"} className="settings-section">
             <h3>联机</h3>
-            {isTauri() && (
+            {capabilities.hosting && (
               <Switch
                 label="自动创建临时公网入口"
                 checked={preferences.network.temporary}
@@ -319,7 +327,7 @@ export function Settings({
                 }
               />
             )}
-            {isTauri() && (
+            {capabilities.hosting && (
               <>
                 <Switch
                   label="直连失败后尝试代理开房"

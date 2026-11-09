@@ -1,0 +1,11 @@
+{
+  "build": {
+    "beforeBuildCommand": "npm run ios:prepare"
+  },
+  "bundle": {
+    "resources": {},
+    "iOS": {
+      "minimumSystemVersion": "17.0"
+    }
+  }
+}

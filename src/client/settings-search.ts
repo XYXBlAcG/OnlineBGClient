@@ -1,7 +1,7 @@
 export interface SettingsSearchSection {
   label: string;
   terms: string;
-  desktop?: boolean;
+  requires?: "desktop" | "voice";
 }
 
 export const settingsSearchSections: SettingsSearchSection[] = [
@@ -23,19 +23,28 @@ export const settingsSearchSections: SettingsSearchSection[] = [
   {
     label: "声音与语音",
     terms: "麦克风 扬声器 语音 连麦 变声 设备与连麦设置 设备 测试",
-    desktop: true,
+    requires: "voice",
   },
   {
     label: "软件更新",
     terms: "版本 更新 自动更新 自动下载 下载 进度 通道 检查更新",
-    desktop: true,
+    requires: "desktop",
   },
-  { label: "软件日志", terms: "日志 诊断 错误 报告 导出", desktop: true },
-  { label: "使用统计", terms: "使用时长 统计 tokens 模型 用量", desktop: true },
+  {
+    label: "软件日志",
+    terms: "日志 诊断 错误 报告 导出",
+    requires: "desktop",
+  },
+  {
+    label: "使用统计",
+    terms: "使用时长 统计 tokens 模型 用量",
+    requires: "desktop",
+  },
   {
     label: "联机",
     terms:
       "临时公网 自动创建临时公网入口 代理 直连失败后尝试代理开房 HTTP 代理地址 局域网 显示局域网调试开房 服务地址 自定义房间服务地址 网络",
+    requires: "desktop",
   },
   {
     label: "AI 计算",
@@ -48,14 +57,20 @@ export const settingsSearchSections: SettingsSearchSection[] = [
   {
     label: "快捷键",
     terms: "快捷键 绑定 键盘 按键 组合键 命令 语音 当前游戏",
+    requires: "desktop",
   },
 ];
 
-export function searchSettingsSections(query: string, desktop: boolean) {
+export function searchSettingsSections(
+  query: string,
+  desktop: boolean,
+  voice = desktop,
+) {
   const search = query.trim().toLowerCase();
   return settingsSearchSections.filter(
     (section) =>
-      (!section.desktop || desktop) &&
+      (!section.requires ||
+        (section.requires === "desktop" ? desktop : voice)) &&
       (!search ||
         `${section.label} ${section.terms}`.toLowerCase().includes(search)),
   );

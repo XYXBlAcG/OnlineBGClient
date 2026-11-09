@@ -7,6 +7,7 @@ import { emit } from "@tauri-apps/api/event";
 import { confirmation } from "../confirmation-controller";
 import { Select, Slider, Switch } from "../ui/Controls";
 import type { VoicePreferences } from "../../domain/voice";
+import { capabilities } from "../platform";
 import { useVoice } from "./VoiceProvider";
 interface Config {
   url: string;
@@ -34,16 +35,18 @@ export function VoiceSettings({
     [loopback, setLoopback] = useState(false);
   useEffect(() => {
     let active = true;
-    void invoke<Config>("voice_config")
-      .then((next) => {
-        if (active) {
-          setConfig(next);
-          setSetupOpen(!next.hasSecret);
-        }
-      })
-      .catch((error) => {
-        if (active) setNotice(String(error));
-      });
+    if (capabilities.voiceHostConfig)
+      void invoke<Config>("voice_config")
+        .then((next) => {
+          if (active) {
+            setConfig(next);
+            setSetupOpen(!next.hasSecret);
+          }
+        })
+        .catch((error) => {
+          if (active) setNotice(String(error));
+        });
+    else setSetupOpen(false);
     send({ type: "devices" });
     return () => {
       active = false;
@@ -76,86 +79,92 @@ export function VoiceSettings({
       <p className="muted">
         仅客户端支持房间连麦。加入后默认静音，语音音量独立于游戏音效。
       </p>
-      <VoiceSetupGuide
-        configured={config.hasSecret}
-        onConfigure={() => {
-          setSetupOpen(true);
-          requestAnimationFrame(() => {
-            configPanel.current?.scrollIntoView({ block: "nearest" });
-            configPanel.current?.querySelector("summary")?.focus();
-          });
-        }}
-      />
-      <details
-        ref={configPanel}
-        open={setupOpen}
-        onToggle={(event) => setSetupOpen(event.currentTarget.open)}
-      >
-        <summary>房主语音服务配置</summary>
-        <p className="muted">
-          仅开房的电脑需要配置自己的 LiveKit 项目。API Secret
-          保存到系统凭据存储，不发送给其他玩家。
-        </p>
-        <label>
-          项目地址
-          <input
-            value={config.url}
-            placeholder="wss://你的项目.livekit.cloud"
-            autoComplete="off"
-            onChange={(event) =>
-              setConfig({ ...config, url: event.target.value })
-            }
-          />
-        </label>
-        <label>
-          API Key
-          <input
-            value={config.apiKey}
-            autoComplete="off"
-            onChange={(event) =>
-              setConfig({ ...config, apiKey: event.target.value })
-            }
-          />
-        </label>
-        <label>
-          API Secret
-          <input
-            type="password"
-            value={secret}
-            autoComplete="new-password"
-            placeholder={
-              config.hasSecret
-                ? "已保存；留空保留现有 Secret"
-                : "填写项目 Secret"
-            }
-            onChange={(event) => setSecret(event.target.value)}
-          />
-        </label>
-        <div className="voice-buttons">
-          <button type="button" disabled={busy} onClick={() => void save()}>
-            保存房主配置
-          </button>
-          <button
-            type="button"
-            disabled={busy || !config.hasSecret}
-            onClick={async () => {
-              if (
-                await confirmation.request(
-                  "清除本机保存的语音服务凭据？当前房间不受影响，重启服务后停用语音。",
-                  "清除凭据",
-                )
-              )
-                void save(true);
+      {capabilities.voiceHostConfig && (
+        <>
+          <VoiceSetupGuide
+            configured={config.hasSecret}
+            onConfigure={() => {
+              setSetupOpen(true);
+              requestAnimationFrame(() => {
+                configPanel.current?.scrollIntoView({ block: "nearest" });
+                configPanel.current?.querySelector("summary")?.focus();
+              });
             }}
+          />
+          <details
+            ref={configPanel}
+            open={setupOpen}
+            onToggle={(event) => setSetupOpen(event.currentTarget.open)}
           >
-            清除凭据
-          </button>
-        </div>
-      </details>
-      <VoiceEffectControls
-        value={value.effect}
-        onChange={(effect) => onChange({ ...value, effect })}
-      />
+            <summary>房主语音服务配置</summary>
+            <p className="muted">
+              仅开房的电脑需要配置自己的 LiveKit 项目。API Secret
+              保存到系统凭据存储，不发送给其他玩家。
+            </p>
+            <label>
+              项目地址
+              <input
+                value={config.url}
+                placeholder="wss://你的项目.livekit.cloud"
+                autoComplete="off"
+                onChange={(event) =>
+                  setConfig({ ...config, url: event.target.value })
+                }
+              />
+            </label>
+            <label>
+              API Key
+              <input
+                value={config.apiKey}
+                autoComplete="off"
+                onChange={(event) =>
+                  setConfig({ ...config, apiKey: event.target.value })
+                }
+              />
+            </label>
+            <label>
+              API Secret
+              <input
+                type="password"
+                value={secret}
+                autoComplete="new-password"
+                placeholder={
+                  config.hasSecret
+                    ? "已保存；留空保留现有 Secret"
+                    : "填写项目 Secret"
+                }
+                onChange={(event) => setSecret(event.target.value)}
+              />
+            </label>
+            <div className="voice-buttons">
+              <button type="button" disabled={busy} onClick={() => void save()}>
+                保存房主配置
+              </button>
+              <button
+                type="button"
+                disabled={busy || !config.hasSecret}
+                onClick={async () => {
+                  if (
+                    await confirmation.request(
+                      "清除本机保存的语音服务凭据？当前房间不受影响，重启服务后停用语音。",
+                      "清除凭据",
+                    )
+                  )
+                    void save(true);
+                }}
+              >
+                清除凭据
+              </button>
+            </div>
+          </details>
+        </>
+      )}
+      {capabilities.desktop && (
+        <VoiceEffectControls
+          value={value.effect}
+          onChange={(effect) => onChange({ ...value, effect })}
+        />
+      )}
       <div className="voice-device-grid">
         <label>
           麦克风
@@ -202,38 +211,44 @@ export function VoiceSettings({
         <button type="button" onClick={() => send({ type: "devices" })}>
           刷新设备
         </button>
-        <button
-          type="button"
-          onClick={() =>
-            send({ type: "test", enabled: !view.testing, loopback })
-          }
-        >
-          {view.testing ? "停止输入测试" : "测试麦克风"}
-        </button>
+        {capabilities.desktop && (
+          <button
+            type="button"
+            onClick={() =>
+              send({ type: "test", enabled: !view.testing, loopback })
+            }
+          >
+            {view.testing ? "停止输入测试" : "测试麦克风"}
+          </button>
+        )}
       </div>
-      <Switch
-        label="测试时耳返（建议佩戴耳机）"
-        checked={loopback}
-        onCheckedChange={(checked) => {
-          setLoopback(checked);
-          if (view.testing)
-            send({ type: "test", enabled: true, loopback: checked });
-        }}
-      />
-      <div
-        className="voice-input-level"
-        role="meter"
-        aria-label="麦克风输入电平"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(view.inputLevel * 100)}
-      >
-        <span
-          style={{
-            width: `${Math.max(0, Math.min(1, view.inputLevel)) * 100}%`,
-          }}
-        />
-      </div>
+      {capabilities.desktop && (
+        <>
+          <Switch
+            label="测试时耳返（建议佩戴耳机）"
+            checked={loopback}
+            onCheckedChange={(checked) => {
+              setLoopback(checked);
+              if (view.testing)
+                send({ type: "test", enabled: true, loopback: checked });
+            }}
+          />
+          <div
+            className="voice-input-level"
+            role="meter"
+            aria-label="麦克风输入电平"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(view.inputLevel * 100)}
+          >
+            <span
+              style={{
+                width: `${Math.max(0, Math.min(1, view.inputLevel)) * 100}%`,
+              }}
+            />
+          </div>
+        </>
+      )}
       <label>
         语音总音量
         <Slider
@@ -256,8 +271,9 @@ export function VoiceSettings({
         <option value="push">按键说话</option>
       </Select>
       <p className="muted">
-        按键说话需先开启麦克风。按键在「快捷键 →
-        按住说话」修改，仅客户端获得焦点且未输入文字时生效。
+        {capabilities.desktop
+          ? "按键说话需先开启麦克风。按键在「快捷键 → 按住说话」修改，仅客户端获得焦点且未输入文字时生效。"
+          : "按键说话需先开启麦克风；在房间语音栏按住麦克风按钮发送。"}
       </p>
       <Switch
         label="有人说话时降低应用提示音"

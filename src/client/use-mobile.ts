@@ -1,6 +1,6 @@
 import { phonePreviewEnabled } from "./phone-preview";
+import { capabilities, runtime } from "./platform";
 import { useEffect, useState } from "react";
-import { isTauri } from "@tauri-apps/api/core";
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() => matchMedia(query).matches);
@@ -16,8 +16,10 @@ function useMediaQuery(query: string): boolean {
 export function useMobile(): boolean {
   const coarse = useMediaQuery("(pointer: coarse)");
   return (
-    !isTauri() &&
-    (coarse || phonePreviewEnabled(location.search, window.parent !== window))
+    capabilities.mobileUi ||
+    (runtime === "web" &&
+      (coarse ||
+        phonePreviewEnabled(location.search, window.parent !== window)))
   );
 }
 

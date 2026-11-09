@@ -1,7 +1,8 @@
 import { v4 as randomId } from "uuid";
 import { useEffect, useRef } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { capabilities } from "../platform";
 import {
   auxiliaryView,
   auxiliaryIntentSchema,
@@ -9,7 +10,7 @@ import {
   type AuxiliaryPayload,
   type AuxiliaryView,
 } from "./contract";
-export const nativeMain = () => isTauri() && !auxiliaryView;
+export const nativeMain = () => capabilities.voice && !auxiliaryView;
 export function useNativeWindow(
   view: AuxiliaryView,
   open: boolean,
@@ -17,7 +18,7 @@ export function useNativeWindow(
   receive: (intent: AuxiliaryIntent) => void,
   enabled = true,
 ) {
-  const active = nativeMain();
+  const active = capabilities.auxiliaryWindows;
   const shown = enabled && open;
   const visible = useRef(shown);
   visible.current = shown;

@@ -1,6 +1,7 @@
 import { recordClientLog } from "../diagnostics";
 import { useEffect } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
+import { capabilities } from "../platform";
 import type { Snapshot } from "../../domain/protocol";
 export type UsageContext = { game: string; session: string };
 export function useUsageContext(
@@ -22,7 +23,7 @@ export function useUsageContext(
       : null);
   const session = override?.session ?? snapshot?.playId;
   useEffect(() => {
-    if (!isTauri()) return;
+    if (!capabilities.desktop) return;
     void invoke("usage_context", {
       context: game && session ? { game, session } : null,
     }).catch((error) => recordClientLog("usage", String(error)));

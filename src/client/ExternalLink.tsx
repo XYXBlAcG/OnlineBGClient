@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
+import { capabilities } from "./platform";
 import links from "./about.json";
 export function ExternalLink({
   name,
@@ -18,7 +19,7 @@ export function ExternalLink({
         target="_blank"
         rel="noreferrer"
         onClick={(event) => {
-          if (!isTauri()) return;
+          if (!capabilities.desktop) return;
           event.preventDefault();
           setError("");
           void invoke("open_link", { key: name }).catch((error) =>

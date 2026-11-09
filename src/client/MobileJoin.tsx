@@ -1,10 +1,11 @@
-import { invitationLink } from "./invitation";
+import { invitationLink, parseInvitation } from "./invitation";
 import { ThemeControl } from "./ThemeControl";
 import { MotionControls } from "./MotionControls";
 import { AvatarPicker } from "./AvatarPicker";
 import type { Preferences } from "./preferences";
 import { useEffect, useState } from "react";
 import { gameCatalogue, type GameKind } from "../domain/catalogue";
+import { capabilities } from "./platform";
 import { TextField } from "./ui/Controls";
 export function MobileJoin({
   preferences,
@@ -29,6 +30,28 @@ export function MobileJoin({
       seats: number;
     } | null>(null),
     [error, setError] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const scanInvitation = async () => {
+    setError("");
+    setScanning(true);
+    try {
+      const { Format, scan } =
+        await import("@tauri-apps/plugin-barcode-scanner");
+      const result = await scan({ formats: [Format.QRCode] });
+      const value = result.content.trim();
+      parseInvitation(value);
+      if (!name.trim()) {
+        setInvitation(value);
+        setError("请填写昵称后加入");
+        return;
+      }
+      onJoin(name.trim(), value);
+    } catch (error) {
+      if (!/取消|cancel/i.test(String(error))) setError(String(error));
+    } finally {
+      setScanning(false);
+    }
+  };
   useEffect(() => {
     if (!room) return;
     const controller = new AbortController();
@@ -103,9 +126,18 @@ export function MobileJoin({
             }
           />
         </details>
+        {!room && capabilities.qrScanner && (
+          <button
+            type="button"
+            disabled={scanning}
+            onClick={() => void scanInvitation()}
+          >
+            {scanning ? "正在打开相机…" : "扫描邀请二维码"}
+          </button>
+        )}
         <button
           className="primary-button"
-          disabled={busy || !name.trim() || !invitation}
+          disabled={busy || scanning || !name.trim() || !invitation}
           type="submit"
         >
           {busy ? "连接中…" : "加入 / 恢复房间"}

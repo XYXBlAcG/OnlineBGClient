@@ -22,6 +22,7 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 设置与目录偏好                   | [设置](../src/client/Settings.tsx)、[偏好](../src/client/preferences.ts)                                                                                                       |
 | 可选新手引导与各游戏教学内容     | [引导组件](../src/client/BeginnerGuide.tsx)、[内容注册](../src/client/beginner-guides.ts)、[个人偏好](../src/client/preferences.ts)                                            |
 | 视口高度分配、共享侧栏与专注模式 | [房间界面](../src/main.tsx)、[布局](../src/styles.css)、[屏幕类型](../src/client/use-mobile.ts)                                                                                |
+| 平台能力与移动/桌面分支 | [平台能力](../src/client/platform.ts) |
 | 地图适配、缩放与平移             | [地图视口](../src/client/MapViewport.tsx)、[游戏边界接入](../scripts/build-upstream.mjs)                                                                                       |
 | 引导中的实际局面与合法动作       | [局面投影](../src/client/guide-position.ts)、[快照契约](../src/domain/protocol.ts)                                                                                             |
 | 武将与锦囊的悬停、聚焦和触屏详情 | [公共详情组件](../src/client/DetailSurface.tsx)、[锦囊牌面](../src/client/CardSurface.tsx)、[锦囊内容](../src/domain/card-guide.ts)、[武将牌面](../src/client/HeroSurface.tsx) |
@@ -77,9 +78,9 @@ AI 只接收对应席位可见信息。审核展示实际候选、特征贡献�
 
 ## 平台与功能状态
 
-桌面构建目标与检查入口由 [工作流](../.github/workflows/desktop.yml) 定义。实际构建、原生验证与未覆盖的平台见 [验证](verification.md)。游戏、策略和主题目前随应用打包；独立安装与其他平台安排见 [规划](roadmap.md)。
+桌面构建目标与检查入口由 [工作流](../.github/workflows/desktop.yml) 定义。实际构建、原生验证与未覆盖的平台见 [验证](verification.md)。游戏、策略和主题目前随应用打包；独立安装与其他平台安排见 [规划](roadmap.md)，iOS 客户端范围见 [iOS 客户端计划](ios-app-plan.md)。
 
-语音不在当前范围。公网接入与服务部署方案见 [联机运行](network.md)。验证入口与实际覆盖见 [验证](verification.md)。
+房间语音见 [客户端语音](client-voice.md)。公网接入与服务部署方案见 [联机运行](network.md)。验证入口与实际覆盖见 [验证](verification.md)。
 
 界面与游戏动效、头像身份入口见 [体验文档](ui-motion-plan.md)。
 

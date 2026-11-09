@@ -6,6 +6,7 @@
 | --- | --- |
 | 当前交付验证 | Windows 11 实机安装、高 DPI 与窗口交互；两台设备在不同网络完成邀请、对局、聊天、恢复和退出 |
 | 手机实机验证 | iOS Safari、Android Chrome 的触屏、锁屏、输入法、Wi-Fi／移动数据切换和多设备联机 |
+| iOS 客户端 | iPhone：加入、移动大厅、本地对局与房间语音；GitHub IPA 侧载；见 [iOS 客户端计划](ios-app-plan.md) |
 | 界面与动效验收 | [体验入口与检查](ui-motion-plan.md)，增强动效与自选头像的设备审核 |
 | 手机远程开房 | [接入选择、独立宿主与验收](remote-host-plan.md)，待审核，不新增云端游戏部署 |
 | 手机与聚会体验 | [待审核功能与验收](product-next-plan.md)，暂缓实施 |
@@ -14,7 +15,7 @@
 | 斗地主策略 | 独立策略内核、透明决策与审核；先验证规则及策略收益，再选择模型与 NVIDIA／Windows 11 推理方式 |
 | GPU 搜索／推理 | 当前 CPU 策略之外的批量算法或模型、收益评测、Windows 11／RTX 实机验证；提供可用后端后再开放设置 |
 | 更新实机验证 | [签名更新与人工验收](updating.md)；Windows 安装器、macOS 权限和跨版本重启 |
-| 其他平台 | macOS Intel、Windows ARM、Linux、Android、iOS 工具链、交互与生命周期验证 |
+| 其他平台 | macOS Intel、Windows ARM、Linux、Android 工具链、交互与生命周期验证 |
 | 多人扩展 | 语音与房主迁移另行设计；不实施云端部署 |
 
 独立扩展复用公共房间、通信和命令入口，游戏保留专属界面。缺少匹配组件时明确拒绝启动，不替换规则。主题仅改变视觉，不修改游戏权限或状态。

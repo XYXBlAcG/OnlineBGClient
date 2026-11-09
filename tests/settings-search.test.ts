@@ -33,6 +33,18 @@ it("keeps desktop-only settings out of browser search", () => {
   expect(searchSettingsSections("不存在的设置", true)).toEqual([]);
 });
 
+it("shows voice settings on iOS but keeps host-only sections desktop-only", () => {
+  expect(
+    searchSettingsSections("语音", false, true).map((item) => item.label),
+  ).toContain("声音与语音");
+  expect(
+    searchSettingsSections("语音", false, false).map((item) => item.label),
+  ).not.toContain("声音与语音");
+  expect(
+    searchSettingsSections("更新", false, true).map((item) => item.label),
+  ).not.toContain("软件更新");
+});
+
 it("renders search fields without the floating text-field label", () => {
   const html = renderToStaticMarkup(
     createElement(SearchField, {

@@ -17,6 +17,8 @@ mod hosting_probe;
 mod hosting_retry;
 #[cfg(not(mobile))]
 mod identity;
+#[cfg(target_os = "ios")]
+mod mobile;
 #[cfg(not(mobile))]
 mod network_proxy;
 #[cfg(not(mobile))]
@@ -109,9 +111,21 @@ pub fn run() {
             windows::auxiliary_intent
         ])
         .on_window_event(windows::window_event);
+    #[cfg(target_os = "ios")]
+    let builder = builder
+        .plugin(tauri_plugin_barcode_scanner::init())
+        .plugin(tauri_plugin_voice_native::init())
+        .invoke_handler(tauri::generate_handler![
+            mobile::voice_native_connect,
+            mobile::voice_native_set_microphone,
+            mobile::voice_native_set_deafened,
+            mobile::voice_native_set_volume,
+            mobile::voice_native_playback,
+            mobile::voice_native_disconnect
+        ]);
     builder
         .build(tauri::generate_context!())
-        .expect("failed to build desktop client")
+        .expect("failed to build client")
         .run(|app, event| {
             #[cfg(not(mobile))]
             {

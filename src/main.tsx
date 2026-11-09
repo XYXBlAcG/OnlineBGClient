@@ -44,6 +44,7 @@ import { MotionProvider } from "./client/motion";
 import { HeroDescription } from "./client/HeroSurface";
 import { HeroGuides } from "./domain/hero-guide";
 import { useWindowWidth, useMobile } from "./client/use-mobile";
+import { capabilities } from "./client/platform";
 import { MobileJoin } from "./client/MobileJoin";
 import { Invite } from "./client/Invite";
 import { ComputeStatus } from "./client/ComputeStatus";
@@ -263,7 +264,7 @@ function App() {
   const guideShown = guideEnabled && sidebarTab === "guide";
   const sidebarOpen =
     guideShown || (sidebarTab === "chat" && preferences.chatVisible);
-  const detachedSidebar = nativeMain() && narrowLayout;
+  const detachedSidebar = capabilities.auxiliaryWindows && narrowLayout;
   const tableFocused = focusPresentation({
     focused,
     playing: !!snapshot?.state && !snapshot.finished,
@@ -1409,20 +1410,22 @@ function App() {
   return (
     <GameSizeProvider profiles={preferences.gameSizes}>
       <MotionProvider preferences={preferences}>
-        <UpdaterController
-          preferences={preferences.updates}
-          busy={
-            !!snapshot ||
-            !!session.current ||
-            busy ||
-            voiceActive ||
-            /连接中|重连|正在准备/.test(status)
-          }
-          onAttention={() => {
-            setSettingsSection("软件更新");
-            setSettingsOpen(true);
-          }}
-        />
+        {capabilities.updater && (
+          <UpdaterController
+            preferences={preferences.updates}
+            busy={
+              !!snapshot ||
+              !!session.current ||
+              busy ||
+              voiceActive ||
+              /连接中|重连|正在准备/.test(status)
+            }
+            onAttention={() => {
+              setSettingsSection("软件更新");
+              setSettingsOpen(true);
+            }}
+          />
+        )}
         <div
           className={`app-shell ${mobile ? "mobile-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
         >
@@ -1566,7 +1569,7 @@ function App() {
                   }}
                 />
               )}
-              {!mobile && (
+              {(!mobile || capabilities.runtime === "ios") && (
                 <Button
                   onClick={() => {
                     setSettingsSection("外观");
@@ -1575,12 +1578,14 @@ function App() {
                   aria-label="打开设置"
                 >
                   设置{" "}
-                  <Shortcut
-                    binding={
-                      preferences.bindings["app.settings"] ??
-                      `${platformModifier()}+,`
-                    }
-                  />
+                  {capabilities.keyboardShortcuts && (
+                    <Shortcut
+                      binding={
+                        preferences.bindings["app.settings"] ??
+                        `${platformModifier()}+,`
+                      }
+                    />
+                  )}
                 </Button>
               )}
               {snapshot && (

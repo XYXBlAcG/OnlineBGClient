@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
+import { capabilities } from "./platform";
 import { ClientStore, subscribeRecords } from "./storage";
 import { confirmation } from "./confirmation-controller";
 import { Switch } from "./ui/Controls";
@@ -28,7 +29,7 @@ export function CacheSettings({
     [busy, setBusy] = useState(false);
   const refresh = async () => {
     const local = await store.cacheUsage();
-    const native = isTauri()
+    const native = capabilities.desktop
       ? await invoke<{ images: number; runtime: number }>("cache_usage")
       : { images: 0, runtime: 0 };
     setSaving(await store.recordSaving());
@@ -65,7 +66,7 @@ export function CacheSettings({
       return;
     setBusy(true);
     try {
-      if (isTauri() && (selected.runtime || selected.images))
+      if (capabilities.desktop && (selected.runtime || selected.images))
         await invoke("clear_cache", {
           runtime: selected.runtime,
           images: selected.images,
@@ -101,7 +102,7 @@ export function CacheSettings({
           "records",
           "images",
           "audit",
-          ...(isTauri() ? ["runtime"] : []),
+          ...(capabilities.desktop ? ["runtime"] : []),
         ] as Array<keyof typeof selection>
       ).map((key) => (
         <label className="setting-row" key={key}>
