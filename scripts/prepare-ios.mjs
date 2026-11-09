@@ -25,9 +25,7 @@ await mkdir(resolve("src-tauri/gen/apple/Externals"), { recursive: true });
 await cp(source, target, {
   recursive: true,
   filter: (path) =>
-    !path.includes("/.build") &&
-    !path.endsWith("Package.resolved") &&
-    !path.includes("/Tests"),
+    !path.includes("/.build") && !path.endsWith("Package.resolved"),
 });
 execFileSync(
   "xcodegen",
