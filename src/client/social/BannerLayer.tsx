@@ -1,12 +1,86 @@
-import { Emoji } from "../Emoji";
+import { Emoji, emojiUrl } from "../Emoji";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { bannerLifetime } from "../../domain/banner";
 import { interactionCatalogue, type ChatMessage } from "../../domain/social";
 import { usePresentation } from "../motion";
+import { effectMotion } from "../effect-motion";
 import type { Preferences } from "../preferences";
 type BannerMessage = Extract<ChatMessage, { type: "banner" }>;
 type QueuedBanner = BannerMessage & { receivedAt: number };
+type BannerEffectDefinition =
+  (typeof interactionCatalogue)[keyof typeof interactionCatalogue];
+
+function BannerEffect({
+  effect,
+  motion,
+}: {
+  effect: BannerEffectDefinition;
+  motion: boolean;
+}) {
+  const host = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = host.current;
+    const emoji = element?.querySelector<HTMLElement>(".banner-effect-emoji");
+    if (!element || !emoji) return;
+    if (!motion) {
+      emoji.style.opacity = "1";
+      return;
+    }
+    const frames = effectMotion(effect.style, 0, 0, 14, 1.6, true);
+    const main = emoji.animate(frames.body, {
+      duration: frames.duration,
+      easing: "linear",
+      fill: "both",
+    });
+    const particles = frames.fragments.map((keyframes, index) => {
+      const particle = document.createElement("span");
+      particle.className = "banner-effect-particle";
+      particle.style.opacity = "0";
+      const text = index % 3 === 0 ? effect.emoji : effect.particles;
+      const url = emojiUrl(text);
+      if (url) {
+        const image = document.createElement("img");
+        image.className = "shared-emoji";
+        image.src = url;
+        image.alt = text;
+        image.onerror = () => {
+          image.remove();
+          particle.textContent = text;
+        };
+        particle.append(image);
+      } else particle.textContent = text;
+      element.append(particle);
+      const animation = particle.animate(keyframes, {
+        duration: frames.fragmentDuration,
+        delay: frames.impactAt + (index % 4) * 24,
+        easing: "ease-out",
+        fill: "both",
+      });
+      animation.onfinish = () => particle.remove();
+      return particle;
+    });
+    return () => {
+      main.cancel();
+      particles.forEach((particle) => {
+        particle.getAnimations().forEach((animation) => animation.cancel());
+        particle.remove();
+      });
+    };
+  }, [effect, motion]);
+  return (
+    <div
+      ref={host}
+      className="banner-effect"
+      data-style={effect.style}
+      aria-hidden="true"
+    >
+      <span className="banner-effect-emoji">
+        <Emoji text={effect.emoji} />
+      </span>
+    </div>
+  );
+}
 export function BannerLayer({
   messages,
   room,
@@ -141,27 +215,11 @@ export function BannerLayer({
       role="status"
     >
       {effect ? (
-        <>
-          <div key={comboIndex} className="banner-effect-main">
-            <Emoji text={effect.emoji} />
-          </div>
-          <div
-            key={`particles:${comboIndex}`}
-            className="banner-effect-particles"
-            aria-hidden="true"
-          >
-            {Array.from({ length: 12 }, (_, index) => (
-              <span
-                key={index}
-                style={{ "--particle-index": index } as React.CSSProperties}
-              >
-                <Emoji
-                  text={index % 3 === 0 ? effect.emoji : effect.particles}
-                />
-              </span>
-            ))}
-          </div>
-        </>
+        <BannerEffect
+          key={`${current.sequence}:${comboIndex}`}
+          effect={effect}
+          motion={motion}
+        />
       ) : banner.kind === "countdown" ? (
         <>
           <strong key={count} className="banner-count">

@@ -1,0 +1,61 @@
+.native-table-shell {
+  height: var(--mobile-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.native-table-shell > .app-toolbar {
+  display: none;
+}
+
+.native-table-shell .room-layout {
+  height: 100%;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display: block;
+}
+
+.native-table-shell .game-area {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.native-table-shell .game-area > :not(.game-stage, .game-status-row) {
+  display: none;
+}
+
+.native-table-shell .game-stage {
+  height: 100%;
+  min-height: 0;
+}
+
+.native-table-shell .game-status-row,
+.native-table-shell .room-navigation,
+.native-table-shell .room-sidebar {
+  display: none;
+}
+
+.native-table-shell .original-game {
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+.native-table-shell .original-game > [data-table-region="hand"],
+.native-table-shell .table-hand-region,
+.native-table-shell .sgs-hand-panel,
+.native-table-shell .scmj-hand,
+.native-table-shell .dominion-hand,
+.native-table-shell .exp-table-hand {
+  margin-top: auto;
+}
+
+.native-table-loading {
+  height: 100%;
+  min-height: 100dvh;
+  background: var(--canvas);
+}

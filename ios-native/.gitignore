@@ -3,3 +3,4 @@ OnlineBGShell.xcodeproj/
 OnlineBGShell/Info.plist
 xcuserdata/
 DerivedData/
+.build-device/

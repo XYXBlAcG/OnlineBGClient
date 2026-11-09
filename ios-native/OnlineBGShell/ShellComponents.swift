@@ -16,7 +16,7 @@ struct GameCoverView: View {
                 )
             Image(systemName: game.symbol)
                 .font(.system(size: size * 0.38, weight: .semibold))
-                .foregroundStyle(Color(hex: 0x594878).opacity(0.82))
+                .foregroundStyle(ShellTheme.text.opacity(0.72))
         }
         .frame(width: size, height: size)
     }
@@ -36,7 +36,7 @@ struct GameCardView: View {
                 )
                 Image(systemName: game.symbol)
                     .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(Color(hex: 0x594878).opacity(0.82))
+                    .foregroundStyle(ShellTheme.text.opacity(0.72))
             }
             .frame(height: 88)
             .frame(maxWidth: .infinity)
@@ -44,16 +44,16 @@ struct GameCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(game.name)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(ShellTheme.text)
                     .lineLimit(1)
                 Text(game.subtitle)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShellTheme.muted)
                     .lineLimit(2)
                     .frame(minHeight: 30, alignment: .topLeading)
                 Text(game.players)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(ShellTheme.muted.opacity(0.72))
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -74,36 +74,9 @@ struct CategoryChip: View {
     var body: some View {
         Text(title)
             .font(.footnote.weight(.semibold))
-            .foregroundStyle(active ? Color.white : Color.secondary)
+            .foregroundStyle(active ? ShellTheme.accentText : ShellTheme.muted)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(active ? ShellTheme.accent : ShellTheme.field, in: Capsule())
-    }
-}
-
-struct PlayerAvatar: View {
-    let label: String
-    let color: Color
-
-    var body: some View {
-        Text(label)
-            .font(.footnote.weight(.bold))
-            .foregroundStyle(.white)
-            .frame(width: 38, height: 38)
-            .background(color, in: Circle())
-            .overlay {
-                Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 3)
-            }
-    }
-}
-
-struct ShellSectionHeader: View {
-    let title: String
-
-    var body: some View {
-        Text(title.uppercased())
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 4)
     }
 }

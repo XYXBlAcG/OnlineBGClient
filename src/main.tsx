@@ -47,6 +47,8 @@ import { useWindowWidth, useMobile } from "./client/use-mobile";
 import { capabilities } from "./client/platform";
 import { MobileJoin } from "./client/MobileJoin";
 import { MobileHome } from "./client/mobile/MobileHome";
+import { localRoomConfig } from "./client/mobile/local-room";
+import { postNativeShell } from "./client/native-shell-bridge";
 import { Invite } from "./client/Invite";
 import { ComputeStatus } from "./client/ComputeStatus";
 import { SidebarDivider } from "./client/SidebarDivider";
@@ -116,9 +118,14 @@ import "./client/ui/mobile-landscape.css";
 import "./client/ui/platform-controls.css";
 import "./client/ui/mobile-usability.css";
 import "./client/ui/mobile-home.css";
+import "./client/ui/native-table.css";
 
 const emptyInteractions: InteractionEvent[] = [];
 const invited = new URLSearchParams(location.search);
+const nativeTableKind = (() => {
+  const value = invited.get("native-table");
+  return value && value in gameCatalogue ? (value as GameKind) : null;
+})();
 const DevPhoneRoom = import.meta.env.DEV
   ? React.lazy(() => import("./client/dev/PhoneRoom"))
   : null;
@@ -145,7 +152,7 @@ function App() {
   const [shortcutRecording, setShortcutRecording] = useState(false);
   const shortcutOwner = useRef<string | null>(null);
   const [settingsSection, setSettingsSection] = useState("外观");
-  const mobile = useMobile();
+  const mobile = useMobile() || !!nativeTableKind;
   useMobileViewport(mobile);
   const windowWidth = useWindowWidth();
   const narrowLayout = windowWidth < sidebarBreakpoint;
@@ -593,6 +600,14 @@ function App() {
           JSON.stringify({ ...session.current, lan: lanHosting.current }),
         );
       setTokens(response.localTokens || []);
+      if (nativeTableKind) {
+        connection.current?.send({
+          type: "ready",
+          token: response.token,
+          ready: true,
+        });
+        connection.current?.send({ type: "start", token: response.token });
+      }
     }
     if (response.type === "snapshot") {
       void store
@@ -777,6 +792,31 @@ function App() {
       if (generation === launch.current) setBusy(false);
     }
   };
+  const nativeTableStarted = useRef(false);
+  useEffect(() => {
+    if (!nativeTableKind) return;
+    const timer = window.setTimeout(() => {
+      if (nativeTableStarted.current) return;
+      nativeTableStarted.current = true;
+      void connect(
+        localRoomConfig(nativeTableKind),
+        localStorage.getItem("player-name") || "我",
+        "local",
+        "",
+        false,
+        false,
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [connect]);
+  useEffect(() => {
+    if (!nativeTableKind || !snapshot) return;
+    postNativeShell({
+      type: "ready",
+      kind: snapshot.kind,
+      room: snapshot.room,
+    });
+  }, [nativeTableKind, snapshot?.kind, snapshot?.room]);
   const join = (name: string, invitation: string, spectator = false) => {
     invitationEndpoint.current = "";
     lanHosting.current = false;
@@ -1434,12 +1474,19 @@ function App() {
           />
         )}
         <div
-          className={`app-shell ${mobile ? "mobile-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
+          className={`app-shell ${mobile ? "mobile-shell" : ""} ${nativeTableKind ? "native-table-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
         >
           <Confirmation />
           <FpsMeter visible={preferences.showFps} />
           <AchievementToasts
-            items={achievementToasts}
+            items={
+              snapshot
+                ? achievementToasts.filter(
+                    (item) =>
+                      achievementById.get(item.achievementId)?.game !== "app",
+                  )
+                : achievementToasts
+            }
             onDismiss={(achievementId) =>
               setAchievementToasts((value) =>
                 value.filter((item) => item.achievementId !== achievementId),
@@ -1614,7 +1661,9 @@ function App() {
           />
           <SceneSurface scene={sceneKey(snapshot)}>
             {!snapshot && mobile ? (
-              capabilities.localPlay ? (
+              nativeTableKind ? (
+                <div className="native-table-loading" />
+              ) : capabilities.localPlay ? (
                 <MobileHome
                   preferences={preferences}
                   onPreferencesChange={changePreferences}

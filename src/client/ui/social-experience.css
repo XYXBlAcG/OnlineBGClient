@@ -240,42 +240,29 @@
   font-size: clamp(18px, 3vw, 30px);
   text-shadow: 0 2px 8px #0006;
 }
-.banner-effect-main {
-  font-size: clamp(100px, 26vw, 250px);
-  line-height: 1.1;
-}
-.banner-effect-particles {
-  display: none;
-}
-.banner-animated {
-  animation: banner-reveal 2.5s both;
-}
-.banner-animated .banner-effect-main {
-  animation: banner-pop 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-.banner-animated[data-style="bounce"] .banner-effect-main,
-.banner-animated[data-style="confetti"] .banner-effect-main {
-  animation: banner-laugh 1.1s both;
-}
-.banner-animated[data-style="shock"] .banner-effect-main,
-.banner-animated[data-style="fire"] .banner-effect-main {
-  animation: banner-shock 0.8s both;
-}
-.banner-animated .banner-effect-particles {
+.banner-effect {
   position: absolute;
   inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+.banner-effect-emoji {
   display: block;
-}
-.banner-effect-particles span {
-  position: absolute;
-  left: calc(8% + var(--particle-index) * 7%);
-  top: 48%;
-  font-size: clamp(22px, 6vw, 58px);
+  font-size: clamp(100px, 26vw, 250px);
+  line-height: 1.1;
   opacity: 0;
-  animation: banner-particle 1.8s calc(var(--particle-index) * 0.035s) both;
+  will-change: transform, opacity;
 }
-.banner-animated[data-style="rain"] .banner-effect-particles span {
-  animation-name: banner-rain;
+.banner-effect-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-size: clamp(26px, 6vw, 58px);
+  line-height: 1;
+  opacity: 0;
+  will-change: transform, opacity;
 }
 .game-status-row {
   display: flex;
@@ -316,70 +303,15 @@
     transform: scale(1) rotate(0);
   }
 }
-@keyframes banner-laugh {
-  0% {
-    transform: scale(0.25) rotate(-30deg);
-  }
-  35% {
-    transform: scale(1.2) rotate(20deg);
-  }
-  55% {
-    transform: scale(0.95) rotate(-15deg);
-  }
-  75% {
-    transform: scale(1.05) rotate(8deg);
-  }
-  100% {
-    transform: scale(1) rotate(0);
-  }
-}
-@keyframes banner-shock {
-  0% {
-    transform: scale(0.3);
-  }
-  35% {
-    transform: scale(1.25) rotate(-8deg);
-  }
-  55% {
-    transform: scale(1.1) rotate(8deg);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-@keyframes banner-particle {
-  0% {
-    opacity: 0;
-    transform: translateY(35px) scale(0.3);
-  }
-  25% {
-    opacity: 0.8;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(calc(-100px - var(--particle-index) * 13px))
-      rotate(calc(var(--particle-index) * 30deg)) scale(1.2);
-  }
-}
-@keyframes banner-rain {
-  0% {
-    opacity: 0;
-    transform: translateY(-35vh) rotate(-20deg);
-  }
-  25% {
-    opacity: 0.85;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(35vh) rotate(40deg);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .social-banner,
   .social-banner * {
     animation: none !important;
   }
-  .banner-effect-particles {
+  .banner-effect-emoji {
+    opacity: 1;
+  }
+  .banner-effect-particle {
     display: none !important;
   }
 }

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "dev:phone": "vite --host 127.0.0.1 --mode phone --strictPort",
+    "dev:lan": "vite --host 0.0.0.0",
     "preview:phone": "vite --host 127.0.0.1 --mode phone --strictPort",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
@@ -17,6 +18,7 @@
     "icons:ios": "node scripts/build-ios-icons.mjs",
     "native:generate": "cd ios-native && xcodegen generate",
     "native:preview": "node scripts/run-native-shell.mjs",
+    "native:device": "node scripts/run-native-device.mjs",
     "ios:dev": "tauri ios dev",
     "ios:prepare": "node scripts/prepare-ios.mjs && npm run upstream:build && npm run build",
     "ios:build": "tauri ios build --no-sign --ci --target aarch64 --export-method debugging",

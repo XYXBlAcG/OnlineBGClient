@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ShellGame: Identifiable, Hashable {
     let id: String
@@ -40,75 +41,39 @@ let shellGames: [ShellGame] = [
     ShellGame(id: "tq", name: "跳棋", subtitle: "连续跳跃与营地竞速", players: "2–6 人", category: "棋盘", symbol: "circle.grid.cross.fill", colors: [Color(hex: 0xdce3cb), Color(hex: 0xc1cda5)], ai: true),
 ]
 
-enum ShellCardTone: Hashable {
-    case red
-    case blue
-    case green
-    case yellow
-    case wild
-    case black
-}
-
-struct ShellCard: Identifiable, Hashable {
-    let id: String
-    let label: String
-    let tone: ShellCardTone
-    let suit: String?
-}
-
-enum ShellHandStyle {
-    case uno
-    case ddz
-}
-
-let shellUnoHand: [ShellCard] = [
-    ShellCard(id: "uno-red-7", label: "7", tone: .red, suit: nil),
-    ShellCard(id: "uno-blue-4", label: "4", tone: .blue, suit: nil),
-    ShellCard(id: "uno-green-9", label: "9", tone: .green, suit: nil),
-    ShellCard(id: "uno-yellow-skip", label: "⊘", tone: .yellow, suit: nil),
-    ShellCard(id: "uno-red-reverse", label: "⇄", tone: .red, suit: nil),
-    ShellCard(id: "uno-blue-1", label: "1", tone: .blue, suit: nil),
-    ShellCard(id: "uno-wild", label: "W", tone: .wild, suit: nil),
-]
-
-let shellDdzHand: [ShellCard] = [
-    ShellCard(id: "ddz-spade-3", label: "3", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-4", label: "4", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-5", label: "5", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-6", label: "6", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-7", label: "7", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-8", label: "8", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-9", label: "9", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-10", label: "10", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-j", label: "J", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-q", label: "Q", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-k", label: "K", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-a", label: "A", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-spade-2", label: "2", tone: .black, suit: "♠"),
-    ShellCard(id: "ddz-heart-3", label: "3", tone: .red, suit: "♥"),
-    ShellCard(id: "ddz-heart-4", label: "4", tone: .red, suit: "♥"),
-    ShellCard(id: "ddz-club-2", label: "2", tone: .black, suit: "♣"),
-    ShellCard(id: "ddz-joker", label: "JOKER", tone: .wild, suit: nil),
-]
-
 enum ShellTheme {
-    static let accent = Color(hex: 0x34796d)
-    static let canvas = Color(uiColor: .systemGroupedBackground)
-    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
-    static let raised = Color(uiColor: .systemBackground)
-    static let field = Color(uiColor: .tertiarySystemFill)
-    static let feltTop = Color(hex: 0x2c7a61)
-    static let feltBottom = Color(hex: 0x1b4b3c)
+    static let accent = adaptive(light: 0x34796d, dark: 0x8dcbb5)
+    static let accentText = adaptive(light: 0xffffff, dark: 0x111827)
+    static let canvas = adaptive(light: 0xf5f2ea, dark: 0x171e24)
+    static let surface = adaptive(light: 0xfffcf5, dark: 0x222c32)
+    static let field = adaptive(light: 0xece9e2, dark: 0x303d44)
+    static let text = adaptive(light: 0x172330, dark: 0xeef1f7)
+    static let muted = adaptive(light: 0x626b70, dark: 0xadb5c4)
+    static let line = adaptive(light: 0xdeded6, dark: 0x414751)
+    static let focus = adaptive(light: 0xaa6c19, dark: 0xefbf69)
+
+    static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(
+            UIColor { traits in
+                UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
+            }
+        )
+    }
 }
 
 extension Color {
     init(hex: UInt32) {
+        self.init(uiColor: UIColor(hex: hex))
+    }
+}
+
+extension UIColor {
+    convenience init(hex: UInt32) {
         self.init(
-            .sRGB,
-            red: Double((hex >> 16) & 0xff) / 255,
-            green: Double((hex >> 8) & 0xff) / 255,
-            blue: Double(hex & 0xff) / 255,
-            opacity: 1
+            red: CGFloat((hex >> 16) & 0xff) / 255,
+            green: CGFloat((hex >> 8) & 0xff) / 255,
+            blue: CGFloat(hex & 0xff) / 255,
+            alpha: 1
         )
     }
 }

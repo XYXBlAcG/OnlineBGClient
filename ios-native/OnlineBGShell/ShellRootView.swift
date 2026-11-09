@@ -13,19 +13,34 @@ struct ShellRootView: View {
     @State private var tab: ShellTab = .home
     @AppStorage("shell.theme") private var theme = "跟随系统"
 
+    private var launchGame: ShellGame? {
+        let identifier =
+            ProcessInfo.processInfo.environment["SHELL_GAME"] ??
+            ProcessInfo.processInfo.arguments.dropFirst().first
+        return shellGames.first { $0.id == identifier }
+    }
+
     var body: some View {
-        TabView(selection: $tab) {
-            HomeView(onOpenLobby: { tab = .lobby })
-                .tag(ShellTab.home)
-                .tabItem { Label("首页", systemImage: "house.fill") }
+        Group {
+            if let launchGame {
+                NavigationStack {
+                    WebTableScreen(game: launchGame)
+                }
+            } else {
+                TabView(selection: $tab) {
+                    HomeView(onOpenLobby: { tab = .lobby })
+                        .tag(ShellTab.home)
+                        .tabItem { Label("首页", systemImage: "house.fill") }
 
-            LobbyView()
-                .tag(ShellTab.lobby)
-                .tabItem { Label("大厅", systemImage: "square.grid.2x2.fill") }
+                    LobbyView()
+                        .tag(ShellTab.lobby)
+                        .tabItem { Label("大厅", systemImage: "square.grid.2x2.fill") }
 
-            SettingsView()
-                .tag(ShellTab.settings)
-                .tabItem { Label("设置", systemImage: "slider.horizontal.3") }
+                    SettingsView()
+                        .tag(ShellTab.settings)
+                        .tabItem { Label("设置", systemImage: "slider.horizontal.3") }
+                }
+            }
         }
         .tint(ShellTheme.accent)
         .preferredColorScheme(
@@ -65,7 +80,7 @@ struct HomeView: View {
                 case .join:
                     JoinView()
                 case .table(let game):
-                    TablePrototypeView(game: game)
+                    WebTableScreen(game: game)
                 }
             }
         }
@@ -230,7 +245,7 @@ struct LobbyView: View {
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $search, prompt: "搜索游戏")
             .navigationDestination(item: $tableGame) { game in
-                TablePrototypeView(game: game)
+                WebTableScreen(game: game)
             }
             .sheet(item: $sheetGame) { game in
                 GameSetupSheet(game: game) {
@@ -340,6 +355,8 @@ struct JoinView: View {
 
 struct SettingsView: View {
     @AppStorage("shell.theme") private var theme = "跟随系统"
+    @AppStorage("shell.enhancedGameMotion")
+    private var enhancedGameMotion = true
 
     var body: some View {
         NavigationStack {
@@ -353,6 +370,10 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
+                Section("动效") {
+                    Toggle("增强游戏动画", isOn: $enhancedGameMotion)
+                }
+
                 Section("声音与语音") {
                     LabeledContent("按住说话", value: "原生 LiveKit")
                     LabeledContent("输出设备", value: "跟随系统")
@@ -362,6 +383,8 @@ struct SettingsView: View {
                     LabeledContent("版本", value: "0.4.1")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(ShellTheme.canvas)
             .navigationTitle("设置")
         }
     }

@@ -8,6 +8,7 @@ import { avatarSchema } from "../domain/avatar";
 import { z } from "zod";
 import { themes } from "./themes";
 import { gameKinds } from "../domain/catalogue";
+import { capabilities, type RuntimePlatform } from "./platform";
 
 export const preferencesSchema = z.object({
   party: partyPreferencesSchema.default(partyPreferencesSchema.parse({})),
@@ -73,9 +74,46 @@ export const preferencesSchema = z.object({
 });
 export type Preferences = z.infer<typeof preferencesSchema>;
 export const defaultPreferences = preferencesSchema.parse({});
+const iosMotionKey = "onlinebg.ios-motion-v2";
+export function motionRuntime(): RuntimePlatform {
+  if (
+    typeof location !== "undefined" &&
+    new URLSearchParams(location.search).has("native-table")
+  )
+    return "ios";
+  return capabilities.runtime;
+}
+export function enableIosMotionDefaults(
+  preferences: Preferences,
+  runtime: RuntimePlatform = motionRuntime(),
+  storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
+): Preferences {
+  if (runtime !== "ios" || storage.getItem(iosMotionKey)) return preferences;
+  preferences.motion = true;
+  preferences.enhancedGameMotion = true;
+  preferences.lobbySwitchMotion = true;
+  storage.setItem(iosMotionKey, "1");
+  storage.setItem("onlinebg.preferences", JSON.stringify(preferences));
+  return preferences;
+}
+export function applyMotionOverride(
+  preferences: Preferences,
+  search: string = typeof location === "undefined" ? "" : location.search,
+): Preferences {
+  const value = new URLSearchParams(search).get("motion");
+  if (value !== "enhanced" && value !== "basic") return preferences;
+  preferences.enhancedGameMotion = value === "enhanced";
+  try {
+    localStorage.setItem("onlinebg.preferences", JSON.stringify(preferences));
+  } catch {}
+  return preferences;
+}
 export function loadPreferences(): Preferences {
   const saved = localStorage.getItem("onlinebg.preferences");
-  if (!saved) return preferencesSchema.parse({});
+  if (!saved)
+    return applyMotionOverride(
+      enableIosMotionDefaults(preferencesSchema.parse({})),
+    );
   try {
     const raw = JSON.parse(saved) as Record<string, unknown>,
       preferences = preferencesSchema.parse(raw);
@@ -97,8 +135,10 @@ export function loadPreferences(): Preferences {
       !themes.list().some((theme) => theme.id === preferences.theme)
     )
       preferences.theme = "system";
-    return preferences;
+    return applyMotionOverride(enableIosMotionDefaults(preferences));
   } catch {
-    return preferencesSchema.parse({});
+    return applyMotionOverride(
+      enableIosMotionDefaults(preferencesSchema.parse({})),
+    );
   }
 }

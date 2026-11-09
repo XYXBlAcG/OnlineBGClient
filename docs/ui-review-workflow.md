@@ -28,6 +28,55 @@ npm run native:preview
 
 该命令会生成 Xcode 工程、选择 iOS 27.0 / iPhone 18 Pro Simulator、构建、安装并启动原型，同时打开 DeviceHub。运行时版本、设备名称和 UDID 以本机 `xcrun simctl list` 为准，不在文档里维护第二份。
 
+## 真机安装与命令行启动
+
+Xcode 27 的 Developer Disk Image 位于 `/Library/Developer/DeveloperDiskImages/iOS_DDI`。用以下命令确认 DDI 可用：
+
+```sh
+xcrun devicectl list preferredDDI --platform iOS
+xcrun devicectl list devices
+```
+
+真机必须解锁、保持屏幕点亮、已信任这台 Mac；`State` 应为 `available`。`unavailable` 时先在手机上确认信任并重新插拔 USB。
+
+签名构建（把 UDID 和 Team ID 换成实际值）：
+
+```sh
+cd ios-native
+xcodegen generate
+xcodebuild \
+  -project OnlineBGShell.xcodeproj \
+  -scheme OnlineBGShell \
+  -configuration Debug \
+  -destination 'platform=iOS,id=<DEVICE_UDID>' \
+  -derivedDataPath .build-device \
+  -allowProvisioningUpdates \
+  DEVELOPMENT_TEAM=<TEAM_ID> \
+  SHELL_BASE_URL=http://<MAC_LAN_IP>:1420 \
+  build
+```
+
+安装：
+
+```sh
+idevice_id -l
+ideviceinstaller -u <DEVICE_UDID> install \
+  .build-device/Build/Products/Debug-iphoneos/OnlineBGShell.app
+```
+
+安装后在手机主屏打开 OnlineBG Shell。命令行启动需要与手机系统匹配的 Developer Disk Image；DDI 不匹配时直接在手机上点开即可。
+
+真机可用后也可以直接用脚本完成签名构建、安装和尝试启动：
+
+```sh
+npm run dev:lan
+npm run native:device
+```
+
+脚本使用 `ideviceinstaller` 安装，默认使用本机 `DEVELOPMENT_TEAM` 和 `en0` 的局域网地址，并把地址写入安装包的 `ShellBaseURL`；可用 `DEVICE_UDID`、`DEVELOPMENT_TEAM`、`SHELL_BASE_URL` 覆盖。
+
+如果真机仍无法连接，直接在 Xcode 中打开 `ios-native/OnlineBGShell.xcodeproj`，选择你的 Team 和手机，由你手动 Run。
+
 ## 评审流程
 
 1. 先做浏览器原型，确认视觉方向；需要原生布局时再做 SwiftUI。

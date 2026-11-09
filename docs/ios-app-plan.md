@@ -112,7 +112,7 @@
 
 第一版原生外壳原型位于 [ios-native](../ios-native/)，独立于 Tauri 工程。它用 SwiftUI 渲染首页、大厅、加入、设置和手牌托盘，牌桌仍由 Web 引擎承担。生成与启动见 `npm run native:preview`；界面审核规则见 [界面评审](ui-review-workflow.md)。原型通过前不替换现有 Tauri 外壳，也不触发 iOS Release。
 
-原型阶段使用静态 Swift 游戏目录和手牌数据；正式接入时由 TypeScript 目录生成 JSON 和图标资源，避免长期维护两套数据源。
+原型阶段使用静态 Swift 游戏目录和手牌数据；正式接入时由 TypeScript 目录生成 JSON 和图标资源，避免长期维护两套数据源。SwiftUI 外壳颜色以 [主题注册](../src/client/themes.ts) 为唯一来源，不在 Swift 维护第二套色板。房间内只显示本局游戏成就，应用级成就仅在房间外展示。iOS 首次加载自动开启界面动画、增强游戏动画和大厅过渡，之后尊重用户在设置中的关闭选择。
 
 ### 构建与分发
 
