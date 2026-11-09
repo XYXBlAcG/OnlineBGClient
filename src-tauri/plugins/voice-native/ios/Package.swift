@@ -5,7 +5,8 @@ import PackageDescription
 let package = Package(
   name: "tauri-plugin-voice-native",
   platforms: [
-    .iOS(.v15)
+    .iOS(.v15),
+    .macOS(.v10_15)
   ],
   products: [
     .library(
@@ -18,7 +19,7 @@ let package = Package(
     .package(
       name: "LiveKit",
       url: "https://github.com/livekit/client-sdk-swift.git",
-      from: "2.9.0"),
+      exact: "2.19.0"),
   ],
   targets: [
     .target(
