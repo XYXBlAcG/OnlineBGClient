@@ -113,6 +113,7 @@ pub fn run() {
         .on_window_event(windows::window_event);
     #[cfg(target_os = "ios")]
     let builder = builder
+        .setup(mobile::setup)
         .plugin(tauri_plugin_barcode_scanner::init())
         .plugin(tauri_plugin_voice_native::init())
         .invoke_handler(tauri::generate_handler![

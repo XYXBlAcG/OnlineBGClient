@@ -2,6 +2,11 @@ use tauri::ipc::Channel;
 use tauri::{State, Wry};
 use tauri_plugin_voice_native::VoiceNative;
 
+pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?.build()?;
+    Ok(())
+}
+
 #[tauri::command]
 pub fn voice_native_connect(
     voice: State<'_, VoiceNative<Wry>>,

@@ -14,6 +14,7 @@
     "desktop": "npm run tauri -- dev",
     "desktop:build": "node scripts/build-desktop.mjs",
     "ios:init": "tauri ios init",
+    "icons:ios": "node scripts/build-ios-icons.mjs",
     "ios:dev": "tauri ios dev",
     "ios:prepare": "node scripts/prepare-ios.mjs && npm run upstream:build && npm run build",
     "ios:build": "tauri ios build --no-sign --ci --target aarch64 --export-method debugging",

@@ -101,6 +101,7 @@
 ### Tauri iOS 壳
 
 - 使用 Tauri 2 iOS 入口，保留现有 React 构建产物。
+- 主窗口配置保持 `create: false` 供桌面自定义创建；iOS 在 `mobile::setup` 中从同一配置创建主窗口，不能依赖自动创建。
 - 桌面模块继续 `cfg(not(mobile))`；Rust 依赖改为按目标平台引入，避免 `keyring`、托盘、窗口状态、更新器等桌面依赖进入 iOS 构建。
 - 新增移动语音桥：麦克风权限、`AVAudioSession` 分类与路由、系统中断、输出切换、通话期间保持屏幕唤醒。
 - 新增二维码扫描、剪贴板读取、触感反馈、分享等移动能力，优先使用官方 Tauri 插件。
@@ -110,7 +111,7 @@
 ### 构建与分发
 
 - 生成并维护 `src-tauri/gen/apple`，不把桌面窗口配置当成 iOS 配置。
-- 独立 iOS bundle id、应用图标、启动图、麦克风与相机权限说明。
+- 独立 iOS bundle id、应用图标、启动图、麦克风与相机权限说明。iOS 图标由 `npm run icons:ios` 从 [应用图标](../public/icon.svg) 生成并同步到 `src-tauri/icons/ios` 与 Xcode asset catalog。
 - 新增 iOS 构建入口与 CI：macOS runner 生成 arm64 IPA，上传 GitHub Actions artifact；正式版本由统一发布工作流附加到对应 `vX.Y.Z` Release。
 - 第一版不做 TestFlight 和 App Store；GitHub 产物为 IPA，由用户自行签名安装。
 - 未签名 IPA 不能直接被 iOS 安装，需要 Sideloadly、AltStore 或自有 Apple Developer 证书签名；免费 Apple ID 签名通常 7 天到期，更新需重新安装。
@@ -363,6 +364,6 @@ M0 只验证路线 B，不再比较 A／C：
 | 移动大厅与本地开局 | [移动大厅](../src/client/mobile/MobileLobby.tsx)、[本地配置](../src/client/mobile/local-room.ts)、[大厅](../src/client/Lobby.tsx)、[本地连接](../src/client/connection.ts) |
 | 移动设置 | [设置](../src/client/Settings.tsx)、平台能力层 |
 | 语音会话与原生桥 | [语音会话](../src/client/voice/session.ts)、[原生传输](../src/client/voice/native-transport.ts)、[Rust 插件](../src-tauri/plugins/voice-native/)、[Swift 原生层](../src-tauri/mobile/ios/)、[移动命令](../src-tauri/src/mobile.rs) |
-| iOS 工程与权限 | [Xcode 工程](../src-tauri/gen/apple/)、[iOS 配置](../src-tauri/tauri.ios.conf.json)、[权限说明](../src-tauri/Info.ios.plist) |
+| iOS 工程与权限 | [Xcode 工程](../src-tauri/gen/apple/)、[iOS 配置](../src-tauri/tauri.ios.conf.json)、[权限说明](../src-tauri/Info.ios.plist)、[图标脚本](../scripts/build-ios-icons.mjs) |
 | iOS 构建与 GitHub IPA | [准备脚本](../scripts/prepare-ios.mjs)、[包脚本](../package.json)、[iOS 工作流](../.github/workflows/ios.yml)、[统一发布](../.github/workflows/desktop.yml) |
 | 验证 | [平台测试](../tests/platform.test.ts)、[原生传输测试](../tests/voice-native-transport.test.ts)、[本地配置测试](../tests/mobile-local-room.test.ts)、真机清单见本页 |

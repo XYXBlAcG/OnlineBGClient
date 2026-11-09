@@ -29,6 +29,11 @@ jobs:
       - run: rustup component add llvm-tools
       - run: brew install xcodegen
       - run: npm ci
+      - name: Verify iOS icons
+        run: |
+          for icon in src-tauri/icons/ios/*.png; do
+            cmp "$icon" "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/$(basename "$icon")"
+          done
       - run: mkdir -p src-tauri/resources/hosting
       - uses: actions/cache@v4
         with:
