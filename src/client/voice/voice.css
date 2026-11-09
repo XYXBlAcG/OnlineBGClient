@@ -162,6 +162,26 @@
   }
 }
 
+.mobile-voice-push {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 10px;
+  border-radius: 14px;
+  background: var(--field);
+  font-size: 15px;
+  font-weight: 700;
+  touch-action: none;
+}
+
+.mobile-voice-push[data-pressed="true"] {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.mobile-voice-push:disabled {
+  opacity: 0.55;
+}
+
 .voice-effect-controls {
   display: grid;
   gap: 12px;

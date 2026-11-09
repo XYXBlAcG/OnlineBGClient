@@ -1,5 +1,5 @@
 import { VoiceEffectControls } from "./VoiceEffectControls";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { capabilities } from "../platform";
 import { confirmation } from "../confirmation-controller";
@@ -49,6 +49,25 @@ export function VoiceToolbar({
 export function VoiceDock() {
   const { view, send } = useVoice();
   const [expanded, setExpanded] = useState(false);
+  const [pressing, setPressing] = useState(false);
+  const press = (pressed: boolean) => {
+    setPressing(pressed);
+    send({ type: "push", pressed });
+  };
+  useEffect(() => {
+    if (!pressing) return;
+    const release = () => {
+      setPressing(false);
+      send({ type: "push", pressed: false });
+    };
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+      send({ type: "push", pressed: false });
+    };
+  }, [pressing, send]);
   if (!isTauri()) return null;
   const active = ["connected", "reconnecting"].includes(view.phase);
   const join = async () => {
@@ -118,6 +137,24 @@ export function VoiceDock() {
               设备与连麦设置
             </button>
           </div>
+          {capabilities.runtime === "ios" && active && (
+            <button
+              type="button"
+              className="mobile-voice-push"
+              data-pressed={pressing}
+              disabled={view.muted || view.hostMuted}
+              aria-pressed={pressing}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.currentTarget.setPointerCapture(event.pointerId);
+                press(true);
+              }}
+              onPointerUp={() => press(false)}
+              onPointerCancel={() => press(false)}
+            >
+              {pressing ? "正在说话…" : "按住说话"}
+            </button>
+          )}
           {!view.configured && (
             <div>
               <small>
