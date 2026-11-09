@@ -41,7 +41,9 @@ jobs:
         run: |
           rm -rf /tmp/onlinebg-ipa-check
           unzip -q OnlineBGClient-unsigned.ipa -d /tmp/onlinebg-ipa-check
-          nm -gU /tmp/onlinebg-ipa-check/Payload/OnlineBGClient.app/OnlineBGClient | grep _init_plugin_voice_native
+          if ! nm -gU /tmp/onlinebg-ipa-check/Payload/OnlineBGClient.app/OnlineBGClient | grep -q _init_plugin_voice_native; then
+            xcrun dyld_info -exports /tmp/onlinebg-ipa-check/Payload/OnlineBGClient.app/OnlineBGClient | grep _init_plugin_voice_native
+          fi
           test -d /tmp/onlinebg-ipa-check/Payload/OnlineBGClient.app/Frameworks/LiveKitWebRTC.framework
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
