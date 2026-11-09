@@ -46,6 +46,7 @@ import { HeroGuides } from "./domain/hero-guide";
 import { useWindowWidth, useMobile } from "./client/use-mobile";
 import { capabilities } from "./client/platform";
 import { MobileJoin } from "./client/MobileJoin";
+import { MobileHome } from "./client/mobile/MobileHome";
 import { Invite } from "./client/Invite";
 import { ComputeStatus } from "./client/ComputeStatus";
 import { SidebarDivider } from "./client/SidebarDivider";
@@ -114,6 +115,7 @@ import "./client/ui/social-experience.css";
 import "./client/ui/mobile-landscape.css";
 import "./client/ui/platform-controls.css";
 import "./client/ui/mobile-usability.css";
+import "./client/ui/mobile-home.css";
 
 const emptyInteractions: InteractionEvent[] = [];
 const invited = new URLSearchParams(location.search);
@@ -1607,14 +1609,36 @@ function App() {
           />
           <SceneSurface scene={sceneKey(snapshot)}>
             {!snapshot && mobile ? (
-              <MobileJoin
-                preferences={preferences}
-                onPreferencesChange={changePreferences}
-                room={invited.get("room") || ""}
-                service={service}
-                busy={busy}
-                onJoin={join}
-              />
+              capabilities.localPlay ? (
+                <MobileHome
+                  preferences={preferences}
+                  onPreferencesChange={changePreferences}
+                  room={invited.get("room") || ""}
+                  service={service}
+                  busy={busy}
+                  name={localStorage.getItem("player-name") || "我"}
+                  onJoin={join}
+                  onStartLocal={(config) =>
+                    void connect(
+                      config,
+                      localStorage.getItem("player-name") || "我",
+                      "local",
+                      "",
+                      false,
+                      false,
+                    )
+                  }
+                />
+              ) : (
+                <MobileJoin
+                  preferences={preferences}
+                  onPreferencesChange={changePreferences}
+                  room={invited.get("room") || ""}
+                  service={service}
+                  busy={busy}
+                  onJoin={join}
+                />
+              )
             ) : !snapshot ? (
               <>
                 <QuickStart

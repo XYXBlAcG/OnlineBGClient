@@ -2,7 +2,7 @@
 
 状态：M0 基础已落地，等待 iOS 27 真机与 GitHub Actions 构建验证。已确认：语音优先采用原生 Swift LiveKit + Web 桥；只支持 iPhone；通过 GitHub Actions 生成 IPA 自行安装；本地开局为第一版必达。手机浏览器继续作为免安装入口，边界见 [手机浏览器](mobile-browser-plan.md)；桌面语音见 [客户端房间语音](client-voice.md)。
 
-当前 M0 已有：平台能力层、Tauri iOS 工程与权限、原生 Swift LiveKit 桥、二维码扫描入口、GitHub IPA 工作流。尚未完成：CI 实际构建、真机语音/相机验证、移动首页与移动大厅。
+当前 M0 已有：平台能力层、Tauri iOS 工程与权限、原生 Swift LiveKit 桥、二维码扫描入口、GitHub IPA 工作流、移动首页、本地开局与移动大厅。宿主机仍需 Xcode/iOS SDK；真机语音、相机和触屏验收待用户执行。
 
 第一版目标：让手机更容易加入朋友的房间，并在 iOS 客户端提供浏览器没有的连麦、移动大厅、本地开局和完整移动牌桌。手机独立开房放到后续阶段，不依赖浏览器承担房间服务。
 
@@ -358,11 +358,11 @@ M0 只验证路线 B，不再比较 A／C：
 | 职责 | 计划入口 |
 | --- | --- |
 | 平台能力与运行环境 | [平台能力](../src/client/platform.ts)，替换 [移动判断](../src/client/use-mobile.ts) 与 [原生窗口](../src/client/native/windows.ts) 的桌面假设 |
-| 移动首页与加入 | `src/client/MobileHome.tsx`、[加入页](../src/client/MobileJoin.tsx)、[邀请](../src/client/Invite.tsx) |
+| 移动首页与加入 | [移动首页](../src/client/mobile/MobileHome.tsx)、[加入页](../src/client/MobileJoin.tsx)、[邀请](../src/client/Invite.tsx) |
 | 邀请二维码 | [加入页](../src/client/MobileJoin.tsx)、[移动权限](../src-tauri/capabilities/mobile.json) |
-| 移动大厅与本地开局 | `src/client/mobile/MobileLobby.tsx`、[大厅](../src/client/Lobby.tsx)、[本地连接](../src/client/connection.ts) |
+| 移动大厅与本地开局 | [移动大厅](../src/client/mobile/MobileLobby.tsx)、[本地配置](../src/client/mobile/local-room.ts)、[大厅](../src/client/Lobby.tsx)、[本地连接](../src/client/connection.ts) |
 | 移动设置 | [设置](../src/client/Settings.tsx)、平台能力层 |
 | 语音会话与原生桥 | [语音会话](../src/client/voice/session.ts)、[原生传输](../src/client/voice/native-transport.ts)、[Rust 插件](../src-tauri/plugins/voice-native/)、[Swift 原生层](../src-tauri/mobile/ios/)、[移动命令](../src-tauri/src/mobile.rs) |
 | iOS 工程与权限 | [Xcode 工程](../src-tauri/gen/apple/)、[iOS 配置](../src-tauri/tauri.ios.conf.json)、[权限说明](../src-tauri/Info.ios.plist) |
 | iOS 构建与 GitHub IPA | [包脚本](../package.json)、[工作流](../.github/workflows/ios.yml) |
-| 验证 | [平台测试](../tests/platform.test.ts)、[原生传输测试](../tests/voice-native-transport.test.ts)、真机清单见本页 |
+| 验证 | [平台测试](../tests/platform.test.ts)、[原生传输测试](../tests/voice-native-transport.test.ts)、[本地配置测试](../tests/mobile-local-room.test.ts)、真机清单见本页 |
