@@ -31,7 +31,29 @@ jobs:
       - run: brew install xcodegen
       - run: npm ci
       - run: mkdir -p src-tauri/resources/hosting
-      - run: npx tauri ios build --no-sign --ci --target aarch64 --export-method debugging
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/Developer/Xcode/DerivedData/*/SourcePackages
+          key: ios-swiftpm-livekit-2.19.0-v1
+          restore-keys: |
+            ios-swiftpm-livekit-
+      - name: Build unsigned IPA
+        shell: bash
+        run: |
+          set -o pipefail
+          for attempt in 1 2 3; do
+            if npx tauri ios build --no-sign --ci --target aarch64 --export-method debugging 2>&1 | tee /tmp/ios-build.log; then
+              exit 0
+            fi
+            if grep -q "badResponseStatusCode(504)" /tmp/ios-build.log; then
+              sleep 20
+              continue
+            fi
+            exit 1
+          done
+          exit 1
       - name: Collect unsigned IPA
         run: |
           IPA=$(find src-tauri/gen/apple src-tauri/target -name '*.ipa' -type f | head -1)
