@@ -82,11 +82,14 @@ class VoiceNativePlugin: Plugin, RoomDelegate, @unchecked Sendable {
           invoke.resolve()
           return
         }
-        if args.enabled && !(await requestMicrophonePermission()) {
-          throw NSError(
-            domain: "voice-native",
-            code: 1,
-            userInfo: [NSLocalizedDescriptionKey: "麦克风权限未开启，请在系统设置中允许访问。"])
+        if args.enabled {
+          let granted = await requestMicrophonePermission()
+          if !granted {
+            throw NSError(
+              domain: "voice-native",
+              code: 1,
+              userInfo: [NSLocalizedDescriptionKey: "麦克风权限未开启，请在系统设置中允许访问。"])
+          }
         }
         try await room.localParticipant.setMicrophone(enabled: args.enabled)
         invoke.resolve()
