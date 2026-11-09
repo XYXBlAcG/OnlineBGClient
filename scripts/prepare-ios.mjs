@@ -27,8 +27,3 @@ await cp(source, target, {
   filter: (path) =>
     !path.includes("/.build") && !path.endsWith("Package.resolved"),
 });
-execFileSync(
-  "xcodegen",
-  ["generate", "--spec", "src-tauri/gen/apple/project.yml"],
-  { stdio: "inherit" },
-);
