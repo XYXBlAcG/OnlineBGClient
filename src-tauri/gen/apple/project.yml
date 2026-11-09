@@ -81,7 +81,7 @@ targets:
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: true
         CLANG_ENABLE_OBJC_ARC: true
         EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
-        OTHER_LDFLAGS: $(inherited) -Wl,-u,_init_plugin_voice_native -Wl,-exported_symbol,_init_plugin_voice_native
+        OTHER_LDFLAGS: $(inherited) -Wl,-u,_init_plugin_voice_native -Wl,-export_dynamic -Wl,-exported_symbol,_init_plugin_voice_native
       groups: [app]
     dependencies:
       - package: Tauri
