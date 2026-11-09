@@ -17,7 +17,6 @@ let package = Package(
   dependencies: [
     .package(name: "Tauri", path: "../.tauri/tauri-api"),
     .package(
-      name: "LiveKit",
       url: "https://github.com/livekit/client-sdk-swift.git",
       exact: "2.19.0"),
   ],
@@ -26,7 +25,7 @@ let package = Package(
       name: "tauri-plugin-voice-native",
       dependencies: [
         .byName(name: "Tauri"),
-        .product(name: "LiveKit", package: "LiveKit"),
+        .product(name: "LiveKit", package: "client-sdk-swift"),
       ],
       path: "Sources")
   ],
