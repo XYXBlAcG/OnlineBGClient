@@ -27,40 +27,63 @@ export async function prepareRelease(input, output, version, tag, repo) {
     return matches[0];
   };
   const windows = unique(".exe", "Windows 安装包"),
-    updater = unique(".app.tar.gz", "macOS 更新包");
+    updater = unique(".app.tar.gz", "macOS 更新包"),
+    ipa = unique(".ipa", "iOS 安装包");
   const pairs = [
-    [windows, `OnlineBGClient-${version}-Windows-x64.exe`],
-    [updater, `OnlineBGClient-${version}-macOS-arm64.app.tar.gz`],
+    {
+      source: windows,
+      name: `OnlineBGClient-${version}-Windows-x64.exe`,
+      format: "Windows 安装包",
+      valid: (bytes) => bytes.subarray(0, 2).equals(Buffer.from("MZ")),
+      platform: "windows-x86_64",
+      label: "Windows",
+      install: "运行安装程序",
+    },
+    {
+      source: updater,
+      name: `OnlineBGClient-${version}-macOS-arm64.app.tar.gz`,
+      format: "macOS 更新包",
+      valid: (bytes) => bytes.subarray(0, 2).equals(Buffer.from([31, 139])),
+      platform: "darwin-aarch64",
+      label: "macOS",
+      install: "解压后移到「应用程序」",
+    },
+    {
+      source: ipa,
+      name: `OnlineBGClient-${version}-iOS-arm64-unsigned.ipa`,
+      format: "iOS 安装包",
+      valid: (bytes) =>
+        bytes.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])),
+      label: "iOS（未签名）",
+      install:
+        "使用 Sideloadly、AltStore 或自有 Apple Developer 证书签名安装；最低 iOS 17，仅 iPhone",
+    },
   ];
   await mkdir(out, { recursive: true });
   const assets = [],
     checks = [],
+    downloads = [],
     targets = {};
-  for (const [source, name] of pairs) {
-    const bytes = await readFile(source);
-    if (
-      name.endsWith(".exe") &&
-      !bytes.subarray(0, 2).equals(Buffer.from("MZ"))
-    )
-      throw Error("Windows 安装包格式无效");
-    if (
-      name.endsWith(".gz") &&
-      !bytes.subarray(0, 2).equals(Buffer.from([31, 139]))
-    )
-      throw Error("macOS 更新包格式无效");
-    const target = join(out, name);
-    await copyFile(source, target);
+  for (const item of pairs) {
+    const bytes = await readFile(item.source);
+    if (!item.valid(bytes)) throw Error(`${item.format}格式无效`);
+    const target = join(out, item.name);
+    await copyFile(item.source, target);
     assets.push(target);
-    checks.push(`${createHash("sha256").update(bytes).digest("hex")}  ${name}`);
-    const signature = (await readFile(source + ".sig", "utf8")).trim();
+    checks.push(
+      `${createHash("sha256").update(bytes).digest("hex")}  ${item.name}`,
+    );
+    downloads.push(`| ${item.label} | \`${item.name}\` | ${item.install} |`);
+    if (!item.platform) continue;
+    const signature = (await readFile(item.source + ".sig", "utf8")).trim();
     if (!/^[A-Za-z0-9+/=]+$/.test(signature) || signature.length < 20)
       throw Error("更新签名无效");
     const signaturePath = target + ".sig";
     await writeFile(signaturePath, signature + "\n");
     assets.push(signaturePath);
-    targets[name.endsWith(".exe") ? "windows-x86_64" : "darwin-aarch64"] = {
+    targets[item.platform] = {
       signature,
-      url: `https://github.com/${repo}/releases/download/${tag}/${name}`,
+      url: `https://github.com/${repo}/releases/download/${tag}/${item.name}`,
     };
   }
   if (version === "0.4.1") {
@@ -72,6 +95,7 @@ export async function prepareRelease(input, output, version, tag, repo) {
     await copyFile(source, target);
     assets.push(target);
     checks.push(`${createHash("sha256").update(bytes).digest("hex")}  ${name}`);
+    downloads.push(`| 共享字体（可选） | \`${name}\` | 按需下载 |`);
   }
   const latest = join(out, "latest.json");
   await writeFile(
@@ -91,5 +115,12 @@ export async function prepareRelease(input, output, version, tag, repo) {
   const sums = join(out, "SHA256SUMS.txt");
   await writeFile(sums, checks.join("\n") + "\n");
   assets.push(sums);
-  return { assets, tag, version };
+  const notes = `## 更新内容\n\n${release.changes
+    .map((change) => `- ${change}`)
+    .join(
+      "\n",
+    )}\n\n## 下载\n\n| 平台 | 文件 | 安装 |\n| --- | --- | --- |\n${downloads.join(
+    "\n",
+  )}\n\n\`latest.json\`、\`.sig\` 和 \`SHA256SUMS.txt\` 用于自动更新与完整性校验，无需手动下载。\n`;
+  return { assets, notes, tag, version };
 }

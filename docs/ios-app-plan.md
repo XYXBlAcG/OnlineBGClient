@@ -1,6 +1,6 @@
 # iOS 客户端：加入、语音与移动大厅
 
-状态：M0 基础已落地，GitHub Actions 已生成未签名 IPA；等待 iOS 27 真机语音、相机与触屏验证。已确认：语音优先采用原生 Swift LiveKit + Web 桥；只支持 iPhone；通过 GitHub Actions 生成 IPA 自行安装；本地开局为第一版必达。手机浏览器继续作为免安装入口，边界见 [手机浏览器](mobile-browser-plan.md)；桌面语音见 [客户端房间语音](client-voice.md)。
+状态：M0 基础已落地，未签名 IPA 已随 `v0.4.1` 发布；等待 iOS 27 真机语音、相机与触屏验证。已确认：语音优先采用原生 Swift LiveKit + Web 桥；只支持 iPhone；通过 GitHub Actions 生成 IPA 自行安装；本地开局为第一版必达。手机浏览器继续作为免安装入口，边界见 [手机浏览器](mobile-browser-plan.md)；桌面语音见 [客户端房间语音](client-voice.md)。
 
 当前 M0 已有：平台能力层、Tauri iOS 工程与权限、原生 Swift LiveKit 桥、二维码扫描入口、GitHub IPA 工作流、移动首页、本地开局与移动大厅。宿主机仍需 Xcode/iOS SDK；真机语音、相机和触屏验收待用户执行。
 
@@ -111,13 +111,13 @@
 
 - 生成并维护 `src-tauri/gen/apple`，不把桌面窗口配置当成 iOS 配置。
 - 独立 iOS bundle id、应用图标、启动图、麦克风与相机权限说明。
-- 新增 iOS 构建入口与 CI：macOS runner 生成 arm64 IPA，上传 GitHub Actions artifact，并在手动触发或版本标签时附加到 GitHub Release。
+- 新增 iOS 构建入口与 CI：macOS runner 生成 arm64 IPA，上传 GitHub Actions artifact；正式版本由统一发布工作流附加到对应 `vX.Y.Z` Release。
 - 第一版不做 TestFlight 和 App Store；GitHub 产物为 IPA，由用户自行签名安装。
 - 未签名 IPA 不能直接被 iOS 安装，需要 Sideloadly、AltStore 或自有 Apple Developer 证书签名；免费 Apple ID 签名通常 7 天到期，更新需重新安装。
 - 未签名构建使用 Release、arm64，关闭代码签名后打包 `Payload/OnlineBGClient.app`；签名由用户侧完成。
-- 本地构建需要 Xcode 和 iOS SDK，入口为 `npm run ios:build`；GitHub 构建入口见 [工作流](../.github/workflows/ios.yml)。
+- 本地构建需要 Xcode 和 iOS SDK，入口为 `npm run ios:build`；CI 入口见 [iOS 工作流](../.github/workflows/ios.yml)，正式发布由 [统一发布工作流](../.github/workflows/desktop.yml) 调用。
 - 如果后续提供签名安装，CI 通过 secrets 接收证书和 Provisioning Profile 生成 ad-hoc IPA；没有 secrets 时仍输出未签名 IPA，不阻塞构建。
-- 桌面发布流程不变；iOS 版本号与协议版本分别管理。
+- 桌面与 iOS 共用应用版本号和发布流程，协议版本独立管理。
 - IPA 更新通过重新安装完成，对局中不强制升级。
 
 ## 移动界面
@@ -286,7 +286,7 @@ M0 只验证路线 B，不再比较 A／C：
 - GitHub Actions 生成 arm64 IPA，上传 artifact 和 Release。
 - 验证未签名 IPA 的侧载安装、权限弹窗、重装和签名有效期。
 - 版本与协议兼容检查、重装更新提示。
-- 发布 GitHub Release；不做 TestFlight 和 App Store。
+- 发布统一的 GitHub Release（桌面与 iOS）；不做 TestFlight 和 App Store。
 
 ### M6：后续
 
@@ -364,5 +364,5 @@ M0 只验证路线 B，不再比较 A／C：
 | 移动设置 | [设置](../src/client/Settings.tsx)、平台能力层 |
 | 语音会话与原生桥 | [语音会话](../src/client/voice/session.ts)、[原生传输](../src/client/voice/native-transport.ts)、[Rust 插件](../src-tauri/plugins/voice-native/)、[Swift 原生层](../src-tauri/mobile/ios/)、[移动命令](../src-tauri/src/mobile.rs) |
 | iOS 工程与权限 | [Xcode 工程](../src-tauri/gen/apple/)、[iOS 配置](../src-tauri/tauri.ios.conf.json)、[权限说明](../src-tauri/Info.ios.plist) |
-| iOS 构建与 GitHub IPA | [准备脚本](../scripts/prepare-ios.mjs)、[包脚本](../package.json)、[工作流](../.github/workflows/ios.yml) |
+| iOS 构建与 GitHub IPA | [准备脚本](../scripts/prepare-ios.mjs)、[包脚本](../package.json)、[iOS 工作流](../.github/workflows/ios.yml)、[统一发布](../.github/workflows/desktop.yml) |
 | 验证 | [平台测试](../tests/platform.test.ts)、[原生传输测试](../tests/voice-native-transport.test.ts)、[本地配置测试](../tests/mobile-local-room.test.ts)、真机清单见本页 |

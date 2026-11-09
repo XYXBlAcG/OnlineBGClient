@@ -22,7 +22,7 @@ if (tauri.version !== "../package.json")
   throw new Error("桌面版本必须引用 package.json");
 if (!ref.startsWith("refs/tags/v")) throw new Error("仅正式版本标签可以发布");
 const tag = ref.slice("refs/tags/".length);
-const { assets } = await prepareRelease(
+const { assets, notes } = await prepareRelease(
   "artifacts/release-input",
   "artifacts/release-output",
   pkg.version,
@@ -65,11 +65,6 @@ if (existing && !existing.draft) {
     await rm(directory, { recursive: true, force: true });
   }
 } else {
-  const history = JSON.parse(
-    await readFile("src/client/releases.json", "utf8"),
-  );
-  const release = history.find((item) => item.version === pkg.version);
-  const notes = `${release.changes.map((change) => `- ${change}`).join("\n")}\n\nWindows：下载 .exe。macOS：下载 .app.tar.gz，解压后将应用移到 Applications。\nlatest.json 和签名文件用于客户端自动更新。\n`;
   await writeFile("artifacts/release-output/notes.md", notes);
   if (!existing)
     await execute("gh", [
