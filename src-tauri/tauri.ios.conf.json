@@ -3,7 +3,7 @@
     "beforeBuildCommand": "npm run ios:prepare"
   },
   "bundle": {
-    "resources": {},
+    "resources": [],
     "iOS": {
       "minimumSystemVersion": "17.0"
     }
