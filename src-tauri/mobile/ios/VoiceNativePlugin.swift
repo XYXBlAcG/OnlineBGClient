@@ -25,6 +25,7 @@ struct VolumeArgs: Decodable {
   let volume: Double
 }
 
+@objc(OnlineBGVoiceNativePlugin)
 class VoiceNativePlugin: Plugin, RoomDelegate, @unchecked Sendable {
   private var room: Room?
   private var events: Channel?
@@ -227,10 +228,4 @@ class VoiceNativePlugin: Plugin, RoomDelegate, @unchecked Sendable {
       emitMembers()
     }
   }
-}
-
-@_used
-@_cdecl("init_plugin_voice_native")
-func initPlugin() -> Plugin {
-  VoiceNativePlugin()
 }
