@@ -982,6 +982,23 @@ details[open] > summary + * {
   margin: 0;
   font-size: calc(18px * var(--ui-font-scale));
 }
+.error-boundary {
+  display: grid;
+  place-content: center;
+  gap: var(--space-3);
+  min-height: 240px;
+  padding: var(--space-6);
+  text-align: center;
+}
+.error-boundary p {
+  margin: 0;
+  color: var(--muted);
+}
+.error-boundary-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
 .settings-section {
   margin: 20px 0;
 }
@@ -1348,16 +1365,6 @@ kbd {
   color: var(--accent);
 }
 
-:root {
-  --layer-effects: 20;
-  --layer-practice: 35;
-  --layer-party: 75;
-  --layer-chat: 10;
-  --layer-notice: 80;
-  --layer-dialog-overlay: 50;
-  --layer-dialog: 60;
-  --layer-menu: 70;
-}
 .original-game {
   position: relative;
   isolation: isolate;
@@ -2848,7 +2855,9 @@ kbd {
   min-height: 44px;
 }
 .ui-search-field > input::-webkit-search-cancel-button {
-  margin-left: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 .ui-field-summary {
   position: absolute;

@@ -44,7 +44,7 @@ export function RestSite({
   return (
     <section className="exp-rest-site" data-guide-target="expedition.choices">
       <header>
-        <span aria-hidden="true">♨</span>
+        <span aria-hidden="true">♨︎</span>
         <h2>{recovery ? "整理行装" : "围炉休整"}</h2>
       </header>
       {!recovery && (

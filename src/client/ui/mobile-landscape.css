@@ -582,3 +582,20 @@
   flex: 1;
   padding: 2px;
 }
+
+:root[data-mobile-orientation="landscape"] .original-game[data-game="pool"] {
+  min-height: 0;
+  flex: 1;
+  padding: 2px;
+}
+:root[data-mobile-orientation="landscape"]
+  .original-game[data-game="pool"]
+  .pool-table {
+  height: 100%;
+  gap: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .original-game[data-game="pool"]
+  .pool-canvas {
+  min-height: 0;
+}

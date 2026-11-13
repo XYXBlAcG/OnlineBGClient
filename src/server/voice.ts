@@ -90,7 +90,6 @@ export class VoiceAuthority {
   private member(roomId: string, token: string) {
     const room = this.gateway.rooms.get(roomId);
     if (!room) throw new Error("房间不存在");
-    const actor = room.identity(token);
     const member = room.member(token);
     if (!member.online) throw new Error("房间连接已断开，请重新加入");
     return { room, member, id: member.id! };
@@ -227,7 +226,7 @@ export class VoiceAuthority {
       const online = new Set([
         ...(room.host?.online ? [room.host.id] : []),
         ...room.seats.filter((s) => s.token && s.online).map((s) => s.id!),
-        ...room.spectators.filter(s=>s.online).map(s=>s.id),
+        ...room.spectators.filter((s) => s.online).map((s) => s.id),
       ]);
       for (const [id, time] of channel.leases)
         if (
@@ -239,7 +238,7 @@ export class VoiceAuthority {
       const identities = new Set([
         ...(room.host ? [room.host.id] : []),
         ...room.seats.filter((s) => s.token).map((s) => s.id!),
-        ...room.spectators.map(s=>s.id),
+        ...room.spectators.map((s) => s.id),
       ]);
       for (const id of channel.policy.keys())
         if (!identities.has(id)) channel.policy.delete(id);

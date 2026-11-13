@@ -1,6 +1,6 @@
 # 房间体验与客户端审核
 
-当前 [macOS 审核应用](../artifacts/review/room-experience/OnlineBGClient.app)；退出旧客户端后直接打开。构建、定向检查及包内服务证据见 [校验记录](../artifacts/review/room-experience/verification.json)。界面、原生菜单、跨设备与连麦由人工验收。
+审核应用与打开方式见 [审核与提交](review-and-submit.md#本地-macos-审核应用)；构建与定向检查入口见 [验证](verification.md)。界面、原生菜单、跨设备与连麦由人工验收。
 
 ## 实现入口
 
@@ -23,7 +23,7 @@
 6. 房主在任意游戏进行中通过「结束对局」确认结束，回到原房间等待界面；按 `F` 切换专注模式，`Esc` 退出，专注模式保留同一操作。普通玩家、回放、未开始或已结束时不显示结束按钮。
 7. macOS 检查应用、房间、对局、视图、设置与编辑操作菜单，当前不可用操作禁用；点击设置分类打开对应页，复制粘贴正常。快捷键录入中菜单不抢走按键。Windows 检查没有原生应用菜单栏，窗口控制与房间操作正常。
 
-语音与变声的设备及真实通话审核见 [声音与输入](voice-effects-and-input.md)。清理结果见 [废纸篓记录](../artifacts/review/room-experience/cleanup-results.json)。
+语音与变声的设备及真实通话审核见 [声音与输入](voice-effects-and-input.md)。
 
 ## macOS 窗口验收
 

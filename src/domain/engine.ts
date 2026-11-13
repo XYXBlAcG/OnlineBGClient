@@ -1,6 +1,7 @@
 import type { GameOptions } from "./game-options";
 import { UpstreamRuntime } from "../upstream/runtime";
 import { gameCatalogue, gameKinds, type GameKind } from "./catalogue";
+import { gameRules } from "./rule-catalogue";
 import { CheckersRules } from "./checkers";
 import { SgsRules } from "./sgs";
 import { FlightRules } from "./flight";
@@ -17,7 +18,7 @@ export class GameEngine {
   readonly rules = this.runtime.load(6749);
   readonly cards = this.runtime.load(8280);
   private plugins = new Map<GameKind, GameRules>(
-    gameKinds.map((kind) => [kind, gameCatalogue[kind].rules(this.runtime)]),
+    gameKinds.map((kind) => [kind, gameRules[kind](this.runtime)]),
   );
   private sgsRules = new SgsRules(this.runtime);
 
@@ -60,6 +61,9 @@ export class GameEngine {
   needsResolution(state: GameState): boolean {
     return this.plugins.get(state.kind)!.needsResolution(state);
   }
+  actionDelay(state: GameState): number {
+    return this.plugins.get(state.kind)!.actionDelay(state);
+  }
   resolutionDelay(state: GameState): number | undefined {
     return this.plugins.get(state.kind)!.resolutionDelay(state);
   }
@@ -80,7 +84,9 @@ export class GameEngine {
   project(state: GameState, actor: number): GameState {
     return this.plugins.get(state.kind)!.project(state, actor);
   }
-  actionWindow(state:GameState,action:Action):string|undefined {return this.plugins.get(state.kind)!.actionWindow(state,action);}
+  actionWindow(state: GameState, action: Action): string | undefined {
+    return this.plugins.get(state.kind)!.actionWindow(state, action);
+  }
   keepValue(card: number): number {
     return this.sgsRules.keepValue(card);
   }

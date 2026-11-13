@@ -6,6 +6,7 @@ import { it, expect } from "vitest";
 import { ClientStore } from "../src/client/storage";
 import { RoomStore } from "../src/server/storage";
 import { Gateway } from "../src/domain/gateway";
+import { journalKnowledge } from "../src/domain/expedition/journal";
 it("远征进度独立于普通记录缓存，SQLite 重开和本机重开都保留原进度", async () => {
   const gateway = new Gateway(),
     store = new ClientStore();
@@ -62,4 +63,33 @@ it("远征进度独立于普通记录缓存，SQLite 重开和本机重开都保
   await store.abandonRun(id);
   expect(await store.run(id)).toBeUndefined();
   expect((await store.runLinks()).some((link) => link.id === id)).toBe(false);
+});
+
+it("migrates imported journals and never duplicates legacy knowledge", async () => {
+  const store = new ClientStore(),
+    old = {
+      format: 1,
+      runs: {
+        imported: {
+          chapter: 3,
+          won: true,
+          professions: [0],
+          cards: ["strike"],
+          relics: [],
+          bosses: [0, 1, 2, 3],
+        },
+      },
+    };
+  await store.importJournal(old);
+  const migrated = await store.journal();
+  expect(migrated.format).toBe(2);
+  expect(migrated.runs.imported).toMatchObject({
+    settled: true,
+    knowledge: 44,
+  });
+  await store.importJournal(old);
+  expect(journalKnowledge(await store.journal())).toBe(44);
+  const upgraded = await store.upgradeLegacy("supply1");
+  expect(upgraded.legacy).toEqual(["supply1"]);
+  expect(journalKnowledge(upgraded)).toBe(44);
 });

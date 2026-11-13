@@ -7,17 +7,22 @@ import {
   graphwarGuardSchema,
 } from "./graphwar/types";
 import { mahjongMoveSchema } from "./mahjong/types";
+import { poolShotActionSchema } from "./pool/types";
 import { splendorMoveSchema } from "./splendor-actions";
 import { catanMoveSchema } from "./catan-actions";
 import { z } from "zod";
 const ids = z.array(z.number().int().min(-160).max(160)).max(160);
 export const actionSchema = z.discriminatedUnion("type", [
-  z.object({ type:z.literal("expedition-action"),move:expeditionMoveSchema }),
+  z.object({
+    type: z.literal("expedition-action"),
+    move: expeditionMoveSchema,
+  }),
   z.object({ type: z.literal("dominion-action"), move: dominionMoveSchema }),
   graphwarFireSchema,
   graphwarPassSchema,
   graphwarMoveSchema,
   graphwarGuardSchema,
+  poolShotActionSchema,
   z.object({ type: z.literal("scmj-action"), move: mahjongMoveSchema }),
   z.object({ type: z.literal("ccbs-action"), move: splendorMoveSchema }),
   z.object({ type: z.literal("ktd-action"), move: catanMoveSchema }),

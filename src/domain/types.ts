@@ -203,7 +203,8 @@ export type GameState =
   | { kind: "tq"; view: CheckersView }
   | { kind: "fxq"; view: FlightView }
   | { kind: "uno"; view: UnoView }
-  | { kind: "sgs"; view: SgsView };
+  | { kind: "sgs"; view: SgsView }
+  | import("./pool/types").PoolState;
 export interface Candidate {
   action: Action;
   label: string;

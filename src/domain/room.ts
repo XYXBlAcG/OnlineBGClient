@@ -1,9 +1,17 @@
-import { achievementById } from "./achievements";
+import type { PartyQueue, QueuedGame } from "./protocol";
+import { achievementById, type AchievementDefinition } from "./achievements";
 import { gameRulesVersion } from "./catalogue";
 import { migrateExpedition } from "./expedition/migration";
 import { partyResults, partySignals } from "./party/facts";
 import type { PartyEvent } from "./party/model";
-import { PartyLedger, partyItems, observerSeats, type PartyAction, type PartyContext, type PartyState } from "./party";
+import {
+  PartyLedger,
+  partyItems,
+  observerSeats,
+  type PartyAction,
+  type PartyContext,
+  type PartyState,
+} from "./party";
 import { v4 as randomId } from "uuid";
 import { heroContent } from "./expedition/content";
 import {
@@ -49,13 +57,58 @@ import {
 } from "./challenges";
 
 export class Room {
+  private partyQueue: PartyQueue = { revision: 0, entries: [] };
+  setQueue(token: string, revision: number, entries: QueuedGame[]): void {
+    if (!this.canManage(token)) throw new Error("只有房主可以修改下一局队列");
+    if (revision !== this.partyQueue.revision)
+      throw new Error("队列已更新，请重新查看");
+    if (
+      entries.length > 12 ||
+      new Set(entries.map((item) => item.id)).size !== entries.length
+    )
+      throw new Error("队列无效");
+    this.partyQueue = {
+      revision: revision + 1,
+      entries: entries.map((item) => ({
+        id: item.id,
+        config: configSchema.parse(item.config),
+      })),
+    };
+    this.version++;
+  }
+  applyQueued(
+    token: string,
+    id: string,
+    revision: number,
+    setup: RoomSetup,
+  ): void {
+    if (!this.canManage(token)) throw new Error("只有房主可以应用下一局");
+    if (
+      this.partyQueue.revision !== revision ||
+      this.partyQueue.entries[0]?.id !== id
+    )
+      throw new Error("下一局队列已更新");
+    if (this.state && !this.ended && !this.engine.finished(this.state))
+      throw new Error("请先完成或保存结束当前对局");
+    this.changeGame(token, setup);
+    this.partyQueue = {
+      revision: revision + 1,
+      entries: this.partyQueue.entries.slice(1),
+    };
+  }
   readonly engine = new GameEngine();
   readonly config: RoomConfig;
   readonly seats: Seat[];
   readonly seed: string;
   host: { id: string; name: string; token: string; online: boolean } | null =
     null;
-  readonly spectators:{id:string;name:string;avatar:string;token:string;online:boolean}[]=[];
+  readonly spectators: {
+    id: string;
+    name: string;
+    avatar: string;
+    token: string;
+    online: boolean;
+  }[] = [];
   private projection = new Map<
     number,
     {
@@ -92,6 +145,7 @@ export class Room {
   private roundVersion = 0;
   private simultaneousSince = 0;
   private lastMoveAt = 0;
+  private actionReadyAt = 0;
   private replay: ReplayRecord | null = null;
   private challenges: ChallengeBoard | null = null;
   private records: ReplayRecord[] = [];
@@ -105,8 +159,20 @@ export class Room {
     this.seed = seed;
     this.config = configSchema.parse(config);
     this.seats = Room.createSeats(this.config);
-    this.party.execute(-1,"initial-plugins",{type:"plugins",packs:this.config.plugins},this.partyContext(),true);
-    this.party.execute(-1,"initial-policy",{type:"policy",policy:this.config.party},this.partyContext(),true);
+    this.party.execute(
+      -1,
+      "initial-plugins",
+      { type: "plugins", packs: this.config.plugins },
+      this.partyContext(),
+      true,
+    );
+    this.party.execute(
+      -1,
+      "initial-policy",
+      { type: "policy", policy: this.config.party },
+      this.partyContext(),
+      true,
+    );
   }
 
   private static createSeats(config: RoomConfig): Seat[] {
@@ -139,13 +205,12 @@ export class Room {
     return this.host.token;
   }
   canManage(token: string): boolean {
-    const actor=this.identity(token);
-    return actor===0||actor===-1;
+    const actor = this.identity(token);
+    return actor === 0 || actor === -1;
   }
   claim(name: string, token?: string, avatar = "😊"): string {
     if (token) {
       const wasPaused = this.paused;
-      const actor = this.identity(token);
       const seat = this.member(token);
       seat.online = true;
       if (wasPaused && !this.paused) this.updateResolution();
@@ -167,15 +232,26 @@ export class Room {
     return seat.token;
   }
 
-  watch(name:string,avatar="😊"):string {
-    if(this.spectators.length>=24)throw Error("旁观席已满");
-    const member={id:randomId(),name,avatar:avatarSchema.parse(avatar),token:randomId(),online:true};
-    this.spectators.push(member);this.party.sync(this.partyContext());
+  watch(name: string, avatar = "😊"): string {
+    if (this.spectators.length >= 24) throw Error("旁观席已满");
+    const member = {
+      id: randomId(),
+      name,
+      avatar: avatarSchema.parse(avatar),
+      token: randomId(),
+      online: true,
+    };
+    this.spectators.push(member);
+    this.party.sync(this.partyContext());
     return member.token;
   }
-  member(token:string){
-    const actor=this.identity(token);
-    return actor===-1?this.host!:actor<-1?this.spectators[-actor-2]:this.seats[actor];
+  member(token: string) {
+    const actor = this.identity(token);
+    return actor === -1
+      ? this.host!
+      : actor < -1
+        ? this.spectators[-actor - 2]
+        : this.seats[actor];
   }
   setAvatar(token: string, avatar: string): void {
     const actor = this.identity(token);
@@ -184,7 +260,6 @@ export class Room {
   }
 
   disconnect(token: string): void {
-    const actor = this.identity(token);
     this.member(token).online = false;
   }
 
@@ -212,31 +287,28 @@ export class Room {
         this.records.push(this.replay);
         this.records = this.records.slice(-20);
       }
-      const roundSeed = this.config.kind === "scmj" && this.config.mahjong.mode === "washizu"
-        ? randomId()
-        : `${this.seed}:round:${this.version}`;
+      const roundSeed =
+        this.config.kind === "scmj" && this.config.mahjong.mode === "washizu"
+          ? randomId()
+          : `${this.seed}:round:${this.version}`;
       this.state = this.engine.create(
         this.config.kind,
         this.seats.length,
         roundSeed,
         this.config.team,
-        {
-          expedition: this.config.expedition,
-          dominion: this.config.dominion,
-          mahjong: this.config.mahjong,
-          graphwar: this.config.graphwar,
-            flight: this.config.flight,
-            checkers: this.config.checkers,
-        },
+        this.config,
       );
       this.replay = {
         format: 1,
         room: this.id,
         config: structuredClone(this.config),
-        rulesVersion: gameRulesVersion(this.config.kind, this.config.mahjong.mode),
+        rulesVersion: gameRulesVersion(
+          this.config.kind,
+          this.config.mahjong.mode,
+        ),
         names: this.seats.map((seat) => seat.name),
         avatars: this.seats.map(seatAvatar),
-        memberIds:this.seats.map((s,i)=>s.id??`ai:${i}`),
+        memberIds: this.seats.map((s, i) => s.id ?? `ai:${i}`),
         seed: roundSeed,
         startedAt: Date.now(),
         ...(this.state.kind === "graphwar"
@@ -249,7 +321,11 @@ export class Room {
             }
           : {}),
         ...(this.state.kind === "expedition"
-          ? { expeditionMap: structuredClone(this.state.view.map), expeditionCampaign: this.state.view.campaignVersion, expeditionTuning: this.state.view.tuning }
+          ? {
+              expeditionMap: structuredClone(this.state.view.map),
+              expeditionCampaign: this.state.view.campaignVersion,
+              expeditionTuning: this.state.view.tuning,
+            }
           : {}),
         events: [],
       };
@@ -261,6 +337,8 @@ export class Room {
       if (this.challenges)
         this.replay.challenges = structuredClone(this.challenges);
     }
+    if (this.replay && this.state?.kind === "expedition")
+      this.replay.expeditionRunId = this.state.view.runId;
     this.version++;
     this.roundVersion = this.version;
     this.simultaneousSince = this.version;
@@ -276,6 +354,7 @@ export class Room {
     this.resolutionAt = 0;
     this.ended = false;
     this.lastMoveAt = Date.now();
+    this.actionReadyAt = 0;
     this.queued = null;
     this.updateResolution();
   }
@@ -330,7 +409,21 @@ export class Room {
       seats[index] = { ...seat, ready: index === 0 };
     });
     if (this.replay) this.records = [...this.records, this.replay].slice(-20);
-    Object.assign(this.config, next,{party:this.party.export().policy,plugins:this.party.export().plugins});
+    Object.assign(this.config, next, {
+      party: this.party.export().policy,
+      plugins: this.party.export().plugins,
+    });
+    for (const member of members.filter(
+      (seat) => !setup.retain.includes(seat.id!),
+    )) {
+      this.spectators.push({
+        id: member.id!,
+        token: member.token!,
+        name: member.name,
+        avatar: seatAvatar(member),
+        online: member.online,
+      });
+    }
     this.seats.splice(0, this.seats.length, ...seats);
     this.bannerPolicy = {
       ...this.bannerPolicy,
@@ -360,6 +453,7 @@ export class Room {
     if (actor < 0) throw new Error("服务身份不参与游戏");
     const key = `${token}:${id}`;
     if (this.accepted.has(key)) return;
+    if (Date.now() < this.actionReadyAt) throw new Error("请等待当前动作播放完成");
     if (this.seats[actor].autoplay) throw new Error("请先取消托管，再手动操作");
     const window = this.state
       ? this.engine.actionWindow(this.state, action)
@@ -384,10 +478,15 @@ export class Room {
       this.engine.actionWindow(next, action)
     )
       this.simultaneousSince = this.version + 1;
-    this.party.trigger(partySignals(this.state,next,actor,action,this.engine),this.partyContext(),this.version+1);
+    this.party.trigger(
+      partySignals(this.state, next, actor, action, this.engine),
+      this.partyContext(),
+      this.version + 1,
+    );
     this.state = next;
     this.queued = null;
     this.lastMoveAt = Date.now();
+    this.actionReadyAt = this.lastMoveAt + this.engine.actionDelay(this.state);
     this.version++;
     this.replay!.events.push({
       type: "action",
@@ -395,6 +494,10 @@ export class Room {
       action: structuredClone(action),
       graphwarShot:
         this.state.kind === "graphwar" && action.type === "graphwar-fire"
+          ? structuredClone(this.state.view.lastShot!)
+          : undefined,
+      poolShot:
+        this.state.kind === "pool" && action.type === "pool-shot"
           ? structuredClone(this.state.view.lastShot!)
           : undefined,
       seed: `${this.seed}:move:${this.version - 1}`,
@@ -414,7 +517,6 @@ export class Room {
       this.addMessage(token, id, { type: "text", text });
       return;
     }
-    const actor = this.identity(token);
     const member = this.member(token);
     const permission = bannerCommands.find(
       (command) => command.kind === banner.kind,
@@ -488,7 +590,34 @@ export class Room {
       actor < 0
         ? member.name
         : seatDisplayName(this.seats[actor], actor, this.state);
-    this.addSystemMessage(id, `${name} 达成了「${definition.title}」成就`);
+    this.addAchievementMessage(id, member.id!, name, definition);
+  }
+  private addAchievementMessage(
+    id: string,
+    sender: string,
+    name: string,
+    definition: AchievementDefinition,
+  ): void {
+    const key = `system:${id}`;
+    if (this.accepted.has(key)) return;
+    this.messages.push({
+      type: "achievement",
+      text: `${name} 达成了「${definition.title}」成就`,
+      achievementId: definition.id,
+      title: definition.title,
+      symbol: definition.symbol,
+      rarity: definition.rarity,
+      game: definition.game,
+      id,
+      sequence: ++this.messageSequence,
+      sender,
+      name,
+      time: Date.now(),
+    });
+    if (this.messages.length > 200) this.messages.shift();
+    this.accepted.add(key);
+    if (this.accepted.size > 2048)
+      this.accepted.delete(this.accepted.values().next().value!);
   }
   private addSystemMessage(id: string, text: string): void {
     const key = `system:${id}`;
@@ -553,39 +682,110 @@ export class Room {
   }
   private partyContext(): PartyContext {
     return {
-      players:[...this.seats.map((s,i)=>({id:s.id??`ai:${i}`,name:s.name,human:!!s.token})),...this.spectators.map(s=>({id:s.id,name:s.name,human:true}))],
-      observers:[...(this.ended?[]:observerSeats(this.state,this.seats.length)),...this.spectators.map((_,i)=>this.seats.length+i)],
-      round: this.replay?.config.mahjong.mode === "washizu"
-        ? `${this.id}:${this.replay.startedAt}`
-        : this.replay?.seed ?? "lobby",
-      playing:!!this.state&&!this.ended&&!this.engine.finished(this.state),
-      finished:!!this.state&&!this.ended&&this.engine.finished(this.state),
-      state:this.state,
-      ...partyResults(this.state,this.seats.map((seat,i)=>({id:seat.id??`ai:${i}`,name:seat.name})),this.engine),
+      players: [
+        ...this.seats.map((s, i) => ({
+          id: s.id ?? `ai:${i}`,
+          name: s.name,
+          human: !!s.token,
+        })),
+        ...this.spectators.map((s) => ({
+          id: s.id,
+          name: s.name,
+          human: true,
+        })),
+      ],
+      observers: [
+        ...(this.ended ? [] : observerSeats(this.state, this.seats.length)),
+        ...this.spectators.map((_, i) => this.seats.length + i),
+      ],
+      round:
+        this.replay?.config.mahjong.mode === "washizu"
+          ? `${this.id}:${this.replay.startedAt}`
+          : (this.replay?.seed ?? "lobby"),
+      playing: !!this.state && !this.ended && !this.engine.finished(this.state),
+      finished: !!this.state && !this.ended && this.engine.finished(this.state),
+      state: this.state,
+      ...partyResults(
+        this.state,
+        this.seats.map((seat, i) => ({
+          id: seat.id ?? `ai:${i}`,
+          name: seat.name,
+        })),
+        this.engine,
+      ),
     };
   }
-  partyAction(token:string,id:string,action:PartyAction,now=Date.now()): PartyEvent | undefined {
-    const event=this.party.execute(this.partyActor(token),id,action,this.partyContext(),this.canManage(token),now);
-    if(event && this.state?.kind==="graphwar") {
-      const view=this.state.view;
-      const from=view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.from && s.hp>0 && s.id===view.currentSoldier)
-        ?? view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.from && s.hp>0)
-        ?? view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.from);
-      const target=view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.target && s.hp>0) ?? view.soldiers.find(s=>this.partyContext().players[s.player]?.id===event.target);
-      if(from && target)event.units={game:"graphwar",from:from.id,target:target.id};
+  partyAction(
+    token: string,
+    id: string,
+    action: PartyAction,
+    now = Date.now(),
+  ): PartyEvent | undefined {
+    const event = this.party.execute(
+      this.partyActor(token),
+      id,
+      action,
+      this.partyContext(),
+      this.canManage(token),
+      now,
+    );
+    if (event && this.state?.kind === "graphwar") {
+      const view = this.state.view;
+      const from =
+        view.soldiers.find(
+          (s) =>
+            this.partyContext().players[s.player]?.id === event.from &&
+            s.hp > 0 &&
+            s.id === view.currentSoldier,
+        ) ??
+        view.soldiers.find(
+          (s) =>
+            this.partyContext().players[s.player]?.id === event.from &&
+            s.hp > 0,
+        ) ??
+        view.soldiers.find(
+          (s) => this.partyContext().players[s.player]?.id === event.from,
+        );
+      const target =
+        view.soldiers.find(
+          (s) =>
+            this.partyContext().players[s.player]?.id === event.target &&
+            s.hp > 0,
+        ) ??
+        view.soldiers.find(
+          (s) => this.partyContext().players[s.player]?.id === event.target,
+        );
+      if (from && target)
+        event.units = { game: "graphwar", from: from.id, target: target.id };
     }
-    this.config.party=this.party.export().policy;
-    this.config.plugins=this.party.export().plugins;
+    this.config.party = this.party.export().policy;
+    this.config.plugins = this.party.export().plugins;
     this.recordParty();
     return event;
   }
-  partyActor(token:string):number {const actor=this.identity(token);return actor<-1?this.seats.length-actor-2:actor;}
-  tickParty(now=Date.now()):boolean { const changed=this.party.sync(this.partyContext(),now);if(changed)this.recordParty();return changed; }
-  private recordParty():void {
-    if(!this.replay)return;
-    const current=this.party.export().events,history=this.replay.party??=[];
-    for(const event of current){const saved=history.find(e=>e.event.id===event.id);if(saved)saved.event=event;else history.push({frame:this.replay.events.length,event});}
-    this.replay.party=history.filter(saved=>saved.event.time<=Date.now()||current.some(e=>e.id===saved.event.id));
+  partyActor(token: string): number {
+    const actor = this.identity(token);
+    return actor < -1 ? this.seats.length - actor - 2 : actor;
+  }
+  tickParty(now = Date.now()): boolean {
+    const changed = this.party.sync(this.partyContext(), now);
+    if (changed) this.recordParty();
+    return changed;
+  }
+  private recordParty(): void {
+    if (!this.replay) return;
+    const current = this.party.export().events,
+      history = (this.replay.party ??= []);
+    for (const event of current) {
+      const saved = history.find((e) => e.event.id === event.id);
+      if (saved) saved.event = event;
+      else history.push({ frame: this.replay.events.length, event });
+    }
+    this.replay.party = history.filter(
+      (saved) =>
+        saved.event.time <= Date.now() ||
+        current.some((e) => e.id === saved.event.id),
+    );
   }
   interact(
     token: string,
@@ -637,6 +837,7 @@ export class Room {
     audit: boolean;
   } | null {
     if (
+      Date.now() < this.actionReadyAt ||
       !this.state ||
       this.ended ||
       this.paused ||
@@ -665,9 +866,9 @@ export class Room {
   }
 
   acceptDecision(decision: AiResult, version: number): boolean {
-    if (!this.state || this.ended || this.paused || version !== this.version)
+    if (Date.now() < this.actionReadyAt || !this.state || this.ended || this.paused || version !== this.version)
       return false;
-    const previous=this.state;
+    const previous = this.state;
     const oldWindow = this.engine.actionWindow(this.state, decision.chosen);
     this.state = this.engine.apply(
       this.state,
@@ -686,11 +887,22 @@ export class Room {
     );
     if (this.challenges && this.replay)
       this.replay.challenges = structuredClone(this.challenges);
-    this.party.trigger(partySignals(previous,this.state,decision.actor,decision.chosen,this.engine),this.partyContext(),this.version+1);
+    this.party.trigger(
+      partySignals(
+        previous,
+        this.state,
+        decision.actor,
+        decision.chosen,
+        this.engine,
+      ),
+      this.partyContext(),
+      this.version + 1,
+    );
     this.version++;
     if (oldWindow !== this.engine.actionWindow(this.state, decision.chosen))
       this.simultaneousSince = this.version;
     this.lastMoveAt = Date.now();
+    this.actionReadyAt = this.lastMoveAt + this.engine.actionDelay(this.state);
     this.replay!.events.push({
       type: "action",
       actor: decision.actor,
@@ -698,6 +910,10 @@ export class Room {
       graphwarShot:
         this.state.kind === "graphwar" &&
         decision.chosen.type === "graphwar-fire"
+          ? structuredClone(this.state.view.lastShot!)
+          : undefined,
+      poolShot:
+        this.state.kind === "pool" && decision.chosen.type === "pool-shot"
           ? structuredClone(this.state.view.lastShot!)
           : undefined,
       seed: `${this.seed}:move:${this.version - 1}`,
@@ -732,12 +948,16 @@ export class Room {
       return false;
     if (this.engine.actors(this.state).length && now < this.resolutionAt)
       return false;
-    const previous=this.state;
+    const previous = this.state;
     this.state = this.engine.resolve(
       this.state,
       `${this.seed}:resolve:${this.version}`,
     );
-    this.party.trigger(partySignals(previous,this.state,-1,undefined,this.engine),this.partyContext(),this.version+1);
+    this.party.trigger(
+      partySignals(previous, this.state, -1, undefined, this.engine),
+      this.partyContext(),
+      this.version + 1,
+    );
     this.version++;
     this.replay!.events.push({
       type: "resolution",
@@ -746,6 +966,7 @@ export class Room {
     });
     this.queued = null;
     this.lastMoveAt = Date.now();
+    this.actionReadyAt = 0;
     this.updateResolution();
     return true;
   }
@@ -762,7 +983,8 @@ export class Room {
       projected.paused !== paused
     ) {
       const state =
-        (actor >= 0 || actor<-1 ||
+        (actor >= 0 ||
+          actor < -1 ||
           (["tq", "scmj"].includes(this.config.kind) && !this.config.humans)) &&
         this.state &&
         !this.ended
@@ -784,6 +1006,7 @@ export class Room {
       this.projection.set(actor, projected);
     }
     return {
+      partyQueue: structuredClone(this.partyQueue),
       resumeRoles:
         this.pendingResume?.kind === "expedition"
           ? this.pendingResume.view.combat.heroes.map((h, i) => ({
@@ -793,7 +1016,10 @@ export class Room {
           : undefined,
       serverTime: Date.now(),
       apiVersion: protocolVersion,
-      rulesVersion: gameRulesVersion(this.config.kind, this.config.mahjong.mode),
+      rulesVersion: gameRulesVersion(
+        this.config.kind,
+        this.config.mahjong.mode,
+      ),
       room: this.id,
       kind: this.config.kind,
       config: this.config,
@@ -824,8 +1050,8 @@ export class Room {
       aiPaused: this.aiPaused,
       bannerPolicy: this.bannerPolicy,
       party: this.party.snapshot(this.partyContext()),
-      partyActor:this.partyActor(token),
-      spectators:this.spectators.map(({token:_token,...member})=>member),
+      partyActor: this.partyActor(token),
+      spectators: this.spectators.map(({ token: _token, ...member }) => member),
       chat: this.messages,
       chatSequence: this.messageSequence,
       chatTotals: this.messageTotals,
@@ -841,7 +1067,9 @@ export class Room {
         this.engine.needsResolution(this.state) &&
         this.engine.resolutionDelay(this.state) === undefined,
       turnDeadline:
-        this.state?.kind === "graphwar" && !finished && this.resolutionAt
+        ["graphwar", "pool"].includes(this.state?.kind ?? "") &&
+        !finished &&
+        this.resolutionAt
           ? this.resolutionAt
           : undefined,
     };
@@ -917,7 +1145,9 @@ export class Room {
 
   setTempo(token: string, delayMs: number): void {
     if (!this.canManage(token)) throw new Error("只有房主可以调整节奏");
+    if (this.config.aiDelayMs === delayMs) return;
     this.config.aiDelayMs = delayMs;
+    this.version++;
   }
 
   queueDecision(decision: AiResult, version: number): boolean {
@@ -941,8 +1171,8 @@ export class Room {
 
   identity(token: string): number {
     if (this.host?.token === token) return -1;
-    const spectator=this.spectators.findIndex(s=>s.token===token);
-    if(spectator>=0)return -spectator-2;
+    const spectator = this.spectators.findIndex((s) => s.token === token);
+    if (spectator >= 0) return -spectator - 2;
     const actor = this.seats.findIndex((seat) => seat.token === token);
     if (actor < 0) throw new Error("房间身份无效");
     return actor;
@@ -969,23 +1199,40 @@ export class Room {
   }
   leave(token: string): void {
     const actor = this.identity(token);
-    if(actor<-1){this.spectators.splice(-actor-2,1);return;}
+    if (actor < -1) {
+      this.spectators.splice(-actor - 2, 1);
+      return;
+    }
     if (actor <= 0) throw new Error("房主需要关闭房间");
-    if (this.state && !this.ended && !this.engine.finished(this.state))
-      throw new Error("请先结束对局再离开");
+    const seat = this.seats[actor];
+    const id = seat.id;
     this.bannerPolicy = {
       ...this.bannerPolicy,
-      members: this.bannerPolicy.members.filter(
-        (id) => id !== this.seats[actor].id,
-      ),
+      members: this.bannerPolicy.members.filter((member) => member !== id),
     };
-    if (this.seats[actor].id) delete this.messageTotals[this.seats[actor].id!];
+    if (id) delete this.messageTotals[id];
+    if (this.state && !this.ended && !this.engine.finished(this.state)) {
+      if (gameCatalogue[this.config.kind].ai) {
+        seat.difficulty = "normal";
+        seat.online = true;
+        seat.ready = true;
+        seat.autoplay = false;
+        seat.token = undefined;
+        seat.id = undefined;
+      } else {
+        seat.online = false;
+        seat.ready = false;
+      }
+      this.party.sync(this.partyContext());
+      return;
+    }
     this.seats[actor] = {
       name: "",
       difficulty: null,
       online: false,
       ready: false,
     };
+    this.party.sync(this.partyContext());
   }
   configureSeat(token: string, index: number, config: SeatConfig): void {
     if (!this.canManage(token)) throw new Error("只有房主可以调整席位");
@@ -1026,6 +1273,7 @@ export class Room {
   export(): RoomArchive {
     return {
       format: 1,
+      partyQueue: structuredClone(this.partyQueue),
       pendingResume: this.pendingResume ?? undefined,
       checkpoint: this.state
         ? { version: this.version, state: structuredClone(this.state) }
@@ -1034,7 +1282,7 @@ export class Room {
       seed: this.seed,
       config: this.config,
       seats: this.seats,
-      spectators:this.spectators,
+      spectators: this.spectators,
       host: this.host,
       version: this.version,
       roundVersion: this.roundVersion,
@@ -1081,7 +1329,9 @@ export class Room {
       room.seats.length,
       ...archive.seats.map((seat) => ({ ...seat, online: !!seat.difficulty })),
     );
-    room.spectators.push(...(archive.spectators??[]).map(s=>({...s,online:false})));
+    room.spectators.push(
+      ...(archive.spectators ?? []).map((s) => ({ ...s, online: false })),
+    );
     room.host = archive.host ? { ...archive.host, online: false } : null;
     room.party = new PartyLedger(archive.party);
     room.version = archive.version;
@@ -1089,6 +1339,7 @@ export class Room {
     room.ended = archive.ended;
     room.aiPaused = archive.aiPaused ?? false;
     room.simultaneousSince = archive.simultaneousSince ?? room.version;
+    room.partyQueue = archive.partyQueue ?? { revision: 0, entries: [] };
     room.replay = archive.replay;
     room.challenges = archive.replay?.challenges ?? null;
     room.records = archive.records;
@@ -1113,7 +1364,8 @@ export class Room {
     }
     room.pendingResume = archive.pendingResume ?? null;
     if (room.state?.kind === "expedition") migrateExpedition(room.state.view);
-    if (room.pendingResume?.kind === "expedition") migrateExpedition(room.pendingResume.view);
+    if (room.pendingResume?.kind === "expedition")
+      migrateExpedition(room.pendingResume.view);
     if (room.pendingResume) room.state = null;
     room.lastMoveAt = Date.now();
     room.updateResolution();
@@ -1154,7 +1406,7 @@ export class Room {
     this.recordParty();
     this.resolutionAt =
       this.state && this.engine.needsResolution(this.state)
-        ? Date.now() +
+        ? Math.max(Date.now(), this.actionReadyAt) +
           (this.engine.resolutionDelay(this.state) ??
             Math.max(4500, this.config.aiDelayMs + 500))
         : 0;
@@ -1162,7 +1414,8 @@ export class Room {
 }
 
 export interface RoomArchive {
-  spectators?:Room["spectators"];
+  partyQueue?: PartyQueue;
+  spectators?: Room["spectators"];
   party?: PartyState;
   format: 1;
   pendingResume?: import("./types").GameState;

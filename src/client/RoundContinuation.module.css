@@ -1,0 +1,9 @@
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.root > span {
+  color: var(--muted);
+}

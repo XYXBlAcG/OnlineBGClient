@@ -1,6 +1,6 @@
 # 游戏动画方案演示
 
-[打开独立 demo](../artifacts/review/game-motion-lab.html)。复用现有游戏组件导出的牌面、棋子和地图，支持八款游戏、播放／暂停、倍速、进度拖动和低动态模式。全部资源内嵌，可直接在浏览器打开。
+复用现有游戏组件导出的牌面、棋子和地图，支持八款游戏、播放／暂停、倍速、进度拖动和低动态模式。审核入口见 [体验文档](ui-motion-plan.md)。
 
 ## 审核重点
 
@@ -18,4 +18,4 @@
 
 动作来源见 [语义事件](../src/client/game-motion-events.ts)，播放与实体交接见 [TableAnimator](../src/client/motion/table-animator.ts)。权威局面立即生效，表现层可中断、快进与清理；不增加出牌等待，不展示他人的隐藏信息。客户端开关与现有入口见 [体验文档](ui-motion-plan.md)。
 
-[演示截图](../artifacts/review/game-motion-lab.png)。浏览器已检查八场景切换、播放暂停、进度拖动及手机宽度；实际客户端验证入口见 [体验文档](ui-motion-plan.md)。
+浏览器已检查八场景切换、播放暂停、进度拖动及手机宽度；实际客户端验证入口见 [体验文档](ui-motion-plan.md)。

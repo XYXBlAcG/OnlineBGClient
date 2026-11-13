@@ -2,12 +2,14 @@ import { useGameScale } from "./game-sizing/GameSizing";
 import { ExpeditionTable } from "./expedition/ExpeditionTable";
 import { DominionTable } from "./dominion/DominionTable";
 import { GraphwarTable } from "./graphwar/GraphwarTable";
+import { SichuanTable } from "./mahjong/SichuanTable";
+import { PoolGame } from "./pool/PoolGame";
+import type { PoolRenderer } from "./pool/renderer";
 import { FlightSpecialPanel } from "./flight/FlightSpecialPanel";
 import { FlightMapViewport } from "./flight/FlightMapViewport";
 import { FlightOverlayProvider } from "./flight/FlightWeatherContext";
 import { CheckersSpecialPanel } from "./checkers/CheckersSpecialPanel";
 import { UnoTeamPanel } from "./uno/UnoTeamPanel";
-import { SichuanTable } from "./mahjong/SichuanTable";
 import type { MotionPreferences } from "./MotionControls";
 import { GameMotionLayer } from "./GameMotionLayer";
 import { usePresentation } from "./motion";
@@ -23,6 +25,7 @@ import { CardSurface } from "./CardSurface";
 import { gameCatalogue } from "../domain/catalogue";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { UpstreamRuntime } from "../upstream/runtime";
+import { ErrorBoundary } from "./ui/ErrorBoundary";
 import type { Action } from "../domain/types";
 import type { Snapshot } from "../domain/protocol";
 
@@ -60,6 +63,10 @@ export const OriginalGame = memo(function OriginalGame({
   animationRate = 1,
   sound = false,
   onInteractionEnd,
+  poolRenderer = "auto",
+  onPoolRendererChange,
+  poolSound = true,
+  soundVolume = 0.5,
 }: {
   customPhrases?: import("../domain/phrases").PhraseGroup[];
   replay?: boolean;
@@ -72,6 +79,10 @@ export const OriginalGame = memo(function OriginalGame({
   animationRate?: number;
   sound?: boolean;
   onInteractionEnd?: (id: string) => void;
+  poolRenderer?: PoolRenderer;
+  onPoolRendererChange?: (renderer: PoolRenderer) => void;
+  poolSound?: boolean;
+  soundVolume?: number;
   snapshot: GameSnapshot;
   pending?: boolean;
   act: (action: Action) => void;
@@ -257,89 +268,109 @@ export const OriginalGame = memo(function OriginalGame({
         }
       }}
     >
-      {presentation.kind === "expedition" &&
-      snapshot.state?.kind === "expedition" ? (
-        <ExpeditionTable
-          onAutoplay={onAutoplay}
+      <ErrorBoundary
+        key={`${snapshot.room}:${snapshot.kind}:${snapshot.actor}`}
+        scope="game"
+      >
+        {presentation.kind === "expedition" &&
+        snapshot.state?.kind === "expedition" ? (
+          <ExpeditionTable
+            onAutoplay={onAutoplay}
+            snapshot={snapshot}
+            act={act}
+            replay={replay}
+            avatar={avatarContext}
+            pending={pending}
+          />
+        ) : presentation.kind === "dominion" &&
+          snapshot.state?.kind === "dominion" ? (
+          <DominionTable
+            snapshot={snapshot}
+            act={act}
+            replay={replay}
+            avatar={avatarContext}
+            pending={pending}
+          />
+        ) : presentation.kind === "graphwar" &&
+          snapshot.state?.kind === "graphwar" ? (
+          <GraphwarTable
+            view={snapshot.state.view}
+            snapshot={snapshot}
+            act={act}
+            replay={replay}
+            avatar={avatarContext}
+            pending={pending}
+            animationActive={animationActive}
+            animationRate={animationRate}
+          />
+        ) : presentation.kind === "sichuan" ? (
+          <SichuanTable
+            snapshot={snapshot}
+            act={act}
+            replay={replay}
+            onAutoplay={onAutoplay}
+            avatar={avatarContext}
+          />
+        ) : presentation.kind === "pool" && snapshot.state?.kind === "pool" ? (
+          <PoolGame
+            view={snapshot.state.view}
+            actor={snapshot.actor}
+            act={act}
+            replay={replay}
+            pending={pending}
+            turnDeadline={snapshot.turnDeadline}
+            serverTime={snapshot.serverTime}
+            paused={snapshot.paused}
+            renderer={poolRenderer}
+            onRendererChange={onPoolRendererChange}
+            soundEnabled={poolSound}
+            soundVolume={soundVolume}
+          />
+        ) : Game ? (
+          <>
+            {snapshot.kind === "fxq" && snapshot.state?.kind === "fxq" && (
+              <FlightSpecialPanel
+                view={snapshot.state.view}
+                snapshot={snapshot}
+                act={act}
+                replay={replay}
+                playersCollapsed={flightPlayersCollapsed}
+                onTogglePlayers={() =>
+                  setFlightPlayersCollapsed((value) => !value)
+                }
+              />
+            )}
+            {snapshot.kind === "tq" && snapshot.state?.kind === "tq" && (
+              <CheckersSpecialPanel view={snapshot.state.view} />
+            )}
+            {snapshot.kind === "uno" && snapshot.state?.kind === "uno" && (
+              <UnoTeamPanel view={snapshot.state.view} snapshot={snapshot} />
+            )}
+            {game && flightOverlay ? (
+              <FlightOverlayProvider value={flightOverlay}>
+                {game}
+              </FlightOverlayProvider>
+            ) : (
+              game
+            )}
+          </>
+        ) : null}
+        <GameMotionLayer
           snapshot={snapshot}
-          act={act}
-          replay={replay}
-          avatar={avatarContext}
-          pending={pending}
+          active={animationActive}
+          rate={animationRate}
         />
-      ) : presentation.kind === "dominion" &&
-        snapshot.state?.kind === "dominion" ? (
-        <DominionTable
-          snapshot={snapshot}
-          act={act}
-          replay={replay}
-          avatar={avatarContext}
-          pending={pending}
-        />
-      ) : presentation.kind === "graphwar" &&
-        snapshot.state?.kind === "graphwar" ? (
-        <GraphwarTable
-          view={snapshot.state.view}
-          snapshot={snapshot}
-          act={act}
-          replay={replay}
-          avatar={avatarContext}
-          pending={pending}
-          animationActive={animationActive}
-          animationRate={animationRate}
-        />
-      ) : presentation.kind === "sichuan" ? (
-        <SichuanTable
-          snapshot={snapshot}
-          act={act}
-          replay={replay}
-          onAutoplay={onAutoplay}
-          avatar={avatarContext}
-        />
-      ) : Game ? (
-        <>
-          {snapshot.kind === "fxq" && snapshot.state?.kind === "fxq" && (
-            <FlightSpecialPanel
-              view={snapshot.state.view}
-              snapshot={snapshot}
-              act={act}
-              replay={replay}
-              playersCollapsed={flightPlayersCollapsed}
-              onTogglePlayers={() =>
-                setFlightPlayersCollapsed((value) => !value)
-              }
-            />
-          )}
-          {snapshot.kind === "tq" && snapshot.state?.kind === "tq" && (
-            <CheckersSpecialPanel view={snapshot.state.view} />
-          )}
-          {snapshot.kind === "uno" && snapshot.state?.kind === "uno" && (
-            <UnoTeamPanel view={snapshot.state.view} snapshot={snapshot} />
-          )}
-          {game && flightOverlay ? (
-            <FlightOverlayProvider value={flightOverlay}>
-              {game}
-            </FlightOverlayProvider>
-          ) : (
-            game
-          )}
-        </>
-      ) : null}
-      <GameMotionLayer
-        snapshot={snapshot}
-        active={animationActive}
-        rate={animationRate}
-      />
-      {!replay && onInteractionEnd && (
-        <Interactions
-          key={`${snapshot.room}:${snapshot.kind}`}
-          events={interactions}
-          motion={gameMotion !== "reduced"}
-          enhanced={gameMotion === "enhanced"}
-          sound={sound}
-          onEnd={onInteractionEnd}
-        />
-      )}
+        {!replay && onInteractionEnd && (
+          <Interactions
+            key={`${snapshot.room}:${snapshot.kind}`}
+            events={interactions}
+            motion={gameMotion !== "reduced"}
+            enhanced={gameMotion === "enhanced"}
+            sound={sound}
+            onEnd={onInteractionEnd}
+          />
+        )}
+      </ErrorBoundary>
     </div>
   );
 });

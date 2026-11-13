@@ -42,6 +42,9 @@ export const partyScenes = [
   "gems",
   "alchemy",
   "runes",
+  "achievementEpic",
+  "achievementLegendary",
+  "achievementMythic",
 ] as const;
 export type PartySceneId = (typeof partyScenes)[number];
 export const partyGlyphs = [
@@ -58,7 +61,8 @@ export const partyGlyphs = [
   "note",
 ] as const;
 export type PartyGlyph = (typeof partyGlyphs)[number];
-export type PartyShader = "none" | "glow" | "shockwave" | "rays" | "void";
+export type PartyShader =
+  "none" | "glow" | "shockwave" | "rays" | "void" | "bloom";
 export interface PartyArt {
   scene: PartySceneId;
   glyph: PartyGlyph;
@@ -122,7 +126,8 @@ export const partyArt = {
   wish: art("wish", "star"),
 } satisfies Record<PartyItemId, PartyArt>;
 export function resolvePartyArt(event: PartyEvent): PartyArt {
-  if (!event.plugin) return partyArt[event.item];
+  const base = partyArt[event.item];
+  if (!event.plugin) return base;
   const scene =
     event.visual?.scene ??
     (
@@ -139,7 +144,7 @@ export function resolvePartyArt(event: PartyEvent): PartyArt {
     )[event.visual?.pattern ?? "burst"];
   return {
     scene,
-    glyph: event.visual?.particle ?? "emoji",
-    shader: partyArt[event.item].shader,
+    glyph: event.visual?.particle ?? base.glyph,
+    shader: event.plugin.id === "achievement" ? "bloom" : base.shader,
   };
 }

@@ -55,12 +55,24 @@ export function resizeScroll(
 export function fitMapZoom(
   view: { width: number; height: number },
   content: { width: number; height: number },
+  minimum = 0.25,
 ): number {
-  return mapZoom(
-    Math.min(view.width / content.width, view.height / content.height),
+  return Math.max(
+    minimum,
+    Math.min(4, view.width / content.width, view.height / content.height),
   );
 }
 
 export function mapDisplayScale(renderedWidth: number, layoutWidth: number) {
   return renderedWidth > 0 && layoutWidth > 0 ? renderedWidth / layoutWidth : 1;
+}
+
+export function readingMapZoom(
+  view: { width: number; height: number },
+  region: { width: number; height: number },
+): number {
+  return Math.max(
+    0.85,
+    Math.min(1.25, view.width / region.width, view.height / region.height),
+  );
 }

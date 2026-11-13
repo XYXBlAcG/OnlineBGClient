@@ -1,0 +1,27 @@
+{
+  "ignorePatterns": ["src/upstream/**"],
+  "plugins": ["react"],
+  "categories": {
+    "correctness": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/domain/**"],
+      "rules": {
+        "react-hooks/rules-of-hooks": "off"
+      }
+    }
+  ],
+  "rules": {
+    "no-unused-vars": "error",
+    "no-unused-expressions": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "off",
+    "react/refs": "off",
+    "react/set-state-in-effect": "off",
+    "react/purity": "off",
+    "react/immutability": "off",
+    "no-misleading-character-class": "off",
+    "unicorn/no-useless-spread": "off"
+  }
+}

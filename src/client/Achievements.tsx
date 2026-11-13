@@ -10,18 +10,12 @@ import {
   type AchievementUnlock,
   type AppStats,
 } from "../domain/achievements";
+import { achievementRarityNames } from "../domain/achievement-types";
 import { gameCatalogue, gameKinds } from "../domain/catalogue";
 import { ClientStore } from "./storage";
 import { Button, SearchField, Select } from "./ui/Controls";
 import "./achievements.css";
 
-const rarityNames: Record<AchievementRarity, string> = {
-  common: "普通",
-  rare: "稀有",
-  epic: "史诗",
-  legendary: "传说",
-  mythic: "神话",
-};
 export const achievementToastDurations: Record<AchievementRarity, number> = {
   common: 6500,
   rare: 7500,
@@ -211,7 +205,7 @@ export function AchievementGallery({
               ? byAchievement.has(definition.id)
               : !byAchievement.has(definition.id))) &&
           (!search ||
-            `${definition.title} ${definition.description} ${metaFor(definition.game).name} ${rarityNames[definition.rarity]}`
+            `${definition.title} ${definition.description} ${metaFor(definition.game).name} ${achievementRarityNames[definition.rarity]}`
               .toLowerCase()
               .includes(search)),
       ),
@@ -326,7 +320,7 @@ export function AchievementGallery({
             }
           >
             <option value="all">全部稀有度</option>
-            {Object.entries(rarityNames).map(([value, label]) => (
+            {Object.entries(achievementRarityNames).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
@@ -405,7 +399,7 @@ export function AchievementGallery({
               </div>
               <div>
                 <dt>稀有度</dt>
-                <dd>{rarityNames[selectedDefinition.rarity]}</dd>
+                <dd>{achievementRarityNames[selectedDefinition.rarity]}</dd>
               </div>
               {selectedUnlock ? (
                 <>

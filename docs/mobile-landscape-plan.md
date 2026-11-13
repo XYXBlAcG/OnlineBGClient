@@ -12,6 +12,23 @@
 
 输入 `/` 或打开「指令」查看所有示例。指令目录同时提供解析、帮助、补全和权限分类，定义见 [指令模型](../src/domain/banner.ts)，服务校验见 [房间](../src/domain/room.ts)。公告、倒数与表情连击沿用横幅授权；清屏只允许房主管理者。倒数只提醒，不自动开局；娱乐骰子不替代任何游戏内骰子，结果随消息保存，回放不会重新掷骰。
 
+## 原生壳横屏
+
+原生本地牌桌使用 `.native-table-shell`：隐藏 Web 顶栏、房间导航和游戏状态行，牌桌全屏，手牌贴底。原生联机房间使用 `.native-room-shell`：隐藏重复的 Web 顶栏，保留房间工具栏和右下角 Web 聊天按钮，原生导航只保留返回。两者共用 [安全区与手牌规则](../src/client/ui/native-table.css)。
+
+逐款审查入口：
+
+| 游戏 | 横屏布局 |
+| --- | --- |
+| UNO、斗地主、三国杀 | [mobile-landscape.css](../src/client/ui/mobile-landscape.css) |
+| 卡坦岛、璀璨宝石、毒药 | [mobile-landscape.css](../src/client/ui/mobile-landscape.css) |
+| 飞行棋、跳棋 | [mobile-landscape.css](../src/client/ui/mobile-landscape.css) |
+| 四川麻将 | [mobile-usability.css](../src/client/ui/mobile-usability.css)、[mahjong.css](../src/client/mahjong/mahjong.css) |
+| 领土 Dominion | [dominion.css](../src/client/dominion/dominion.css) |
+| 秘塔远征 | [expedition/table.css](../src/client/expedition/table.css)、[横屏地图](../src/client/expedition/map-layout.ts) |
+
+本轮只做共享框架和 CSS 入口整理；每款仍需用户在真机横屏逐项操作，重点检查手牌、地图、弹层、聊天按钮和安全区。
+
 ## 实现索引
 
 | 职责 | 源 |

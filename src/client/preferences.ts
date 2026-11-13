@@ -9,6 +9,7 @@ import { z } from "zod";
 import { themes } from "./themes";
 import { gameKinds } from "../domain/catalogue";
 import { capabilities, type RuntimePlatform } from "./platform";
+import { poolRenderers } from "./pool/renderer";
 
 export const preferencesSchema = z.object({
   party: partyPreferencesSchema.default(partyPreferencesSchema.parse({})),
@@ -48,12 +49,16 @@ export const preferencesSchema = z.object({
   chatVisible: z.boolean().default(false),
   sidebarWidth: z.number().int().min(280).max(520).default(320),
   imageQuality: z.enum(["clear", "data"]).default("clear"),
+  poolRenderer: z.enum(poolRenderers).default("auto"),
   bannerColor: bannerColorSchema.default("#ffce37"),
   bannerDisplay: z.boolean().default(true),
   soundVolume: z.number().min(0).max(1).default(0.5),
+  poolSound: z.boolean().default(true),
   turnSound: z.boolean().default(false),
   messageSound: z.boolean().default(false),
   systemNotifications: z.boolean().default(false),
+  achievementStage: z.boolean().default(false),
+  shareAchievements: z.boolean().default(true),
   interactions: z.boolean().default(true),
   interactionSound: z.boolean().default(false),
   performance: performanceSchema.default({ mode: "auto", threads: 8 }),

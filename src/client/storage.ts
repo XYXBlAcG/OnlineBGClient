@@ -1,4 +1,17 @@
 import {
+  migrateJournal,
+  observeExpedition,
+  emptyJournal,
+  unlockLegacy,
+  type ExpeditionJournal,
+} from "../domain/expedition/journal";
+import {
+  normalizeLegacy,
+  type LegacyNodeId,
+} from "../domain/expedition/legacy";
+import type { ExpeditionRun } from "../domain/expedition/adventure-types";
+import type { ReplayBookmark } from "../domain/replay-timeline";
+import {
   workshopPackSchema,
   workshopVersionCompare,
   type WorkshopInstallation,
@@ -59,6 +72,8 @@ function publishHistory() {
     localStorage.setItem(historyRevision, randomId());
 }
 interface ClientDatabase extends DBSchema {
+  expeditionJournal: { key: string; value: ExpeditionJournal };
+  replayNotes: { key: string; value: ReplayBookmark[] };
   plugins: { key: string; value: WorkshopInstallation };
   recordSettings: { key: string; value: boolean };
   recordSeen: { key: string; value: boolean };
@@ -81,8 +96,12 @@ interface ClientDatabase extends DBSchema {
 }
 export class ClientStore {
   private observed = new Set<string>();
-  private database = openDB<ClientDatabase>("onlinebg-client", 8, {
+  private database = openDB<ClientDatabase>("onlinebg-client", 9, {
     upgrade(database) {
+      if (!database.objectStoreNames.contains("expeditionJournal"))
+        database.createObjectStore("expeditionJournal");
+      if (!database.objectStoreNames.contains("replayNotes"))
+        database.createObjectStore("replayNotes");
       if (!database.objectStoreNames.contains("plugins"))
         database.createObjectStore("plugins");
       if (!database.objectStoreNames.contains("runs"))
@@ -226,11 +245,17 @@ export class ClientStore {
   }): Promise<void> {
     const database = await this.database;
     const stores: Array<
-      "stickers" | "attachments" | "local" | "records" | "recordSeen"
-    > = ["local", "attachments", "records", "recordSeen"];
+      | "stickers"
+      | "attachments"
+      | "local"
+      | "records"
+      | "recordSeen"
+      | "replayNotes"
+    > = ["local", "attachments", "records", "recordSeen", "replayNotes"];
     if (database.objectStoreNames.contains("stickers")) stores.push("stickers");
     const transaction = database.transaction(stores, "readwrite");
     if (selection.records) {
+      await transaction.objectStore("replayNotes").clear();
       for (const key of await transaction.objectStore("records").getAllKeys())
         await transaction.objectStore("recordSeen").put(true, key);
       await transaction.objectStore("records").clear();
@@ -331,16 +356,104 @@ export class ClientStore {
     await transaction.done;
     publishHistory();
   }
+  async journal(): Promise<ExpeditionJournal> {
+    return migrateJournal(
+      (await (await this.database).get("expeditionJournal", "profile")) ??
+        structuredClone(emptyJournal),
+    );
+  }
+  async observeRun(run: ExpeditionRun, actor: number): Promise<void> {
+    const transaction = (await this.database).transaction(
+      "expeditionJournal",
+      "readwrite",
+    );
+    const current = migrateJournal(
+      (await transaction.store.get("profile")) ?? emptyJournal,
+    );
+    const next = observeExpedition(current, run, actor);
+    if (next !== current) await transaction.store.put(next, "profile");
+    await transaction.done;
+  }
+  async upgradeLegacy(id: LegacyNodeId): Promise<ExpeditionJournal> {
+    const transaction = (await this.database).transaction(
+      "expeditionJournal",
+      "readwrite",
+    );
+    const current = migrateJournal(
+      (await transaction.store.get("profile")) ?? emptyJournal,
+    );
+    const next = unlockLegacy(current, id);
+    await transaction.store.put(next, "profile");
+    await transaction.done;
+    return next;
+  }
+  async importJournal(input: unknown): Promise<ExpeditionJournal> {
+    const imported = migrateJournal(input);
+    const tx = (await this.database).transaction(
+      "expeditionJournal",
+      "readwrite",
+    );
+    const current = migrateJournal(
+      (await tx.store.get("profile")) ?? emptyJournal,
+    );
+    for (const [id, entry] of Object.entries(imported.runs)) {
+      const old = current.runs[id];
+      current.runs[id] = old
+        ? {
+            chapter: Math.max(old.chapter, entry.chapter),
+            won: old.won || entry.won,
+            ascension: Math.max(old.ascension, entry.ascension),
+            settled: old.settled || entry.settled,
+            knowledge: Math.max(old.knowledge, entry.knowledge),
+            professions: [
+              ...new Set([...old.professions, ...entry.professions]),
+            ],
+            cards: [...new Set([...old.cards, ...entry.cards])],
+            relics: [...new Set([...old.relics, ...entry.relics])],
+            bosses: [...new Set([...old.bosses, ...entry.bosses])],
+          }
+        : entry;
+    }
+    current.legacy = normalizeLegacy([...current.legacy, ...imported.legacy]);
+    await tx.store.put(current, "profile");
+    await tx.done;
+    return current;
+  }
+  async bookmarks(record: ReplayRecord): Promise<ReplayBookmark[]> {
+    return (
+      (await (await this.database).get("replayNotes", recordKey(record))) ?? []
+    );
+  }
+  async saveBookmarks(
+    record: ReplayRecord,
+    items: ReplayBookmark[],
+  ): Promise<void> {
+    if (
+      items.length > 100 ||
+      items.some(
+        (item) =>
+          !Number.isInteger(item.frame) ||
+          item.frame < 0 ||
+          item.frame > record.events.length ||
+          item.label.length > 80,
+      )
+    )
+      throw new Error("书签无效");
+    await (
+      await this.database
+    ).put("replayNotes", structuredClone(items), recordKey(record));
+  }
   async records(): Promise<ReplayRecord[]> {
     return (await this.database).getAll("records");
   }
   async deleteRecord(record: ReplayRecord): Promise<void> {
     const database = await this.database,
       transaction = database.transaction(
-        ["records", "recordSeen"],
+        ["records", "recordSeen", "replayNotes"],
         "readwrite",
       ),
       key = recordKey(record);
+    await transaction.objectStore("replayNotes").delete(key);
     await transaction.objectStore("records").delete(key);
     await transaction.objectStore("recordSeen").put(true, key);
     await transaction.done;

@@ -9,5 +9,5 @@ it('dispatches supported games through one strategy contract and rejects unavail
   const decision = registry.decide(engine.project(uno, 0), 0, 'easy', 'audit');
   expect(registry.decide(decision.observation, 0, 'easy', 'audit', decision.version)).toEqual(decision);
   expect(() => registry.decide(uno, 0, 'easy', 'audit', 'unknown')).toThrow('版本');
-  expect(() => registry.decide(engine.create('ddz', 3, 'ddz'), 0, 'easy', 'audit')).toThrow('尚未接入');
+  expect(registry.decide(engine.project(engine.create('ddz', 3, 'ddz'), 0), 0, 'easy', 'audit').chosen.type).toBe('ddz-claim');
 });

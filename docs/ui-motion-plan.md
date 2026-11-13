@@ -38,9 +38,9 @@
 
 ## 审核与验证
 
-- [macOS Apple Silicon 审核入口](multiplayer-room-experience.md#审核产物)：解压后打开 OnlineBGClient.app。
-- [真实设置截图](../artifacts/review/experience-settings.png)、[真实牌桌截图](../artifacts/review/experience-splendor.png)、[手机头像与动效入口](../artifacts/review/experience-mobile-avatar.png)。
-- [八游戏与四组合浏览器检查](../scripts/verify-experience.mjs)：真实服务、权威动作、桌面／手机头像同步、暂停回放与实时牌桌隔离、系统减少动态效果、清理、低高度；[本机帧时间](../artifacts/review/experience-performance.json) 为 Chromium 动作后空闲帧记录，不代表动画期间或手机实机性能。
+- [macOS 审核入口](multiplayer-room-experience.md#审核产物)：安装与打开方式见该入口。
+- 真实设置、真实牌桌与手机头像动效由人工审核，入口见上。
+- [八游戏与四组合浏览器检查](../scripts/verify-experience.mjs)：真实服务、权威动作、桌面／手机头像同步、暂停回放与实时牌桌隔离、系统减少动态效果、清理、低高度；本机帧时间为 Chromium 动作后空闲帧记录，不代表动画期间或手机实机性能。
 - [UNO 双视角翻牌检查](../scripts/verify-uno-motion.mjs)：真实摸牌、本人正面、他人牌背、落点、点击中断与减少动态效果；[原生翻牌检查](../scripts/native-motion-smoke.js) 使用 `COMPANION_SMOKE_PROFILE=motion`。
 - [动作语义测试](../tests/game-motion-events.test.ts)、[头像身份测试](../tests/avatar.test.ts)、[策略测试](../tests/motion-policy.test.ts)、[反馈测试](../tests/game-motion.test.ts)。
 - [完整牌桌检查](../scripts/verify-workspace.mjs)、[横竖屏检查](../scripts/verify-viewport.mjs)、[社交检查](../scripts/verify-social.mjs)、[缓存检查](../scripts/verify-cache.mjs)。

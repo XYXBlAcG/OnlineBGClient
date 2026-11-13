@@ -18,7 +18,7 @@ export function useNativeWindow(
   receive: (intent: AuxiliaryIntent) => void,
   enabled = true,
 ) {
-  const active = capabilities.auxiliaryWindows;
+  const active = capabilities.auxiliaryWindows && !auxiliaryView;
   const shown = enabled && open;
   const visible = useRef(shown);
   visible.current = shown;
@@ -97,7 +97,8 @@ export async function bindAuxiliary(
       finished = true;
       clearTimeout(timer);
       dispose?.();
-      error ? reject(new Error(error)) : resolve();
+      if (error) reject(new Error(error));
+      else resolve();
     };
     const timer = setTimeout(() => finish("保存超时，请重试"), 10000);
     void listen<{ request: string; error?: string }>(

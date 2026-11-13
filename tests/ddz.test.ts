@@ -30,7 +30,7 @@ describe('original dou dizhu rules', () => {
     }
     expect(engine.finished(state)).toBe(true);
   });
-  it('rejects AI configuration until the dedicated strategy is available', () => {
-    expect(() => configSchema.parse({ kind: 'ddz', humans: 1, ai: [{ difficulty: 'easy' }, { difficulty: 'easy' }], team: false, training: false })).toThrow('AI');
+  it('accepts AI configuration with the dedicated strategy', () => {
+    expect(configSchema.parse({ kind: 'ddz', humans: 1, ai: [{ difficulty: 'easy' }, { difficulty: 'easy' }], team: false, training: false }).ai).toHaveLength(2);
   });
 });

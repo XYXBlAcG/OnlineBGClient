@@ -441,3 +441,54 @@
   font-size: 12px;
   font-weight: 650;
 }
+.party-stage-preview .party-canvas::before {
+  background: radial-gradient(ellipse at 50% 42%, #0d193d33, #02071366);
+}
+
+@keyframes party-stage-shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  18% {
+    transform: translate(-9px, 5px) rotate(-0.5deg);
+  }
+  36% {
+    transform: translate(7px, -4px) rotate(0.4deg);
+  }
+  54% {
+    transform: translate(-5px, 3px) rotate(-0.25deg);
+  }
+  72% {
+    transform: translate(4px, -2px) rotate(0.2deg);
+  }
+}
+@keyframes party-vignette {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.party-stage[data-active="true"] .party-canvas::before {
+  animation: party-vignette 3.2s ease-in-out infinite;
+}
+.party-cinematic[data-scene="blast"],
+.party-cinematic[data-scene="lightning"],
+.party-cinematic[data-scene="slash"],
+.party-cinematic[data-scene="achievementLegendary"],
+.party-cinematic[data-scene="achievementMythic"] {
+  animation: party-stage-shake 520ms ease-out;
+}
+.party-stage[data-paused="true"] .party-canvas::before,
+.party-stage[data-paused="true"] .party-cinematic {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .party-stage[data-active="true"] .party-canvas::before,
+  .party-cinematic[data-scene] {
+    animation: none;
+  }
+}

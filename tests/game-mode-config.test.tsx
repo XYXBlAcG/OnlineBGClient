@@ -79,3 +79,34 @@ it("creates two-seat siege checkers instead of failing on the default seats", ()
   expect(config.humans + config.ai.length).toBe(2);
   act(() => tree.unmount());
 });
+
+it("shows pool modes inside gameplay options and creates the selected nine-ball game", async () => {
+  const { gameCatalogue } = await import("../src/domain/catalogue");
+  const onCreate = vi.fn(),
+    tree = renderLobby(onCreate);
+  selectGame(tree, gameCatalogue.pool.name);
+  expect(gameCatalogue.pool.name).toBe("台球");
+  const options = tree.root.findByProps({ "aria-label": "玩法选项" });
+  const selector = options.findAll(
+    (node) =>
+      node.props["aria-label"] === "台球玩法" &&
+      typeof node.props.onValueChange === "function",
+  )[0];
+  expect(selector).toBeDefined();
+  act(() => selector.props.onValueChange("nine-ball"));
+  createRoom(tree);
+  expect(onCreate.mock.calls[0][0].pool.mode).toBe("nine-ball");
+  act(() => tree.unmount());
+});
+
+it("places the expedition archive in the selected game heading", () => {
+  const tree = renderLobby(vi.fn());
+  selectGame(tree, "秘塔远征");
+  const heading = tree.root.findByProps({ className: "club-setup-heading" });
+  expect(
+    heading
+      .findAllByType("button")
+      .some((button) => button.props.children === "远征档案"),
+  ).toBe(true);
+  act(() => tree.unmount());
+});

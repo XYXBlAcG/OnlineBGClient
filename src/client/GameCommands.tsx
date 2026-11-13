@@ -4,7 +4,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { useEffect, useRef, useState } from "react";
 import type { Snapshot } from "../domain/protocol";
 import type { Action } from "../domain/types";
-import { CommandRegistry, formatBinding, keyboardBinding } from "./commands";
+import { CommandRegistry, keyboardBinding } from "./commands";
 import { Button } from "./ui/Controls";
 import { Shortcut } from "./ui/Shortcut";
 

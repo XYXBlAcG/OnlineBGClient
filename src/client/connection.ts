@@ -1,3 +1,4 @@
+import { recordClientLog } from "./diagnostics";
 import { WindowComputeHost } from "./compute-host";
 import {
   computeDiagnostic,
@@ -62,6 +63,7 @@ export class NetworkConnection implements Connection {
   private socket: WebSocket | null = null;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private stopped = false;
+  private deadline: ReturnType<typeof setTimeout> | undefined;
   private pending = new Map<string, Command>();
   private attempts = 0;
   private session?: { room: string; token: string };
@@ -111,9 +113,14 @@ export class NetworkConnection implements Connection {
       command.type === "achievement-chat"
     )
       this.pending.set(command.id, command);
-    if (this.socket?.readyState === WebSocket.OPEN)
+    if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(command));
-    else if (
+      if (
+        (command.type === "action" || command.type === "snapshot") &&
+        this.deadline === undefined
+      )
+        this.waitForSnapshot(this.socket);
+    } else if (
       command.type !== "action" &&
       command.type !== "chat" &&
       command.type !== "chat-image" &&
@@ -127,6 +134,7 @@ export class NetworkConnection implements Connection {
     document.removeEventListener("visibilitychange", this.resume);
     window.removeEventListener("online", this.resume);
     clearTimeout(this.timer);
+    clearTimeout(this.deadline);
     this.socket?.close();
   }
 
@@ -135,11 +143,24 @@ export class NetworkConnection implements Connection {
     if (this.socket?.readyState === WebSocket.OPEN && this.session) {
       this.status("正在恢复");
       this.send({ type: "snapshot", token: this.session.token });
+      this.waitForSnapshot(this.socket);
     } else if (this.socket?.readyState !== WebSocket.CONNECTING) {
       clearTimeout(this.timer);
       this.connect();
     }
   };
+  private waitForSnapshot(socket: WebSocket): void {
+    clearTimeout(this.deadline);
+    this.deadline = setTimeout(() => {
+      if (this.stopped || socket !== this.socket) return;
+      recordClientLog(
+        "connection",
+        `snapshot-timeout endpoint=${new URL(this.endpoint).origin} attempt=${this.attempts + 1}`,
+      );
+      this.status("同步超时，正在重新连接");
+      socket.close();
+    }, 15000);
+  }
   private connect(): void {
     this.status(this.attempts ? "重连中" : "连接中");
     const url = new URL("/connect", this.endpoint);
@@ -147,6 +168,11 @@ export class NetworkConnection implements Connection {
     this.replica = new SnapshotReplica();
     const socket = new WebSocket(url);
     this.socket = socket;
+    this.waitForSnapshot(socket);
+    recordClientLog(
+      "connection",
+      `connect endpoint=${url.origin} attempt=${this.attempts + 1}`,
+    );
     socket.onopen = () => {
       if (this.stopped || socket !== this.socket) return;
       const command = this.session
@@ -163,7 +189,15 @@ export class NetworkConnection implements Connection {
     };
     socket.onmessage = (event) => {
       if (this.stopped || socket !== this.socket) return;
-      let response: Response = JSON.parse(event.data);
+      let response: Response;
+      try {
+        response = JSON.parse(event.data);
+      } catch {
+        recordClientLog("connection", "invalid-json");
+        this.status("收到无效数据，正在重新连接");
+        socket.close();
+        return;
+      }
       if (response.type === "snapshot" || response.type === "patch") {
         const snapshot = this.replica.apply(response);
         if (!snapshot) {
@@ -191,15 +225,25 @@ export class NetworkConnection implements Connection {
         });
         return;
       }
-      if (response.type === "snapshot") this.status("已连接");
+      if (response.type === "snapshot") {
+        const restoring = this.deadline !== undefined;
+        clearTimeout(this.deadline);
+        this.deadline = undefined;
+        this.attempts = 0;
+        this.status("已连接");
+        if (restoring)
+          recordClientLog(
+            "connection",
+            `synchronized version=${response.snapshot.version}`,
+          );
+      }
       if (response.type === "session") {
         this.session = { room: response.room, token: response.token };
         localStorage.setItem(
           `room:${new URL(this.endpoint).origin}:${response.room}`,
           response.token,
         );
-        this.attempts = 0;
-        this.status("已连接");
+        this.status("正在同步牌桌");
         for (const command of this.pending.values())
           this.socket!.send(JSON.stringify(command));
       }
@@ -234,8 +278,18 @@ export class NetworkConnection implements Connection {
         this.receive({ type: "activity", pending: false, latencyMs });
       }
     };
+    socket.onerror = () => {
+      if (this.stopped || socket !== this.socket) return;
+      recordClientLog("connection", `transport-error endpoint=${url.origin}`);
+      this.status("网络连接异常，等待重试");
+    };
     socket.onclose = (event) => {
       if (this.stopped || socket !== this.socket) return;
+      clearTimeout(this.deadline);
+      recordClientLog(
+        "connection",
+        `closed code=${event.code} pending=${this.pending.size}`,
+      );
       if (event.code === 4001) {
         this.close();
         this.status("身份已在其他窗口恢复");

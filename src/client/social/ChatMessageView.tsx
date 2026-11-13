@@ -20,6 +20,23 @@ export function ChatMessageView({
         <p>{message.text}</p>
       </div>
     );
+  if (message.type === "achievement")
+    return (
+      <div
+        className="chat-message chat-achievement"
+        data-content="achievement"
+        data-rarity={message.rarity}
+        aria-label={message.text}
+      >
+        <span className="chat-achievement-symbol" aria-hidden="true">
+          {message.symbol}
+        </span>
+        <span className="chat-achievement-copy">
+          <small>{message.name} 达成成就</small>
+          <strong>{message.title}</strong>
+        </span>
+      </div>
+    );
   return (
     <div
       data-content={message.type}

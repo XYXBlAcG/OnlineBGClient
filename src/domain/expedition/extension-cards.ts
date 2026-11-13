@@ -4,7 +4,7 @@ export const extensionCards = {
     name: "反击姿态",
     cost: 1,
     target: "self",
-    icon: "⛨",
+    icon: "⛨︎",
     effects: [
       {
         kind: "block",
@@ -20,7 +20,7 @@ export const extensionCards = {
     name: "不屈战意",
     cost: 2,
     target: "self",
-    icon: "♜",
+    icon: "♜︎",
     effects: [
       {
         kind: "strength",
@@ -37,7 +37,7 @@ export const extensionCards = {
     name: "堡垒冲锋",
     cost: 2,
     target: "enemy",
-    icon: "⬢",
+    icon: "⬢︎",
     effects: [
       {
         kind: "damage",
@@ -50,7 +50,7 @@ export const extensionCards = {
     name: "军阵号令",
     cost: 2,
     target: "self",
-    icon: "⚑",
+    icon: "⚑︎",
     effects: [
       {
         kind: "block",
@@ -67,7 +67,7 @@ export const extensionCards = {
     name: "以守为攻",
     cost: 1,
     target: "enemy",
-    icon: "⛨",
+    icon: "⛨︎",
     effects: [
       {
         kind: "damage",
@@ -81,7 +81,7 @@ export const extensionCards = {
     name: "重装援护",
     cost: 2,
     target: "ally",
-    icon: "⬡",
+    icon: "⬡︎",
     effects: [
       {
         kind: "block",
@@ -97,7 +97,7 @@ export const extensionCards = {
     name: "伺机而动",
     cost: 0,
     target: "self",
-    icon: "◎",
+    icon: "◎︎",
     effects: [
       {
         kind: "draw",
@@ -114,7 +114,7 @@ export const extensionCards = {
     name: "钉射",
     cost: 1,
     target: "enemy",
-    icon: "➶",
+    icon: "➶︎",
     effects: [
       {
         kind: "damage",
@@ -130,7 +130,7 @@ export const extensionCards = {
     name: "伏击连射",
     cost: 2,
     target: "enemy",
-    icon: "⋙",
+    icon: "⋙︎",
     effects: [
       {
         kind: "damage",
@@ -148,7 +148,7 @@ export const extensionCards = {
     name: "迷踪雾",
     cost: 1,
     target: "self",
-    icon: "≋",
+    icon: "≋︎",
     effects: [
       {
         kind: "block",
@@ -164,7 +164,7 @@ export const extensionCards = {
     name: "踏风",
     cost: 0,
     target: "self",
-    icon: "⌁",
+    icon: "⌁︎",
     effects: [
       {
         kind: "block",
@@ -181,7 +181,7 @@ export const extensionCards = {
     name: "猎场标记",
     cost: 2,
     target: "all-enemies",
-    icon: "◎",
+    icon: "◎︎",
     effects: [
       {
         kind: "damage",
@@ -197,7 +197,7 @@ export const extensionCards = {
     name: "净化蒸馏",
     cost: 1,
     target: "ally",
-    icon: "⚗",
+    icon: "⚗︎",
     effects: [
       {
         kind: "cleanse",
@@ -213,7 +213,7 @@ export const extensionCards = {
     name: "催化反应",
     cost: 1,
     target: "enemy",
-    icon: "✺",
+    icon: "✺︎",
     effects: [
       {
         kind: "damage",
@@ -230,7 +230,7 @@ export const extensionCards = {
     name: "腐蚀云",
     cost: 2,
     target: "all-enemies",
-    icon: "☁",
+    icon: "☁︎",
     effects: [
       {
         kind: "poison",
@@ -246,7 +246,7 @@ export const extensionCards = {
     name: "生命培养液",
     cost: 2,
     target: "ally",
-    icon: "✚",
+    icon: "✚︎",
     effects: [
       {
         kind: "heal",
@@ -262,7 +262,7 @@ export const extensionCards = {
     name: "缓释胶囊",
     cost: 1,
     target: "self",
-    icon: "◷",
+    icon: "◷︎",
     effects: [
       {
         kind: "regen",
@@ -279,7 +279,7 @@ export const extensionCards = {
     name: "协同酊剂",
     cost: 2,
     target: "self",
-    icon: "⚗",
+    icon: "⚗︎",
     effects: [
       {
         kind: "regen",
@@ -297,7 +297,7 @@ export const extensionCards = {
     name: "耐心筹备",
     cost: 0,
     target: "self",
-    icon: "◷",
+    icon: "◷︎",
     effects: [
       {
         kind: "focus",
@@ -310,7 +310,7 @@ export const extensionCards = {
     name: "应急口粮",
     cost: 1,
     target: "self",
-    icon: "✚",
+    icon: "✚︎",
     effects: [
       {
         kind: "heal",
@@ -323,7 +323,7 @@ export const extensionCards = {
     name: "救援绳索",
     cost: 1,
     target: "ally",
-    icon: "⌁",
+    icon: "⌁︎",
     effects: [
       {
         kind: "block",
@@ -339,7 +339,7 @@ export const extensionCards = {
     name: "信号焰火",
     cost: 1,
     target: "all-enemies",
-    icon: "✹",
+    icon: "✹︎",
     effects: [
       {
         kind: "vulnerable",
@@ -355,7 +355,7 @@ export const extensionCards = {
     name: "净水壶",
     cost: 0,
     target: "self",
-    icon: "◡",
+    icon: "◡︎",
     effects: [
       {
         kind: "cleanse",
@@ -368,7 +368,7 @@ export const extensionCards = {
     name: "砥砺",
     cost: 1,
     target: "self",
-    icon: "⚒",
+    icon: "⚒︎",
     effects: [
       {
         kind: "strength",
@@ -385,7 +385,7 @@ export const extensionCards = {
     name: "拾荒",
     cost: 0,
     target: "self",
-    icon: "◈",
+    icon: "◈︎",
     effects: [
       {
         kind: "draw",
@@ -398,7 +398,7 @@ export const extensionCards = {
     name: "掩护前进",
     cost: 2,
     target: "self",
-    icon: "⬡",
+    icon: "⬡︎",
     effects: [
       {
         kind: "block",
@@ -411,7 +411,7 @@ export const extensionCards = {
     name: "简易陷阱",
     cost: 1,
     target: "enemy",
-    icon: "♠",
+    icon: "♠︎",
     effects: [
       {
         kind: "damage",
@@ -427,7 +427,7 @@ export const extensionCards = {
     name: "远行灯",
     cost: 1,
     target: "self",
-    icon: "☀",
+    icon: "☀︎",
     effects: [
       {
         kind: "blessing",
@@ -443,7 +443,7 @@ export const extensionCards = {
     name: "后备计划",
     cost: 1,
     target: "self",
-    icon: "◷",
+    icon: "◷︎",
     effects: [
       {
         kind: "draw",
@@ -459,7 +459,7 @@ export const extensionCards = {
     name: "孤注一掷",
     cost: 3,
     target: "enemy",
-    icon: "ϟ",
+    icon: "ϟ︎",
     effects: [
       {
         kind: "damage",

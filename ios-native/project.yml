@@ -9,13 +9,25 @@ settings:
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: DBV9QXGHLB
     CODE_SIGN_STYLE: Automatic
-    SHELL_BASE_URL: "http://127.0.0.1:1420"
 targets:
   OnlineBGShell:
     type: application
     platform: iOS
     sources:
       - path: OnlineBGShell
+    preBuildScripts:
+      - name: Bundle Web
+        script: |
+          set -e
+          SRC="$SRCROOT/../dist"
+          DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/web"
+          if [ ! -f "$SRC/index.html" ]; then
+            echo "web build missing: run npm run build"
+            exit 1
+          fi
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          cp -R "$SRC"/. "$DEST"/
     settings:
       base:
         PRODUCT_NAME: OnlineBGShell
@@ -28,8 +40,8 @@ targets:
       path: OnlineBGShell/Info.plist
       properties:
         CFBundleDisplayName: OnlineBG Shell
-        CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "0.5.0"
+        CFBundleVersion: "11"
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
@@ -37,6 +49,7 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         CADisableMinimumFrameDurationOnPhone: true
-        ShellBaseURL: $(SHELL_BASE_URL)
+        NSLocalNetworkUsageDescription: 连接同一 Wi-Fi 下的牌桌服务。
+        NSCameraUsageDescription: 扫描房间邀请二维码。
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true

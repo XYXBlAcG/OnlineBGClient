@@ -4,7 +4,7 @@ export const mechanicCards = {
     name: "铆钉射击",
     cost: 1,
     target: "enemy",
-    icon: "⚙",
+    icon: "⚙︎",
     effects: [
       {
         kind: "damage",
@@ -21,7 +21,7 @@ export const mechanicCards = {
     name: "隔热装甲",
     cost: 1,
     target: "self",
-    icon: "▣",
+    icon: "▣︎",
     effects: [
       {
         kind: "block",
@@ -37,7 +37,7 @@ export const mechanicCards = {
     name: "便携炮台",
     cost: 1,
     target: "self",
-    icon: "♜",
+    icon: "♜︎",
     effects: [
       {
         kind: "device",
@@ -50,7 +50,7 @@ export const mechanicCards = {
     name: "紧急排热",
     cost: 0,
     target: "self",
-    icon: "♨",
+    icon: "♨︎",
     effects: [
       {
         kind: "cool",
@@ -67,7 +67,7 @@ export const mechanicCards = {
     name: "超载炮击",
     cost: 2,
     target: "enemy",
-    icon: "ϟ",
+    icon: "ϟ︎",
     effects: [
       {
         kind: "damage",
@@ -85,7 +85,7 @@ export const mechanicCards = {
     name: "哨戒装置",
     cost: 2,
     target: "self",
-    icon: "♜",
+    icon: "♜︎",
     effects: [
       {
         kind: "device",
@@ -102,7 +102,7 @@ export const mechanicCards = {
     name: "现场检修",
     cost: 1,
     target: "ally",
-    icon: "⚒",
+    icon: "⚒︎",
     effects: [
       {
         kind: "heal",
@@ -118,7 +118,7 @@ export const mechanicCards = {
     name: "点燃反应堆",
     cost: 0,
     target: "self",
-    icon: "☀",
+    icon: "☀︎",
     effects: [
       {
         kind: "heat",
@@ -135,7 +135,7 @@ export const mechanicCards = {
     name: "联动齐射",
     cost: 2,
     target: "all-enemies",
-    icon: "⚙",
+    icon: "⚙︎",
     effects: [
       {
         kind: "damage",
@@ -153,7 +153,7 @@ export const mechanicCards = {
     name: "循环冷却",
     cost: 1,
     target: "self",
-    icon: "❄",
+    icon: "❄︎",
     effects: [
       {
         kind: "cool",
@@ -169,7 +169,7 @@ export const mechanicCards = {
     name: "团队镀层",
     cost: 2,
     target: "self",
-    icon: "⬢",
+    icon: "⬢︎",
     effects: [
       {
         kind: "block",
@@ -187,7 +187,7 @@ export const mechanicCards = {
     name: "蓄电线圈",
     cost: 1,
     target: "self",
-    icon: "ϟ",
+    icon: "ϟ︎",
     effects: [
       {
         kind: "focus",
@@ -203,7 +203,7 @@ export const mechanicCards = {
     name: "回收零件",
     cost: 0,
     target: "self",
-    icon: "⚒",
+    icon: "⚒︎",
     effects: [
       {
         kind: "draw",
@@ -220,7 +220,7 @@ export const mechanicCards = {
     name: "尖刺护板",
     cost: 1,
     target: "self",
-    icon: "♠",
+    icon: "♠︎",
     effects: [
       {
         kind: "thorns",
@@ -237,7 +237,7 @@ export const mechanicCards = {
     name: "钻头突破",
     cost: 1,
     target: "enemy",
-    icon: "↗",
+    icon: "↗︎",
     effects: [
       {
         kind: "damage",
@@ -253,7 +253,7 @@ export const mechanicCards = {
     name: "涡轮风扇",
     cost: 1,
     target: "self",
-    icon: "✺",
+    icon: "✺︎",
     effects: [
       {
         kind: "cool",
@@ -269,7 +269,7 @@ export const mechanicCards = {
     name: "攻城模式",
     cost: 3,
     target: "enemy",
-    icon: "♜",
+    icon: "♜︎",
     effects: [
       {
         kind: "damage",
@@ -287,7 +287,7 @@ export const mechanicCards = {
     name: "应急屏障",
     cost: 0,
     target: "ally",
-    icon: "⬡",
+    icon: "⬡︎",
     effects: [
       {
         kind: "block",
@@ -305,7 +305,7 @@ export const mechanicCards = {
     name: "快速组装",
     cost: 2,
     target: "self",
-    icon: "⚒",
+    icon: "⚒︎",
     effects: [
       {
         kind: "device",
@@ -322,7 +322,7 @@ export const mechanicCards = {
     name: "熔炉冲击",
     cost: 1,
     target: "all-enemies",
-    icon: "☀",
+    icon: "☀︎",
     effects: [
       {
         kind: "damage",
@@ -340,7 +340,7 @@ export const mechanicCards = {
     name: "绝缘维护",
     cost: 1,
     target: "ally",
-    icon: "▣",
+    icon: "▣︎",
     effects: [
       {
         kind: "cleanse",
@@ -356,7 +356,7 @@ export const mechanicCards = {
     name: "精密校准",
     cost: 1,
     target: "self",
-    icon: "◎",
+    icon: "◎︎",
     effects: [
       {
         kind: "strength",
@@ -373,7 +373,7 @@ export const mechanicCards = {
     name: "移动堡垒",
     cost: 3,
     target: "self",
-    icon: "⬢",
+    icon: "⬢︎",
     effects: [
       {
         kind: "block",
@@ -391,7 +391,7 @@ export const mechanicCards = {
     name: "余热脉冲",
     cost: 1,
     target: "enemy",
-    icon: "✹",
+    icon: "✹︎",
     effects: [
       {
         kind: "damage",

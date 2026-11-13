@@ -1,0 +1,267 @@
+@layer app {
+  .gallery {
+    min-height: 100dvh;
+    padding: var(--space-6);
+    background: var(--canvas);
+    color: var(--text);
+    display: grid;
+    align-content: start;
+    gap: var(--space-6);
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--font-size-aux);
+  }
+  .note {
+    max-width: 430px;
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--font-size-aux);
+  }
+  .headerTools {
+    display: grid;
+    justify-items: end;
+    gap: var(--space-2);
+  }
+  .themeSwitch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .section {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    gap: var(--space-2);
+  }
+  .swatch {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-2);
+    border-radius: var(--radius-control);
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+  }
+  .swatch strong {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: var(--font-size-aux);
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .swatchColor {
+    display: block;
+    height: var(--control-height);
+    border-radius: var(--radius-control);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+    align-items: start;
+    gap: var(--space-4);
+  }
+  .desktopFrame,
+  .mobileFrame {
+    overflow: hidden;
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .desktopFrame {
+    min-height: 360px;
+  }
+  .mockToolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--app-toolbar-height);
+    padding: 0 var(--space-4);
+    background: var(--surface);
+    box-shadow: 0 1px 0 var(--line);
+  }
+  .mockToolbar strong {
+    margin-right: auto;
+  }
+  .mockToolbar span {
+    color: var(--muted);
+    font-size: var(--font-size-aux);
+  }
+  .mockBody {
+    display: grid;
+    grid-template-columns: 136px minmax(0, 1fr);
+    gap: var(--space-6);
+    padding: var(--space-4);
+  }
+  .mockContent {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  .formRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: var(--control-height);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-control);
+    background: var(--field);
+  }
+  .formRow > span {
+    flex: none;
+    white-space: nowrap;
+    font-size: var(--font-size-control);
+    font-weight: var(--font-weight-control);
+  }
+  .sliderSlot {
+    flex: 1;
+    min-width: 0;
+  }
+  .mobileFrame {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+  .mobileHeading,
+  .mobileHero,
+  .mobileActions,
+  .mobileCards {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .mobileHeading {
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: var(--font-size-aux);
+  }
+  .mobileHero {
+    display: grid;
+    align-content: start;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    border-radius: var(--radius-panel);
+    background: var(--raised);
+  }
+  .mobileHero strong {
+    font-size: var(--font-size-page);
+  }
+  .mobileHero p {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--font-size-aux);
+  }
+  .mobileActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .mobileCards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .miniCard {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border-radius: var(--radius-card);
+    background: var(--field);
+  }
+  .miniCard small {
+    color: var(--muted);
+  }
+  .showcaseGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    gap: var(--space-3);
+  }
+  .surfaceCard {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-4);
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--space-6);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--field);
+    color: var(--text);
+    font-size: var(--font-size-aux);
+    font-weight: var(--font-weight-control);
+  }
+  .status[data-tone="info"] {
+    background: color-mix(in srgb, var(--info) 14%, var(--field));
+    color: var(--info);
+  }
+  .status[data-tone="success"] {
+    background: color-mix(in srgb, var(--success) 14%, var(--field));
+    color: var(--success);
+  }
+  .status[data-tone="warning"] {
+    background: color-mix(in srgb, var(--warning) 14%, var(--field));
+    color: var(--warning);
+  }
+  .status[data-tone="danger"] {
+    background: color-mix(in srgb, var(--danger) 14%, var(--field));
+    color: var(--danger);
+  }
+  .skeleton {
+    height: var(--control-height);
+    border-radius: var(--radius-control);
+    background: var(--skeleton);
+    animation: skeleton-pulse 1.3s ease-in-out infinite;
+  }
+  .empty {
+    display: grid;
+    place-items: center;
+    min-height: calc(var(--space-8) * 2);
+    border-radius: var(--radius-control);
+    background: var(--field);
+    color: var(--muted);
+    font-size: var(--font-size-aux);
+  }
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @media (max-width: 900px) {
+    .columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .gallery {
+      padding: var(--space-4);
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import type { Preferences } from "../preferences";
-import { Button, Slider, Switch } from "../ui/Controls";
+import { Button, Select, Slider, Switch } from "../ui/Controls";
 import type { GameSizing } from "./model";
 
 export function DisplaySettings({
@@ -78,6 +78,23 @@ export function DisplaySettings({
         checked={preferences.showFps}
         onCheckedChange={(showFps) => update({ showFps })}
       />
+      <label className="setting-row">
+        台球渲染
+        <Select
+          aria-label="台球渲染"
+          value={preferences.poolRenderer}
+          onValueChange={(poolRenderer) =>
+            update({
+              poolRenderer: poolRenderer as Preferences["poolRenderer"],
+            })
+          }
+        >
+          <option value="auto">自动（桌面 3D）</option>
+          <option value="3d">3D</option>
+          <option value="2d">2D</option>
+        </Select>
+      </label>
+      <p className="muted">自动模式在桌面启用 3D，WebGL 不可用时回退 2D。</p>
       <h4>牌桌元素</h4>
       <label>
         牌桌元素大小 · {Math.round(info.scale * 100)}%

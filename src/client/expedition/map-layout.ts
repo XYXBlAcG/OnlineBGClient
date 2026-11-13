@@ -2,6 +2,7 @@ import type { MapNode } from "../../domain/expedition/adventure-types";
 
 type Point = { x: number; y: number };
 type Curve = { start: Point; c1: Point; c2: Point; end: Point };
+export type RouteOrientation = "portrait" | "landscape";
 
 function pathFromCurves(curves: readonly Curve[]) {
   return curves
@@ -32,23 +33,36 @@ export function pointOnCurves(curves: readonly Curve[], step: number): Point {
   };
 }
 
-export function routeLayout(map: MapNode[][]) {
-  const width = Math.max(
-      720,
-      160 + Math.max(...map.map((row) => row.length)) * 128,
-    ),
-    height = 200 + (map.length - 1) * 196,
+export function routeLayout(
+  map: MapNode[][],
+  orientation: RouteOrientation = "portrait",
+) {
+  const horizontal = orientation === "landscape",
+    lanes = Math.max(...map.map((row) => row.length)),
+    width = horizontal
+      ? 200 + (map.length - 1) * 196
+      : Math.max(720, 160 + lanes * 128),
+    height = horizontal
+      ? Math.max(360, 140 + lanes * 112)
+      : 200 + (map.length - 1) * 196,
     nodeWidth = 94,
-    nodeHeight = 78;
-  const floors = map.map((_, floor) => 88 + (map.length - 1 - floor) * 196);
+    nodeHeight = 78,
+    halfAlong = (horizontal ? nodeWidth : nodeHeight) / 2,
+    floors = map.map((_, floor) =>
+      horizontal ? 100 + floor * 196 : 88 + (map.length - 1 - floor) * 196,
+    ),
+    place = (along: number, across: number): Point =>
+      horizontal ? { x: along, y: across } : { x: across, y: along },
+    alongOf = (point: Point) => (horizontal ? point.x : point.y),
+    acrossOf = (point: Point) => (horizontal ? point.y : point.x);
   const points = new Map(
-    map.flat().map((node) => [
-      node.id,
-      {
-        x: 80 + ((node.lane + 0.5) / map[node.floor].length) * (width - 160),
-        y: floors[node.floor],
-      },
-    ]),
+    map.flat().map((node) => {
+      const count = map[node.floor].length,
+        across = horizontal
+          ? 70 + ((node.lane + 0.5) / count) * (height - 140)
+          : 80 + ((node.lane + 0.5) / count) * (width - 160);
+      return [node.id, place(floors[node.floor], across)];
+    }),
   );
   const links = map
     .flatMap((row) =>
@@ -56,71 +70,59 @@ export function routeLayout(map: MapNode[][]) {
         node.next.map((id, edgeIndex) => {
           const from = points.get(node.id)!,
             to = points.get(id)!,
-            backward = to.y > from.y,
+            fromAlong = alongOf(from),
+            toAlong = alongOf(to),
+            backward = horizontal ? toAlong < fromAlong : toAlong > fromAlong,
             shortcut = !map[node.floor + 1]?.some(
               (candidate) => candidate.id === id,
             ),
-            direction = Math.sign(to.y - from.y) || -1,
-            start = {
-              x: from.x,
-              y: from.y + direction * (nodeHeight / 2 + 7),
-            },
-            end = {
-              x: to.x,
-              y: to.y - direction * (nodeHeight / 2 + 7),
-            },
+            direction = Math.sign(toAlong - fromAlong) || (horizontal ? 1 : -1),
             laneOffset =
               (((node.floor + node.lane + edgeIndex + id.length) % 3) - 1) * 7;
           if (backward || shortcut) {
-            const side = to.x >= from.x ? 1 : -1,
+            const side = acrossOf(to) >= acrossOf(from) ? 1 : -1,
               corridor =
-                side > 0 ? width - 24 - edgeIndex * 8 : 24 + edgeIndex * 8,
-              sourceGap =
-                from.y + direction * (nodeHeight / 2 + 22) + laneOffset,
-              targetGap = to.y - direction * (nodeHeight / 2 + 22) + laneOffset,
-              sourceCorner = {
-                x: corridor,
-                y: sourceGap,
-              },
-              targetCorner = {
-                x: corridor,
-                y: targetGap,
-              },
+                side > 0
+                  ? (horizontal ? height : width) - 24 - edgeIndex * 8
+                  : 24 + edgeIndex * 8,
+              sourceGap = fromAlong + direction * (halfAlong + 22) + laneOffset,
+              targetGap = toAlong - direction * (halfAlong + 22) + laneOffset,
+              start = place(
+                fromAlong + direction * (halfAlong + 7),
+                acrossOf(from),
+              ),
+              end = place(toAlong - direction * (halfAlong + 7), acrossOf(to)),
+              sourceCorner = place(sourceGap, corridor),
+              targetCorner = place(targetGap, corridor),
               curves: Curve[] = [
                 {
                   start,
-                  c1: {
-                    x: from.x + side * 20,
-                    y: start.y + direction * 8,
-                  },
-                  c2: {
-                    x: corridor,
-                    y: sourceGap,
-                  },
+                  c1: place(
+                    alongOf(start) + direction * 8,
+                    acrossOf(from) + side * 20,
+                  ),
+                  c2: sourceCorner,
                   end: sourceCorner,
                 },
                 {
                   start: sourceCorner,
-                  c1: {
-                    x: corridor + side * 12,
-                    y: sourceGap + (targetGap - sourceGap) * 0.34,
-                  },
-                  c2: {
-                    x: corridor + side * 12,
-                    y: targetGap - (targetGap - sourceGap) * 0.34,
-                  },
+                  c1: place(
+                    sourceGap + (targetGap - sourceGap) * 0.34,
+                    corridor + side * 12,
+                  ),
+                  c2: place(
+                    targetGap - (targetGap - sourceGap) * 0.34,
+                    corridor + side * 12,
+                  ),
                   end: targetCorner,
                 },
                 {
                   start: targetCorner,
-                  c1: {
-                    x: corridor,
-                    y: targetGap,
-                  },
-                  c2: {
-                    x: to.x + side * 20,
-                    y: end.y - direction * 8,
-                  },
+                  c1: targetCorner,
+                  c2: place(
+                    alongOf(end) - direction * 8,
+                    acrossOf(to) + side * 20,
+                  ),
                   end,
                 },
               ];
@@ -133,18 +135,23 @@ export function routeLayout(map: MapNode[][]) {
               path: pathFromCurves(curves),
             };
           }
-          const half = (end.y - start.y) / 2,
+          const start = place(
+              fromAlong + direction * (halfAlong + 7),
+              acrossOf(from),
+            ),
+            end = place(toAlong - direction * (halfAlong + 7), acrossOf(to)),
+            span = alongOf(end) - alongOf(start),
             curves: Curve[] = [
               {
                 start,
-                c1: {
-                  x: from.x + laneOffset * 0.35,
-                  y: start.y + half * 0.38,
-                },
-                c2: {
-                  x: to.x + laneOffset * 0.35,
-                  y: end.y - half * 0.38,
-                },
+                c1: place(
+                  alongOf(start) + span * 0.19,
+                  acrossOf(from) + laneOffset * 0.35,
+                ),
+                c2: place(
+                  alongOf(end) - span * 0.19,
+                  acrossOf(to) + laneOffset * 0.35,
+                ),
                 end,
               },
             ];
@@ -164,5 +171,17 @@ export function routeLayout(map: MapNode[][]) {
         Number(left.shortcut || left.backward) -
         Number(right.shortcut || right.backward),
     );
-  return { width, height, nodeWidth, nodeHeight, floors, points, links };
+  return {
+    orientation,
+    width,
+    height,
+    nodeWidth,
+    nodeHeight,
+    floors,
+    floorLabels: floors.map((along) =>
+      horizontal ? { x: along, y: 34 } : { x: 12, y: along },
+    ),
+    points,
+    links,
+  };
 }

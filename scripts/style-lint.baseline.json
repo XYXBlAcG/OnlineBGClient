@@ -1,0 +1,129 @@
+{
+  "src/styles.css": {
+    "color-no-hex": 51,
+    "declaration-no-important": 14,
+    "media-feature-name-value-allowed-list": 5,
+    "selector-max-id": 1,
+    "selector-max-universal": 15
+  },
+  "src/client/achievements.css": {
+    "color-no-hex": 5
+  },
+  "src/client/dominion/dominion.css": {
+    "color-no-hex": 9,
+    "declaration-no-important": 1,
+    "media-feature-name-value-allowed-list": 1,
+    "selector-max-universal": 1
+  },
+  "src/client/expedition/cards.css": {
+    "color-no-hex": 12,
+    "declaration-no-important": 3
+  },
+  "src/client/expedition/expedition.css": {
+    "color-no-hex": 20,
+    "declaration-no-important": 4,
+    "media-feature-name-value-allowed-list": 1,
+    "selector-max-universal": 4
+  },
+  "src/client/expedition/journal.css": {
+    "color-no-hex": 1,
+    "media-feature-name-value-allowed-list": 2
+  },
+  "src/client/expedition/table.css": {
+    "color-no-hex": 40,
+    "declaration-no-important": 4,
+    "media-feature-name-value-allowed-list": 5,
+    "selector-max-universal": 2
+  },
+  "src/client/expedition/world-art.css": {
+    "color-no-hex": 10
+  },
+  "src/client/graphwar/graphwar.css": {
+    "color-no-hex": 28
+  },
+  "src/client/lobby/lobby.css": {
+    "color-no-hex": 34,
+    "declaration-no-important": 2,
+    "media-feature-name-value-allowed-list": 2
+  },
+  "src/client/lobby/resume-drawer.css": {
+    "media-feature-name-value-allowed-list": 1
+  },
+  "src/client/mahjong/mahjong.css": {
+    "color-no-hex": 7,
+    "declaration-no-important": 1,
+    "media-feature-name-value-allowed-list": 2
+  },
+  "src/client/party/party.css": {
+    "color-no-hex": 25,
+    "declaration-no-important": 2,
+    "media-feature-name-value-allowed-list": 1,
+    "selector-max-universal": 1
+  },
+  "src/client/ui/art-experience.css": {
+    "color-no-hex": 10,
+    "selector-max-universal": 1
+  },
+  "src/client/ui/board-themes.css": {
+    "color-no-hex": 1
+  },
+  "src/client/ui/design-tokens.css": {
+    "color-no-hex": 9
+  },
+  "src/client/ui/experience.css": {
+    "color-no-hex": 26,
+    "declaration-no-important": 7,
+    "media-feature-name-value-allowed-list": 1,
+    "selector-max-universal": 2
+  },
+  "src/client/ui/game-icons.css": {
+    "color-no-hex": 19
+  },
+  "src/client/ui/mobile-home.css": {
+    "color-no-hex": 1
+  },
+  "src/client/ui/mobile-landscape.css": {
+    "selector-max-universal": 1
+  },
+  "src/client/ui/native-shell-preview.css": {
+    "color-no-hex": 79,
+    "declaration-no-important": 4,
+    "media-feature-name-value-allowed-list": 1,
+    "selector-max-universal": 6
+  },
+  "src/client/ui/phone-room.css": {
+    "color-no-hex": 5
+  },
+  "src/client/ui/quick-start.css": {
+    "media-feature-name-value-allowed-list": 1
+  },
+  "src/client/ui/scroll-surfaces.css": {
+    "media-feature-name-value-allowed-list": 1,
+    "selector-max-universal": 1
+  },
+  "src/client/ui/selection.css": {
+    "declaration-no-important": 6,
+    "selector-max-universal": 3
+  },
+  "src/client/ui/social-experience.css": {
+    "color-no-hex": 12,
+    "declaration-no-important": 2,
+    "selector-max-universal": 2
+  },
+  "src/client/ui/table-material.css": {
+    "color-no-hex": 3
+  },
+  "src/client/updates/updates.css": {
+    "color-no-hex": 2
+  },
+  "src/client/voice/voice.css": {
+    "color-no-hex": 2,
+    "media-feature-name-value-allowed-list": 1,
+    "selector-max-universal": 1
+  },
+  "src/client/flight/flight.css": {
+    "color-no-hex": 39,
+    "declaration-no-important": 1,
+    "selector-max-universal": 1
+  }
+}

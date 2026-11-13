@@ -1,7 +1,13 @@
+import { advancedBalance } from "../../domain/expedition/advanced";
+import { ExpeditionHint } from "./ExpeditionHint";
 import { VoteStatus } from "./VoteStatus";
 import { ballotPhase } from "../../domain/expedition/ballot";
 import { chapters, waystationRecovery } from "../../domain/expedition/chapters";
 import { ascensionProfile } from "../../domain/expedition/ascension";
+import {
+  legacyEffectLines,
+  legacyProfile,
+} from "../../domain/expedition/legacy";
 import { cardServices } from "../../domain/expedition/card-services";
 import { Inventory } from "./Inventory";
 import { RestSite, Shop } from "./CardNodes";
@@ -36,6 +42,7 @@ import { BattleScene } from "./BattleScene";
 import { ProfessionDetail } from "./ProfessionDetail";
 import { RelicGainedOverlay } from "./RelicGainedOverlay";
 import { CompanionRoster } from "./CompanionRoster";
+import { ExpeditionDrawer } from "./ExpeditionDrawer";
 import "./expedition.css";
 import "./table.css";
 const DevExpeditionController = import.meta.env.DEV
@@ -112,13 +119,16 @@ export function ExpeditionTable({
     run = state.view,
     actor = snapshot.actor,
     hero = run.combat.heroes[actor],
-    ascension = ascensionProfile(run.ascension);
+    ascension = ascensionProfile(run.ascension),
+    legacy = run.legacy?.length ? legacyProfile(run.legacy) : null;
   const [selected, setSelected] = useState<string | null>(null),
     [hover, setHover] = useState<Target | null>(null),
     [inspect, setInspect] = useState<number | null>(null),
     [markMode, setMarkMode] = useState(false),
     [professionPreview, setProfessionPreview] = useState(0),
     [professionOpen, setProfessionOpen] = useState(false),
+    [menuOpen, setMenuOpen] = useState(false),
+    [playersOpen, setPlayersOpen] = useState(false),
     [dismissedResult, setDismissedResult] = useState<number | null>(null),
     [manualAction, setManualAction] = useState({
       token: 0,
@@ -170,9 +180,14 @@ export function ExpeditionTable({
   const targetActions = cardActions.filter(
     (c) => "target" in c.move && c.move.target,
   );
-  const direct = cardActions.find(
-    (c) => !("target" in c.move) || !c.move.target,
-  );
+  const direct =
+    cardActions.find((c) => !("target" in c.move) || !c.move.target) ??
+    (targetActions.length === 1 &&
+    "target" in targetActions[0].move &&
+    targetActions[0].move.target?.side === "hero" &&
+    targetActions[0].move.target.index === actor
+      ? targetActions[0]
+      : undefined);
   const previewAction = hover
     ? targetActions.find(
         (c) =>
@@ -296,6 +311,56 @@ export function ExpeditionTable({
   const shopRaidRemaining = run.shopRaidDeadlineRound
     ? Math.max(0, run.shopRaidDeadlineRound - run.combat.round + 1)
     : null;
+  const closeMenu = () => setMenuOpen(false);
+  const statusActions = () => (
+    <>
+      <button
+        onClick={() => {
+          closeMenu();
+          setInspect(Math.max(0, actor));
+        }}
+      >
+        牌组与遗物
+      </button>
+      {hero && run.professions[actor] !== undefined && (
+        <button
+          aria-expanded={professionOpen}
+          onClick={() => {
+            closeMenu();
+            setProfessionOpen((open) => !open);
+          }}
+        >
+          职业详情
+        </button>
+      )}
+      {!replay && !snapshot.finished && onAutoplay && (
+        <>
+          <button
+            onClick={() => {
+              closeMenu();
+              onAutoplay(!snapshot.seats[actor]?.autoplay);
+            }}
+          >
+            {snapshot.seats[actor]?.autoplay ? "收回控制" : "暂离托管"}
+          </button>
+          {snapshot.canManage &&
+            snapshot.seats.map((s, i) =>
+              !s.difficulty && !s.online && !s.autoplay ? (
+                <button
+                  key={i}
+                  onClick={() => {
+                    closeMenu();
+                    onAutoplay(true, i);
+                  }}
+                >
+                  托管 {s.name}
+                </button>
+              ) : null,
+            )}
+        </>
+      )}
+    </>
+  );
   return (
     <section
       className={`expedition-table exp-chapter-${run.chapter}`}
@@ -308,7 +373,7 @@ export function ExpeditionTable({
         data-guide-target="expedition.status"
         data-motion-zone="expedition.status"
       >
-        <div>
+        <div className="exp-phase-block">
           <small
             title={`第 ${run.chapter + 1} 大层 / 第 ${Math.max(1, run.floor + 1)} 站，共 ${run.map.length} 站`}
           >
@@ -319,71 +384,126 @@ export function ExpeditionTable({
             {run.phase === "battle" ? ` · 第 ${run.combat.round} 回合` : ""}
           </strong>
         </div>
-        <span className="exp-ascension-badge">N{run.ascension}</span>
-        {run.side && <span className="exp-side-badge">深层裂隙</span>}
-        {shopRaidRemaining !== null && (
-          <span className="exp-shop-raid-countdown" role="status">
-            抢店剩余 <strong>{shopRaidRemaining}</strong> 回合
+        <div className="exp-status-badges">
+          <span className="exp-ascension-badge exp-badge">
+            N{run.ascension}
           </span>
-        )}
-        {hero && (
-          <span
-            className="exp-resource exp-health"
-            aria-label={`生命 ${hero.hp}/${hero.maxHp}`}
-          >
-            ♥ <strong>{hero.hp}</strong>/{hero.maxHp}
-          </span>
-        )}
-        {hero && (
-          <span
-            className="exp-resource exp-gold"
-            aria-label={`金币 ${hero.gold}`}
-          >
-            ◈ <strong>{hero.gold}</strong>
-          </span>
-        )}
-        {hero && run.phase === "battle" && (
-          <span className="exp-resource" aria-label={`剩余能量 ${hero.energy}`}>
-            能量 <strong>{hero.energy}</strong>
-          </span>
-        )}
-        {hero && (
-          <span className="exp-resource">
-            罗盘 <strong>{run.compass}</strong>
-          </span>
-        )}
-        {run.contract && (
-          <span className="exp-contract-badge">誓约 · 下一首领增援</span>
-        )}
-        <button onClick={() => setInspect(Math.max(0, actor))}>
-          牌组与遗物
-        </button>
-        {hero && run.professions[actor] !== undefined && (
-          <button
-            aria-expanded={professionOpen}
-            onClick={() => setProfessionOpen((open) => !open)}
-          >
-            职业详情
-          </button>
-        )}
-        {!replay && !snapshot.finished && onAutoplay && (
-          <>
-            <button
-              onClick={() => onAutoplay(!snapshot.seats[actor]?.autoplay)}
+          {run.legacy?.length ? (
+            <span
+              className="exp-legacy-badge exp-badge"
+              title={
+                legacy
+                  ? legacyEffectLines({
+                      ...legacy,
+                      campHealing: legacy.campHealing - 1,
+                    }).join(" · ")
+                  : ""
+              }
             >
-              {snapshot.seats[actor]?.autoplay ? "收回控制" : "暂离托管"}
-            </button>
-            {snapshot.canManage &&
-              snapshot.seats.map((s, i) =>
-                !s.difficulty && !s.online && !s.autoplay ? (
-                  <button key={i} onClick={() => onAutoplay(true, i)}>
-                    托管 {s.name}
-                  </button>
-                ) : null,
-              )}
-          </>
-        )}
+              传承 {run.legacy.length}
+            </span>
+          ) : null}
+          {run.side && (
+            <span className="exp-side-badge exp-badge">深层裂隙</span>
+          )}
+          {shopRaidRemaining !== null && (
+            <span className="exp-shop-raid-countdown exp-badge" role="status">
+              抢店剩余 <strong>{shopRaidRemaining}</strong> 回合
+            </span>
+          )}
+          {run.contract && (
+            <span className="exp-contract-badge exp-badge">
+              誓约 · 下一首领增援
+            </span>
+          )}
+        </div>
+        <div className="exp-status-resources">
+          {hero && (
+            <span
+              className="exp-resource exp-health"
+              aria-label={`生命 ${hero.hp}/${hero.maxHp}`}
+            >
+              <span className="exp-resource-label">生命</span>
+              <strong>{hero.hp}</strong>
+              <span className="exp-resource-max">/{hero.maxHp}</span>
+            </span>
+          )}
+          {hero && (
+            <span
+              className="exp-resource exp-gold"
+              aria-label={`金币 ${hero.gold}`}
+            >
+              <span className="exp-resource-label">金币</span>
+              <strong>{hero.gold}</strong>
+            </span>
+          )}
+          {hero && run.phase === "battle" && (
+            <span
+              className="exp-resource exp-energy"
+              aria-label={`剩余能量 ${hero.energy}`}
+            >
+              <span className="exp-resource-label">能量</span>
+              <strong>{hero.energy}</strong>
+            </span>
+          )}
+          {hero && (
+            <span className="exp-resource exp-compass">
+              <span className="exp-resource-label">罗盘</span>
+              <strong>{run.compass}</strong>
+            </span>
+          )}
+        </div>
+        <div className="exp-status-actions">{statusActions()}</div>
+        <div className="exp-status-triggers">
+          <button
+            className="exp-drawer-trigger"
+            aria-expanded={playersOpen}
+            onClick={() => setPlayersOpen(true)}
+          >
+            玩家
+          </button>
+          <button
+            className="exp-drawer-trigger"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(true)}
+          >
+            操作
+          </button>
+        </div>
       </header>
+      <ExpeditionDrawer
+        open={playersOpen}
+        title="队伍"
+        onClose={() => setPlayersOpen(false)}
+      >
+        <div className="exp-drawer-players">
+          {run.combat.heroes.map((h, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setPlayersOpen(false);
+                setInspect(i);
+              }}
+            >
+              <AvatarSurface {...avatar} index={i} />
+              <span>
+                <strong>{snapshot.seats[i]?.name ?? h.name}</strong>
+                <small>
+                  {h.name} · {h.hp}/{h.maxHp} 生命 · {h.gold} 金币 ·{" "}
+                  {h.ready ? "已结束" : h.hp <= 0 ? "倒地" : "行动中"}
+                </small>
+              </span>
+            </button>
+          ))}
+        </div>
+      </ExpeditionDrawer>
+      <ExpeditionDrawer
+        open={menuOpen}
+        title="远征操作"
+        onClose={() => setMenuOpen(false)}
+      >
+        <div className="exp-drawer-actions">{statusActions()}</div>
+      </ExpeditionDrawer>
       {DevExpeditionController && !replay && (
         <Suspense fallback={null}>
           <DevExpeditionController
@@ -415,7 +535,7 @@ export function ExpeditionTable({
               <div key={i}>
                 <AvatarSurface {...avatar} index={i} />
                 <button onClick={() => setInspect(i)}>
-                  {h.name} · {h.hp}/{h.maxHp} ♥ · {h.gold} ◈
+                  {h.name} · {h.hp}/{h.maxHp} ♥︎ · {h.gold} ◈︎
                 </button>
               </div>
             ))}
@@ -434,7 +554,7 @@ export function ExpeditionTable({
                     (member.hp > 0 ? member.maxHp - member.hp : member.maxHp) *
                       waystationRecovery,
                   )}{" "}
-                ♥
+                ♥︎
               </span>
             ))}
           </div>
@@ -627,15 +747,33 @@ export function ExpeditionTable({
             className="exp-table-controls"
             data-guide-target="expedition.actions"
           >
-            <span>
-              {markMode
-                ? "点击角色发送团队标记"
-                : direct
-                  ? "点击确认使用，或按 Enter"
-                  : selected
-                    ? "点击高亮角色确认目标"
-                    : "选择手牌，再选择高亮目标"}
-            </span>
+            {!replay && (
+              <ExpeditionHint
+                text={
+                  pending
+                    ? "正在确认操作…"
+                    : hero?.ready
+                      ? "你已结束行动，等待队友"
+                      : markMode
+                        ? "点击角色发送团队标记"
+                        : direct
+                          ? "点击确认使用，或按 Enter"
+                          : selected
+                            ? "点击高亮角色确认目标"
+                            : `剩余 ${hero?.energy ?? 0} 能量，选择手牌或结束行动`
+                }
+              />
+            )}
+            {selected && !pending && (
+              <button
+                onClick={() => {
+                  setSelected(null);
+                  setHover(null);
+                }}
+              >
+                取消选择
+              </button>
+            )}
             {!replay && moves.some((c) => c.move.type === "ping") && (
               <button
                 aria-pressed={markMode}
@@ -675,7 +813,7 @@ export function ExpeditionTable({
                 aria-pressed={selected === `potion:${i}`}
                 onClick={() => setSelected(`potion:${i}`)}
               >
-                ⚗ {potions[id].name}
+                ⚗︎ {potions[id].name}
               </button>
             ))}
           </div>
@@ -697,7 +835,7 @@ export function ExpeditionTable({
                   )
                 }
                 onChoose={() => {
-                  setSelected(card.id);
+                  setSelected((value) => (value === card.id ? null : card.id));
                   setHover(null);
                   setMarkMode(false);
                 }}
@@ -706,6 +844,62 @@ export function ExpeditionTable({
           </div>
         </>
       )}
+      {run.phase === "battle" &&
+        run.combat.enemies.some(
+          (enemy) => enemy.key === "advanced-shield" && enemy.hp > 0,
+        ) && (
+          <p role="status">
+            屏障机关存活：每轮开始时，其他敌人获得 {advancedBalance.shield}{" "}
+            格挡。击破机关可停止加固。
+          </p>
+        )}
+      {run.phase === "battle" && run.teamContract && (
+        <section aria-label="协作契约">
+          <strong>
+            协作契约：
+            {
+              {
+                offered: "可选",
+                active: "进行中",
+                declined: "本战跳过",
+                completed: "已完成",
+              }[run.teamContract.status]
+            }
+          </strong>
+          {run.teamContract.status === "active" && (
+            <span>
+              同轮由不同角色完成攻击与格挡；单人可自行完成，奖励全队{" "}
+              {advancedBalance.contract}
+              格挡。攻击：
+              {run.teamContract.attack
+                .map((id) => snapshot.seats[id]?.name)
+                .join("、") || "待完成"}
+              ；格挡：
+              {run.teamContract.defend
+                .map((id) => snapshot.seats[id]?.name)
+                .join("、") || "待完成"}
+            </span>
+          )}
+          {moves
+            .filter((c) => c.move.type === "team-contract")
+            .map((c) => (
+              <button
+                key={c.label}
+                disabled={pending}
+                onClick={() => send(c.move)}
+              >
+                {c.label}
+              </button>
+            ))}
+        </section>
+      )}
+      {moves
+        .filter((c) => c.move.type === "compass-supply")
+        .map((c) => (
+          <button key={c.label} disabled={pending} onClick={() => send(c.move)}>
+            {c.label}
+          </button>
+        ))}
       {run.phase === "reward" && (
         <div
           className="exp-node-content"

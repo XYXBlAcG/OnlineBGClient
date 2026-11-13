@@ -70,8 +70,10 @@ export function AuxiliaryRoot() {
     void sendAuxiliary(intent).catch((error) => setError(String(error)));
   };
   const close = () => send({ view: auxiliaryView!, type: "close" });
-  const onError = (message: string) =>
+  const onError = (message: string) => {
+    setError(message);
     send({ view: auxiliaryView!, type: "error", message });
+  };
   const payload = frame?.visible ? frame.payload : undefined;
   const [recordsReady, setRecordsReady] = useState(false);
   const acceptRecords = useCallback(() => setRecordsReady(true), []);

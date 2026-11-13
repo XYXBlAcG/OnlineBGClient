@@ -3,9 +3,12 @@ import type { ExpeditionState, Target } from "./types";
 import { heroContent, type CardId } from "./content";
 import { chapters } from "./chapters";
 import type { RelicId, StoryEventId, PotionId } from "./world";
+import { legacyNodeIds, type LegacyNodeId } from "./legacy";
 export const expeditionOptionsSchema = z.object({
   difficulty: z.enum(["story", "standard", "challenge"]).default("standard"),
+  advanced: z.boolean().optional(),
   ascension: z.number().int().min(0).max(10).default(0),
+  legacy: z.array(z.enum(legacyNodeIds)).default([]),
 });
 export const expeditionDifficulties = {
   story: { label: "旅途", multiplier: 0.82, legacyMultiplier: 0.85 },
@@ -16,12 +19,16 @@ export type ResolvedExpeditionOptions = z.infer<typeof expeditionOptionsSchema>;
 export type ExpeditionOptions = {
   difficulty: ResolvedExpeditionOptions["difficulty"];
   ascension?: number;
+  advanced?: boolean;
+  legacy?: LegacyNodeId[];
 };
 const targetSchema = z.object({
   side: z.enum(["hero", "enemy"]),
   index: z.number().int().min(0).max(3),
 });
 export const expeditionMoveSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("team-contract"), accept: z.boolean() }),
+  z.object({ type: z.literal("compass-supply") }),
   z.object({
     type: z.literal("profession"),
     profession: z
@@ -203,6 +210,8 @@ export interface ExpeditionNodeResult {
   after: ExpeditionResourceSnapshot;
 }
 export interface ExpeditionRun {
+  advanced?: boolean;
+  teamContract?: import("./advanced").TeamContract;
   rulesVersion: 1;
   contentVersion: 1;
   campaignVersion: 1 | 2;
@@ -216,6 +225,8 @@ export interface ExpeditionRun {
   seed: string;
   difficulty: ResolvedExpeditionOptions["difficulty"];
   ascension: number;
+  legacy?: LegacyNodeId[];
+  legacyFreeRerolls?: number[];
   phase:
     | "waystation"
     | "profession"

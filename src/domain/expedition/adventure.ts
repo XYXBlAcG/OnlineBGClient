@@ -1,6 +1,13 @@
+import {
+  advancedBalance,
+  advancedEncounter,
+  grantSceneShield,
+  advanceTeamContract,
+} from "./advanced";
 import { ballotOption, ballotResult, routeLabel } from "./ballot";
 import { chapters, advancementChoices, waystationRecovery } from "./chapters";
 import { ascensionProfile } from "./ascension";
+import { legacyProfile, normalizeLegacy } from "./legacy";
 import { cardServices, campRecovery } from "./card-services";
 import type { Rules } from "../plugin";
 import type { Action, Candidate } from "../types";
@@ -15,7 +22,6 @@ import {
   canUpgrade,
   definition,
   type CardId,
-  type CardInstance,
 } from "./content";
 import {
   potions,
@@ -45,7 +51,6 @@ import {
   encounterFor,
   shopRaidBalance,
   shopRaidEncounter,
-  nodeNames,
   travelCost,
 } from "./map";
 import { shuffled } from "./random";
@@ -74,15 +79,19 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     if (players < 1 || players > 4) throw new Error("秘塔远征支持 1–4 名角色");
     const seed = `${this.random()}:${this.random()}`,
       config = expeditionOptionsSchema.parse(options?.expedition ?? {}),
-      ascension = ascensionProfile(config.ascension);
+      ascension = ascensionProfile(config.ascension),
+      legacy = legacyProfile(config.legacy);
     const view: ExpeditionRun = {
+      advanced: config.advanced,
       rulesVersion: 1,
       campaignVersion: options?.expeditionCampaign ?? 2,
       tuning: options?.expeditionTuning ?? 2,
       chapter: 0,
       history: [],
       luck: Array(players).fill(
-        (options?.expeditionCampaign === 1 ? 0 : 1) + ascension.startLuck,
+        (options?.expeditionCampaign === 1 ? 0 : 1) +
+          ascension.startLuck +
+          legacy.startLuck,
       ),
       rerolls: Array(players).fill(0),
       eventRerolls: 0,
@@ -91,6 +100,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       seed,
       difficulty: config.difficulty,
       ascension: config.ascension,
+      legacy: normalizeLegacy(config.legacy),
+      legacyFreeRerolls: Array(players).fill(legacy.freeRerolls),
       phase: "profession",
       combat: combat.create(
         seed,
@@ -135,7 +146,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       companionBattle: null,
       nodeStart: null,
       lastNodeResult: null,
-      compass: 2 + ascension.startCompass,
+      compass: 2 + ascension.startCompass + legacy.startCompass,
       sequence: 0,
       marks: [],
     };
@@ -236,19 +247,20 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         add({ type: "tie", choice }, `领队决定：${label}`);
       });
     if (run.phase === "battle") {
+      if (run.teamContract?.status === "offered") {
+        add(
+          { type: "team-contract", accept: true },
+          `接受协作契约：同轮攻击与格挡，全队获得 ${advancedBalance.contract} 格挡`,
+        );
+        add({ type: "team-contract", accept: false }, "本战不接受契约");
+      }
       if (
         run.companionBattle &&
         !run.companionBattle.chosen &&
         run.companions.some((companion) => companion.active && !companion.dead)
       ) {
-        add(
-          { type: "toggle-companion", enabled: true },
-          "让 AI 队友上场",
-        );
-        add(
-          { type: "toggle-companion", enabled: false },
-          "本场让 AI 队友待命",
-        );
+        add({ type: "toggle-companion", enabled: true }, "让 AI 队友上场");
+        add({ type: "toggle-companion", enabled: false }, "本场让 AI 队友待命");
       }
       for (const action of combat.candidates(run.combat, actor)) {
         if (action.type === "play")
@@ -317,8 +329,13 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       if (hero.hp < hero.maxHp)
         add({ type: "reward", choice: "heal" }, "恢复 8 生命");
       add({ type: "reward", choice: "skip" }, "跳过奖励");
-      if (run.luck[actor] > 0)
-        add({ type: "reroll" }, "重选战利品 · 1 幸运筹码");
+      if (run.luck[actor] > 0 || (run.legacyFreeRerolls?.[actor] ?? 0) > 0)
+        add(
+          { type: "reroll" },
+          (run.legacyFreeRerolls?.[actor] ?? 0) > 0
+            ? "重选战利品 · 传承免费"
+            : "重选战利品 · 1 幸运筹码",
+        );
     }
     if (run.phase === "shop" && !run.nodeReady[actor]) {
       const removalPrice = Math.ceil(
@@ -368,7 +385,9 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       add(
         { type: "rest" },
         `休息：恢复 ${Math.ceil(
-          campRecovery(hero) * ascensionProfile(run.ascension).campHealing,
+          campRecovery(hero) *
+            ascensionProfile(run.ascension).campHealing *
+            legacyProfile(run.legacy ?? []).campHealing,
         )} 生命`,
       );
       allCards(hero)
@@ -388,6 +407,16 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         );
       add({ type: "done" }, "跳过营地");
     }
+    if (
+      run.advanced &&
+      run.phase === "camp" &&
+      !run.nodeReady[actor] &&
+      run.compass >= advancedBalance.supply.compass
+    )
+      add(
+        { type: "compass-supply" },
+        `消耗 ${advancedBalance.supply.compass} 罗盘：恢复 ${advancedBalance.supply.heal} 生命并获得 ${advancedBalance.supply.gold} 金币，结束营地选择`,
+      );
     if (run.phase === "oracle" && !run.nodeReady[actor]) {
       add({ type: "vote", choice: "luck" }, "观星：每人获得 1 幸运筹码");
       add({ type: "vote", choice: "heal" }, "观星：每人恢复 8 生命");
@@ -441,8 +470,9 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     }
     if (run.phase === "recruit") {
       if (
-        run.companions.filter((companion) => companion.active && !companion.dead)
-          .length < 2
+        run.companions.filter(
+          (companion) => companion.active && !companion.dead,
+        ).length < 2
       ) {
         run.companionOffers.forEach((offer) =>
           add({ type: "vote", choice: offer.id }, `招募${offer.name}`),
@@ -523,6 +553,15 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run = next.view,
       move = action.move,
       hero = run.combat.heroes[actor];
+    if (move.type === "team-contract")
+      run.teamContract!.status = move.accept ? "active" : "declined";
+    if (move.type === "compass-supply") {
+      run.compass -= advancedBalance.supply.compass;
+      this.heal(run, actor, advancedBalance.supply.heal);
+      hero.gold += advancedBalance.supply.gold;
+      run.nodeReady[actor] = true;
+      this.nodeDone(run);
+    }
     const cardsBefore = run.combat.metrics.cards;
     run.sequence++;
     if (move.type === "advance") {
@@ -569,12 +608,22 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           run.combat.heroes.map((_, i) => run.professions[i]!),
           [],
         );
-        const profile = ascensionProfile(run.ascension);
-        run.combat.heroes.forEach((h) => {
-          h.maxHp += profile.startMaxHp;
+        const profile = ascensionProfile(run.ascension),
+          legacy = legacyProfile(run.legacy ?? []);
+        run.combat.heroes.forEach((h, index) => {
+          h.maxHp += profile.startMaxHp + legacy.startMaxHp;
           h.hp = h.maxHp;
-          h.gold = 50 + profile.startGold;
+          h.gold = 50 + profile.startGold + legacy.startGold;
           h.relics = [startingRelics[h.profession] ?? "salve"];
+          for (let count = 0; count < legacy.startPotions; count++) {
+            const id = shuffled(
+              (Object.keys(potions) as PotionId[]).filter(
+                (potion) => !h.potions.includes(potion),
+              ),
+              `${run.seed}:legacy:potion:${index}:${count}`,
+            )[0];
+            if (id) h.potions.push(id);
+          }
         });
         run.phase = "map";
       }
@@ -633,6 +682,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       move.type === "ready" ||
       move.type === "unready"
     ) {
+      const beforeCombat = run.combat;
       const round = run.combat.round;
       if (run.companionBattle && !run.companionBattle.chosen)
         run.companionBattle.chosen = true;
@@ -663,6 +713,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           run.companionBattle.actedRound = run.combat.round;
         }
       }
+      advanceTeamContract(run, beforeCombat, actor, move);
       this.afterCombat(run);
     }
     if (move.type === "potion") {
@@ -680,7 +731,9 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     }
     if (move.type === "discard-potion") hero.potions.splice(move.index, 1);
     if (move.type === "reroll") {
-      run.luck[actor]--;
+      if ((run.legacyFreeRerolls?.[actor] ?? 0) > 0)
+        run.legacyFreeRerolls![actor]--;
+      else run.luck[actor]--;
       run.offers[actor] = shuffled(
         this.pool(run, actor).filter((id) => !run.offers[actor].includes(id)),
         `${run.seed}:rewards:${run.current}:${actor}:reroll:${++run.rerolls[actor]}`,
@@ -694,7 +747,9 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       this.nodeDone(run);
     }
     if (move.type === "raid-shop" && run.phase === "shop") {
-      const node = run.map.flat().find((candidate) => candidate.id === run.current);
+      const node = run.map
+        .flat()
+        .find((candidate) => candidate.id === run.current);
       if (node && !run.shopsSealed) {
         run.shopRaidActive = true;
         run.shopRaidFailed = false;
@@ -739,7 +794,9 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         run,
         actor,
         Math.ceil(
-          campRecovery(hero) * ascensionProfile(run.ascension).campHealing,
+          campRecovery(hero) *
+            ascensionProfile(run.ascension).campHealing *
+            legacyProfile(run.legacy ?? []).campHealing,
         ),
       );
       run.nodeReady[actor] = true;
@@ -960,7 +1017,23 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         return;
       }
       if (["battle", "elite", "boss"].includes(node.kind)) {
-        run.combat = combat.begin(run.combat, encounterFor(run, node));
+        run.combat = combat.begin(
+          run.combat,
+          advancedEncounter(
+            encounterFor(run, node),
+            !!run.advanced && node.kind === "elite" && node.lane % 2 === 0,
+            run.chapter,
+          ),
+        );
+        run.teamContract = run.advanced
+          ? {
+              status: "offered",
+              round: run.combat.round,
+              attack: [],
+              defend: [],
+            }
+          : undefined;
+        if (run.advanced) grantSceneShield(run.combat);
         if (node.kind === "boss") run.contract = null;
         run.combat.revivalFraction =
           node.kind === "boss" && run.campaignVersion === 2 ? 0 : 0.25;
@@ -1110,7 +1183,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           [true, true, true, false, false],
           `${run.seed}:gamble:${run.current}`,
         )[0];
-        run.combat.heroes.forEach((hero, actor) => {
+        run.combat.heroes.forEach((hero) => {
           if (win) hero.gold += 55;
           else {
             const damage = Math.min(hero.hp - 1, 12);
@@ -1250,11 +1323,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         id: companion.id,
         name: companion.name,
         hp: companion.hp,
-        status: companion.active
-          ? "active"
-          : companion.dead
-            ? "dead"
-            : "left",
+        status: companion.active ? "active" : companion.dead ? "dead" : "left",
       })),
     };
   }
@@ -1379,14 +1448,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
   private rollCompanionOffers(run: ExpeditionRun): CompanionOffer[] {
     const names = ["苔灯", "折羽", "雾铃", "青铜仆从", "拾荒客", "白噪"],
       modes = ["fragile", "limited", "eternal"] as const,
-      cards = [
-        "strike",
-        "defend",
-        "quick",
-        "protect",
-        "bash",
-        "heal",
-      ] as const;
+      cards = ["strike", "defend", "quick", "protect", "bash", "heal"] as const;
     const offerModes = shuffled(
       [...modes],
       `${run.seed}:companion-modes:${run.current}`,
@@ -1402,12 +1464,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
           [...cards],
           `${run.seed}:companion-deck:${run.current}:${index}`,
         ).slice(0, 3),
-        hpScale =
-          mode === "fragile" ? 0.45 : mode === "limited" ? 0.65 : 0.55,
-        maxHp = Math.max(
-          8,
-          Math.ceil(heroContent[profession].maxHp * hpScale),
-        );
+        hpScale = mode === "fragile" ? 0.45 : mode === "limited" ? 0.65 : 0.55,
+        maxHp = Math.max(8, Math.ceil(heroContent[profession].maxHp * hpScale));
       return {
         id: `companion-${run.sequence}-${index}`,
         name: `${names[(run.sequence + index) % names.length]}·${heroContent[profession].name}`,

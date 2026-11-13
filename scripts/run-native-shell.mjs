@@ -16,6 +16,7 @@ const run = (command, args, cwd = root) =>
 const capture = (command, args) =>
   execFileSync(command, args, { cwd: root, encoding: "utf8" });
 
+run("npm", ["run", "build"], root);
 run("xcodegen", ["generate"], shellPath);
 
 const runtimes = JSON.parse(

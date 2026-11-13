@@ -29,5 +29,5 @@ it("keeps unfinished runs and room recovery in a closed drawer", () => {
   const main = readFileSync("src/main.tsx", "utf8");
   expect(main).toContain("<ResumeDrawer");
   expect(main).not.toContain("recent-rooms");
-  expect(main).not.toContain("<RunShelf");
+  expect(main).toMatch(/nativeRuns \? \([\s\S]*?<RunShelf/);
 });

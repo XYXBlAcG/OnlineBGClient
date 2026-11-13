@@ -16,7 +16,7 @@ export function Notices({
     const timer = setTimeout(onDismiss, 7000);
     return () => clearTimeout(timer);
   }, [notice, onDismiss]);
-  const success = /已复制|成功|已就绪/.test(notice);
+  const success = /已复制|成功|已就绪|已恢复/.test(notice);
   return createPortal(
     <div className="notification-stack" aria-live="polite" aria-atomic="true">
       {progress && (

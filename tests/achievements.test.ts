@@ -27,8 +27,13 @@ it("registers rare achievements for every game without duplicate ids", () => {
       definition.rarity,
     );
   }
-  for (const game of gameKinds)
-    expect(achievementsForGame(game).length).toBeGreaterThanOrEqual(6);
+  for (const game of gameKinds) {
+    const gameAchievements = achievementsForGame(game);
+    expect(gameAchievements.length).toBeGreaterThanOrEqual(6);
+    expect(
+      new Set(gameAchievements.map((definition) => definition.rarity)).size,
+    ).toBeGreaterThanOrEqual(3);
+  }
   expect(achievementsForGame("app").length).toBeGreaterThanOrEqual(10);
 });
 

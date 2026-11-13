@@ -2,6 +2,8 @@ import { partyEventSchema } from "./party/model";
 import { expeditionMapSchema } from "./expedition/adventure-types";
 import { maxRoomSeats } from "./catalogue";
 import { graphwarShotSchema, graphwarInitialSchema } from "./graphwar/types";
+import { poolShotSchema } from "./pool/types";
+import { PoolRules } from "./pool/rules";
 import { GraphwarRules } from "./graphwar/rules";
 import { bannerSchema, chatEventSchema } from "./banner";
 import { avatarSchema } from "./avatar";
@@ -13,6 +15,7 @@ import { challengeBoardSchema } from "./challenges";
 
 export const replaySchema = z.object({
   format: z.literal(1),
+  expeditionRunId: z.string().max(150).optional(),
   challenges: challengeBoardSchema.optional(),
   graphwarInitial: graphwarInitialSchema.optional(),
   expeditionMap: expeditionMapSchema.optional(),
@@ -25,8 +28,16 @@ export const replaySchema = z.object({
   avatars: z.array(avatarSchema).max(maxRoomSeats).optional(),
   seed: z.string().max(150),
   startedAt: z.number().int(),
-  memberIds:z.array(z.string().max(100)).max(maxRoomSeats).optional(),
-  party:z.array(z.object({frame:z.number().int().min(0).max(20000),event:partyEventSchema})).max(10000).optional(),
+  memberIds: z.array(z.string().max(100)).max(maxRoomSeats).optional(),
+  party: z
+    .array(
+      z.object({
+        frame: z.number().int().min(0).max(20000),
+        event: partyEventSchema,
+      }),
+    )
+    .max(10000)
+    .optional(),
   social: z
     .array(
       z.union([
@@ -56,6 +67,7 @@ export const replaySchema = z.object({
             .max(maxRoomSeats - 1),
           action: actionSchema,
           graphwarShot: graphwarShotSchema.optional(),
+          poolShot: poolShotSchema.optional(),
           seed: z.string().max(150),
           version: z.number().int(),
         }),
@@ -124,16 +136,11 @@ export class Replay {
           this.record.seed,
           this.record.config.team,
           {
-            expedition: this.record.config.expedition,
+            ...this.record.config,
             expeditionMap: this.record.expeditionMap,
             expeditionTuning: this.record.expeditionTuning ?? 1,
             expeditionCampaign: this.record.expeditionCampaign ?? 1,
             expeditionLayout: this.record.expeditionMap ? 2 : 1,
-            dominion: this.record.config.dominion,
-            mahjong: this.record.config.mahjong,
-            graphwar: this.record.config.graphwar,
-            flight: this.record.config.flight,
-            checkers: this.record.config.checkers,
             graphwarInitial:
               this.record.config.kind === "graphwar"
                 ? graphwarInitialSchema.parse(this.record.graphwarInitial)
@@ -151,7 +158,16 @@ export class Replay {
                 event.action,
                 graphwarShotSchema.parse(event.graphwarShot),
               )
-            : this.engine.apply(state, event.actor, event.action, event.seed)
+            : state.kind === "pool" &&
+                event.action.type === "pool-shot" &&
+                event.poolShot
+              ? new PoolRules(() => 0).apply(
+                  state,
+                  event.actor,
+                  event.action,
+                  poolShotSchema.parse(event.poolShot),
+                )
+              : this.engine.apply(state, event.actor, event.action, event.seed)
           : this.engine.resolve(state, event.seed);
       if (cursor % 32 === 0) {
         this.checkpoints.set(cursor, structuredClone(state));

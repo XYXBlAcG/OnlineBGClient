@@ -53,11 +53,28 @@
   --progress-fill: var(--accent);
   --surface-soft: color-mix(in srgb, var(--surface) 72%, var(--canvas));
   --action-focus: var(--focus);
-  --action-danger: #b64040;
+  --action-danger: var(--danger);
   --link: #2563eb;
+  --touch-target: max(44px, var(--control-height-compact));
+  --overlay: color-mix(in srgb, #172330 34%, transparent);
+  --overlay-hover: color-mix(in srgb, #172330 44%, transparent);
+  --overlay-pressed: color-mix(in srgb, #172330 54%, transparent);
+  --skeleton: color-mix(in srgb, var(--text) 7%, var(--field));
+  --divider: var(--line);
+  --shadow-low: var(--shadow-soft);
+  --shadow-med: var(--shadow);
+  --shadow-high: var(--shadow);
+  --radius-pill: 999px;
+  --layer-effects: 20;
+  --layer-practice: 35;
+  --layer-party: 75;
+  --layer-chat: 10;
+  --layer-notice: 80;
+  --layer-dialog-overlay: 50;
+  --layer-dialog: 60;
+  --layer-menu: 70;
 }
 :root[data-color-scheme="dark"] {
-  --action-danger: #ffaaa1;
   --link: #9bbdff;
 }
 :is(.app-shell, .native-window-root, .ui-panel) button[data-button-variant] {

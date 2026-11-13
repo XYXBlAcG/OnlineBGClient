@@ -37,7 +37,9 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 璀璨宝石规则与界面动作           | [规则](../src/domain/splendor.ts)、[动作](../src/domain/splendor-actions.ts)                                                                                                   |
 | 卡坦岛与璀璨宝石搜索             | [公共信息集搜索](../src/domain/economic-strategy.ts)、[卡坦岛](../src/domain/catan-strategy.ts)、[璀璨宝石](../src/domain/splendor-strategy.ts)                                |
 | Release 产物与发布               | [游戏与发布入口](game-ai-release-plan.md)                                                                                                                                      |
-| 斗地主真人规则                   | [斗地主](../src/domain/ddz.ts)                                                                                                                                                 |
+| 斗地主真人规则与 AI              | [斗地主](../src/domain/ddz.ts)、[组合候选](../src/domain/ddz-combinations.ts)、[策略](../src/domain/ddz-strategy.ts)                                                          |
+| 台球规则、物理、AI、2D／3D 牌桌  | [规则与物理](../src/domain/pool/)、[2D 牌桌](../src/client/pool/PoolTable.tsx)、[3D 渲染](../src/client/pool/render3d/PoolScene3D.ts)、[计划](pool-plan.md)                     |
+| 质量门禁与文档完整性             | [质量工作流](../.github/workflows/quality.yml)、[架构检查](../scripts/architecture-check.mjs)、[样式违规基线门禁](../scripts/style-lint-gate.mjs)、[文档检查](../scripts/doc-check.mjs) |
 | AI 名称派生                      | [名称](../src/domain/names.ts)                                                                                                                                                 |
 | 确认交互                         | [确认服务](../src/client/confirmation-controller.ts)、[确认框](../src/client/Confirmation.tsx)                                                                                 |
 | 跳棋原规则与棋子目标分配         | [跳棋](../src/domain/checkers.ts)                                                                                                                                              |

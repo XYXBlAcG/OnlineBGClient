@@ -18,6 +18,13 @@
 .game-symbol[data-game-icon="fxq"] {
   background: #2471cf;
 }
+.game-symbol[data-game-icon="scmj"] {
+  background: #347e66;
+}
+.game-symbol[data-game-icon="graphwar"] {
+  background: linear-gradient(145deg, #327adb, #6b56c5);
+  color: #fff;
+}
 .game-symbol[data-game-icon="sgs"] {
   background: #b64242;
 }

@@ -1,3 +1,5 @@
+import { PartyQueue } from "./client/PartyQueue";
+import { RoundContinuation } from "./client/RoundContinuation";
 import { FontAssets } from "./client/fonts";
 import { useUsageContext } from "./client/usage/context";
 import "./client/ui/art-experience.css";
@@ -20,6 +22,7 @@ import {
 import "./client/ui/focus.css";
 import { GameCommandProvider } from "./client/use-game-commands";
 import { ResumeDrawer } from "./client/lobby/ResumeDrawer";
+import { RunShelf } from "./client/expedition/RunShelf";
 import type { RunLink } from "./client/storage";
 import { voicePushBinding } from "./client/voice/shortcuts";
 import { VoiceProvider, useVoiceActions } from "./client/voice/VoiceProvider";
@@ -47,7 +50,7 @@ import { useWindowWidth, useMobile } from "./client/use-mobile";
 import { capabilities } from "./client/platform";
 import { MobileJoin } from "./client/MobileJoin";
 import { MobileHome } from "./client/mobile/MobileHome";
-import { localRoomConfig } from "./client/mobile/local-room";
+import { localRoomConfigFromParams } from "./client/mobile/local-room";
 import { postNativeShell } from "./client/native-shell-bridge";
 import { Invite } from "./client/Invite";
 import { ComputeStatus } from "./client/ComputeStatus";
@@ -59,6 +62,7 @@ import { installContextMenuPolicy } from "./client/desktop-context-menu";
 import { applyTheme } from "./client/themes";
 import { applyDisplayScale } from "./client/display-scale";
 import { Button, Panel } from "./client/ui/Controls";
+import { ErrorBoundary } from "./client/ui/ErrorBoundary";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { About } from "./client/About";
 import { Records } from "./client/Records";
@@ -88,6 +92,7 @@ import { confirmation } from "./client/confirmation-controller";
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useMemo,
@@ -99,7 +104,7 @@ import {
   NetworkConnection,
   type Connection,
 } from "./client/connection";
-import { OriginalGame } from "./client/OriginalGame";
+import { OriginalGameLazy } from "./client/OriginalGameLazy";
 import { Audit } from "./client/Audit";
 import type { Action } from "./domain/types";
 import type { Response, RoomConfig, Snapshot } from "./domain/protocol";
@@ -111,6 +116,7 @@ import { PregamePanel } from "./client/PregamePanel";
 import { toGameSnapshot } from "./client/game-snapshot";
 import { gameCatalogue, type GameKind } from "./domain/catalogue";
 import { cardNames, skillNames } from "./domain/terms";
+import "./client/ui/layers.css";
 import "./styles.css";
 import "./client/ui/experience.css";
 import "./client/ui/social-experience.css";
@@ -126,11 +132,54 @@ const nativeTableKind = (() => {
   const value = invited.get("native-table");
   return value && value in gameCatalogue ? (value as GameKind) : null;
 })();
+const nativeRoomMode = invited.has("native-room");
+const nativeRuns = invited.has("native-runs");
+const nativeSpectator = invited.get("spectator") === "1";
+const nativeShell = !!nativeTableKind || nativeRoomMode || nativeRuns;
+const nativeConfirm =
+  (window as unknown as { __onlinebgNativeConfirm?: boolean })
+    .__onlinebgNativeConfirm === true;
+if (nativeShell) document.documentElement.dataset.nativeShell = "true";
 const DevPhoneRoom = import.meta.env.DEV
   ? React.lazy(() => import("./client/dev/PhoneRoom"))
   : null;
 const DevNativeShell = import.meta.env.DEV
   ? React.lazy(() => import("./client/dev/NativeShellPreview"))
+  : null;
+const DevStyleGallery = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/StyleGallery").then((module) => ({
+        default: module.StyleGallery,
+      })),
+    )
+  : null;
+const DevStageGallery = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/StageGallery").then((module) => ({
+        default: module.StageGallery,
+      })),
+    )
+  : null;
+const DevPoolPreview = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/PoolPreview").then((module) => ({
+        default: module.PoolPreview,
+      })),
+    )
+  : null;
+const DevPool3DPreview = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/Pool3DPreview").then((module) => ({
+        default: module.Pool3DPreview,
+      })),
+    )
+  : null;
+const DevPoolPlayPreview = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/PoolPlayPreview").then((module) => ({
+        default: module.PoolPlayPreview,
+      })),
+    )
   : null;
 const Practice = React.lazy(() =>
   import("./client/Practice").then((module) => ({ default: module.Practice })),
@@ -138,6 +187,11 @@ const Practice = React.lazy(() =>
 const devPhoneRoom = import.meta.env.DEV && invited.get("dev") === "phone";
 const devNativeShell =
   import.meta.env.DEV && invited.get("dev") === "native-shell";
+const devStyles = import.meta.env.DEV && invited.get("dev") === "styles";
+const devStage = import.meta.env.DEV && invited.get("dev") === "stage";
+const devPool = import.meta.env.DEV && invited.get("dev") === "pool";
+const devPool3D = import.meta.env.DEV && invited.get("dev") === "pool3d";
+const devPoolPlay = import.meta.env.DEV && invited.get("dev") === "poolplay";
 const initialService =
   invited.get("service") ||
   (!isTauri() &&
@@ -152,7 +206,7 @@ function App() {
   const [shortcutRecording, setShortcutRecording] = useState(false);
   const shortcutOwner = useRef<string | null>(null);
   const [settingsSection, setSettingsSection] = useState("外观");
-  const mobile = useMobile() || !!nativeTableKind;
+  const mobile = useMobile() || nativeShell;
   useMobileViewport(mobile);
   const windowWidth = useWindowWidth();
   const narrowLayout = windowWidth < sidebarBreakpoint;
@@ -164,6 +218,7 @@ function App() {
   const [computeFailure, setComputeFailure] =
     useState<ComputeDiagnostic | null>(null);
   const [notice, setNotice] = useState("");
+  const restoringRun = useRef<string | null>(null);
   const [actionPending, setActionPending] = useState(false);
   const [latencyMs, setLatencyMs] = useState<number>();
   const dismissNotice = useCallback(() => setNotice(""), []);
@@ -268,6 +323,7 @@ function App() {
     };
   }, []);
   const guideEnabled =
+    !mobile &&
     !!snapshot &&
     !!guideFor(snapshot.kind, snapshot.config) &&
     !!preferences.beginnerGuides[snapshot.kind];
@@ -411,16 +467,17 @@ function App() {
       const created = await store.unlockAchievements(unlocks);
       if (created.length) {
         pushAchievementToasts(created);
-        for (const item of created) {
-          const definition = achievementById.get(item.achievementId);
-          if (definition?.game !== current.kind || !session.current) continue;
-          connection.current?.send({
-            type: "achievement-chat",
-            token: session.current.token,
-            id: randomId(),
-            achievementId: item.achievementId,
-          });
-        }
+        if (preferences.shareAchievements)
+          for (const item of created) {
+            const definition = achievementById.get(item.achievementId);
+            if (definition?.game !== current.kind || !session.current) continue;
+            connection.current?.send({
+              type: "achievement-chat",
+              token: session.current.token,
+              id: randomId(),
+              achievementId: item.achievementId,
+            });
+          }
       }
     }
     await appProgress.recordCompletion(completed);
@@ -553,6 +610,17 @@ function App() {
       });
   }, []);
   const receive = async (response: Response) => {
+    if (nativeShell && (response.type === "closed" || response.type === "left"))
+      postNativeShell({ type: "closed" });
+    if (
+      restoringRun.current &&
+      response.type === "snapshot" &&
+      response.snapshot.state?.kind === "expedition" &&
+      response.snapshot.state.view.runId === restoringRun.current
+    ) {
+      restoringRun.current = null;
+      setNotice("远征已恢复");
+    }
     operation.accept(response);
     if (response.type === "activity") {
       setActionPending(response.pending);
@@ -610,6 +678,10 @@ function App() {
       }
     }
     if (response.type === "snapshot") {
+      if (response.snapshot.state?.kind === "expedition")
+        void store
+          .observeRun(response.snapshot.state.view, response.snapshot.actor)
+          .catch((error) => setNotice(String(error)));
       void store
         .archiveRecords([
           ...response.snapshot.records,
@@ -722,6 +794,33 @@ function App() {
     setGuideLocated(false);
     setPreferences((value) => ({ ...value, chatVisible: open }));
   };
+  useEffect(() => {
+    if (!nativeShell || !nativeConfirm) return;
+    const pending = new Map<string, (confirmed: boolean) => void>();
+    const receive = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ id?: string; confirmed?: boolean }>
+      ).detail;
+      if (!detail?.id) return;
+      pending.get(detail.id)?.(!!detail.confirmed);
+      pending.delete(detail.id);
+    };
+    window.addEventListener("onlinebg-native-confirm", receive);
+    confirmation.setNativeHandler(
+      (message, label) =>
+        new Promise<boolean>((resolve) => {
+          const id = randomId();
+          pending.set(id, resolve);
+          postNativeShell({ type: "confirm", id, message, label });
+        }),
+    );
+    return () => {
+      window.removeEventListener("onlinebg-native-confirm", receive);
+      confirmation.setNativeHandler(null);
+      for (const resolve of pending.values()) resolve(false);
+      pending.clear();
+    };
+  }, []);
   const connect = async (
     config: RoomConfig,
     name: string,
@@ -793,30 +892,39 @@ function App() {
     }
   };
   const nativeTableStarted = useRef(false);
+  const connectRef = useRef(connect);
+  useLayoutEffect(() => {
+    connectRef.current = connect;
+  });
   useEffect(() => {
-    if (!nativeTableKind) return;
-    const timer = window.setTimeout(() => {
-      if (nativeTableStarted.current) return;
-      nativeTableStarted.current = true;
-      void connect(
-        localRoomConfig(nativeTableKind),
-        localStorage.getItem("player-name") || "我",
-        "local",
-        "",
-        false,
-        false,
-      );
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [connect]);
+    if (!nativeTableKind || nativeTableStarted.current) return;
+    nativeTableStarted.current = true;
+    void connectRef.current(
+      localRoomConfigFromParams(nativeTableKind, invited),
+      localStorage.getItem("player-name") || "我",
+      "local",
+      "",
+      false,
+      false,
+    );
+  }, [nativeTableKind]);
   useEffect(() => {
-    if (!nativeTableKind || !snapshot) return;
+    if (!nativeRuns) return;
+    postNativeShell({ type: "ready", kind: "runs", room: "" });
+  }, []);
+  useEffect(() => {
+    if (!nativeShell || !notice || /已复制|成功|已就绪|邀请链接/.test(notice))
+      return;
+    postNativeShell({ type: "notice", message: notice });
+  }, [nativeShell, notice]);
+  useEffect(() => {
+    if (!nativeShell || !snapshot) return;
     postNativeShell({
       type: "ready",
       kind: snapshot.kind,
       room: snapshot.room,
     });
-  }, [nativeTableKind, snapshot?.kind, snapshot?.room]);
+  }, [nativeShell, snapshot?.kind, snapshot?.room]);
   const join = (name: string, invitation: string, spectator = false) => {
     invitationEndpoint.current = "";
     lanHosting.current = false;
@@ -842,8 +950,11 @@ function App() {
     if (autoJoined.current || !invited.has("room") || snapshot) return;
     autoJoined.current = true;
     join(
-      localStorage.getItem("player-name") || "我",
+      invited.get("name")?.trim() ||
+        localStorage.getItem("player-name") ||
+        "我",
       invitationLink(invited.get("room") || "", initialService),
+      nativeSpectator,
     );
   }, [snapshot, invited, initialService, join]);
   const leave = async () => {
@@ -860,6 +971,22 @@ function App() {
     } else
       connection.current?.send({ type: "leave", token: session.current.token });
   };
+  const leaveRef = useRef(leave);
+  useLayoutEffect(() => {
+    leaveRef.current = leave;
+  });
+  useEffect(() => {
+    if (!nativeRoomMode && !nativeRuns) return;
+    const leaveRoom = () => {
+      if (!session.current) {
+        postNativeShell({ type: "closed" });
+        return;
+      }
+      void leaveRef.current();
+    };
+    window.addEventListener("onlinebg-native-leave", leaveRoom);
+    return () => window.removeEventListener("onlinebg-native-leave", leaveRoom);
+  }, []);
   const restoreHosted = async () => {
     const saved = localStorage.getItem("onlinebg.hosted-room");
     if (!saved) return;
@@ -902,6 +1029,7 @@ function App() {
   };
   const restoreRun = async (link: RunLink) => {
     const generation = ++launch.current;
+    restoringRun.current = link.id;
     setBusy(true);
     try {
       connection.current?.close();
@@ -932,6 +1060,7 @@ function App() {
         });
       }
     } catch (error) {
+      restoringRun.current = null;
       setNotice(String(error));
     } finally {
       if (generation === launch.current) setBusy(false);
@@ -1256,7 +1385,8 @@ function App() {
       {
         id: "view.guide",
         title: guideShown ? "关闭新手引导" : "新手引导",
-        enabled: () => !!snapshot && !!guideFor(snapshot.kind, snapshot.config),
+        enabled: () =>
+          !mobile && !!snapshot && !!guideFor(snapshot.kind, snapshot.config),
         run: () => {
           if (!snapshot) return;
           setFocused(false);
@@ -1474,7 +1604,7 @@ function App() {
           />
         )}
         <div
-          className={`app-shell ${mobile ? "mobile-shell" : ""} ${nativeTableKind ? "native-table-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
+          className={`app-shell ${mobile ? "mobile-shell" : ""} ${nativeTableKind ? "native-table-shell" : ""} ${nativeRoomMode || (nativeRuns && snapshot) ? "native-room-shell" : ""} ${nativeRuns && !snapshot ? "native-runs-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
         >
           <Confirmation />
           <FpsMeter visible={preferences.showFps} />
@@ -1661,8 +1791,22 @@ function App() {
           />
           <SceneSurface scene={sceneKey(snapshot)}>
             {!snapshot && mobile ? (
-              nativeTableKind ? (
-                <div className="native-table-loading" />
+              nativeRuns ? (
+                <main className="native-runs-page">
+                  <p className="native-runs-lead">
+                    选择一次远征继续，存档保存在本机或原房间服务。
+                  </p>
+                  <RunShelf
+                    busy={busy}
+                    onRestore={restoreRun}
+                    onAbandon={abandonRun}
+                  />
+                </main>
+              ) : nativeTableKind ? (
+                <div className="native-table-loading" role="status">
+                  <span className="native-table-spinner" aria-hidden="true" />
+                  <span>加载中</span>
+                </div>
               ) : capabilities.localPlay ? (
                 <MobileHome
                   preferences={preferences}
@@ -1750,7 +1894,9 @@ function App() {
                     act={act}
                     registry={registry}
                     pending={actionPending}
-                    guideAvailable={!!guideFor(snapshot.kind, snapshot.config)}
+                    guideAvailable={
+                      !mobile && !!guideFor(snapshot.kind, snapshot.config)
+                    }
                     guideShown={guideShown}
                     onPractice={
                       gameCatalogue[snapshot.kind].ai
@@ -1935,14 +2081,33 @@ function App() {
                                   查看回放
                                 </button>
                               )}
-                              {snapshot.canManage && (
-                                <button
-                                  onClick={restart}
-                                  disabled={!!pendingOperation}
-                                >
-                                  再来一局
-                                </button>
+                              {!!snapshot.partyQueue?.entries.length && (
+                                <PartyQueue
+                                  compact
+                                  snapshot={snapshot}
+                                  onError={setNotice}
+                                  send={(command) => {
+                                    if (session.current)
+                                      connection.current?.send({
+                                        ...command,
+                                        token: session.current.token,
+                                      });
+                                  }}
+                                />
                               )}
+                              <RoundContinuation
+                                snapshot={snapshot}
+                                pending={!!pendingOperation}
+                                onStart={restart}
+                                onReady={(ready) => {
+                                  if (session.current)
+                                    connection.current?.send({
+                                      type: "ready",
+                                      token: session.current.token,
+                                      ready,
+                                    });
+                                }}
+                              />
                             </div>
                           )}
                           {snapshot.resolving && !snapshot.finished && (
@@ -1981,7 +2146,7 @@ function App() {
                               registry={registry}
                               bindings={preferences.bindings}
                             >
-                              <OriginalGame
+                              <OriginalGameLazy
                                 pending={actionPending}
                                 onAutoplay={(enabled, index) =>
                                   connection.current!.send({
@@ -1999,6 +2164,15 @@ function App() {
                                     : emptyInteractions
                                 }
                                 sound={preferences.interactionSound}
+                                poolRenderer={preferences.poolRenderer}
+                                poolSound={preferences.poolSound}
+                                soundVolume={preferences.soundVolume}
+                                onPoolRendererChange={(poolRenderer) =>
+                                  setPreferences((value) => ({
+                                    ...value,
+                                    poolRenderer,
+                                  }))
+                                }
                                 onInteractionEnd={finishInteraction}
                                 restart={restart}
                                 snapshot={gameSnapshot!}
@@ -2206,20 +2380,42 @@ applyDisplayScale(initialPreferences);
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <FontAssets />
-    <VoiceProvider>
-      {auxiliaryView ? (
-        <AuxiliaryRoot />
-      ) : devNativeShell && DevNativeShell ? (
-        <React.Suspense fallback={null}>
-          <DevNativeShell />
-        </React.Suspense>
-      ) : devPhoneRoom && DevPhoneRoom ? (
-        <React.Suspense fallback={null}>
-          <DevPhoneRoom />
-        </React.Suspense>
-      ) : (
-        <App />
-      )}
-    </VoiceProvider>
+    <ErrorBoundary scope="app">
+      <VoiceProvider>
+        {auxiliaryView ? (
+          <AuxiliaryRoot />
+        ) : devNativeShell && DevNativeShell ? (
+          <React.Suspense fallback={null}>
+            <DevNativeShell />
+          </React.Suspense>
+        ) : devPool3D && DevPool3DPreview ? (
+          <React.Suspense fallback={null}>
+            <DevPool3DPreview debug={invited.get("debug") === "1"} />
+          </React.Suspense>
+        ) : devPoolPlay && DevPoolPlayPreview ? (
+          <React.Suspense fallback={null}>
+            <DevPoolPlayPreview />
+          </React.Suspense>
+        ) : devPool && DevPoolPreview ? (
+          <React.Suspense fallback={null}>
+            <DevPoolPreview />
+          </React.Suspense>
+        ) : devStage && DevStageGallery ? (
+          <React.Suspense fallback={null}>
+            <DevStageGallery />
+          </React.Suspense>
+        ) : devStyles && DevStyleGallery ? (
+          <React.Suspense fallback={null}>
+            <DevStyleGallery />
+          </React.Suspense>
+        ) : devPhoneRoom && DevPhoneRoom ? (
+          <React.Suspense fallback={null}>
+            <DevPhoneRoom />
+          </React.Suspense>
+        ) : (
+          <App />
+        )}
+      </VoiceProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 );

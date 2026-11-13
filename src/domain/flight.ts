@@ -5,7 +5,6 @@ import type {
   Action,
   Candidate,
   FlightLastEffect,
-  FlightSpecialView,
   FlightView,
   FlightWeather,
 } from "./types";

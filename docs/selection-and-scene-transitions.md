@@ -1,6 +1,6 @@
 # 文字选择与场景过渡审核
 
-当前 [macOS 审核应用](../artifacts/review/scene-experience/OnlineBGClient.app)，退出旧客户端后直接打开。构建与非界面检查见 [校验记录](../artifacts/review/scene-experience/verification.json)。
+审核应用与打开方式见 [审核与提交](review-and-submit.md#本地-macos-审核应用)。构建与非界面检查入口见 [验证](verification.md)。
 
 ## 实现索引
 

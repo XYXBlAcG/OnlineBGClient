@@ -1,23 +1,21 @@
 import type { MahjongMode } from "./mahjong/types";
 import { balance as graphwarBalance } from "./graphwar/balance";
-import {
-  expeditionPlugin,
-  dominionPlugin,
-  sichuanPlugin,
-  graphwarPlugin,
-  catanPlugin,
-  splendorPlugin,
-  poisonPlugin,
-  unoPlugin,
-  sgsPlugin,
-  ddzPlugin,
-  checkersPlugin,
-  flightPlugin,
-} from "./builtin-rules";
 export const gameCatalogue = {
-  expedition:{rules:expeditionPlugin,apiVersion:1,name:"秘塔远征",category:"合作",description:"协作构筑 · 探索裂隙遗迹",minPlayers:1,maxPlayers:4,presentation:{kind:"expedition"},team:false,symbol:"✧",ai:true,version:"1"},
+  expedition: {
+    apiVersion: 1,
+    name: "秘塔远征",
+    category: "合作",
+    description: "协作构筑 · 探索裂隙遗迹",
+    minPlayers: 1,
+    maxPlayers: 4,
+    presentation: { kind: "expedition" },
+    team: false,
+    symbol: "✧",
+    ai: true,
+    mobile: true,
+    version: "1",
+  },
   dominion: {
-    rules: dominionPlugin,
     apiVersion: 1,
     name: "领土 · Dominion",
     category: "策略",
@@ -28,10 +26,10 @@ export const gameCatalogue = {
     team: false,
     symbol: "♜",
     ai: true,
+    mobile: true,
     version: "1",
   },
   graphwar: {
-    rules: graphwarPlugin,
     apiVersion: 1,
     name: "Graphwar",
     category: "策略",
@@ -42,10 +40,10 @@ export const gameCatalogue = {
     team: false,
     symbol: "ƒ",
     ai: true,
+    mobile: false,
     version: graphwarBalance.version,
   },
   scmj: {
-    rules: sichuanPlugin,
     apiVersion: 1,
     name: "麻将",
     category: "纸牌",
@@ -56,10 +54,10 @@ export const gameCatalogue = {
     team: false,
     symbol: "麻",
     ai: true,
+    mobile: true,
     version: "1",
   },
   ccbs: {
-    rules: splendorPlugin,
     apiVersion: 1,
     name: "璀璨宝石",
     category: "策略",
@@ -70,10 +68,10 @@ export const gameCatalogue = {
     team: false,
     symbol: "◆",
     ai: true,
+    mobile: true,
     version: "1",
   },
   ktd: {
-    rules: catanPlugin,
     apiVersion: 1,
     name: "卡坦岛",
     category: "策略",
@@ -84,10 +82,10 @@ export const gameCatalogue = {
     team: false,
     symbol: "🏝",
     ai: true,
+    mobile: true,
     version: "1",
   },
   dy: {
-    rules: poisonPlugin,
     apiVersion: 1,
     name: "毒药",
     category: "纸牌",
@@ -98,10 +96,10 @@ export const gameCatalogue = {
     team: false,
     symbol: "⚗",
     ai: true,
+    mobile: true,
     version: "1",
   },
   ddz: {
-    rules: ddzPlugin,
     apiVersion: 1,
     name: "斗地主",
     category: "纸牌",
@@ -111,11 +109,11 @@ export const gameCatalogue = {
     presentation: { kind: "upstream", module: 6544 },
     team: false,
     symbol: "♠",
-    ai: false,
+    ai: true,
+    mobile: true,
     version: "1",
   },
   uno: {
-    rules: unoPlugin,
     apiVersion: 1,
     name: "UNO",
     category: "纸牌",
@@ -125,11 +123,11 @@ export const gameCatalogue = {
     presentation: { kind: "upstream", module: 7707 },
     team: true,
     ai: true,
+    mobile: true,
     version: "2",
     symbol: "四色",
   },
   sgs: {
-    rules: sgsPlugin,
     apiVersion: 1,
     name: "三国杀",
     category: "策略",
@@ -139,11 +137,11 @@ export const gameCatalogue = {
     presentation: { kind: "upstream", module: 6749 },
     team: true,
     ai: true,
+    mobile: true,
     version: "1",
     symbol: "杀",
   },
   fxq: {
-    rules: flightPlugin,
     apiVersion: 1,
     name: "飞行棋",
     category: "棋盘",
@@ -153,11 +151,11 @@ export const gameCatalogue = {
     presentation: { kind: "upstream", module: 7448 },
     team: false,
     ai: true,
+    mobile: true,
     version: "2",
     symbol: "✈",
   },
   tq: {
-    rules: checkersPlugin,
     apiVersion: 1,
     name: "跳棋",
     category: "棋盘",
@@ -167,8 +165,23 @@ export const gameCatalogue = {
     presentation: { kind: "upstream", module: 1621 },
     team: false,
     ai: true,
+    mobile: true,
     version: "2",
     symbol: "跳",
+  },
+  pool: {
+    apiVersion: 1,
+    name: "台球",
+    category: "体育",
+    description: "俯视台球，支持高低杆与侧旋",
+    minPlayers: 2,
+    maxPlayers: 2,
+    presentation: { kind: "pool" },
+    team: false,
+    ai: true,
+    mobile: true,
+    version: "1",
+    symbol: "🎱",
   },
 } as const;
 export type GameKind = keyof typeof gameCatalogue;
@@ -177,10 +190,13 @@ export const gameKinds = Object.keys(gameCatalogue) as [
   ...GameKind[],
 ];
 
+export const mobileGameKinds = gameKinds.filter(
+  (kind) => gameCatalogue[kind].mobile,
+);
+
 export const maxRoomSeats = Math.max(
   ...gameKinds.map((kind) => gameCatalogue[kind].maxPlayers),
 );
-
 
 export function gameRulesVersion(kind: GameKind, mahjongMode?: MahjongMode) {
   return kind === "scmj" && mahjongMode === "washizu"

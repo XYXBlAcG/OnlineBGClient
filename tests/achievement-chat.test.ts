@@ -29,11 +29,16 @@ it("publishes a deduplicated system chat message for game achievements", () => {
     .chat.filter((message) => message.id === "achievement-1");
   expect(messages).toHaveLength(1);
   expect(messages[0]).toMatchObject({
-    type: "system",
-    sender: "system",
-    name: "系统",
+    type: "achievement",
+    name: "甲",
     text: "甲 达成了「纯色胜利」成就",
+    achievementId: "uno.pure-color",
+    title: "纯色胜利",
+    rarity: "legendary",
+    symbol: "🃏",
+    game: "uno",
   });
+  expect(messages[0].sender).not.toBe("system");
   expect(() =>
     room.achievementChat(token, "achievement-2", "fxq.three-sixes"),
   ).toThrow("成就不属于当前游戏");

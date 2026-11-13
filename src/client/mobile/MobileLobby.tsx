@@ -1,13 +1,19 @@
 import { useState } from "react";
 import {
   gameCatalogue,
-  gameKinds,
+  mobileGameKinds,
   type GameKind,
 } from "../../domain/catalogue";
 import type { RoomConfig } from "../../domain/protocol";
 import type { Difficulty } from "../../domain/types";
 import { Button, Select } from "../ui/Controls";
-import { defaultLocalHumans, localRoomConfig } from "./local-room";
+import { ExpeditionJournalPanel } from "../expedition/ExpeditionJournalPanel";
+import { useExpeditionJournal } from "../expedition/use-expedition-journal";
+import {
+  defaultLocalHumans,
+  localAiRange,
+  localRoomConfig,
+} from "./local-room";
 
 export function MobileLobby({
   initialKind,
@@ -23,11 +29,28 @@ export function MobileLobby({
     defaultLocalHumans(initialKind ?? "uno"),
   );
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
+  const [aiDelayMs, setAiDelayMs] = useState(1500);
+  const [expeditionDifficulty, setExpeditionDifficulty] = useState<
+    "story" | "standard" | "challenge"
+  >("standard");
+  const [requestedAi, setRequestedAi] = useState<number | null>(null);
   const game = gameCatalogue[kind];
+  const expedition = kind === "expedition";
+  const expeditionJournal = useExpeditionJournal(expedition);
   const humanFloor = game.ai ? 1 : game.minPlayers;
+  const aiRange = localAiRange(kind, humans);
+  const aiCount =
+    requestedAi === null
+      ? aiRange.min
+      : Math.min(Math.max(requestedAi, aiRange.min), aiRange.max);
   const changeKind = (next: GameKind) => {
     setKind(next);
     setHumans(defaultLocalHumans(next));
+    setRequestedAi(null);
+  };
+  const changeHumans = (next: number) => {
+    setHumans(next);
+    setRequestedAi(null);
   };
   return (
     <main className="mobile-lobby">
@@ -41,7 +64,7 @@ export function MobileLobby({
         </div>
       </header>
       <section className="mobile-game-grid" aria-label="选择游戏">
-        {gameKinds.map((item) => (
+        {mobileGameKinds.map((item) => (
           <button
             type="button"
             key={item}
@@ -66,14 +89,20 @@ export function MobileLobby({
             <strong>{game.name}</strong>
             <small>{game.description}</small>
           </div>
-          <span>{game.ai ? "可以和 AI 玩" : "同屏轮流"}</span>
+          <span>
+            {game.ai
+              ? expedition
+                ? "可以和 AI 朋友玩"
+                : "可以和 AI 玩"
+              : "同屏轮流"}
+          </span>
         </div>
         <label className="mobile-local-field">
           <span>真人玩家</span>
           <Select
             aria-label="真人玩家"
             value={humans}
-            onValueChange={(value) => setHumans(Number(value))}
+            onValueChange={(value) => changeHumans(Number(value))}
           >
             {Array.from(
               { length: game.maxPlayers - humanFloor + 1 },
@@ -85,9 +114,28 @@ export function MobileLobby({
             ))}
           </Select>
         </label>
+        {game.ai && aiRange.max > 0 && (
+          <label className="mobile-local-field">
+            <span>{expedition ? "AI 朋友" : "AI 对手"}</span>
+            <Select
+              aria-label="AI 对手"
+              value={aiCount}
+              onValueChange={(value) => setRequestedAi(Number(value))}
+            >
+              {Array.from(
+                { length: aiRange.max - aiRange.min + 1 },
+                (_, index) => index + aiRange.min,
+              ).map((value) => (
+                <option key={value} value={value}>
+                  {value} 个
+                </option>
+              ))}
+            </Select>
+          </label>
+        )}
         {game.ai && (
           <label className="mobile-local-field">
-            <span>AI 难度</span>
+            <span>{expedition ? "AI 能力" : "AI 难度"}</span>
             <Select
               aria-label="AI 难度"
               value={difficulty}
@@ -99,15 +147,73 @@ export function MobileLobby({
             </Select>
           </label>
         )}
+        {expedition && (
+          <ExpeditionJournalPanel
+            journal={expeditionJournal.journal}
+            error={expeditionJournal.error}
+            loading={expeditionJournal.loading}
+            onUpgrade={expeditionJournal.upgrade}
+            onImport={expeditionJournal.importJournal}
+            onRefresh={expeditionJournal.refresh}
+          />
+        )}
+        {expedition && (
+          <label className="mobile-local-field">
+            <span>远征难度</span>
+            <Select
+              aria-label="远征难度"
+              value={expeditionDifficulty}
+              onValueChange={(value) =>
+                setExpeditionDifficulty(
+                  value as "story" | "standard" | "challenge",
+                )
+              }
+            >
+              <option value="story">剧情</option>
+              <option value="standard">标准</option>
+              <option value="challenge">挑战</option>
+            </Select>
+          </label>
+        )}
+        {game.ai && (
+          <label className="mobile-local-field">
+            <span>AI 响应</span>
+            <Select
+              aria-label="AI 响应"
+              value={aiDelayMs}
+              onValueChange={(value) => setAiDelayMs(Number(value))}
+            >
+              <option value={500}>0.5 秒</option>
+              <option value={1000}>1 秒</option>
+              <option value={1500}>1.5 秒</option>
+              <option value={2000}>2 秒</option>
+              <option value={3000}>3 秒</option>
+            </Select>
+          </label>
+        )}
         <p className="mobile-local-note">
           {game.ai
-            ? `共 ${Math.max(game.minPlayers, humans)} 人开局，不足最低人数时由 AI 补足。`
+            ? expedition
+              ? `共 ${humans + aiCount} 人开局，${aiCount} 位 AI 朋友。`
+              : `共 ${humans + aiCount} 人开局，${aiCount} 个 AI。`
             : "同屏轮流操作，不加入 AI。"}
         </p>
         <Button
           variant="primary"
           className="mobile-local-start"
-          onClick={() => onStart(localRoomConfig(kind, humans, difficulty))}
+          disabled={expedition && expeditionJournal.loading}
+          onClick={() =>
+            onStart(
+              localRoomConfig(kind, {
+                humans,
+                difficulty,
+                requestedAi: aiCount,
+                aiDelayMs,
+                expeditionDifficulty,
+                expeditionLegacy: expeditionJournal.journal.legacy,
+              }),
+            )
+          }
         >
           开始本地对局
         </Button>

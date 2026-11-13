@@ -14,4 +14,5 @@ export interface GameOptions {
   graphwarInitial?: GraphwarInitial;
   flight?: FlightOptions;
   checkers?: CheckersOptions;
+  pool?: import("./pool/types").PoolOptions;
 }

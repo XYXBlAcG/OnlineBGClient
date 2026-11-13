@@ -5,6 +5,7 @@ import { interactionCatalogue, interactionSchema } from "../src/domain/social";
 
 it("keeps grouped presets and custom ordering in the shared preference contract", () => {
   const first = preferencesSchema.parse({});
+  expect(first.shareAchievements).toBe(true);
   expect(first.phraseGroups.flatMap((group) => group.items)).toContain(
     "你这操作，AI看了都得重启。",
   );
@@ -19,7 +20,6 @@ it("keeps grouped presets and custom ordering in the shared preference contract"
   expect(
     phraseGroupsSchema.safeParse([{ name: "空", items: [" "] }]).success,
   ).toBe(false);
-
 });
 it("validates every effect from one catalogue with a distinct visual style", () => {
   expect(Object.keys(interactionCatalogue).length).toBeGreaterThanOrEqual(19);

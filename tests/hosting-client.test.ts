@@ -2,7 +2,10 @@ import { expect, it, vi } from "vitest";
 import { defaultPreferences } from "../src/client/preferences";
 import { startHosting } from "../src/client/start-hosting";
 const calls = vi.hoisted(() => vi.fn());
-vi.mock("@tauri-apps/api/core", () => ({ invoke: calls }));
+vi.mock("@tauri-apps/api/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tauri-apps/api/core")>()),
+  invoke: calls,
+}));
 it("开房分别保留对外邀请和本机连接地址，局域网请求不依赖公网", async () => {
   calls
     .mockResolvedValueOnce("http://192.168.1.4:40400")

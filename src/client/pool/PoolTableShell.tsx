@@ -1,0 +1,152 @@
+import type { ReactNode } from "react";
+import type { PoolView } from "../../domain/pool/types";
+import { Button } from "../ui/Controls";
+
+const spinOptions: [string, number, number][] = [
+  ["高杆", 0, 0.8],
+  ["低杆", 0, -0.8],
+  ["左塞", -0.8, 0],
+  ["右塞", 0.8, 0],
+  ["中杆", 0, 0],
+];
+const elevationOptions: [string, number][] = [
+  ["平杆", 0],
+  ["30°", 0.5],
+  ["60°", 0.9],
+];
+
+export function PoolTableShell({
+  view,
+  remaining,
+  power,
+  spin,
+  onSpin,
+  elevation,
+  onElevation,
+  predict,
+  onPredict,
+  renderer,
+  onRendererToggle,
+  onResetCamera,
+  cameraMode,
+  onCameraToggle,
+  hint,
+  disabled,
+  replay,
+  children,
+}: {
+  view: PoolView;
+  remaining: number | null;
+  power: number;
+  spin: { x: number; y: number };
+  onSpin: (spin: { x: number; y: number }) => void;
+  elevation: number;
+  onElevation: (elevation: number) => void;
+  predict: boolean;
+  onPredict: () => void;
+  renderer: "2d" | "3d";
+  onRendererToggle?: () => void;
+  onResetCamera?: () => void;
+  cameraMode?: "aim" | "orbit";
+  onCameraToggle?: () => void;
+  hint: string;
+  disabled: boolean;
+  replay: boolean;
+  children: ReactNode;
+}) {
+  const percent = Math.round(power * 100);
+  return (
+    <section className="pool-table" data-renderer={renderer}>
+      <header className="pool-heading" data-guide-target="pool.status">
+        <div>
+          <strong>台球</strong>
+          <small>
+            玩家 {view.turn + 1} 击球 · 第 {view.shotNumber + 1} 杆
+          </small>
+        </div>
+        <span className="pool-message">
+          {remaining !== null && (
+            <time className="pool-clock">{remaining}s</time>
+          )}
+          {view.message}
+        </span>
+      </header>
+      {children}
+      <div className="pool-hud">
+        <div className="pool-pockets" data-guide-target="pool.pockets">
+          {view.balls
+            .filter((ball) => ball.pocketed && ball.id !== 0)
+            .map((ball) => (
+              <span key={ball.id} data-ball={ball.id}>
+                {ball.id}
+              </span>
+            ))}
+        </div>
+        {!replay && (
+          <div className="pool-controls">
+            <span className="pool-power" data-guide-target="pool.power">
+              <span className="pool-power-track" aria-hidden="true">
+                <span style={{ width: `${percent}%` }} />
+              </span>
+              力度 {percent}%
+            </span>
+            <small className="pool-hint">{hint}</small>
+            <Button
+              data-guide-target="pool.predict"
+              variant={predict ? "primary" : "secondary"}
+              onClick={onPredict}
+              disabled={disabled}
+            >
+              预计轨迹
+            </Button>
+            {onCameraToggle && (
+              <Button
+                data-guide-target="pool.camera"
+                variant={cameraMode === "orbit" ? "primary" : "secondary"}
+                onClick={onCameraToggle}
+              >
+                {cameraMode === "orbit" ? "返回击球" : "转动视角"}
+              </Button>
+            )}
+            {onResetCamera && <Button onClick={onResetCamera}>视角复位</Button>}
+            {onRendererToggle && (
+              <Button
+                data-guide-target="pool.render"
+                onClick={onRendererToggle}
+                aria-label={`切换到 ${renderer === "3d" ? "2D" : "3D"} 渲染`}
+              >
+                {renderer === "3d" ? "2D" : "3D"}
+              </Button>
+            )}
+            <div className="pool-elevation" data-guide-target="pool.elevation">
+              {elevationOptions.map(([label, value]) => (
+                <Button
+                  key={label}
+                  variant={elevation === value ? "primary" : "secondary"}
+                  onClick={() => onElevation(value)}
+                  disabled={disabled}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+            <div className="pool-spin" data-guide-target="pool.spin">
+              {spinOptions.map(([label, x, y]) => (
+                <Button
+                  key={label}
+                  variant={
+                    spin.x === x && spin.y === y ? "primary" : "secondary"
+                  }
+                  onClick={() => onSpin({ x, y })}
+                  disabled={disabled}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

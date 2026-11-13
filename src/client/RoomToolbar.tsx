@@ -1,3 +1,4 @@
+import { PartyQueue, type QueueCommand } from "./PartyQueue";
 import { PartyRuntime } from "./party/PartyRuntime";
 import { RoomParty } from "./RoomParty";
 import { roomSurface } from "./room-surface";
@@ -59,7 +60,8 @@ export function RoomToolbar({
       | Omit<Extract<Command, { type: "banner-policy" }>, "token">
       | Omit<Extract<Command, { type: "game" }>, "token">
       | Omit<Extract<Command, { type: "ai-run" }>, "token">
-      | Omit<Extract<Command, { type: "party" }>, "token">,
+      | Omit<Extract<Command, { type: "party" }>, "token">
+      | QueueCommand,
   ) => void;
   onError: (message: string) => void;
   act: (action: Action) => void;
@@ -83,6 +85,7 @@ export function RoomToolbar({
         )));
   const controls = (
     <>
+      <PartyQueue snapshot={snapshot} send={send} onError={onError} />
       <section className="room-drawer-section">
         {guideAvailable && (
           <Button

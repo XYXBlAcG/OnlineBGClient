@@ -8,6 +8,8 @@ export interface ConfirmationRequest {
 
 class ConfirmationController {
   private current: ConfirmationRequest | null = null;
+  private native:
+    ((message: string, label: string) => Promise<boolean>) | null = null;
   private listeners = new Set<() => void>();
   snapshot = () => this.current;
   subscribe = (listener: () => void) => {
@@ -16,7 +18,13 @@ class ConfirmationController {
       this.listeners.delete(listener);
     };
   };
+  setNativeHandler(
+    handler: ((message: string, label: string) => Promise<boolean>) | null,
+  ): void {
+    this.native = handler;
+  }
   request(message: string, label: string): Promise<boolean> {
+    if (this.native) return this.native(message, label);
     if (isTauri())
       return confirm(message, {
         title: "OnlineBGClient",

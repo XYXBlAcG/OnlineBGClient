@@ -14,17 +14,6 @@
     [...document.querySelectorAll("button")].find(
       (node) => node.textContent.trim() === text,
     );
-  const choose = async (label, text) => {
-    document.querySelector(`[role=combobox][aria-label="${label}"]`).click();
-    (
-      await waitFor(() =>
-        [...document.querySelectorAll("[role=option]")].find(
-          (node) => node.textContent.replace(/✓/g, "").trim() === text,
-        ),
-      )
-    ).click();
-    await waitFor(() => !document.querySelector("[role=listbox]"));
-  };
   try {
     await waitFor(() => button("设置"));
     await window.__TAURI_INTERNALS__.invoke("smoke_progress", {

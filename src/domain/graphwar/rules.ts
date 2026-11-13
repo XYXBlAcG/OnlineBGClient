@@ -9,7 +9,6 @@ import {
   firingView,
   graphwarInitialSchema,
   graphwarOptionsSchema,
-  battlefield,
   actionLimit,
   type GraphwarState,
   type Shot,

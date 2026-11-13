@@ -1,6 +1,6 @@
 # 秘塔远征
 
-从大厅选择「秘塔远征」，确认远征难度和 N0–N10 阶位后进入房间配置。地图显示节点、连线、罗盘消耗与队友投票，遭遇详情在抵达后查看。难度倍率见 [选项定义](../src/domain/expedition/adventure-types.ts)，已保存的远征按其记录的倍率继续。职业、主题地图与数值以代码为准，客户端与联机服务共用同一规则；连麦配置独立于游戏，不需要 LiveKit 即可游玩。
+从大厅选择「秘塔远征」，确认远征难度和 N0–N10 阶位后进入房间配置；房主档案中的永久传承会自动带入，并对全队生效。地图显示节点、连线、罗盘消耗与队友投票，遭遇详情在抵达后查看。难度倍率见 [选项定义](../src/domain/expedition/adventure-types.ts)，已保存的远征按其记录的倍率继续。职业、主题地图与数值以代码为准，客户端与联机服务共用同一规则；连麦配置独立于游戏，不需要 LiveKit 即可游玩。
 
 ## 实现入口
 
@@ -55,8 +55,8 @@
 - 三档策略与真实 CPU Worker：[策略](../tests/expedition-ai.test.ts)、[Worker](../tests/expedition-worker.test.ts)。
 - 能力较强 AI 的真实 `decide` 完整对局与职业详情投影：[困难 AI 测试](../tests/expedition-hard-ai.test.ts)、[高级机制测试](../tests/expedition-advanced-mechanics.test.tsx)。
 - 静态组件与动画事件：[组件](../tests/expedition-renderer.test.tsx)、[事件](../tests/game-motion-events.test.ts)。静态输出不证明界面尺寸、图层或触控正常。
-- 固定种子首章基准：`npm run benchmark:expedition-chapter`；[完整报告](../artifacts/expedition-chapter/benchmark.json)保留样本、策略、人数、结果与耗时。使用普通启发式、公开投影，不含搜索；小样本不代表真人胜率或平衡已完成。
-- HTTP/WebSocket：先运行 `npm run server:build`，再运行 `npm run verify:expedition-chapter`；[脚本](../scripts/smoke-expedition.mjs)使用隔离临时数据库，[结果](../artifacts/expedition-chapter/network.json)记录并发、服务重启、新设备接管及永久放弃检查。
+- 固定种子首章基准：`npm run benchmark:expedition-chapter`；完整报告保留样本、策略、人数、结果与耗时。使用普通启发式、公开投影，不含搜索；小样本不代表真人胜率或平衡已完成。
+- HTTP/WebSocket：先运行 `npm run server:build`，再运行 `npm run verify:expedition-chapter`；[脚本](../scripts/smoke-expedition.mjs)使用隔离临时数据库，结果记录并发、服务重启、新设备接管及永久放弃检查。
 
 构建、包校验与自动更新入口见 [软件更新](updating.md)。
 
@@ -95,10 +95,33 @@
 
 规则验证：[多级强化](../tests/expedition-upgrades.test.ts)、[跨层与随机重选](../tests/expedition-chapters.test.ts)、[职业机制](../tests/expedition-mechanisms.test.ts)、[真实房间回放与恢复](../tests/expedition-depth-replay.test.ts)、[文字对比度](../tests/expedition-card-contrast.test.ts)。对比度与静态组件检查不替代人工界面验收。
 
-多层固定种子基准：`node scripts/benchmark-expedition-depth.mjs`，可通过 `EXPEDITION_BENCHMARK_SEEDS` 指定每职业种子数；[报告](../artifacts/expedition-depth/benchmark.json)记录实际样本与来源指纹，不代表真人胜率。地图生成的定向检查覆盖每个已开放主题的固定种子。
+多层固定种子基准：`node scripts/benchmark-expedition-depth.mjs`，可通过 `EXPEDITION_BENCHMARK_SEEDS` 指定每职业种子数；报告记录实际样本与来源指纹，不代表真人胜率。地图生成的定向检查覆盖每个已开放主题的固定种子。
 
 ## 投票与路线审核
 
 [选项与历史票箱](../src/domain/expedition/ballot.ts)是地图、动作和裁决的共用描述来源；[地图](../src/client/expedition/ExpeditionMap.tsx)复用原节点图形，使用空间位置与站数区分同类节点；[逐人状态](../src/client/expedition/VoteStatus.tsx)显示姓名、座位和选择。先预览再确认投票，平票保留地图并提示裁决人；历史结果保留结算前票箱。
 
 人工使用两处同类型节点检查：候选和地图能互相定位、本人改投、相同昵称、长名字、领队裁决、旁观者等待，以及事件／遗物／领取人投票。不得以测试通过代替界面与触控审核。[定向测试](../tests/expedition-ballot.test.tsx)。
+
+地图交互入口：[地图](../src/client/expedition/ExpeditionMap.tsx)、[共享视窗](../src/client/MapViewport.tsx)、[缩放模型](../src/client/map-view.ts)。投票面板默认关闭，可独立开启并记住选择；节点直接选择、双击投票及键盘确认不依赖面板。横版初始显示可读局部，提供全图总览与返回局部；手动拖动/滚动后停止自动跟随，点当前位置恢复。节点字号跟随缩放，不由整图宽度决定。
+
+战斗选牌支持再次点击取消，Esc 和取消按钮沿用合法动作；唯一自身目标可以直接确认。即时提示见 [提示组件](../src/client/expedition/ExpeditionHint.tsx)，可隐藏并记住本机选择，不增加正式课程。
+
+定向检查：[地图与可读缩放](../tests/expedition-map-comfort.test.tsx)、[地图输出](../tests/expedition-map-renderer.test.tsx)、[曲线与命中坐标](../tests/route-links.test.ts)、[确认防重复](../tests/confirmed-choice.test.tsx)。地图拖动、动画、字号和实际手感由用户人工审核。
+
+## 进阶机制与远征档案
+
+开局选项：[ExpeditionOptionsControl](../src/client/expedition/ExpeditionOptionsControl.tsx)；规则入口：[advanced](../src/domain/expedition/advanced.ts) 与 [Adventure](../src/domain/expedition/adventure.ts)；AI 复用 [策略](../src/domain/expedition/ai.ts)。既有远征不自动开启进阶机制。
+
+档案事实归并：[journal](../src/domain/expedition/journal.ts)；永久科技树与数值：[legacy](../src/domain/expedition/legacy.ts)；持久化、合并导入与导出：[ClientStore](../src/client/storage.ts)；大厅读取与购买：[use-expedition-journal](../src/client/expedition/use-expedition-journal.ts)、[档案面板](../src/client/expedition/ExpeditionJournalPanel.tsx)、[档案样式](../src/client/expedition/journal.css)。
+
+档案现在包含四类信息：
+
+- 总览：探索、通关、胜率、最深层、首领、职业/卡牌/遗物发现与最近远征。
+- 传承：有前置依赖的永久科技树，消耗结算获得的秘塔学识；加成覆盖起始金币、最大生命、罗盘、幸运、营地恢复、开局药水和首次奖励重选。具体节点、价格和数值以 [legacy.ts](../src/domain/expedition/legacy.ts) 为唯一来源。
+- 图鉴：全部职业、卡牌和遗物；未发现条目保留轮廓、类型和发现条件，不提前展示效果。
+- 记录：每次远征的章节、胜负、N 阶、职业、首领和学识。
+
+学识只在该远征结算时记录一次；旧格式 1 档案会自动迁移。联机远征使用房主档案的传承，对全队生效，传承写入房间配置并由服务器应用，客户端只负责展示和购买；移动端本地开局读取同一份档案。档案独立于回放缓存。
+
+定向检查：[新机制与权威回放](../tests/expedition-advanced-batch.test.ts)、[发现与结算幂等](../tests/expedition-journal.test.ts)、[传承与学识](../tests/expedition-legacy.test.ts)、[档案迁移与合并](../tests/expedition-storage.test.ts)、[档案渲染](../tests/expedition-journal-renderer.test.tsx)。人工验收：打开远征档案，核对总览、科技树前置与购买、三类图鉴锁定态、记录详情和导入导出；进行一局远征，确认结算学识只增加一次；升级传承后开新局，检查开局金币/生命/罗盘/幸运/药水和首次奖励重选；联机确认房主传承全队生效。回看入口见[连续对局与回放](replay-series.md)。

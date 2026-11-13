@@ -1,0 +1,37 @@
+import styles from "./RoundContinuation.module.css";
+import type { Snapshot } from "../domain/protocol";
+import { roomReadiness } from "./room-readiness";
+import { Button } from "./ui/Controls";
+export function RoundContinuation({
+  snapshot,
+  pending,
+  onStart,
+  onReady,
+}: {
+  snapshot: Pick<Snapshot, "seats" | "actor" | "canManage">;
+  pending: boolean;
+  onStart: () => void;
+  onReady: (ready: boolean) => void;
+}) {
+  const readiness = roomReadiness(snapshot.seats);
+  const seat = snapshot.seats[snapshot.actor];
+  return (
+    <div className={styles.root}>
+      <span role="status">{readiness.message}</span>
+      {seat && !seat.difficulty && (
+        <Button disabled={pending} onClick={() => onReady(!seat.ready)}>
+          {seat.ready ? "取消准备" : "准备下一局"}
+        </Button>
+      )}
+      {snapshot.canManage && (
+        <Button
+          variant="primary"
+          disabled={pending || !readiness.canStart}
+          onClick={onStart}
+        >
+          {pending ? "正在开局…" : "开始下一局"}
+        </Button>
+      )}
+    </div>
+  );
+}

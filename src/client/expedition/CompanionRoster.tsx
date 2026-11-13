@@ -47,7 +47,7 @@ export function CompanionRoster({
               <strong>{companion.name}</strong>
               <small>
                 {heroContent[companion.profession].name} · {modeNames[companion.mode]} ·{" "}
-                {companion.hp}/{companion.maxHp} ♥
+                {companion.hp}/{companion.maxHp} ♥︎
               </small>
               <small>
                 {companion.mode === "fragile"

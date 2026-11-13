@@ -28,100 +28,100 @@ export interface RelicDefinition {
 export const relics = {
   ember: {
     name: "余烬徽章",
-    icon: "☀",
+    icon: "☀︎",
     trigger: "start",
     effects: [{ kind: "strength", amount: 1 }],
   },
   shell: {
     name: "铁壳护符",
-    icon: "⬡",
+    icon: "⬡︎",
     trigger: "start",
     effects: [{ kind: "block", amount: 8 }],
   },
   lens: {
     name: "鹰眼镜",
-    icon: "◎",
+    icon: "◎︎",
     trigger: "start",
     effects: [{ kind: "draw", amount: 1 }],
   },
   battery: {
     name: "蓄能晶体",
-    icon: "ϟ",
+    icon: "ϟ︎",
     trigger: "start",
     effects: [{ kind: "energy", amount: 1 }],
   },
   needle: {
     name: "荆棘针",
-    icon: "♠",
+    icon: "♠︎",
     trigger: "start",
     effects: [{ kind: "thorns", amount: 2 }],
   },
   salve: {
     name: "长青药罐",
-    icon: "✚",
+    icon: "✚︎",
     trigger: "start",
     effects: [{ kind: "regen", amount: 2 }],
   },
   buckler: {
     name: "旧圆盾",
-    icon: "◈",
+    icon: "◈︎",
     trigger: "round",
     effects: [{ kind: "block", amount: 3 }],
   },
   clock: {
     name: "铜制时钟",
-    icon: "◷",
+    icon: "◷︎",
     trigger: "round",
     every: 3,
     effects: [{ kind: "energy", amount: 1 }],
   },
   quill: {
     name: "灵感羽笔",
-    icon: "✎",
+    icon: "✎︎",
     trigger: "round",
     every: 2,
     effects: [{ kind: "draw", amount: 1 }],
   },
   bandage: {
     name: "旅行绷带",
-    icon: "✚",
+    icon: "✚︎",
     trigger: "victory",
     effects: [{ kind: "heal", amount: 4 }],
   },
   trophy: {
     name: "猎人奖章",
-    icon: "♜",
+    icon: "♜︎",
     trigger: "kill",
     effects: [{ kind: "block", amount: 3 }],
   },
   tooth: {
     name: "狼牙",
-    icon: "⋀",
+    icon: "⋀︎",
     trigger: "kill",
     effects: [{ kind: "heal", amount: 2 }],
   },
   stone: {
     name: "稳心石",
-    icon: "◆",
+    icon: "◆︎",
     trigger: "start",
     effects: [{ kind: "dexterity", amount: 1 }],
   },
   pennant: {
     name: "协作锦旗",
-    icon: "⚑",
+    icon: "⚑︎",
     trigger: "start",
     effects: [{ kind: "block", amount: 3, target: "party" }],
   },
   charm: {
     name: "护命符",
-    icon: "✦",
+    icon: "✦︎",
     trigger: "round",
     every: 4,
     effects: [{ kind: "heal", amount: 3 }],
   },
   whetstone: {
     name: "磨刀石",
-    icon: "◇",
+    icon: "◇︎",
     trigger: "card",
     every: 3,
     cardType: "attack",
@@ -129,7 +129,7 @@ export const relics = {
   },
   tome: {
     name: "旧战术书",
-    icon: "▤",
+    icon: "▤︎",
     trigger: "card",
     every: 3,
     cardType: "skill",
@@ -137,118 +137,118 @@ export const relics = {
   },
   prism: {
     name: "共鸣棱镜",
-    icon: "⬢",
+    icon: "⬢︎",
     trigger: "victory",
     effects: [{ kind: "heal", amount: 2, target: "party" }],
   },
   lockpick: {
     name: "断锁钳",
-    icon: "⌁",
+    icon: "⌁︎",
     trigger: "sealed",
     effects: [{ kind: "strength", amount: 1 }],
   },
   pawnTicket: {
     name: "当票",
-    icon: "▱",
+    icon: "▱︎",
     trigger: "loot",
     effects: [{ kind: "heal", amount: 4 }],
   },
   relicSatchel: {
     name: "无主遗物袋",
-    icon: "◫",
+    icon: "◫︎",
     trigger: "loot",
     every: 2,
     effects: [{ kind: "regen", amount: 3 }],
   },
   silentBell: {
     name: "静默耳塞",
-    icon: "◌",
+    icon: "◌︎",
     trigger: "silenced",
     effects: [{ kind: "cleanse", amount: 1 }],
   },
   curseIndex: {
     name: "禁书索引",
-    icon: "▥",
+    icon: "▥︎",
     trigger: "start",
     effects: [{ kind: "block", amount: 8 }],
   },
   secondFate: {
     name: "二手命运",
-    icon: "↻",
+    icon: "↻︎",
     trigger: "sealed",
     effects: [{ kind: "focus", amount: 1 }],
   },
   lootScales: {
     name: "赃物天平",
-    icon: "⚖",
+    icon: "⚖︎",
     trigger: "loot",
     effects: [{ kind: "strength", amount: 1 }],
   },
   blackLedger: {
     name: "黑市账本",
-    icon: "▤",
+    icon: "▤︎",
     trigger: "victory",
     effects: [{ kind: "heal", amount: 6 }],
   },
   thornHalo: {
     name: "荆棘光环",
-    icon: "♠",
+    icon: "♠︎",
     trigger: "start",
     effects: [{ kind: "thorns", amount: 3 }],
   },
   glassHour: {
     name: "玻璃沙漏",
-    icon: "◷",
+    icon: "◷︎",
     trigger: "start",
     effects: [{ kind: "draw", amount: 1 }],
   },
   ironWill: {
     name: "铁意徽章",
-    icon: "⬢",
+    icon: "⬢︎",
     trigger: "start",
     effects: [{ kind: "block", amount: 9 }],
   },
   duelist: {
     name: "决斗者徽记",
-    icon: "⚔",
+    icon: "⚔︎",
     trigger: "round",
     effects: [{ kind: "strength", amount: 1 }],
   },
   merchantSeal: {
     name: "商旅印章",
-    icon: "▣",
+    icon: "▣︎",
     trigger: "victory",
     effects: [{ kind: "heal", amount: 5 }],
   },
   scavenger: {
     name: "拾荒者钩",
-    icon: "⌁",
+    icon: "⌁︎",
     trigger: "kill",
     effects: [{ kind: "block", amount: 3 }],
   },
   echoCharm: {
     name: "回声符",
-    icon: "◎",
+    icon: "◎︎",
     trigger: "round",
     every: 3,
     effects: [{ kind: "draw", amount: 1 }],
   },
   bloodTithe: {
     name: "血税杯",
-    icon: "◒",
+    icon: "◒︎",
     trigger: "card",
     every: 4,
     effects: [{ kind: "heal", amount: 2 }],
   },
   curseLantern: {
     name: "禁咒灯",
-    icon: "▥",
+    icon: "▥︎",
     trigger: "start",
     effects: [{ kind: "dexterity", amount: 2 }],
   },
   quickLash: {
     name: "快攻鞭",
-    icon: "╱",
+    icon: "╱︎",
     trigger: "card",
     every: 3,
     cardType: "attack",
@@ -256,20 +256,20 @@ export const relics = {
   },
   wardenEye: {
     name: "守门者之眼",
-    icon: "◉",
+    icon: "◉︎",
     trigger: "round",
     every: 4,
     effects: [{ kind: "block", amount: 4 }],
   },
   secondWind: {
     name: "第二口气",
-    icon: "↻",
+    icon: "↻︎",
     trigger: "victory",
     effects: [{ kind: "regen", amount: 2 }],
   },
   prismVeil: {
     name: "棱光面纱",
-    icon: "✧",
+    icon: "✧︎",
     trigger: "start",
     effects: [
       { kind: "focus", amount: 2 },
@@ -278,7 +278,7 @@ export const relics = {
   },
   diceCrown: {
     name: "骰骨王冠",
-    icon: "⬡",
+    icon: "⬡︎",
     trigger: "start",
     effects: [
       { kind: "dice", amount: 2 },
@@ -287,7 +287,7 @@ export const relics = {
   },
   turretCore: {
     name: "自律炮芯",
-    icon: "⌖",
+    icon: "⌖︎",
     trigger: "start",
     effects: [
       { kind: "device", amount: 2 },
@@ -296,7 +296,7 @@ export const relics = {
   },
   ventCharm: {
     name: "排热护符",
-    icon: "≋",
+    icon: "≋︎",
     trigger: "round",
     every: 2,
     effects: [
@@ -306,7 +306,7 @@ export const relics = {
   },
   volatileHeart: {
     name: "沸血核心",
-    icon: "♨",
+    icon: "♨︎",
     trigger: "start",
     effects: [
       { kind: "strength", amount: 2 },
@@ -315,7 +315,7 @@ export const relics = {
   },
   sporeVial: {
     name: "净孢瓶",
-    icon: "✚",
+    icon: "✚︎",
     trigger: "round",
     every: 3,
     effects: [
@@ -325,7 +325,7 @@ export const relics = {
   },
   redThread: {
     name: "赤线结",
-    icon: "∞",
+    icon: "∞︎",
     trigger: "kill",
     every: 3,
     effects: [
@@ -335,7 +335,7 @@ export const relics = {
   },
   boneWheel: {
     name: "白骨轮",
-    icon: "◉",
+    icon: "◉︎",
     trigger: "round",
     every: 4,
     effects: [
@@ -345,26 +345,26 @@ export const relics = {
   },
   oathSigil: {
     name: "守誓印",
-    icon: "⚑",
+    icon: "⚑︎",
     trigger: "victory",
     effects: [{ kind: "blessing", amount: 3 }],
   },
   crystalChoir: {
     name: "晶歌匣",
-    icon: "♫",
+    icon: "♫︎",
     trigger: "victory",
     effects: [{ kind: "echo", amount: 10 }],
   },
   pilgrimCharm: {
     name: "远行者结",
-    icon: "⌂",
+    icon: "⌂︎",
     trigger: "round",
     every: 5,
     effects: [{ kind: "heal", amount: 5, target: "party" }],
   },
   woundEtcher: {
     name: "伤痕刻刀",
-    icon: "╱",
+    icon: "╱︎",
     trigger: "card",
     every: 4,
     cardType: "attack",
@@ -372,13 +372,13 @@ export const relics = {
   },
   mirrorPact: {
     name: "镜中契约",
-    icon: "◫",
+    icon: "◫︎",
     trigger: "sealed",
     effects: [{ kind: "draw", amount: 2 }],
   },
   lastWord: {
     name: "未竟遗言",
-    icon: "◌",
+    icon: "◌︎",
     trigger: "silenced",
     effects: [
       { kind: "block", amount: 12 },
@@ -387,7 +387,7 @@ export const relics = {
   },
   lootCrown: {
     name: "失而复得冠",
-    icon: "♛",
+    icon: "♛︎",
     trigger: "loot",
     effects: [
       { kind: "energy", amount: 1 },
@@ -396,14 +396,14 @@ export const relics = {
   },
   sunDial: {
     name: "逆日晷",
-    icon: "◷",
+    icon: "◷︎",
     trigger: "round",
     every: 6,
     effects: [{ kind: "energy", amount: 2 }],
   },
   cinderPact: {
     name: "余烬契约",
-    icon: "☄",
+    icon: "☄︎",
     trigger: "start",
     effects: [
       { kind: "draw", amount: 2 },
@@ -412,7 +412,7 @@ export const relics = {
   },
   blackMass: {
     name: "黑弥撒",
-    icon: "♜",
+    icon: "♜︎",
     trigger: "start",
     effects: [
       { kind: "strength", amount: 2 },
@@ -421,14 +421,14 @@ export const relics = {
   },
   goldReservoir: {
     name: "黄金蓄能池",
-    icon: "◉",
+    icon: "◉︎",
     trigger: "round",
     effects: [],
     goldEnergyPer: 400,
   },
   appraisalSeal: {
     name: "逐利商印",
-    icon: "◈",
+    icon: "◈︎",
     trigger: "start",
     effects: [{ kind: "block", amount: 6 }],
     appraisal: {
@@ -440,7 +440,7 @@ export const relics = {
   },
   wanderingLedger: {
     name: "漂泊账簿",
-    icon: "▤",
+    icon: "▤︎",
     trigger: "round",
     every: 3,
     effects: [{ kind: "draw", amount: 1 }],
@@ -453,7 +453,7 @@ export const relics = {
   },
   battleMint: {
     name: "战利铸币",
-    icon: "◉",
+    icon: "◉︎",
     trigger: "kill",
     effects: [{ kind: "strength", amount: 1 }],
     appraisal: {

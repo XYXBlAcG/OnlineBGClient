@@ -14,7 +14,6 @@ import {
   mahjongModeNames,
   tileName,
   tileSuit,
-  tileType,
   type MahjongMove,
 } from "../../domain/mahjong/types";
 import { winningTiles } from "../../domain/mahjong/hand";

@@ -1,3 +1,4 @@
+import { ddzCombinations } from "./ddz-combinations";
 import { UpstreamRuntime } from "../upstream/runtime";
 import type { Action, Candidate, DdzView } from "./types";
 
@@ -28,11 +29,14 @@ export class DdzRules {
     const result: Candidate[] = [];
     if (this.original.GU(view, actor + 1))
       result.push({ action: { type: "ddz-pass" }, label: "不出" });
-    for (const card of view.playerCardLists[actor + 1])
-      if (this.original.DB(view, actor + 1, 3, [card]))
+    for (const cards of ddzCombinations(
+      view.playerCardLists[actor + 1],
+      (card) => this.original.Vz(card),
+    ))
+      if (this.original.DB(view, actor + 1, 3, cards))
         result.push({
-          action: { type: "ddz-play", cards: [card] },
-          label: `出 ${this.cardName(card)}`,
+          action: { type: "ddz-play", cards },
+          label: `出 ${cards.map((card) => this.cardName(card)).join(" ")}`,
         });
     return result;
   }
@@ -73,7 +77,7 @@ export class DdzRules {
   project(view: DdzView, actor: number): DdzView {
     const result = structuredClone(view);
     const visible = new Set([
-      ...(actor>=0?view.playerCardLists[actor + 1]:[]),
+      ...(actor >= 0 ? view.playerCardLists[actor + 1] : []),
       ...view.playedCardList,
       ...(view.state !== 0 ? view.holeCardList : []),
     ]);
@@ -86,4 +90,18 @@ export class DdzRules {
     if (view.state === 0) result.holeCardList.fill(-1);
     return result;
   }
+}
+
+export function ddzTrickOwner(view: DdzView): number {
+  let owner = view.landlordId,
+    turn = ((view.landlordId + 1) % 3) + 1,
+    hasCards = false;
+  for (const card of view.playedCardList) {
+    if (card === 0) {
+      if (hasCards) owner = turn;
+      turn = (turn % 3) + 1;
+      hasCards = false;
+    } else hasCards = true;
+  }
+  return hasCards ? turn : owner;
 }

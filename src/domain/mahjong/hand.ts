@@ -2,7 +2,6 @@ import Majiang from "@kobalab/majiang-core";
 import {
   tileCounts,
   tileSuit,
-  tileType,
   type MahjongMeld,
   type MahjongOptions,
   type MahjongScore,

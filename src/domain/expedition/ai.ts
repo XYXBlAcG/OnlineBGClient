@@ -83,6 +83,30 @@ export class ExpeditionStrategy extends Strategy {
         Math.max(0, allCards(hero).length - 14) * 1.2
       );
     };
+    if (move.type === "team-contract" || move.type === "compass-supply") {
+      const score =
+        move.type === "team-contract"
+          ? move.accept
+            ? 1000
+            : -1000
+          : hero.hp < hero.maxHp * 0.6 && run.compass > 1
+            ? 15
+            : -5;
+      return {
+        ...candidate,
+        score,
+        features: audit
+          ? [
+              {
+                name: "可选协作与补给收益",
+                value: score,
+                weight: 1,
+                contribution: score,
+              },
+            ]
+          : [],
+      };
+    }
     let score = -100;
     const features: DecisionCandidate["features"] = [];
     if (move.type === "profession")
@@ -149,6 +173,25 @@ export class ExpeditionStrategy extends Strategy {
             : 0),
         0,
       );
+      const contract = run.teamContract;
+      if (move.type === "card" && contract?.status === "active") {
+        const solo =
+          run.combat.heroes.filter((member) => member.hp > 0).length === 1;
+        if (
+          next.enemies.some(
+            (enemy, index) => enemy.hp < run.combat.enemies[index].hp,
+          ) &&
+          contract.defend.some((id) => solo || id !== actor)
+        )
+          score += 12;
+        if (
+          next.heroes.some(
+            (member, index) => member.block > run.combat.heroes[index].block,
+          ) &&
+          contract.attack.some((id) => solo || id !== actor)
+        )
+          score += 12;
+      }
       run.combat.heroes.forEach((h, i) => {
         const retaliation = h.hand.some((card) =>
           definition(card).effects.some((effect) => effect.kind === "damage"),
@@ -478,8 +521,7 @@ export class ExpeditionStrategy extends Strategy {
           ? 18 +
             (offer.mode === "limited" ? 6 : offer.mode === "eternal" ? 4 : 0)
           : 3;
-      }
-      else if (phase === "holder")
+      } else if (phase === "holder")
         score = 20 - run.combat.heroes[Number(move.choice)].relics.length * 3;
       else if (phase === "treasure")
         score = relics[move.choice as keyof typeof relics].effects.reduce(

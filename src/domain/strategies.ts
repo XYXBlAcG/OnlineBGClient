@@ -1,6 +1,8 @@
+import { DdzStrategy } from "./ddz-strategy";
 import { ExpeditionStrategy } from "./expedition/ai";
 import { DominionStrategy } from "./dominion/strategy";
 import { GraphwarStrategy } from "./graphwar/strategy";
+import { PoolStrategy } from "./pool/strategy";
 import { MahjongStrategy } from "./mahjong/strategy";
 import { CatanStrategy } from "./catan-strategy";
 import { SplendorStrategy } from "./splendor-strategy";
@@ -28,11 +30,13 @@ export class Strategies {
     for (const [Factory, kinds] of [
       [ExpeditionStrategy, ["expedition"]],
       [DominionStrategy, ["dominion"]],
+      [DdzStrategy, ["ddz"]],
       [Strategy, ["uno", "sgs", "fxq", "tq", "dy"]],
       [CatanStrategy, ["ktd"]],
       [MahjongStrategy, ["scmj"]],
       [GraphwarStrategy, ["graphwar"]],
       [SplendorStrategy, ["ccbs"]],
+      [PoolStrategy, ["pool"]],
     ] as [typeof Strategy, GameKind[]][]) {
       let instance: Strategy | undefined;
       const kernel = () => (instance ||= new Factory());

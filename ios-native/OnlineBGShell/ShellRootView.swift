@@ -2,6 +2,10 @@ import SwiftUI
 
 @main
 struct OnlineBGShellApp: App {
+    init() {
+        LocalWebServer.shared.start()
+    }
+
     var body: some Scene {
         WindowGroup {
             ShellRootView()
@@ -24,7 +28,10 @@ struct ShellRootView: View {
         Group {
             if let launchGame {
                 NavigationStack {
-                    WebTableScreen(game: launchGame)
+                    WebTableScreen(
+                        game: launchGame,
+                        setup: .standard(for: launchGame)
+                    )
                 }
             } else {
                 TabView(selection: $tab) {
@@ -51,14 +58,34 @@ struct ShellRootView: View {
 
 enum HomeRoute: Hashable {
     case join
-    case table(ShellGame)
+}
+
+private enum HomeCover: Identifiable {
+    case table(ShellTableRoute)
+    case runs
+
+    var id: String {
+        switch self {
+        case .table(let route):
+            route.id
+        case .runs:
+            "runs"
+        }
+    }
 }
 
 struct HomeView: View {
     let onOpenLobby: () -> Void
+    @AppStorage("shell.lastGame") private var lastGameID = "uno"
     @State private var path: [HomeRoute] = []
+    @State private var cover: HomeCover?
+    @State private var setupGame: ShellGame?
+    @State private var pendingRoute: ShellTableRoute?
 
-    private let lastGame = shellGames.first { $0.id == "uno" }!
+    private var lastGame: ShellGame {
+        shellGames.first { $0.id == lastGameID && $0.mobile } ??
+        shellGames.first { $0.id == "uno" }!
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -66,7 +93,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     heroCard
                     actionGrid
-                    recentRoom
+                    runsEntry
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 8)
@@ -79,8 +106,35 @@ struct HomeView: View {
                 switch route {
                 case .join:
                     JoinView()
-                case .table(let game):
-                    WebTableScreen(game: game)
+                }
+            }
+        }
+        .sheet(
+            item: $setupGame,
+            onDismiss: {
+                if let pendingRoute {
+                    cover = .table(pendingRoute)
+                    self.pendingRoute = nil
+                }
+            }
+        ) { game in
+            GameSetupSheet(game: game) { setup in
+                lastGameID = game.id
+                pendingRoute = ShellTableRoute(game: game, setup: setup)
+                setupGame = nil
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(item: $cover) { item in
+            switch item {
+            case .table(let route):
+                NavigationStack {
+                    WebTableScreen(game: route.game, setup: route.setup)
+                }
+            case .runs:
+                NavigationStack {
+                    ShellRunsScreen()
                 }
             }
         }
@@ -103,9 +157,14 @@ struct HomeView: View {
                 Spacer(minLength: 0)
             }
             Button {
-                path.append(.table(lastGame))
+                setupGame = lastGame
             } label: {
-                Label(lastGame.ai ? "和 AI 玩" : "同屏开局", systemImage: "sparkles")
+                Label(
+                    lastGame.id == "expedition"
+                        ? "和 AI 朋友玩"
+                        : lastGame.ai ? "和 AI 玩" : "同屏开局",
+                    systemImage: "sparkles"
+                )
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }
@@ -132,21 +191,27 @@ struct HomeView: View {
         }
     }
 
-    private var recentRoom: some View {
+    private var runsEntry: some View {
         Button {
-            path.append(.table(lastGame))
+            cover = .runs
         } label: {
             HStack(spacing: 12) {
-                Text("U")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(Color(hex: 0x2a6ed4), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(ShellTheme.accent)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        ShellTheme.field,
+                        in: RoundedRectangle(
+                            cornerRadius: 13,
+                            style: .continuous
+                        )
+                    )
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("继续上次房间")
+                    Text("继续远征")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
-                    Text("UNO · 4 人 · 等待加入")
+                    Text("读取本地和联机存档")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -156,7 +221,10 @@ struct HomeView: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(12)
-            .background(ShellTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(
+                ShellTheme.surface,
+                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            )
         }
         .buttonStyle(.plain)
     }
@@ -188,12 +256,14 @@ private struct ActionTile: View {
 }
 
 struct LobbyView: View {
+    @AppStorage("shell.lastGame") private var lastGameID = "uno"
     @State private var search = ""
     @State private var category = "全部"
     @State private var sheetGame: ShellGame?
-    @State private var tableGame: ShellGame?
+    @State private var tableRoute: ShellTableRoute?
+    @State private var pendingRoute: ShellTableRoute?
 
-    private let categories = ["全部", "常玩", "收藏", "合作", "策略", "纸牌", "棋盘"]
+    private let categories = ["全部", "合作", "策略", "纸牌", "棋盘"]
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12),
@@ -201,6 +271,7 @@ struct LobbyView: View {
 
     private var games: [ShellGame] {
         shellGames.filter { game in
+            game.mobile &&
             (category == "全部" || game.category == category) &&
             (search.trimmingCharacters(in: .whitespaces).isEmpty ||
                 game.name.localizedCaseInsensitiveContains(search))
@@ -244,16 +315,27 @@ struct LobbyView: View {
             .navigationTitle("本地大厅")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $search, prompt: "搜索游戏")
-            .navigationDestination(item: $tableGame) { game in
-                WebTableScreen(game: game)
-            }
-            .sheet(item: $sheetGame) { game in
-                GameSetupSheet(game: game) {
+            .sheet(
+                item: $sheetGame,
+                onDismiss: {
+                    if let pendingRoute {
+                        tableRoute = pendingRoute
+                        self.pendingRoute = nil
+                    }
+                }
+            ) { game in
+                GameSetupSheet(game: game) { setup in
+                    lastGameID = game.id
+                    pendingRoute = ShellTableRoute(game: game, setup: setup)
                     sheetGame = nil
-                    tableGame = game
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+            }
+        }
+        .fullScreenCover(item: $tableRoute) { route in
+            NavigationStack {
+                WebTableScreen(game: route.game, setup: route.setup)
             }
         }
     }
@@ -261,7 +343,29 @@ struct LobbyView: View {
 
 struct GameSetupSheet: View {
     let game: ShellGame
-    let onStart: () -> Void
+    let onStart: (ShellTableSetup) -> Void
+    @State private var aiCount: Int
+    @State private var difficulty = "normal"
+    @State private var aiDelayMs = 1500
+    @State private var expeditionDifficulty = "standard"
+
+    init(game: ShellGame, onStart: @escaping (ShellTableSetup) -> Void) {
+        self.game = game
+        self.onStart = onStart
+        _aiCount = State(
+            initialValue: game.ai ? max(0, game.minPlayers - 1) : 0
+        )
+    }
+
+    private var humans: Int {
+        game.ai ? 1 : game.minPlayers
+    }
+
+    private var aiRange: ClosedRange<Int> {
+        let minimum = game.ai ? max(0, game.minPlayers - 1) : 0
+        let maximum = game.ai ? max(0, game.maxPlayers - 1) : 0
+        return minimum...maximum
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -278,13 +382,88 @@ struct GameSetupSheet: View {
             }
 
             VStack(spacing: 0) {
-                settingsRow("真人玩家", "1 人")
-                settingsRow("AI 补位", game.ai ? (game.id == "scmj" ? "3 位" : "1 位") : "同屏轮流")
-                settingsRow("难度", "普通")
+                settingsRow("真人玩家", "\(humans) 人")
+                if game.ai {
+                    Stepper(value: $aiCount, in: aiRange) {
+                        HStack {
+                            Text(game.id == "expedition" ? "AI 朋友" : "AI 对手")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(aiCount) 个")
+                                .fontWeight(.medium)
+                        }
+                        .font(.subheadline)
+                        .padding(.horizontal, 14)
+                        .frame(height: 44)
+                    }
+                    HStack {
+                        Text(game.id == "expedition" ? "AI 能力" : "AI 难度")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("AI 难度", selection: $difficulty) {
+                            Text("简单").tag("easy")
+                            Text("普通").tag("normal")
+                            Text("困难").tag("hard")
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 190)
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 14)
+                    .frame(height: 52)
+                    HStack {
+                        Text("AI 响应")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("AI 响应", selection: $aiDelayMs) {
+                            Text("0.5 秒").tag(500)
+                            Text("1 秒").tag(1000)
+                            Text("1.5 秒").tag(1500)
+                            Text("2 秒").tag(2000)
+                            Text("3 秒").tag(3000)
+                        }
+                        .pickerStyle(.menu)
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 14)
+                    .frame(height: 44)
+                    if game.id == "expedition" {
+                        HStack {
+                            Text("远征难度")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Picker(
+                                "远征难度",
+                                selection: $expeditionDifficulty
+                            ) {
+                                Text("剧情").tag("story")
+                                Text("标准").tag("standard")
+                                Text("挑战").tag("challenge")
+                            }
+                            .pickerStyle(.menu)
+                        }
+                        .font(.subheadline)
+                        .padding(.horizontal, 14)
+                        .frame(height: 44)
+                    }
+                } else {
+                    settingsRow("操作", "同屏轮流")
+                }
+                settingsRow("总人数", "\(humans + (game.ai ? aiCount : 0)) 人")
             }
             .background(ShellTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            Button(action: onStart) {
+            Button {
+                onStart(
+                    ShellTableSetup(
+                        humans: humans,
+                        ai: game.ai ? aiCount : 0,
+                        difficulty: difficulty,
+                        aiDelayMs: aiDelayMs,
+                        expeditionDifficulty: expeditionDifficulty
+                    )
+                )
+            } label: {
                 Text("开始本地对局")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
@@ -314,41 +493,172 @@ struct GameSetupSheet: View {
 }
 
 struct JoinView: View {
+    @AppStorage("shell.playerName") private var name = "我"
+    @AppStorage("shell.enhancedGameMotion")
+    private var enhancedGameMotion = true
     @State private var link = ""
-    @State private var name = "我"
-    @State private var showingPrototypeNotice = false
+    @State private var spectator = false
+    @State private var presentation: JoinPresentation?
+    @State private var recentRooms: [ShellInvitation] = []
+    @State private var errorMessage: String?
+    @State private var pendingInvitation: ShellInvitation?
+    @State private var pendingScannerError: String?
 
     var body: some View {
         Form {
             Section {
-                TextField("https://…/room/…", text: $link)
+                TextField("邀请链接", text: $link)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .keyboardType(.URL)
                 TextField("你的昵称", text: $name)
+                Toggle("以旁观者加入", isOn: $spectator)
             } header: {
                 Text("邀请")
             }
 
+            if !recentRooms.isEmpty {
+                Section("最近加入") {
+                    ForEach(recentRooms) { invitation in
+                        Button {
+                            link = invitation.inviteLink
+                            join(invitation.inviteLink)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("房间 \(invitation.room)")
+                                    Text(
+                                        URL(string: invitation.service)?
+                                            .host ?? invitation.service
+                                    )
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "arrow.up.left")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+
             Section {
                 Button {
-                    showingPrototypeNotice = true
+                    presentation = .scanner
                 } label: {
                     Label("扫描邀请二维码", systemImage: "qrcode.viewfinder")
                 }
                 Button {
-                    showingPrototypeNotice = true
+                    join(link)
                 } label: {
                     Text("加入牌桌").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(ShellTheme.accent)
-                .disabled(link.trimmingCharacters(in: .whitespaces).isEmpty || name.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(
+                    link.trimmingCharacters(in: .whitespaces).isEmpty ||
+                    name.trimmingCharacters(in: .whitespaces).isEmpty
+                )
             }
         }
         .navigationTitle("加入房间")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("暂未接入", isPresented: $showingPrototypeNotice) {
+        .onAppear {
+            recentRooms = ShellRecentRooms.load()
+        }
+        .alert(
+            "无法加入",
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )
+        ) {
             Button("知道了", role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "")
+        }
+        .fullScreenCover(
+            item: $presentation,
+            onDismiss: {
+                if let pendingInvitation {
+                    presentation = .room(pendingInvitation)
+                    self.pendingInvitation = nil
+                }
+                if let pendingScannerError {
+                    errorMessage = pendingScannerError
+                    self.pendingScannerError = nil
+                }
+            }
+        ) { item in
+            switch item {
+            case .room(let invitation):
+                NavigationStack {
+                    WebRoomScreen(invitation: invitation)
+                }
+            case .scanner:
+                NavigationStack {
+                    QRScannerView { code in
+                        scan(code)
+                    }
+                    .ignoresSafeArea()
+                    .navigationTitle("扫描邀请")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("取消") {
+                                presentation = nil
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func join(_ raw: String) {
+        guard let invitation = invitation(from: raw) else {
+            errorMessage = "请粘贴完整的房间邀请链接"
+            return
+        }
+        ShellRecentRooms.remember(invitation)
+        recentRooms = ShellRecentRooms.load()
+        presentation = .room(invitation)
+    }
+
+    private func scan(_ raw: String) {
+        link = raw
+        guard let invitation = invitation(from: raw) else {
+            pendingScannerError = "二维码不是有效的房间邀请"
+            presentation = nil
+            return
+        }
+        ShellRecentRooms.remember(invitation)
+        recentRooms = ShellRecentRooms.load()
+        pendingInvitation = invitation
+        presentation = nil
+    }
+
+    private func invitation(from raw: String) -> ShellInvitation? {
+        ShellInvitation.parse(
+            raw,
+            name: name,
+            enhancedMotion: enhancedGameMotion,
+            spectator: spectator
+        )
+    }
+}
+
+private enum JoinPresentation: Identifiable {
+    case room(ShellInvitation)
+    case scanner
+
+    var id: String {
+        switch self {
+        case .room(let invitation):
+            invitation.id
+        case .scanner:
+            "scanner"
         }
     }
 }
@@ -357,6 +667,16 @@ struct SettingsView: View {
     @AppStorage("shell.theme") private var theme = "跟随系统"
     @AppStorage("shell.enhancedGameMotion")
     private var enhancedGameMotion = true
+
+    private var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
+            as? String ?? "?"
+    }
+
+    private var build: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion")
+            as? String ?? "?"
+    }
 
     var body: some View {
         NavigationStack {
@@ -374,13 +694,9 @@ struct SettingsView: View {
                     Toggle("增强游戏动画", isOn: $enhancedGameMotion)
                 }
 
-                Section("声音与语音") {
-                    LabeledContent("按住说话", value: "原生 LiveKit")
-                    LabeledContent("输出设备", value: "跟随系统")
-                }
-
                 Section("关于") {
-                    LabeledContent("版本", value: "0.4.1")
+                    LabeledContent("版本", value: version)
+                    LabeledContent("构建", value: build)
                 }
             }
             .scrollContentBackground(.hidden)

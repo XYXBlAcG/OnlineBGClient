@@ -1,0 +1,33 @@
+.body {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  gap: var(--space-3);
+}
+.body > :global(.map-viewport) {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.panel {
+  flex: 0 0 min(30%, 280px);
+  min-width: 0;
+  overflow: auto;
+}
+.voters {
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  padding: var(--space-1);
+  border-radius: var(--radius-control);
+  background: var(--raised);
+  color: var(--text);
+  pointer-events: none;
+}
+.voters > span {
+  display: inline-flex;
+}

@@ -1,3 +1,4 @@
+import { PoolOptionsControl } from "./pool/PoolOptionsControl";
 import type { CommandRegistry } from "./commands";
 import { Shortcut } from "./ui/Shortcut";
 import {
@@ -30,7 +31,11 @@ export function RoomSetup({
   onApply,
   onError,
   onClose,
+  purpose = "game",
+  proposedConfig,
 }: {
+  purpose?: "game" | "enqueue";
+  proposedConfig?: Snapshot["config"];
   snapshot: Snapshot;
   registry?: CommandRegistry;
   binding?: string;
@@ -39,7 +44,7 @@ export function RoomSetup({
   onClose?: () => void;
 }) {
   const [open, setOpen] = useState(auxiliaryView === "roomsetup"),
-    [draftConfig, updateConfig] = useState(snapshot.config),
+    [draftConfig, updateConfig] = useState(proposedConfig ?? snapshot.config),
     [retain, setRetain] = useState<string[]>(
       snapshot.seats.filter((s) => !s.difficulty && s.name).map((s) => s.id),
     ),
@@ -61,9 +66,10 @@ export function RoomSetup({
       }
       if (intent.type === "error") onError(intent.message);
     },
+    purpose === "game" && !proposedConfig,
   );
   const openSetup = () => {
-    setConfig(structuredClone(snapshot.config));
+    setConfig(structuredClone(proposedConfig ?? snapshot.config));
     const ids = snapshot.seats
       .filter((s) => !s.difficulty && s.name)
       .map((s) => s.id);
@@ -124,7 +130,12 @@ export function RoomSetup({
     <>
       {!auxiliaryView && (
         <Button data-room-action="setup" onClick={openSetup}>
-          更换游戏 / 下一局 <Shortcut binding={binding} />
+          {purpose === "enqueue"
+            ? "添加下一局"
+            : proposedConfig
+              ? "确认席位并切换"
+              : "更换游戏 / 下一局"}{" "}
+          <Shortcut binding={binding} />
         </Button>
       )}
       {!detached && (
@@ -134,7 +145,7 @@ export function RoomSetup({
             setOpen(value);
             if (!value) onClose?.();
           }}
-          title="更换游戏与下一局"
+          title={purpose === "enqueue" ? "规划下一局" : "确认游戏与真人席位"}
         >
           <label className="setting-row">
             游戏
@@ -287,6 +298,12 @@ export function RoomSetup({
                 onChange={(flight) => setConfig({ ...config, flight })}
               />
             )}
+            {config.kind === "pool" && (
+              <PoolOptionsControl
+                value={config.pool}
+                onChange={(pool) => setConfig({ ...config, pool })}
+              />
+            )}
             {config.kind === "tq" && (
               <CheckersOptionsControl
                 value={config.checkers}
@@ -364,26 +381,29 @@ export function RoomSetup({
                 />
               </label>
             )}
-            <h3>保留玩家</h3>
-            {snapshot.seats
-              .filter((seat) => members.includes(seat.id))
-              .map((seat) => (
-                <label key={seat.id} className="setting-row">
-                  <span>{seat.name}</span>
-                  <input
-                    type="checkbox"
-                    checked={retain.includes(seat.id)}
-                    disabled={seat.id === snapshot.seats[0].id}
-                    onChange={(event) =>
-                      setRetain(
-                        event.target.checked
-                          ? [...retain, seat.id]
-                          : retain.filter((id) => id !== seat.id),
-                      )
-                    }
-                  />
-                </label>
-              ))}
+            {purpose !== "enqueue" && (
+              <h3>继续参与的玩家（未选中将转为旁观）</h3>
+            )}
+            {purpose !== "enqueue" &&
+              snapshot.seats
+                .filter((seat) => members.includes(seat.id))
+                .map((seat) => (
+                  <label key={seat.id} className="setting-row">
+                    <span>{seat.name}</span>
+                    <input
+                      type="checkbox"
+                      checked={retain.includes(seat.id)}
+                      disabled={seat.id === snapshot.seats[0].id}
+                      onChange={(event) =>
+                        setRetain(
+                          event.target.checked
+                            ? [...retain, seat.id]
+                            : retain.filter((id) => id !== seat.id),
+                        )
+                      }
+                    />
+                  </label>
+                ))}
             <button
               className="primary-button"
               onClick={async () => {
@@ -392,7 +412,7 @@ export function RoomSetup({
                   onError(parsed.error.issues[0].message);
                   return;
                 }
-                if (retain.length > config.humans) {
+                if (purpose !== "enqueue" && retain.length > config.humans) {
                   onError("保留玩家超过真人席位数");
                   return;
                 }
@@ -401,13 +421,17 @@ export function RoomSetup({
                     (s) => members.includes(s.id) && !retain.includes(s.id),
                   )
                   .map((s) => s.name);
-                const playing = !!snapshot.state && !snapshot.finished;
+                const playing =
+                  purpose !== "enqueue" &&
+                  !!snapshot.state &&
+                  !snapshot.finished;
                 if (
-                  (playing || removed.length) &&
+                  purpose !== "enqueue" &&
+                  (playing || removed.length || proposedConfig) &&
                   !(await confirmation.request(
                     [
                       playing ? "当前对局将结束并保存回放。" : "",
-                      removed.length ? `移除玩家：${removed.join("、")}。` : "",
+                      removed.length ? `转为旁观：${removed.join("、")}。` : "",
                       "确认应用下一局配置？",
                     ].join(""),
                     "应用配置",
@@ -424,7 +448,7 @@ export function RoomSetup({
                 onClose?.();
               }}
             >
-              应用
+              {purpose === "enqueue" ? "加入队列" : "确认应用"}
             </button>
           </fieldset>
         </Panel>

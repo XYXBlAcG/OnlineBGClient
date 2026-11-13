@@ -2,9 +2,12 @@ import { phonePreviewEnabled } from "./phone-preview";
 import { capabilities, runtime } from "./platform";
 import { useEffect, useState } from "react";
 
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => matchMedia(query).matches);
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(
+    () => typeof matchMedia !== "undefined" && matchMedia(query).matches,
+  );
   useEffect(() => {
+    if (typeof matchMedia === "undefined") return;
     const media = matchMedia(query);
     const update = () => setMatches(media.matches);
     media.addEventListener("change", update);
@@ -15,11 +18,12 @@ function useMediaQuery(query: string): boolean {
 
 export function useMobile(): boolean {
   const coarse = useMediaQuery("(pointer: coarse)");
+  if (runtime !== "web" || typeof window === "undefined")
+    return capabilities.mobileUi;
   return (
     capabilities.mobileUi ||
-    (runtime === "web" &&
-      (coarse ||
-        phonePreviewEnabled(location.search, window.parent !== window)))
+    coarse ||
+    phonePreviewEnabled(location.search, window.parent !== window)
   );
 }
 

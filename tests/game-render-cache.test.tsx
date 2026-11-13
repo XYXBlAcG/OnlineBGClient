@@ -44,6 +44,7 @@ it("retains an isolated upstream view across non-game updates and replaces it fo
     clone.mockClear();
     room.chat(other, "chat", "你好");
     snapshot = room.snapshot(owner);
+    clone.mockClear();
     act(() => {
       renderer!.update(
         <OriginalGame snapshot={snapshot} act={send} end={send} />,

@@ -1,0 +1,622 @@
+.exp-journal-panel.ui-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(1180px, calc(100vw - 32px));
+  height: min(760px, 88vh);
+  max-height: 88vh;
+  padding: 20px;
+  overflow: hidden;
+}
+.exp-journal-panel .ui-panel-heading {
+  flex: none;
+  margin-bottom: 12px;
+}
+.exp-journal {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+.exp-journal-loading {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.exp-journal-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 16px;
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(
+      ellipse at 10% 0%,
+      color-mix(in srgb, var(--accent) 14%, transparent),
+      transparent 56%
+    ),
+    var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+.exp-journal-title {
+  display: grid;
+  gap: 2px;
+  min-width: 130px;
+}
+.exp-journal-title strong {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+.exp-journal-title span,
+.exp-journal-currency span,
+.exp-journal-metrics span,
+.exp-journal-progress span,
+.exp-journal-recent small,
+.exp-journal-detail small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.exp-journal-currency {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+.exp-journal-currency article,
+.exp-journal-metrics article {
+  display: grid;
+  gap: 2px;
+  min-width: 76px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--field);
+}
+.exp-journal-currency b,
+.exp-journal-metrics b {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.exp-journal-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.exp-journal-actions button {
+  min-height: 32px;
+  font-size: 12px;
+}
+.exp-journal-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.exp-journal-tabs button {
+  flex: none;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.exp-journal-tabs button.active {
+  background: var(--accent);
+  color: var(--accent-contrast, #fff);
+}
+.exp-journal-overview {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.exp-journal-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.exp-journal-metrics article {
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+.exp-journal-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.exp-journal-progress article,
+.exp-journal-recent,
+.exp-journal-explain article,
+.exp-journal-milestones article {
+  padding: 13px 14px;
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+.exp-journal-progress article > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+  font-size: 12px;
+}
+.exp-journal-progress progress {
+  width: 100%;
+  height: 7px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--field);
+}
+.exp-journal-progress progress::-webkit-progress-bar {
+  background: var(--field);
+}
+.exp-journal-progress progress::-webkit-progress-value {
+  background: var(--accent);
+}
+.exp-journal-progress progress::-moz-progress-bar {
+  background: var(--accent);
+}
+.exp-journal-explain {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.exp-journal-explain h3,
+.exp-journal-recent h3 {
+  margin: 0 0 5px;
+  font-size: 13px;
+}
+.exp-journal-explain p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.exp-journal-milestones {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.exp-journal-milestones article {
+  display: grid;
+  gap: 3px;
+  opacity: 0.55;
+}
+.exp-journal-milestones article[data-unlocked="true"] {
+  opacity: 1;
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+.exp-journal-milestones strong {
+  font-size: 13px;
+}
+.exp-journal-milestones span {
+  color: var(--accent);
+  font-size: 10px;
+}
+.exp-journal-milestones small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.exp-journal-recent > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.exp-journal-recent button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: var(--field);
+  text-align: left;
+}
+.exp-journal-recent button + button {
+  margin-top: 5px;
+}
+.exp-journal-recent button > span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+.exp-journal-recent button > div {
+  display: grid;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.exp-journal-recent button strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exp-journal-recent button b {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
+}
+.exp-journal-legacy {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.exp-journal-legacy-summary {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(
+      ellipse at 20% 0%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 60%
+    ),
+    var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+.exp-journal-legacy-summary strong {
+  color: var(--muted);
+  font-size: 11px;
+}
+.exp-journal-legacy-summary b {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+}
+.exp-journal-legacy-summary span,
+.exp-journal-legacy-summary small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.exp-journal-legacy-summary p {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.exp-journal-tree {
+  display: grid;
+  gap: 8px;
+}
+.exp-journal-tier {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding-bottom: 10px;
+}
+.exp-journal-tier:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 18px;
+  width: 1px;
+  height: 10px;
+  background: var(--line);
+}
+.exp-journal-tier > header {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.exp-journal-tier > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 7px;
+}
+.exp-journal-node {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 11px;
+  border-radius: var(--radius-card);
+  background: var(--field);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.exp-journal-node[data-unlocked="true"] {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, var(--line));
+}
+.exp-journal-node[data-ready="true"] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 56%, var(--line));
+}
+.exp-journal-node > header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.exp-journal-node > header span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  font-size: 15px;
+}
+.exp-journal-node > header strong {
+  flex: 1;
+  font-size: 12px;
+}
+.exp-journal-node > header b {
+  color: var(--accent);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.exp-journal-node p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.exp-journal-node > small {
+  color: var(--text);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.exp-journal-node > em {
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1.4;
+}
+.exp-journal-node button {
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+.exp-journal-catalog {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+.exp-journal-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.exp-journal-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.exp-journal-filters .ui-search-field {
+  flex: 1 1 180px;
+}
+.exp-journal-state-filter {
+  margin-left: auto;
+}
+.exp-journal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
+  gap: 8px;
+}
+.exp-journal-card {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 96px;
+  padding: 11px;
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, var(--line));
+  text-align: left;
+}
+.exp-journal-card[data-locked="true"] {
+  background: var(--field);
+  box-shadow: inset 0 0 0 1px var(--line);
+  opacity: 0.66;
+}
+.exp-journal-card[data-selected="true"] {
+  outline: 2px solid color-mix(in srgb, var(--accent) 72%, var(--text));
+  outline-offset: 1px;
+}
+.exp-journal-card > span {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  font-size: 17px;
+}
+.exp-journal-card[data-locked="true"] > span {
+  color: var(--muted);
+}
+.exp-journal-card strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exp-journal-card small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exp-journal-detail {
+  align-self: start;
+  display: grid;
+  gap: 9px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 15px;
+  border-radius: var(--radius-panel);
+  background: var(--raised);
+  box-shadow:
+    var(--shadow),
+    inset 0 0 0 1px var(--line);
+}
+.exp-journal-detail > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.exp-journal-detail > div > span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--field));
+  color: var(--accent);
+  font-size: 19px;
+}
+.exp-journal-detail h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.exp-journal-detail p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.exp-journal-detail dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+.exp-journal-detail dl > div {
+  display: grid;
+  gap: 1px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.exp-journal-detail dt {
+  color: var(--muted);
+  font-size: 9px;
+}
+.exp-journal-detail dd {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.exp-journal-empty {
+  padding: 26px 16px;
+  border-radius: var(--radius-panel);
+  background: var(--field);
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.exp-legacy-summary {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--radius-panel);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, var(--line));
+}
+.exp-legacy-summary > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.exp-legacy-summary strong {
+  font-size: 12px;
+}
+.exp-legacy-summary span,
+.exp-legacy-summary small,
+.exp-legacy-summary p {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.exp-legacy-summary p {
+  margin: 0;
+}
+@media (max-width: 960px) {
+  .exp-journal-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .exp-journal-catalog {
+    grid-template-columns: 1fr;
+  }
+  .exp-journal-detail {
+    max-height: 220px;
+  }
+}
+@media (max-width: 720px) {
+  .exp-journal-panel.ui-panel {
+    width: calc(100vw - 16px);
+    height: 94vh;
+    max-height: 94vh;
+    padding: 14px;
+  }
+  .exp-journal-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .exp-journal-currency {
+    order: 3;
+    width: 100%;
+  }
+  .exp-journal-currency article {
+    flex: 1;
+    min-width: 0;
+  }
+  .exp-journal-actions {
+    margin-left: auto;
+  }
+  .exp-journal-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .exp-journal-progress,
+  .exp-journal-explain,
+  .exp-journal-milestones {
+    grid-template-columns: 1fr;
+  }
+  .exp-journal-legacy {
+    grid-template-columns: 1fr;
+  }
+  .exp-journal-legacy-summary {
+    position: static;
+  }
+  .exp-journal-tier > div {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  .exp-journal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .exp-journal-state-filter {
+    margin-left: 0;
+  }
+}

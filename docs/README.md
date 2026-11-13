@@ -18,13 +18,21 @@
 - [社交体验与实现入口](social-experience-plan.md)
 - [手机浏览器与实现入口](mobile-browser-plan.md)
 - [iOS 客户端：加入、语音与移动大厅](ios-app-plan.md)
+- [手机版与电脑版能力对照](mobile-desktop-differences.md)
 - [桌面牌桌与原生窗口](workspace-and-windows-ai-plan.md)
 - [牌桌布局审核入口](table-layout-review-plan.md)
 
 - [界面、游戏动效与自选头像](ui-motion-plan.md)
+- [样式系统标准化计划](style-system-plan.md)
+- [台球：模式、操作、实现与验收](pool-plan.md)
+- [台球 3D 版本计划](pool-3d-plan.md)
+- [台球 3D 物理引擎计划](pool-3d-physics-plan.md)
+- [社交舞台、成就与 LLM 桌搭子计划](social-stage-llm-plan.md)
+- [社交符号与差异化计划](social-differentiation-plan.md)
 
 - [游戏动画方案演示](game-motion-demo.md)
 - [麻将：四川血战、瓦西子透明麻将与验证入口](mahjong.md)
+- [四川麻将：实现索引与候选牌类](sichuan-mahjong-plan.md)
 
 - [多人房间、记录管理与手动验收](multiplayer-room-experience.md)
 - [手机沉浸牌桌、主题与公网重试验收](mobile-table-review.md)
@@ -39,6 +47,7 @@
 
 - [领土 Dominion：规则、AI 与手动审核](dominion.md)
 
+- [秘塔远征：手机存档与 AI 节奏计划](expedition-mobile-plan.md)
 - [秘塔远征：合作卡牌肉鸽待审核方案](cooperative-roguelike-plan.md)
 - [秘塔远征：主题地图、联机、AI、存档与审核](expedition.md)
 - [DeepSeek 秘塔远征交付指南](expedition-delivery.md)
@@ -67,6 +76,7 @@
 
 - [跨平台外观、局域网调试、代理与日志](platform-network-diagnostics.md)
 - [迁移到 OpenCode](opencode-migration.md)
+- [Codex 交叉评审](codex-review.md)
 
 - [Apple 风格表情资源](emoji.md)
 - [各游戏手机牌桌审核](mobile-usability.md)
@@ -85,3 +95,8 @@
 - [界面设计与大厅](ui-design.md)
 - [成就系统](achievements.md)
 - [间距与展开规范](spacing.md)
+
+- [斗地主规则与 AI](ddz.md)
+- [连续对局与回放](replay-series.md)
+
+- [参考与致谢](../ACKNOWLEDGEMENTS.md)

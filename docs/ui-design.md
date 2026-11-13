@@ -6,6 +6,10 @@
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 浅深主题、用户主题协议                                  | [主题](../src/client/themes.ts)                                                                                                                                 |
 | 派生视觉角色、间距、圆角与动效时长                      | [设计变量](../src/client/ui/design-tokens.css)、[间距规范](spacing.md)                                                                                          |
+| 语义状态色、遮罩、阴影、触控目标与层级 token            | [主题](../src/client/themes.ts)、[设计变量](../src/client/ui/design-tokens.css)                                                                                 |
+| 级联层级与样式边界                                      | [层级定义](../src/client/ui/layers.css)、[样式系统计划](style-system-plan.md)                                                                                   |
+| 响应式断点                                              | [断点常量](../src/client/ui/breakpoints.ts)                                                                                                                     |
+| 新样式护栏、审计与开发陈列页                            | [Stylelint](../stylelint.config.mjs)、[审计脚本](../scripts/style-audit.mjs)、[陈列页](../src/client/dev/StyleGallery.tsx)（`?dev=styles`）                     |
 | 牌桌材质、牌面层次与资源计数                            | [牌桌材质](../src/client/ui/table-material.css)                                                                                                                 |
 | 选择、双击确认与提交状态                                | [确认控件](../src/client/ui/ConfirmedChoice.tsx)                                                                                                                |
 | 快捷键与阶段生命周期                                    | [命令桥接](../src/client/use-game-commands.tsx)、[常用动作](../src/client/game-quick-actions.ts)                                                                |
@@ -46,3 +50,5 @@
 检查入口：[双击与重复提交](../tests/confirmed-choice.test.tsx)、[阶段命令](../tests/game-command-lifecycle.test.tsx)、[暖纸与地图](../tests/paper-table.test.tsx)。
 
 地图连线几何与节点共享 [布局模型](../src/client/expedition/map-layout.ts)，边缘连接与局部图层由[连线检查](../tests/route-links.test.ts)覆盖。
+
+辅助窗口只渲染自己的内容，不再发布辅助窗口状态；唯一发布入口仍在主窗口，见 [窗口调度](../src/client/native/windows.ts)。[回归](../tests/auxiliary-owner.test.tsx)验证辅助窗口不递归调用主窗口接口。

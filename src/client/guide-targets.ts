@@ -92,6 +92,15 @@ export const guideTargetKeys = [
   "ddz.table",
   "ddz.play",
   "ddz.pass",
+  "pool.status",
+  "pool.table",
+  "pool.power",
+  "pool.elevation",
+  "pool.spin",
+  "pool.predict",
+  "pool.render",
+  "pool.camera",
+  "pool.pockets",
 ] as const;
 export type GuideTargetKey = (typeof guideTargetKeys)[number];
 export interface TargetQuery {
@@ -202,6 +211,15 @@ const labels: Record<GuideTargetKey, [string, string]> = {
   "ddz.table": ["查看桌面出的牌", "等待斗地主开局"],
   "ddz.play": ["查看出牌按钮", "轮到你出牌时出现"],
   "ddz.pass": ["查看不要按钮", "轮到你跟牌时出现"],
+  "pool.status": ["查看回合与目标", "等待台球开局"],
+  "pool.table": ["查看台球桌", "等待台球桌出现"],
+  "pool.power": ["查看力度条", "轮到自己并开始蓄力时变化"],
+  "pool.elevation": ["查看杆身角度", "等待台球桌控制区出现"],
+  "pool.spin": ["查看高低杆与左右塞", "轮到自己时可用"],
+  "pool.predict": ["查看预计轨迹", "轮到自己时可开启"],
+  "pool.render": ["切换 2D / 3D", "等待台球桌出现"],
+  "pool.camera": ["转动 3D 视角", "仅 3D 渲染时出现"],
+  "pool.pockets": ["查看已进袋球", "有球进袋后出现"],
 };
 const upstreamSelectors: Partial<Record<GuideTargetKey, string>> = {
   "fxq.players": ".flex.justify-evenly .game-avatar",

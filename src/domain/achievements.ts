@@ -4,9 +4,8 @@ import { Replay } from "./replay";
 import { catanVictoryPoints } from "./catan";
 import type { GameState } from "./types";
 
-export type AchievementRarity =
-  "common" | "rare" | "epic" | "legendary" | "mythic";
-export type AchievementGame = GameKind | "app";
+import type { AchievementGame, AchievementRarity } from "./achievement-types";
+export type { AchievementGame, AchievementRarity } from "./achievement-types";
 export interface AchievementDefinition {
   id: string;
   game: AchievementGame;
@@ -399,6 +398,145 @@ const definitions = [
     "通过清空三堆供应结束并获胜。",
     "📦",
   ],
+  ["fxq.double-six", "fxq", "rare", "双六连掷", "连续两次掷出 6。", "🎲"],
+  [
+    "fxq.specialist",
+    "fxq",
+    "epic",
+    "道具大师",
+    "一局内使用 5 次特殊能力。",
+    "🛠",
+  ],
+  [
+    "uno.minimal-draw",
+    "uno",
+    "rare",
+    "精准手牌",
+    "获胜且摸牌不超过 2 张。",
+    "🎯",
+  ],
+  [
+    "uno.wild-storm",
+    "uno",
+    "epic",
+    "万能风暴",
+    "获胜且打出至少 3 张万能牌或 +4。",
+    "🌈",
+  ],
+  [
+    "ddz.triple-bomb",
+    "ddz",
+    "mythic",
+    "三连爆破",
+    "一局内打出 3 个炸弹或火箭。",
+    "💥",
+  ],
+  [
+    "ddz.farmer-duo",
+    "ddz",
+    "epic",
+    "农民同心",
+    "农民获胜，且两名农民都至少出过 3 手牌。",
+    "🤝",
+  ],
+  ["scmj.pure-suit", "scmj", "epic", "清一色", "以清一色胡牌。", "🀄"],
+  ["scmj.two-kongs", "scmj", "rare", "双杠", "一局内完成至少 2 个杠。", "🀫"],
+  [
+    "ccbs.noble-trio",
+    "ccbs",
+    "epic",
+    "贵族满堂",
+    "一局内获得至少 3 位贵族。",
+    "👑",
+  ],
+  [
+    "ccbs.gem-hoard",
+    "ccbs",
+    "rare",
+    "宝石囤积",
+    "获胜时持有至少 15 枚宝石。",
+    "💎",
+  ],
+  [
+    "ktd.city-builder",
+    "ktd",
+    "epic",
+    "城市巨匠",
+    "一局内建造至少 3 座城市。",
+    "🏙",
+  ],
+  ["ktd.road-10", "ktd", "rare", "十路通达", "最长路达到 10 条。", "🛤"],
+  [
+    "dy.color-trio",
+    "dy",
+    "rare",
+    "三色毒师",
+    "同一种颜色收集至少 3 张。",
+    "🧪",
+  ],
+  ["dy.big-pot", "dy", "epic", "满锅而归", "一局内收集至少 10 张牌。", "🍯"],
+  ["sgs.warlord", "sgs", "epic", "乱世枭雄", "一局内造成至少 5 次伤害。", "⚔"],
+  ["sgs.quick-victory", "sgs", "rare", "速战速决", "在 20 个动作内获胜。", "⏱"],
+  ["tq.mega-chain", "tq", "epic", "超级连跳", "单次连跳至少 7 格。", "🦘"],
+  ["tq.fast-win", "tq", "rare", "快步如飞", "在 15 回合内获胜。", "🏁"],
+  [
+    "graphwar.big-hit",
+    "graphwar",
+    "epic",
+    "重炮轰击",
+    "单发炮弹造成至少 50 点伤害。",
+    "💣",
+  ],
+  [
+    "graphwar.marksman",
+    "graphwar",
+    "rare",
+    "神射手",
+    "一局内至少 5 次命中敌人。",
+    "🎯",
+  ],
+  [
+    "expedition.relic-hoarder",
+    "expedition",
+    "epic",
+    "遗物收藏家",
+    "一局内为队伍收集至少 5 件遗物。",
+    "🗝",
+  ],
+  [
+    "expedition.battles-5",
+    "expedition",
+    "rare",
+    "百战余生",
+    "一局内赢得至少 5 场战斗。",
+    "⚔",
+  ],
+  [
+    "dominion.big-turn",
+    "dominion",
+    "epic",
+    "豪购回合",
+    "单回合购买至少 3 张牌。",
+    "🛒",
+  ],
+  [
+    "dominion.busy-market",
+    "dominion",
+    "rare",
+    "市场常客",
+    "一局内购买至少 10 张牌。",
+    "🏪",
+  ],
+  ["pool.fast-finish", "pool", "epic", "速胜", "5 杆内结束对局并获胜。", "🎱"],
+  [
+    "pool.clean-win",
+    "pool",
+    "legendary",
+    "零封对手",
+    "对手没有上场就获胜。",
+    "🏆",
+  ],
+  ["pool.double-pot", "pool", "epic", "双球入袋", "一杆打进两颗目标球。", "🎯"],
 ] as const;
 
 const appDefinitions = [
@@ -791,6 +929,8 @@ function isWinner(state: GameState, actor: number) {
       );
       return scores[actor] === Math.max(...scores);
     }
+    case "pool":
+      return state.view.winner === actor;
   }
   return false;
 }
@@ -809,6 +949,21 @@ function fxqAchievements(steps: ActionStep[], final: GameState, actor: number) {
     )
   )
     result.push("fxq.three-sixes");
+  let previousSix = false;
+  for (const step of rolls) {
+    const six = step.after.kind === "fxq" && step.after.view.lastDice === 6;
+    if (six && previousSix) {
+      result.push("fxq.double-six");
+      break;
+    }
+    previousSix = six;
+  }
+  if (
+    played(steps, actor).filter(
+      (step) => step.event.action.type === "fxq-special",
+    ).length >= 5
+  )
+    result.push("fxq.specialist");
   const abilities = new Set(
     played(steps, actor)
       .filter((step) => step.event.action.type === "fxq-special")
@@ -870,6 +1025,12 @@ function unoAchievements(steps: ActionStep[], final: GameState, actor: number) {
     (step) => step.event.action.type === "uno-draw",
   ).length;
   if (draws >= 10) result.push("uno.comeback");
+  if (draws <= 2) result.push("uno.minimal-draw");
+  const wilds = own.filter(
+    (step) =>
+      step.event.action.type === "uno-play" && step.event.action.card % 25 > 13,
+  ).length;
+  if (wilds >= 3) result.push("uno.wild-storm");
   const functional = own.some(
     (step) =>
       step.event.action.type === "uno-play" &&
@@ -913,6 +1074,20 @@ function ddzAchievements(steps: ActionStep[], final: GameState, actor: number) {
     return result;
   if (!view.landlordWin && actor !== landlord && landlordPlays.length <= 1)
     result.push("ddz.anti-spring");
+  if (!view.landlordWin && actor !== landlord) {
+    const farmers = [0, 1, 2].filter((index) => index !== landlord);
+    if (
+      farmers.every(
+        (farmer) =>
+          steps.filter(
+            (step) =>
+              step.event.actor === farmer &&
+              step.event.action.type === "ddz-play",
+          ).length >= 3,
+      )
+    )
+      result.push("ddz.farmer-duo");
+  }
   let bombs = 0;
   for (const step of own) {
     if (step.event.action.type !== "ddz-play") continue;
@@ -924,6 +1099,7 @@ function ddzAchievements(steps: ActionStep[], final: GameState, actor: number) {
       bombs++;
   }
   if (bombs >= 2) result.push("ddz.double-bomb");
+  if (bombs >= 3) result.push("ddz.triple-bomb");
   for (const step of own) {
     if (step.event.action.type !== "ddz-play") continue;
     if (step.before.kind !== "ddz") continue;
@@ -949,6 +1125,8 @@ function scmjAchievements(final: GameState, actor: number) {
   if (kongs >= 4) result.push("scmj.four-kongs");
   if (labels.includes("清一色") && labels.includes("七对"))
     result.push("scmj.pure-seven-pairs");
+  if (labels.includes("清一色")) result.push("scmj.pure-suit");
+  if (kongs >= 2) result.push("scmj.two-kongs");
   if (
     view.wall.length === 0 &&
     (win.from === actor || view.lastDraw?.actor === actor)
@@ -987,6 +1165,11 @@ function ccbsAchievements(
   if (!gold) result.push("ccbs.no-gold");
   if (view.playerCardCount[actor]?.every((count) => count > 0))
     result.push("ccbs.five-discounts");
+  if (view.playerNoble[actor].length >= 3) result.push("ccbs.noble-trio");
+  if (
+    (view.playerGem[actor] ?? []).reduce((sum, count) => sum + count, 0) >= 15
+  )
+    result.push("ccbs.gem-hoard");
   const last = played(steps, actor).at(-1);
   if (
     last?.event.action.type === "ccbs-action" &&
@@ -1008,6 +1191,14 @@ function ktdAchievements(steps: ActionStep[], final: GameState, actor: number) {
     player.longestRoad >= 15
   )
     result.push("ktd.road-15");
+  if (
+    (view.bankData.longestRoad >= 10 &&
+      view.bankData.longestRoadPos === actor + 1) ||
+    player.longestRoad >= 10
+  )
+    result.push("ktd.road-10");
+  if (player.houses.filter((house) => house & 1).length >= 3)
+    result.push("ktd.city-builder");
   if (
     (view.bankData.maxRobberCount >= 5 &&
       view.bankData.maxRobberCountPos === actor + 1) ||
@@ -1047,6 +1238,8 @@ function dyAchievements(final: GameState, actor: number) {
     view.eats[actor].filter((card) => Math.floor(card / 20) === 0).length >= 5
   )
     result.push("dy.poison-collector");
+  if (counts.slice(1).some((count) => count >= 3)) result.push("dy.color-trio");
+  if (view.eats[actor].length >= 10) result.push("dy.big-pot");
   return result;
 }
 
@@ -1076,6 +1269,8 @@ function sgsAchievements(steps: ActionStep[], final: GameState, actor: number) {
       ),
   );
   if (duels.length >= 3) result.push("sgs.duel-king");
+  if (duels.length >= 5) result.push("sgs.warlord");
+  if (played(steps, actor).length <= 20) result.push("sgs.quick-victory");
   return result;
 }
 
@@ -1101,6 +1296,14 @@ function tqAchievements(steps: ActionStep[], final: GameState, actor: number) {
     )
   )
     result.push("tq.long-chain");
+  if (
+    moves.some(
+      (step) =>
+        step.event.action.type === "tq-move" &&
+        step.event.action.route.length >= 7,
+    )
+  )
+    result.push("tq.mega-chain");
   const enemyJump = moves.some((step) => {
     if (step.event.action.type !== "tq-move" || step.before.kind !== "tq")
       return false;
@@ -1117,6 +1320,7 @@ function tqAchievements(steps: ActionStep[], final: GameState, actor: number) {
   if (!enemyJump) result.push("tq.no-enemy-jump");
   const rounds = final.view.winnerRound[final.view.winnerId.indexOf(actor)];
   if (rounds !== undefined && rounds <= 20) result.push("tq.short-march");
+  if (rounds !== undefined && rounds <= 15) result.push("tq.fast-win");
   return result;
 }
 
@@ -1127,7 +1331,9 @@ function graphwarAchievements(
 ) {
   if (final.kind !== "graphwar" || !isWinner(final, actor)) return [];
   const result: AchievementId[] = [];
-  let friendly = false;
+  let friendly = false,
+    hits = 0,
+    maxDamage = 0;
   for (const step of played(steps, actor)) {
     if (step.event.action.type !== "graphwar-fire") continue;
     if (step.before.kind !== "graphwar") continue;
@@ -1147,6 +1353,17 @@ function graphwarAchievements(
         teamOf(impact.soldier) !== beforeView.teams[actor],
     );
     if (enemyKills.length >= 3) result.push("graphwar.triple-kill");
+    const enemyHits = shot.impacts.filter(
+      (impact) =>
+        teamOf(impact.soldier) !== undefined &&
+        teamOf(impact.soldier) !== beforeView.teams[actor] &&
+        impact.damage > 0,
+    );
+    if (enemyHits.length) hits++;
+    maxDamage = Math.max(
+      maxDamage,
+      shot.impacts.reduce((sum, impact) => sum + impact.damage, 0),
+    );
     if (
       !beforeView.options.preview &&
       shot.impacts.some(
@@ -1167,6 +1384,8 @@ function graphwarAchievements(
       friendly = true;
   }
   if (!friendly) result.push("graphwar.no-friendly-fire");
+  if (hits >= 5) result.push("graphwar.marksman");
+  if (maxDamage >= 50) result.push("graphwar.big-hit");
   if (
     final.view.soldiers.filter(
       (soldier) => soldier.player === actor && soldier.hp > 0,
@@ -1205,6 +1424,15 @@ function expeditionAchievements(
     )
   )
     result.push("expedition.one-round-boss");
+  if (
+    final.view.combat.heroes.reduce(
+      (sum, hero) => sum + hero.relics.length,
+      0,
+    ) >= 5
+  )
+    result.push("expedition.relic-hoarder");
+  if (final.view.combat.metrics.battlesWon >= 5)
+    result.push("expedition.battles-5");
   return result;
 }
 
@@ -1220,8 +1448,13 @@ function dominionAchievements(
       step.event.action.type === "dominion-action" &&
       step.event.action.move.type === "buy",
   );
-  const provinceTurns = new Map<string, number>();
+  const provinceTurns = new Map<string, number>(),
+    turnBuys = new Map<string, number>();
   for (const step of buys) {
+    if (step.before.kind === "dominion") {
+      const key = `${step.before.view.round}:${step.before.view.turn}`;
+      turnBuys.set(key, (turnBuys.get(key) ?? 0) + 1);
+    }
     if (
       step.event.action.type !== "dominion-action" ||
       step.event.action.move.type !== "buy" ||
@@ -1234,6 +1467,9 @@ function dominionAchievements(
   }
   if ([...provinceTurns.values()].some((count) => count >= 3))
     result.push("dominion.three-provinces");
+  if ([...turnBuys.values()].some((count) => count >= 3))
+    result.push("dominion.big-turn");
+  if (buys.length >= 10) result.push("dominion.busy-market");
   if (
     steps.some(
       (step) =>
@@ -1254,6 +1490,30 @@ function dominionAchievements(
     Object.values(final.view.supply).filter((count) => count === 0).length >= 3
   )
     result.push("dominion.three-piles");
+  return result;
+}
+
+function poolAchievements(
+  steps: ActionStep[],
+  final: GameState,
+  actor: number,
+) {
+  if (final.kind !== "pool" || final.view.winner !== actor) return [];
+  const result: AchievementId[] = [],
+    shots = played(steps, actor)
+      .map((step) =>
+        step.after.kind === "pool" ? step.after.view.lastShot : null,
+      )
+      .filter((shot): shot is NonNullable<typeof shot> => !!shot);
+  if (final.view.shotNumber <= 5) result.push("pool.fast-finish");
+  if (
+    shots.some(
+      (shot) => shot.pocketed.filter((item) => item.id !== 0).length >= 2,
+    )
+  )
+    result.push("pool.double-pot");
+  if (steps.length > 0 && steps.every((step) => step.event.actor === actor))
+    result.push("pool.clean-win");
   return result;
 }
 
@@ -1310,6 +1570,11 @@ export function evaluateReplay(
     case "dominion":
       return {
         achievements: dominionAchievements(steps, final, actor),
+        winner,
+      };
+    case "pool":
+      return {
+        achievements: poolAchievements(steps, final, actor),
         winner,
       };
   }

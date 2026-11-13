@@ -89,10 +89,9 @@ function Particle({
           enhanced,
           frames,
         );
-        element.getAnimations()[0]?.effect &&
-          (element.getAnimations()[0].effect as KeyframeEffect).setKeyframes(
-            nextFrames.body,
-          );
+        const animationEffect = element.getAnimations()[0]?.effect;
+        if (animationEffect)
+          (animationEffect as KeyframeEffect).setKeyframes(nextFrames.body);
         fragments.forEach((f) => {
           f.style.left = `${a.x}px`;
           f.style.top = `${a.y}px`;

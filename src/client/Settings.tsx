@@ -262,9 +262,9 @@ export function Settings({
               }
             />
             <label>
-              提示音量 · {Math.round(preferences.soundVolume * 100)}%
+              音效音量 · {Math.round(preferences.soundVolume * 100)}%
               <Slider
-                aria-label="提示音量"
+                aria-label="音效音量"
                 min={0}
                 max={1}
                 step={0.001}
@@ -274,6 +274,13 @@ export function Settings({
                 }
               />
             </label>
+            <Switch
+              label="台球音效"
+              checked={preferences.poolSound}
+              onCheckedChange={(poolSound) =>
+                onChange({ ...preferences, poolSound })
+              }
+            />
             <Switch
               label="消息提示音"
               checked={preferences.messageSound}
@@ -288,6 +295,20 @@ export function Settings({
                 const granted = enabled ? await enableNotifications() : false;
                 onChange({ ...preferences, systemNotifications: granted });
               }}
+            />
+            <Switch
+              label="成就舞台动画"
+              checked={preferences.achievementStage}
+              onCheckedChange={(achievementStage) =>
+                onChange({ ...preferences, achievementStage })
+              }
+            />
+            <Switch
+              label="向房间广播成就"
+              checked={preferences.shareAchievements}
+              onCheckedChange={(shareAchievements) =>
+                onChange({ ...preferences, shareAchievements })
+              }
             />
             <Switch
               label="显示头像互动"

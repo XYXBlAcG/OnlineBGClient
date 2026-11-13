@@ -1,5 +1,5 @@
 import { balance } from "./graphwar/balance";
-import { maxRoomSeats } from "./catalogue";
+import type { AchievementGame, AchievementRarity } from "./achievement-types";
 import { z } from "zod";
 import type { Banner, ChatEvent } from "./banner";
 import type { Attachment } from "./attachments";
@@ -151,7 +151,10 @@ export type InteractionKind = keyof typeof interactionCatalogue;
 export type InteractionStyle =
   (typeof interactionCatalogue)[InteractionKind]["style"];
 export const interactionSchema = z.enum(
-  Object.keys(freeInteractionCatalogue) as [keyof typeof freeInteractionCatalogue, ...(keyof typeof freeInteractionCatalogue)[]],
+  Object.keys(freeInteractionCatalogue) as [
+    keyof typeof freeInteractionCatalogue,
+    ...(keyof typeof freeInteractionCatalogue)[],
+  ],
 );
 export const interactionUnitsSchema = z.object({
   game: z.literal("graphwar"),
@@ -180,6 +183,15 @@ export type ChatContent =
   | { type: "text"; text: string }
   | { type: "banner"; text: string; banner: Banner }
   | { type: "image"; text: string; attachment: Attachment }
+  | {
+      type: "achievement";
+      text: string;
+      achievementId: string;
+      title: string;
+      symbol: string;
+      rarity: AchievementRarity;
+      game: AchievementGame;
+    }
   | { type: "system"; text: string };
 export type ChatMessage = ChatContent & {
   id: string;

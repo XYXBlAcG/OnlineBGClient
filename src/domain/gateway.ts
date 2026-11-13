@@ -102,7 +102,10 @@ export class Gateway {
     if (command.type === "join") {
       const room = this.rooms.get(command.room);
       if (!room) throw new Error("房间不存在");
-      const token = command.spectator&&!command.token?room.watch(command.name,command.avatar):room.claim(command.name, command.token, command.avatar);
+      const token =
+        command.spectator && !command.token
+          ? room.watch(command.name, command.avatar)
+          : room.claim(command.name, command.token, command.avatar);
       return {
         session: { room: room.id, token },
         response: { type: "session", room: room.id, token },
@@ -122,8 +125,8 @@ export class Gateway {
       return { session, response: { type: "closed", replay } };
     }
     if (command.type === "party") {
-      room.partyAction(command.token,command.id,command.action);
-      return {session,response:{type:"ack",id:command.id}};
+      room.partyAction(command.token, command.id, command.action);
+      return { session, response: { type: "ack", id: command.id } };
     }
     if (command.type === "interaction") {
       const event = room.interact(
@@ -164,6 +167,15 @@ export class Gateway {
       }
     >,
   ): void {
+    if (command.type === "queue-set")
+      room.setQueue(command.token, command.revision, command.entries);
+    if (command.type === "queue-apply")
+      room.applyQueued(
+        command.token,
+        command.id,
+        command.revision,
+        command.setup,
+      );
     if (command.type === "seat")
       room.configureSeat(command.token, command.index, command.config);
     if (command.type === "autoplay")

@@ -1,5 +1,9 @@
 import { roomPluginsSchema } from "./workshop/model";
-import { partyPolicySchema, partyActionSchema, type PartySnapshot } from "./party";
+import {
+  partyPolicySchema,
+  partyActionSchema,
+  type PartySnapshot,
+} from "./party";
 import { expeditionOptionsSchema } from "./expedition/adventure-types";
 import { dominionOptionsSchema } from "./dominion/types";
 import { balanceSeats } from "./room-balance";
@@ -27,6 +31,7 @@ export { actionSchema } from "./actions";
 import type { ReplayRecord } from "./replay";
 import { z } from "zod";
 import { gameCatalogue, gameKinds } from "./catalogue";
+import { poolOptionsSchema } from "./pool/types";
 import type {
   Candidate,
   Decision,
@@ -53,7 +58,7 @@ export const configSchema = z
     team: z.boolean(),
     training: z.boolean(),
     auditEnabled: z.boolean().default(false),
-    plugins:roomPluginsSchema.default([]),
+    plugins: roomPluginsSchema.default([]),
     party: partyPolicySchema.default(partyPolicySchema.parse({})),
     expedition: expeditionOptionsSchema.default(
       expeditionOptionsSchema.parse({}),
@@ -61,6 +66,7 @@ export const configSchema = z
     graphwar: graphwarOptionsSchema.default(graphwarOptionsSchema.parse({})),
     flight: flightOptionsSchema.default(flightOptionsSchema.parse({})),
     checkers: checkersOptionsSchema.default(checkersOptionsSchema.parse({})),
+    pool: poolOptionsSchema.default(poolOptionsSchema.parse({})),
     dominion: dominionOptionsSchema.default(dominionOptionsSchema.parse({})),
     mahjong: mahjongOptionsSchema.default({ cap: 3, selfDraw: "base" }),
     catanTrades: z.boolean().default(true),
@@ -97,6 +103,15 @@ export const configSchema = z
     "据点攻防跳棋仅支持 2 人",
   );
 export type RoomConfig = z.infer<typeof configSchema>;
+export const queuedGameSchema = z.object({
+  id: z.string().min(1).max(80),
+  config: configSchema,
+});
+export type QueuedGame = z.infer<typeof queuedGameSchema>;
+export interface PartyQueue {
+  revision: number;
+  entries: QueuedGame[];
+}
 export const roomSetupSchema = z.object({
   config: configSchema,
   retain: z.array(z.string()).max(maxRoomSeats),
@@ -114,7 +129,31 @@ export const seatConfigSchema = z.discriminatedUnion("type", [
 ]);
 export type SeatConfig = z.infer<typeof seatConfigSchema>;
 export const commandSchema = z.discriminatedUnion("type", [
-  z.object({type:z.literal("party"),token:z.string(),id:z.string().min(1).max(100),action:partyActionSchema}),
+  z.object({
+    type: z.literal("queue-set"),
+    token: z.string(),
+    revision: z.number().int().min(0),
+    entries: z
+      .array(queuedGameSchema)
+      .max(12)
+      .refine(
+        (items) => new Set(items.map((item) => item.id)).size === items.length,
+        "队列标识重复",
+      ),
+  }),
+  z.object({
+    type: z.literal("queue-apply"),
+    token: z.string(),
+    revision: z.number().int().min(0),
+    id: z.string().min(1).max(80),
+    setup: roomSetupSchema,
+  }),
+  z.object({
+    type: z.literal("party"),
+    token: z.string(),
+    id: z.string().min(1).max(100),
+    action: partyActionSchema,
+  }),
   z.object({
     type: z.literal("abandon-run"),
     run: z.string().min(1).max(100),
@@ -245,8 +284,9 @@ export interface DecisionSummary {
   simulations: number;
   version: number;
 }
-export const protocolVersion = 19;
+export const protocolVersion = 20;
 export interface Snapshot {
+  partyQueue?: PartyQueue;
   resumeRoles?: { profession: string; name: string }[];
   serverTime: number;
   apiVersion: number;
@@ -277,7 +317,7 @@ export interface Snapshot {
   bannerPolicy: BannerPolicy;
   party: PartySnapshot;
   partyActor?: number;
-  spectators?: {id:string;name:string;avatar:string;online:boolean}[];
+  spectators?: { id: string; name: string; avatar: string; online: boolean }[];
   chat: ChatMessage[];
   chatSequence: number;
   chatTotals: Record<string, number>;

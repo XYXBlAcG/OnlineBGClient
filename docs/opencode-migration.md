@@ -212,8 +212,7 @@ OpenCode 与 Codex 的会话历史不共享。后续上下文以以下文件为�
 
 - [项目约束](../AGENTS.md)
 - [文档索引](README.md)
-- [视觉样板](../.tmp/docs/visual-language-demo.html)
-- [视觉与交互计划](../.tmp/docs/visual-system-and-ui-refactor-plan.md)
+- [界面设计](ui-design.md)、[样式系统标准化计划](style-system-plan.md)
 - 当前 `git diff` 和测试文件
 
 不要依赖“上一轮 agent 说过什么”。以仓库实际内容为准。

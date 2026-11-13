@@ -12,7 +12,12 @@ export const phraseGroupsSchema = z
 export type PhraseGroup = z.infer<typeof phraseGroupsSchema>[number];
 export const defaultPhraseGroups = phraseGroupsSchema.parse(presets);
 const gamePhrases: Record<GameKind, string[]> = {
-  expedition: ["这轮先保住队友。", "我来破甲，你来收尾。", "先别结束，我还有一张牌。", "营地见，大家一起到塔顶！"],
+  expedition: [
+    "这轮先保住队友。",
+    "我来破甲，你来收尾。",
+    "先别结束，我还有一张牌。",
+    "营地见，大家一起到塔顶！",
+  ],
   dominion: [
     "这套牌开始运转了。",
     "再买一张就收手。",
@@ -44,6 +49,7 @@ const gamePhrases: Record<GameKind, string[]> = {
   tq: ["这一步跳得漂亮！", "快到营地啦！", "借你的棋子搭个桥。"],
   ddz: ["不要。", "这把我来当地主！", "队友加油！", "你的牌也太整齐了吧。"],
   dy: ["这锅快满啦！", "小心毒药！", "这锅汤有点危险。"],
+  pool: ["这杆我先稳住。", "好球！", "高低杆走位。", "差一点就进了。"],
 };
 export function phraseGroups(
   kind: GameKind,

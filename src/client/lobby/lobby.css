@@ -359,6 +359,11 @@
   gap: 12px;
   margin-bottom: 18px;
 }
+.club-setup-heading .expedition-journal-trigger {
+  margin-inline-start: auto;
+  flex: none;
+  white-space: nowrap;
+}
 .club-setup-heading .club-cover {
   width: 62px;
   height: 70px;

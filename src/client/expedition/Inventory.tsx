@@ -36,7 +36,7 @@ export function InventoryContent({ hero, name }: { hero: Hero; name: string }) {
           {name} · {hero.name}
         </strong>
         <span>
-          {hero.hp}/{hero.maxHp} ♥ · {hero.gold} 金币
+          {hero.hp}/{hero.maxHp} ♥︎ · {hero.gold} 金币
         </span>
       </header>
       <div role="tablist" aria-label="行装分类" className="exp-inventory-tabs">

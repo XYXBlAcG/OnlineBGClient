@@ -389,3 +389,14 @@
     font-size: 11px;
   }
 }
+
+.mobile-shell .original-game[data-game="pool"] {
+  min-height: 0;
+}
+.mobile-shell .original-game[data-game="pool"] .pool-table {
+  flex: 1;
+  min-height: 0;
+}
+.mobile-shell .original-game[data-game="pool"] .pool-controls {
+  gap: 4px;
+}

@@ -51,27 +51,32 @@
 }
 .achievement-toast[data-rarity="common"],
 .achievement-card[data-rarity="common"],
-.achievement-detail[data-rarity="common"] {
+.achievement-detail[data-rarity="common"],
+.chat-achievement[data-rarity="common"] {
   --rarity-color: #758195;
 }
 .achievement-toast[data-rarity="rare"],
 .achievement-card[data-rarity="rare"],
-.achievement-detail[data-rarity="rare"] {
+.achievement-detail[data-rarity="rare"],
+.chat-achievement[data-rarity="rare"] {
   --rarity-color: #3f87c7;
 }
 .achievement-toast[data-rarity="epic"],
 .achievement-card[data-rarity="epic"],
-.achievement-detail[data-rarity="epic"] {
+.achievement-detail[data-rarity="epic"],
+.chat-achievement[data-rarity="epic"] {
   --rarity-color: #279a84;
 }
 .achievement-toast[data-rarity="legendary"],
 .achievement-card[data-rarity="legendary"],
-.achievement-detail[data-rarity="legendary"] {
+.achievement-detail[data-rarity="legendary"],
+.chat-achievement[data-rarity="legendary"] {
   --rarity-color: #bf861c;
 }
 .achievement-toast[data-rarity="mythic"],
 .achievement-card[data-rarity="mythic"],
-.achievement-detail[data-rarity="mythic"] {
+.achievement-detail[data-rarity="mythic"],
+.chat-achievement[data-rarity="mythic"] {
   --rarity-color: #8957c6;
 }
 .settings-body.achievement-settings-body {
@@ -427,4 +432,40 @@
   .achievement-gallery .achievement-card:hover {
     transform: none;
   }
+}
+
+.chat-achievement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--rarity-color) 10%, var(--surface));
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--rarity-color) 32%, var(--line));
+}
+.chat-achievement-symbol {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--rarity-color) 16%, var(--field));
+  font-size: 21px;
+}
+.chat-achievement-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.chat-achievement-copy small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.chat-achievement-copy strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }

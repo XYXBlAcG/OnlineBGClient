@@ -1,8 +1,22 @@
-export type NativeShellMessage = {
-  type: "ready";
-  kind: string;
-  room: string;
-};
+export type NativeShellMessage =
+  | {
+      type: "ready";
+      kind: string;
+      room: string;
+    }
+  | {
+      type: "notice";
+      message: string;
+    }
+  | {
+      type: "confirm";
+      id: string;
+      message: string;
+      label: string;
+    }
+  | {
+      type: "closed";
+    };
 
 interface NativeShellWebkit {
   messageHandlers?: {

@@ -17,7 +17,25 @@ describe("native shell bridge", () => {
     const { postNativeShell } =
       await import("../src/client/native-shell-bridge");
     postNativeShell({ type: "ready", kind: "uno", room: "LOCAL" });
-    expect(messages).toEqual([{ type: "ready", kind: "uno", room: "LOCAL" }]);
+    postNativeShell({ type: "notice", message: "无法加入房间" });
+    postNativeShell({
+      type: "confirm",
+      id: "confirm-1",
+      message: "放弃远征？",
+      label: "放弃",
+    });
+    expect(messages).toEqual([
+      { type: "ready", kind: "uno", room: "LOCAL" },
+      { type: "notice", message: "无法加入房间" },
+      {
+        type: "confirm",
+        id: "confirm-1",
+        message: "放弃远征？",
+        label: "放弃",
+      },
+    ]);
+    postNativeShell({ type: "closed" });
+    expect(messages.at(-1)).toEqual({ type: "closed" });
   });
 
   it("普通浏览器没有 nativeShell handler 时保持静默", async () => {

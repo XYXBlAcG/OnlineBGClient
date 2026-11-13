@@ -1,0 +1,18 @@
+export const poolBallColors: Record<number, string> = {
+  0: "#f7f5ee",
+  1: "#f2c94c",
+  2: "#2f80ed",
+  3: "#eb5757",
+  4: "#6fcf97",
+  5: "#bb6bd9",
+  6: "#f2994a",
+  7: "#8b5a3c",
+  8: "#1f2937",
+  9: "#f2c94c",
+  10: "#2f80ed",
+  11: "#eb5757",
+  12: "#6fcf97",
+  13: "#bb6bd9",
+  14: "#f2994a",
+  15: "#8b5a3c",
+};

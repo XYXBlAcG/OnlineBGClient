@@ -1,3 +1,5 @@
+import type { ReplayMarker, ReplayBookmark } from "../domain/replay-timeline";
+import { adjacentReplay, replayPlaylist } from "./replay-playlist";
 import { ReplayParty } from "./party/ReplayParty";
 import { PartyLedger } from "../domain/party";
 import { ReplayBanners } from "./social/ReplayBanners";
@@ -10,8 +12,8 @@ import type { GameState } from "../domain/types";
 import { protocolVersion, type Snapshot } from "../domain/protocol";
 import { ClientStore, subscribeRecords } from "./storage";
 import { exportJson, importJson } from "./files";
-import { OriginalGame } from "./OriginalGame";
-import { Panel, Select, Slider } from "./ui/Controls";
+import { OriginalGameLazy } from "./OriginalGameLazy";
+import { Panel, Select, Slider, Switch } from "./ui/Controls";
 
 export function Records({
   open,
@@ -34,10 +36,37 @@ export function Records({
     },
   );
   const [store] = useState(() => new ClientStore());
+  const [timeline, setTimeline] = useState<ReplayMarker[]>([]);
+  const [bookmarks, setBookmarks] = useState<ReplayBookmark[]>([]);
+  const [bookmarkLabel, setBookmarkLabel] = useState("");
   const [records, setRecords] = useState<ReplayRecord[]>([]);
   const [selected, setSelected] = useState<ReplayRecord | null>(null);
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+  const bookmarkBusy = useRef(false);
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false);
+  const [savingBookmark, setSavingBookmark] = useState(false);
+  async function persistBookmarks(items: ReplayBookmark[]) {
+    const record = selectedRef.current;
+    if (!record || bookmarkBusy.current) return;
+    bookmarkBusy.current = true;
+    setSavingBookmark(true);
+    try {
+      await store.saveBookmarks(record, items);
+      if (selectedRef.current === record) {
+        setBookmarks(items);
+        setBookmarkLabel("");
+      }
+    } catch (error) {
+      onError(String(error));
+    } finally {
+      bookmarkBusy.current = false;
+      setSavingBookmark(false);
+    }
+  }
   const [frame, setFrame] = useState<{
     index: number;
+    actor: number;
     state: GameState;
   } | null>(null);
   const replayWorker = useRef<Worker | null>(null);
@@ -62,6 +91,9 @@ export function Records({
   const gameStep = selected ? Math.min(step, selected.events.length) : 0;
   wantedFrame.current = gameStep;
   const [actor, setActor] = useState(0);
+  const [continuous, setContinuous] = useState(false);
+  const wantedActor = useRef(actor);
+  wantedActor.current = actor;
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -89,24 +121,35 @@ export function Records({
   }, [open, detached, store]);
   useEffect(() => {
     if (!selected) return;
+    setTimeline([]);
+    setBookmarks([]);
+    setBookmarkLabel("");
+    let notesActive = true;
+    setLoadingBookmarks(true);
+    void store
+      .bookmarks(selected)
+      .then((items) => {
+        if (notesActive) setBookmarks(items);
+      })
+      .catch((error) => onError(String(error)))
+      .finally(() => {
+        if (notesActive) setLoadingBookmarks(false);
+      });
     frameCache.current.clear();
     requestedFrames.current.clear();
     setFrame(null);
     setLoading(true);
+    let active = true;
     const worker = new Worker(new URL("./replay-worker.ts", import.meta.url), {
       type: "module",
     });
-    const request = (indexes: number[]) => {
-      const missing = indexes.filter((index) => {
-        const key = `${actor}:${index}`;
-        if (frameCache.current.has(key) || requestedFrames.current.has(key))
-          return false;
-        requestedFrames.current.add(key);
-        return true;
-      });
-      if (missing.length) worker.postMessage({ actor, indexes: missing });
-    };
     worker.onmessage = (event) => {
+      if (!active) return;
+      if (event.data.timelineError) onError(event.data.timelineError);
+      if (event.data.timeline) {
+        setTimeline(event.data.timeline);
+        return;
+      }
       if (event.data.error) {
         setLoading(false);
         onError(event.data.error);
@@ -114,23 +157,32 @@ export function Records({
       }
       for (const item of event.data.frames ?? []) {
         frameCache.current.set(`${event.data.actor}:${item.index}`, item.state);
+        if (frameCache.current.size > 160)
+          frameCache.current.delete(frameCache.current.keys().next().value!);
         requestedFrames.current.delete(`${event.data.actor}:${item.index}`);
       }
       const wanted = frameCache.current.get(
         `${event.data.actor}:${wantedFrame.current}`,
       );
-      if (wanted) {
-        setFrame({ index: wantedFrame.current, state: wanted });
+      if (wanted && event.data.actor === wantedActor.current) {
+        setFrame({
+          index: wantedFrame.current,
+          state: wanted,
+          actor: event.data.actor,
+        });
         setLoading(false);
       }
     };
     worker.onerror = (event) => {
+      if (!active) return;
       setLoading(false);
       onError(event.message);
     };
     replayWorker.current = worker;
     worker.postMessage({ record: selected, actor, indexes: [0] });
     return () => {
+      active = false;
+      notesActive = false;
       worker.terminate();
       replayWorker.current = null;
     };
@@ -141,7 +193,7 @@ export function Records({
     const key = `${actor}:${gameStep}`;
     const cached = frameCache.current.get(key);
     if (cached) {
-      setFrame({ index: gameStep, state: cached });
+      setFrame({ index: gameStep, state: cached, actor });
       setLoading(false);
     } else {
       setLoading(true);
@@ -178,7 +230,7 @@ export function Records({
         carry -= advance;
         setStep((value) => {
           const next = Math.min(value + advance, frameCount - 1);
-          if (next >= frameCount - 1) setPlaying(false);
+
           return next;
         });
       }
@@ -187,9 +239,23 @@ export function Records({
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
   }, [selected, loading, playing, frameCount, speed]);
+  const selectRecord = (record: ReplayRecord, autoplay = false) => {
+    setFrame(null);
+    setStep(0);
+    setLoading(true);
+    setSelected(record);
+    setActor((value) => Math.min(value, record.names.length - 1));
+    setPlaying(autoplay);
+  };
+  useEffect(() => {
+    if (!selected || loading || !playing || step < frameCount - 1) return;
+    const next = continuous ? adjacentReplay(records, selected, 1) : undefined;
+    if (next) selectRecord(next, true);
+    else setPlaying(false);
+  }, [step, frameCount, loading, playing, continuous, selected, records]);
   if (detached) return null;
   const preview: Snapshot | null =
-    selected && frame && frame.index === gameStep
+    selected && frame && frame.actor === actor
       ? {
           serverTime: Date.now(),
           apiVersion: protocolVersion,
@@ -197,7 +263,7 @@ export function Records({
           room: selected.room,
           kind: selected.config.kind,
           config: selected.config,
-          version: step,
+          version: frame.index,
           actor,
           canManage: false,
           playing: false,
@@ -267,12 +333,7 @@ export function Records({
           >
             <button
               onClick={() => {
-                setFrame(null);
-                setStep(0);
-                setActor(0);
-                setPlaying(false);
-                setLoading(true);
-                setSelected(record);
+                selectRecord(record);
                 if (!auxiliaryView) onOpenChange(false);
               }}
             >
@@ -328,6 +389,57 @@ export function Records({
           )}
           <div className="replay-controls">
             <button
+              disabled={!adjacentReplay(records, selected, -1)}
+              onClick={() =>
+                selectRecord(adjacentReplay(records, selected, -1)!)
+              }
+            >
+              上一局
+            </button>
+            <span>
+              第{" "}
+              {replayPlaylist(records, selected).findIndex(
+                (record) => record.startedAt === selected.startedAt,
+              ) + 1}{" "}
+              / {replayPlaylist(records, selected).length} 局
+            </span>
+            <button
+              disabled={!adjacentReplay(records, selected, 1)}
+              onClick={() =>
+                selectRecord(adjacentReplay(records, selected, 1)!)
+              }
+            >
+              下一局
+            </button>
+            <Switch
+              checked={continuous}
+              onCheckedChange={setContinuous}
+              label={
+                selected.config.kind === "expedition"
+                  ? "连续播放本次远征"
+                  : "连续播放本房间"
+              }
+            />
+            <button
+              disabled={step === 0}
+              onClick={() => {
+                setPlaying(false);
+                setStep((value) => Math.max(0, value - 1));
+              }}
+            >
+              上一步
+            </button>
+            <button
+              disabled={step >= frameCount - 1}
+              onClick={() => {
+                setPlaying(false);
+                setStep((value) => Math.min(frameCount - 1, value + 1));
+              }}
+            >
+              下一步
+            </button>
+
+            <button
               disabled={loading || frameCount < 2}
               onClick={() => {
                 if (!playing && step === frameCount - 1) setStep(0);
@@ -354,7 +466,11 @@ export function Records({
             <Select
               aria-label="回放视角"
               value={actor}
-              onValueChange={(value) => setActor(Number(value))}
+              onValueChange={(value) => {
+                setFrame(null);
+                setLoading(true);
+                setActor(Number(value));
+              }}
             >
               {selected.names.map((name, index) => (
                 <option key={index} value={index}>
@@ -377,6 +493,71 @@ export function Records({
               }}
             />
           </div>
+          <details>
+            <summary>时间轴与书签</summary>
+            {timeline.length > 0 && (
+              <Select
+                aria-label="章节与节点"
+                value="choose"
+                onValueChange={(value) => {
+                  setPlaying(false);
+                  setStep(timeline[Number(value)].frame);
+                }}
+              >
+                <option value="choose">跳转到章节或节点</option>
+                {timeline.map((item, i) => (
+                  <option key={i} value={i}>
+                    {item.label}（{item.frame}）
+                  </option>
+                ))}
+              </Select>
+            )}
+            <input
+              aria-label="书签说明"
+              maxLength={80}
+              value={bookmarkLabel}
+              onChange={(event) => setBookmarkLabel(event.target.value)}
+            />
+            <button
+              disabled={savingBookmark || loadingBookmarks}
+              onClick={() =>
+                void persistBookmarks(
+                  [
+                    ...bookmarks.filter((item) => item.frame !== gameStep),
+                    {
+                      frame: gameStep,
+                      label: bookmarkLabel.trim() || `第 ${gameStep} 步`,
+                    },
+                  ].sort((a, b) => a.frame - b.frame),
+                )
+              }
+            >
+              保存当前书签
+            </button>
+            {bookmarks.map((item) => (
+              <div key={item.frame}>
+                <button
+                  onClick={() => {
+                    setPlaying(false);
+                    setStep(item.frame);
+                  }}
+                >
+                  {item.label}
+                </button>
+                <button
+                  aria-label={`删除书签${item.label}`}
+                  disabled={savingBookmark || loadingBookmarks}
+                  onClick={() =>
+                    void persistBookmarks(
+                      bookmarks.filter((mark) => mark.frame !== item.frame),
+                    )
+                  }
+                >
+                  删除
+                </button>
+              </div>
+            ))}
+          </details>
           {!loading && <ReplayBanners record={selected} step={step} />}
           {preview && (
             <ReplayParty
@@ -387,19 +568,16 @@ export function Records({
               preview={preview}
             />
           )}
-          {loading ? (
-            <p>正在重放…</p>
-          ) : (
-            preview && (
-              <OriginalGame
-                replay
-                animationActive={playing}
-                animationRate={speed}
-                snapshot={preview}
-                act={() => {}}
-                end={() => {}}
-              />
-            )
+          {loading && <p role="status">正在定位回放…</p>}
+          {preview && (
+            <OriginalGameLazy
+              replay
+              animationActive={playing}
+              animationRate={speed}
+              snapshot={preview}
+              act={() => {}}
+              end={() => {}}
+            />
           )}
         </Panel>
       )}

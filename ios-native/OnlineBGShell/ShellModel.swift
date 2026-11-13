@@ -6,10 +6,13 @@ struct ShellGame: Identifiable, Hashable {
     let name: String
     let subtitle: String
     let players: String
+    let minPlayers: Int
+    let maxPlayers: Int
     let category: String
     let symbol: String
     let colors: [Color]
     let ai: Bool
+    var mobile: Bool = true
 
     static func == (lhs: ShellGame, rhs: ShellGame) -> Bool {
         lhs.id == rhs.id
@@ -26,19 +29,44 @@ enum ShellTab: Hashable {
     case settings
 }
 
+struct ShellTableSetup: Hashable {
+    var humans: Int
+    var ai: Int
+    var difficulty: String
+    var aiDelayMs: Int = 1500
+    var expeditionDifficulty: String = "standard"
+
+    static func standard(for game: ShellGame) -> ShellTableSetup {
+        ShellTableSetup(
+            humans: game.ai ? 1 : game.minPlayers,
+            ai: game.ai ? max(0, game.minPlayers - 1) : 0,
+            difficulty: "normal"
+        )
+    }
+}
+
+struct ShellTableRoute: Hashable, Identifiable {
+    let game: ShellGame
+    let setup: ShellTableSetup
+
+    var id: String {
+        "\(game.id)-\(setup.humans)-\(setup.ai)-\(setup.difficulty)"
+    }
+}
+
 let shellGames: [ShellGame] = [
-    ShellGame(id: "expedition", name: "秘塔远征", subtitle: "协作构筑 · 探索裂隙遗迹", players: "1–4 人", category: "合作", symbol: "building.columns.fill", colors: [Color(hex: 0xdcd8ec), Color(hex: 0xb9b1db)], ai: true),
-    ShellGame(id: "dominion", name: "领土 · Dominion", subtitle: "构筑牌库与王国竞逐", players: "2–4 人", category: "策略", symbol: "crown.fill", colors: [Color(hex: 0xeee2c0), Color(hex: 0xd8c28d)], ai: true),
-    ShellGame(id: "graphwar", name: "Graphwar", subtitle: "用函数画出炮火的轨迹", players: "2–12 人", category: "策略", symbol: "function", colors: [Color(hex: 0xd3e5e8), Color(hex: 0xa9ced4)], ai: true),
-    ShellGame(id: "scmj", name: "麻将", subtitle: "四川血战与透明立直", players: "4 人", category: "纸牌", symbol: "square.grid.3x3.fill", colors: [Color(hex: 0xd9e8d8), Color(hex: 0xb6d2b4)], ai: true),
-    ShellGame(id: "ccbs", name: "璀璨宝石", subtitle: "宝石、发展与贵族", players: "2–4 人", category: "策略", symbol: "diamond.fill", colors: [Color(hex: 0xd8e7e7), Color(hex: 0xafd2d2)], ai: true),
-    ShellGame(id: "ktd", name: "卡坦岛", subtitle: "资源、贸易与建设", players: "2–8 人", category: "策略", symbol: "hexagon.fill", colors: [Color(hex: 0xe8dbb9), Color(hex: 0xd0bd8c)], ai: true),
-    ShellGame(id: "dy", name: "毒药", subtitle: "药锅与颜色博弈", players: "2–7 人", category: "纸牌", symbol: "flask.fill", colors: [Color(hex: 0xe4d9e8), Color(hex: 0xcbb7d2)], ai: true),
-    ShellGame(id: "ddz", name: "斗地主", subtitle: "地主与农民", players: "3 人", category: "纸牌", symbol: "suit.spade.fill", colors: [Color(hex: 0xecd6d2), Color(hex: 0xd9b3ad)], ai: false),
-    ShellGame(id: "uno", name: "UNO", subtitle: "颜色与数字", players: "2–8 人", category: "纸牌", symbol: "rectangle.on.rectangle.angled", colors: [Color(hex: 0xf4d4bf), Color(hex: 0xe8b99a)], ai: true),
-    ShellGame(id: "sgs", name: "三国杀", subtitle: "身份与武将", players: "2–8 人", category: "纸牌", symbol: "shield.lefthalf.filled", colors: [Color(hex: 0xe9d8cc), Color(hex: 0xd7b8a5)], ai: true),
-    ShellGame(id: "fxq", name: "飞行棋", subtitle: "掷骰与飞跃", players: "2–4 人", category: "棋盘", symbol: "airplane", colors: [Color(hex: 0xd6e2ed), Color(hex: 0xb4c9dd)], ai: true),
-    ShellGame(id: "tq", name: "跳棋", subtitle: "连续跳跃与营地竞速", players: "2–6 人", category: "棋盘", symbol: "circle.grid.cross.fill", colors: [Color(hex: 0xdce3cb), Color(hex: 0xc1cda5)], ai: true),
+    ShellGame(id: "expedition", name: "秘塔远征", subtitle: "协作构筑 · 探索裂隙遗迹", players: "1–4 人", minPlayers: 1, maxPlayers: 4, category: "合作", symbol: "building.columns.fill", colors: [Color(hex: 0xdcd8ec), Color(hex: 0xb9b1db)], ai: true),
+    ShellGame(id: "dominion", name: "领土 · Dominion", subtitle: "构筑牌库与王国竞逐", players: "2–4 人", minPlayers: 2, maxPlayers: 4, category: "策略", symbol: "crown.fill", colors: [Color(hex: 0xeee2c0), Color(hex: 0xd8c28d)], ai: true),
+    ShellGame(id: "graphwar", name: "Graphwar", subtitle: "用函数画出炮火的轨迹", players: "2–12 人", minPlayers: 2, maxPlayers: 12, category: "策略", symbol: "function", colors: [Color(hex: 0xd3e5e8), Color(hex: 0xa9ced4)], ai: true, mobile: false),
+    ShellGame(id: "scmj", name: "麻将", subtitle: "四川血战与透明立直", players: "4 人", minPlayers: 4, maxPlayers: 4, category: "纸牌", symbol: "square.grid.3x3.fill", colors: [Color(hex: 0xd9e8d8), Color(hex: 0xb6d2b4)], ai: true),
+    ShellGame(id: "ccbs", name: "璀璨宝石", subtitle: "宝石、发展与贵族", players: "2–4 人", minPlayers: 2, maxPlayers: 4, category: "策略", symbol: "diamond.fill", colors: [Color(hex: 0xd8e7e7), Color(hex: 0xafd2d2)], ai: true),
+    ShellGame(id: "ktd", name: "卡坦岛", subtitle: "资源、贸易与建设", players: "2–8 人", minPlayers: 2, maxPlayers: 8, category: "策略", symbol: "hexagon.fill", colors: [Color(hex: 0xe8dbb9), Color(hex: 0xd0bd8c)], ai: true),
+    ShellGame(id: "dy", name: "毒药", subtitle: "药锅与颜色博弈", players: "2–7 人", minPlayers: 2, maxPlayers: 7, category: "纸牌", symbol: "flask.fill", colors: [Color(hex: 0xe4d9e8), Color(hex: 0xcbb7d2)], ai: true),
+    ShellGame(id: "ddz", name: "斗地主", subtitle: "地主与农民", players: "3 人", minPlayers: 3, maxPlayers: 3, category: "纸牌", symbol: "suit.spade.fill", colors: [Color(hex: 0xecd6d2), Color(hex: 0xd9b3ad)], ai: false),
+    ShellGame(id: "uno", name: "UNO", subtitle: "颜色与数字", players: "2–8 人", minPlayers: 2, maxPlayers: 8, category: "纸牌", symbol: "rectangle.on.rectangle.angled", colors: [Color(hex: 0xf4d4bf), Color(hex: 0xe8b99a)], ai: true),
+    ShellGame(id: "sgs", name: "三国杀", subtitle: "身份与武将", players: "2–8 人", minPlayers: 2, maxPlayers: 8, category: "纸牌", symbol: "shield.lefthalf.filled", colors: [Color(hex: 0xe9d8cc), Color(hex: 0xd7b8a5)], ai: true),
+    ShellGame(id: "fxq", name: "飞行棋", subtitle: "掷骰与飞跃", players: "2–4 人", minPlayers: 2, maxPlayers: 4, category: "棋盘", symbol: "airplane", colors: [Color(hex: 0xd6e2ed), Color(hex: 0xb4c9dd)], ai: true),
+    ShellGame(id: "tq", name: "跳棋", subtitle: "连续跳跃与营地竞速", players: "2–6 人", minPlayers: 2, maxPlayers: 6, category: "棋盘", symbol: "circle.grid.cross.fill", colors: [Color(hex: 0xdce3cb), Color(hex: 0xc1cda5)], ai: true),
 ]
 
 enum ShellTheme {
@@ -75,5 +103,26 @@ extension UIColor {
             blue: CGFloat(hex & 0xff) / 255,
             alpha: 1
         )
+    }
+}
+
+enum ShellWebBase {
+    static var url: URL {
+        if let value = ProcessInfo.processInfo.environment["SHELL_BASE_URL"],
+           !value.isEmpty,
+           let url = URL(string: value) {
+            return url
+        }
+        if LocalWebServer.shared.hasBundledWeb {
+            return LocalWebServer.shared.baseURL
+        }
+        if let value = Bundle.main.object(
+            forInfoDictionaryKey: "ShellBaseURL"
+        ) as? String,
+           !value.isEmpty,
+           let url = URL(string: value) {
+            return url
+        }
+        return LocalWebServer.shared.baseURL
     }
 }

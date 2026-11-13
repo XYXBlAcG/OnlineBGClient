@@ -1,0 +1,28 @@
+.task {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface);
+  border-radius: var(--radius-panel);
+}
+.task ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  color: var(--muted);
+}
+.task [aria-current="step"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+.task p {
+  margin: 0;
+}
+.table[data-lesson="hand"] :global(.scmj-hand button:not(:disabled)),
+.table[data-lesson="lack"] :global([data-guide-target="scmj.lack-option"]),
+.table[data-lesson="response"] :global(.scmj-actions) {
+  outline: var(--space-1) solid var(--accent);
+  outline-offset: var(--space-1);
+}

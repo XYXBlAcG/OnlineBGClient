@@ -4,7 +4,7 @@
 
 ## 当前实现入口
 
-[冒险推进](../src/domain/expedition/adventure.ts)负责首领奖励、驿站、共同进阶与下一张地图；[首领机制](../src/domain/expedition/boss-mechanics.ts)声明十一位首领的公开议程与阶段文案，[战斗执行器](../src/domain/expedition/rules.ts)统一执行部件、阶段、孢子、根须、热量、节拍、镜面、月潮、小兵孵化和死亡继承；[旧数据迁移](../src/domain/expedition/migration.ts)保留原远征终点；[回放](../src/domain/replay.ts)按记录的远征规则配置重建。历史首章报告与当前多层报告分别保存在[首章基准](../artifacts/expedition-chapter/benchmark.json)、[多层基准](../artifacts/expedition-depth/benchmark.json)，不能混用样本。
+[冒险推进](../src/domain/expedition/adventure.ts)负责首领奖励、驿站、共同进阶与下一张地图；[首领机制](../src/domain/expedition/boss-mechanics.ts)声明十一位首领的公开议程与阶段文案，[战斗执行器](../src/domain/expedition/rules.ts)统一执行部件、阶段、孢子、根须、热量、节拍、镜面、月潮、小兵孵化和死亡继承；[旧数据迁移](../src/domain/expedition/migration.ts)保留原远征终点；[回放](../src/domain/replay.ts)按记录的远征规则配置重建。历史首章报告与当前多层报告分别由 `npm run benchmark:expedition-chapter` 与 [多层基准脚本](../scripts/benchmark-expedition-depth.mjs) 生成，不能混用样本。
 
 ## 调研依据
 

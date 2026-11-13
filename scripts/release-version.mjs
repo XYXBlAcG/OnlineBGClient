@@ -1,20 +1,17 @@
-import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  readReleaseSources,
+  releaseVersionMismatches,
+} from "./lib/release-sources.mjs";
+
 export async function releaseVersion() {
-  const pkg = JSON.parse(await readFile("package.json", "utf8")),
-    config = JSON.parse(await readFile("src-tauri/tauri.conf.json", "utf8")),
-    cargo = await readFile("src-tauri/Cargo.toml", "utf8"),
-    history = JSON.parse(await readFile("src/client/releases.json", "utf8"));
-  if (
-    !/^\d+\.\d+\.\d+$/.test(pkg.version) ||
-    config.version !== "../package.json" ||
-    cargo.match(/^version\s*=\s*"([^"]+)"/m)?.[1] !== pkg.version
-  )
-    throw Error("版本源不一致");
-  if (!history.some((release) => release.version === pkg.version))
-    throw Error("当前版本缺少更新记录");
-  return pkg.version;
+  const sources = await readReleaseSources();
+  if (!/^\d+\.\d+\.\d+$/.test(sources.version))
+    throw Error("package.json 版本格式不正确");
+  const mismatches = releaseVersionMismatches(sources);
+  if (mismatches.length) throw Error(mismatches[0].message);
+  return sources.version;
 }
 if (
   process.argv[1] &&

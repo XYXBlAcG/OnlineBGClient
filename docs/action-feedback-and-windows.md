@@ -1,6 +1,6 @@
 # 操作反馈与原生窗口审核
 
-[macOS 审核应用](../artifacts/review/experience-polish/OnlineBGClient.app)，退出旧客户端后直接打开。构建、定向检查与包内服务证据见 [校验记录](../artifacts/review/experience-polish/verification.json)。
+macOS 审核应用与打开方式见 [审核与提交](review-and-submit.md#本地-macos-审核应用)；构建与定向检查入口见 [验证](verification.md)。
 
 ## 实现索引
 

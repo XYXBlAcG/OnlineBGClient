@@ -61,11 +61,6 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-.exp-table-status > div {
-  display: grid;
-  gap: 3px;
-  margin-right: auto;
-}
 .exp-contract-badge {
   color: var(--exp-red);
   font-size: 12px;
@@ -1749,6 +1744,19 @@
   font-size: 11px;
   font-weight: 700;
 }
+.exp-legacy-badge {
+  align-self: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--exp-green) 12%, transparent);
+  color: var(--exp-green);
+  font-size: 11px;
+  font-weight: 700;
+}
+.exp-table-status .exp-legacy-badge {
+  background: color-mix(in srgb, var(--exp-green) 12%, var(--field));
+  color: var(--exp-green);
+}
 .exp-side-badge {
   align-self: center;
   padding: 3px 8px;
@@ -1879,5 +1887,657 @@
   }
   .exp-route-options {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .expedition-table {
+    padding: 6px;
+    gap: 6px;
+  }
+  .exp-table-status {
+    gap: 4px;
+  }
+  .exp-table-status > div {
+    flex: 1 1 100%;
+    margin-right: 0;
+  }
+  .exp-table-status small {
+    font-size: 9px;
+  }
+  .exp-table-status strong {
+    font-size: 14px;
+  }
+  .exp-table-status .exp-resource {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  .exp-table-status button {
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .exp-side-badge,
+  .exp-contract-badge,
+  .exp-shop-raid-countdown {
+    display: none;
+  }
+  .expedition-table:has(.exp-battle) {
+    height: 100%;
+    min-height: 0;
+    grid-template-areas:
+      "status"
+      "companions"
+      "intents"
+      "scene"
+      "controls"
+      "hand";
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  }
+  .exp-companions {
+    grid-area: companions;
+  }
+  .exp-companions .exp-companion-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .exp-companions .exp-companion-list article {
+    flex: 0 0 220px;
+    padding: 8px;
+  }
+  .exp-companions article p {
+    display: none;
+  }
+  .exp-companions > footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .exp-companions > footer small {
+    display: none;
+  }
+  .exp-ally-bar,
+  .exp-preview {
+    display: none;
+  }
+  .exp-intent-strip {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 2px 0;
+  }
+  .exp-intent-strip details {
+    flex: 0 0 148px;
+    padding: 5px 7px;
+  }
+  .exp-intent-strip summary {
+    font-size: 10px;
+  }
+  .exp-intent-strip summary span {
+    display: none;
+  }
+  .exp-battle {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .expedition-table:has(.exp-battle) .exp-vote-result {
+    display: none;
+  }
+  .expedition-table .exp-scene {
+    min-height: 0;
+    padding: 4px 6px 8px;
+    gap: 8px;
+  }
+  .expedition-table .exp-unit {
+    width: min(116px, 31%);
+  }
+  .expedition-table .exp-target {
+    height: clamp(44px, 8dvh, 68px);
+  }
+  .expedition-table .exp-unit-name strong {
+    font-size: 10px;
+  }
+  .expedition-table .exp-statuses {
+    margin-top: 2px;
+    gap: 2px;
+  }
+  .expedition-table .exp-statuses span {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+  .exp-table-controls {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 4px 0;
+    overflow-x: auto;
+  }
+  .exp-table-controls > span {
+    display: none;
+  }
+  .exp-table-controls button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .exp-table-hand {
+    gap: 8px;
+    padding: 4px 2px 6px;
+  }
+  .exp-table-hand .exp-card {
+    flex-basis: 112px;
+    height: 150px;
+  }
+  .exp-inline-profession {
+    position: fixed;
+    inset: auto 8px 8px;
+    z-index: 30;
+    max-height: 50dvh;
+    overflow: auto;
+    padding: 12px;
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: 0 -12px 40px #0003;
+  }
+  .exp-professions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .exp-professions > button {
+    position: relative;
+    min-height: 108px;
+    padding: 10px 36px 10px 10px;
+    border-radius: 14px;
+  }
+  .exp-professions > button > span {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    float: none;
+    font-size: 28px;
+    line-height: 1;
+  }
+  .exp-professions > button h2 {
+    font-size: 15px;
+    margin: 0 0 2px;
+  }
+  .exp-professions > button p {
+    font-size: 11px;
+    margin: 0 0 4px;
+  }
+  .exp-professions > button small {
+    font-size: 10px;
+  }
+  .exp-professions .exp-profession-browser {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .expedition-table {
+    --exp-card-height: 108px;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+  .expedition-table:has(.exp-battle) {
+    height: 100%;
+    min-height: 0;
+    grid-template-areas:
+      "status status"
+      "companions companions"
+      "intents scene"
+      "controls scene"
+      "hand hand";
+    grid-template-columns: minmax(210px, 28%) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  }
+  .exp-companions {
+    grid-area: companions;
+  }
+  .exp-companions .exp-companion-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+    overflow-x: auto;
+  }
+  .exp-companions .exp-companion-list article {
+    flex: 0 0 200px;
+    padding: 5px 7px;
+  }
+  .exp-companions article p {
+    display: none;
+  }
+  .exp-companions > footer small {
+    display: none;
+  }
+  .exp-intent-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .exp-intent-strip details {
+    flex: 0 0 auto;
+  }
+  .exp-table-controls {
+    flex-wrap: wrap;
+    align-content: start;
+    gap: 4px;
+    overflow-y: auto;
+  }
+  .exp-table-controls > span {
+    display: none;
+  }
+  .exp-table-controls button {
+    min-height: 34px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .exp-battle {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .expedition-table .exp-scene {
+    padding: 2px 6px;
+    gap: 8px;
+  }
+  .exp-ally-bar,
+  .exp-preview {
+    display: none;
+  }
+  .exp-table-hand {
+    padding: 2px 0 4px;
+  }
+  .exp-table-hand .exp-card {
+    flex-basis: 84px;
+    height: 100px;
+  }
+}
+
+.exp-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.exp-table-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exp-table-status .exp-phase-block {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  margin-right: auto;
+}
+
+.exp-status-badges,
+.exp-status-resources,
+.exp-status-actions,
+.exp-status-triggers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.exp-status-badges,
+.exp-status-resources {
+  flex-wrap: wrap;
+}
+
+.exp-status-triggers {
+  display: none;
+  margin-left: auto;
+}
+
+.exp-table-status .exp-phase-block small {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.exp-table-status .exp-phase-block strong {
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.exp-table-status .exp-resource,
+.exp-table-status .exp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.exp-resource-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.exp-table-status .exp-resource strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.exp-resource-max {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.exp-table-status .exp-resource.exp-health strong {
+  color: var(--exp-red);
+}
+
+.exp-table-status .exp-resource.exp-gold strong {
+  color: var(--exp-gold, #a9771b);
+}
+
+.exp-table-status .exp-resource.exp-energy strong {
+  color: var(--exp-blue);
+}
+
+.exp-table-status .exp-resource.exp-compass strong {
+  color: var(--exp-ink);
+}
+
+.exp-table-status .exp-ascension-badge {
+  background: color-mix(in srgb, var(--exp-red) 10%, var(--field));
+  color: var(--exp-red);
+}
+
+.exp-table-status .exp-legacy-badge {
+  background: color-mix(in srgb, var(--exp-green) 12%, var(--field));
+  color: var(--exp-green);
+}
+.exp-side-badge {
+  background: color-mix(in srgb, var(--exp-blue) 12%, var(--field));
+  color: var(--exp-blue);
+}
+
+.exp-table-status .exp-contract-badge,
+.exp-table-status .exp-shop-raid-countdown {
+  background: color-mix(in srgb, var(--exp-red) 10%, var(--field));
+  color: var(--exp-red);
+}
+
+.exp-table-status button,
+.expedition-table .exp-drawer-trigger,
+.exp-drawer .exp-drawer-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.exp-route[data-compact="true"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.exp-route-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.exp-route-toolbar-choice {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exp-route-drawer {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.exp-route-drawer .exp-route-options {
+  padding: 0;
+}
+
+.exp-drawer .exp-route-options > button,
+.exp-drawer .exp-route-drawer > .primary {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--canvas);
+  font-size: 14px;
+}
+
+.exp-drawer .exp-route-options > button[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.exp-drawer .exp-route-drawer > .exp-drawer-trigger {
+  min-height: 44px;
+}
+
+.exp-route[data-wide="true"] .exp-route-canvas {
+  min-height: 100%;
+}
+
+.exp-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  background: rgb(7 16 24 / 28%);
+}
+
+.exp-drawer {
+  display: flex;
+  width: 100%;
+  max-height: 72dvh;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -12px 40px #0003;
+}
+
+.exp-drawer > header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exp-drawer > header strong {
+  font-size: 16px;
+}
+
+.exp-drawer-body {
+  display: grid;
+  min-height: 0;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.exp-drawer-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.exp-drawer-actions button {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--canvas);
+  text-align: left;
+  font-size: 14px;
+}
+
+.exp-drawer-players {
+  display: grid;
+  gap: 8px;
+}
+
+.exp-drawer-players > button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--canvas);
+  text-align: left;
+}
+
+.exp-drawer-players > button > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.exp-drawer-players small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (min-width: 701px) {
+  .exp-drawer-backdrop {
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+  .exp-drawer {
+    width: min(420px, 46vw);
+    height: 100%;
+    max-height: none;
+    border-radius: 18px 0 0 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .exp-table-status {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 8px;
+  }
+  .exp-table-status .exp-phase-block {
+    grid-column: 1;
+    grid-row: 1;
+    margin-right: 0;
+  }
+  .exp-status-badges {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+  }
+  .exp-status-resources {
+    grid-column: 1;
+    grid-row: 2;
+    flex-wrap: wrap;
+  }
+  .exp-status-actions {
+    display: none;
+  }
+  .exp-status-triggers {
+    display: flex;
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+  }
+  .exp-status-triggers .exp-drawer-trigger {
+    min-width: 64px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .exp-drawer-backdrop {
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+  .exp-drawer {
+    width: min(380px, 46vw);
+    height: 100%;
+    max-height: none;
+    border-radius: 18px 0 0 18px;
+    padding-top: 8px;
+  }
+  .exp-table-status {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow: hidden;
+  }
+  .exp-table-status .exp-phase-block {
+    order: 0;
+    flex: 0 1 auto;
+    margin-right: 0;
+  }
+  .exp-status-badges,
+  .exp-status-resources {
+    order: 0;
+    width: auto;
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    overflow: visible;
+  }
+  .exp-status-actions {
+    display: none;
+  }
+  .exp-status-triggers {
+    display: flex;
+    order: 0;
+    margin-left: auto;
+  }
+  .exp-status-badges .exp-side-badge,
+  .exp-status-badges .exp-contract-badge,
+  .exp-status-badges .exp-shop-raid-countdown {
+    display: none;
+  }
+  .exp-table-status .exp-phase-block small {
+    display: none;
+  }
+  .exp-table-status .exp-phase-block strong {
+    font-size: 13px;
+  }
+  .exp-table-status .exp-resource,
+  .exp-table-status .exp-badge {
+    min-height: 28px;
+    padding: 0 8px;
+  }
+  .exp-table-status button {
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+  .exp-route-toolbar .exp-drawer-trigger {
+    min-height: 30px;
   }
 }

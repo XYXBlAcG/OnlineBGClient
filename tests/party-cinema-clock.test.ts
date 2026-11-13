@@ -19,6 +19,7 @@ import { PartyCinema } from "../src/client/party/cinema";
 import type { PartyEvent } from "../src/domain/party";
 it("矢量场景只由播放时钟驱动，暂停、倒放定位和十秒末尾保持同一场景", () => {
   const root = {
+    dataset: {},
     setAttribute: vi.fn(),
     classList: { add: vi.fn() },
     innerHTML: "",

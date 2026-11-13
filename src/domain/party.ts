@@ -9,7 +9,6 @@ import {
   partyItems,
   partyPrice,
   discountedPartyPrice,
-  partyTier,
   slashLines,
   type PartyItemId,
 } from "./party/catalogue";

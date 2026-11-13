@@ -12,6 +12,7 @@ import { SgsRules } from "./sgs";
 import { DdzRules } from "./ddz";
 import { CheckersRules } from "./checkers";
 import { FlightRules } from "./flight";
+import { PoolRules } from "./pool/rules";
 
 export function unoPlugin(runtime: UpstreamRuntime) {
   return new GameAdapter("uno", new UnoRules(runtime));
@@ -96,4 +97,13 @@ export function dominionPlugin(runtime: UpstreamRuntime) {
   return new GameAdapter("dominion", new DominionRules(() => runtime.random()));
 }
 
-export function expeditionPlugin(runtime:UpstreamRuntime){return new GameAdapter("expedition",new ExpeditionAdventure(()=>runtime.random()));}
+export function expeditionPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter(
+    "expedition",
+    new ExpeditionAdventure(() => runtime.random()),
+  );
+}
+
+export function poolPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter("pool", new PoolRules(() => runtime.random()));
+}

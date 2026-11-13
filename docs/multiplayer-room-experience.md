@@ -33,6 +33,5 @@
 
 ## 审核产物
 
-- [macOS Apple Silicon 审核包](../artifacts/review/OnlineBGClient-Sidebar-Close-macOS-arm64.zip)
-- 解压后打开 `OnlineBGClient.app`；也可使用 `artifacts/review/sidebar-close/OnlineBGClient.app`。
+- 本机审核应用与打开方式见 [审核与提交](review-and-submit.md#本地-macos-审核应用)。
 - 本轮界面外观、Windows 与真实手机交互等待用户验收。构建与非界面测试不代表这些验收已完成。

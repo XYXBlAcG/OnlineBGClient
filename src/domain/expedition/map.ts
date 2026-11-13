@@ -550,9 +550,7 @@ export function shopRaidEncounter(
             intent.kind === "attack"
               ? Math.max(
                   1,
-                  Math.round(
-                    intent.amount * shopRaidBalance.attackMultiplier,
-                  ),
+                  Math.round(intent.amount * shopRaidBalance.attackMultiplier),
                 )
               : intent.amount,
           target:
@@ -587,22 +585,22 @@ export const nodeNames: Record<NodeKind, string> = {
   empty: "空商店",
 };
 export const nodeIcons: Record<NodeKind, string> = {
-  battle: "⚔",
-  elite: "♜",
-  boss: "♛",
+  battle: "⚔︎",
+  elite: "♜︎",
+  boss: "♛︎",
   event: "?",
-  shop: "◈",
-  camp: "♨",
-  treasure: "✦",
-  oracle: "◎",
-  contract: "✶",
-  forge: "⚒",
-  secret: "◈",
-  pawnshop: "▱",
-  gamble: "⚄",
-  library: "▥",
-  hunt: "⌖",
-  rift: "◈",
-  recruit: "☺",
+  shop: "◈︎",
+  camp: "♨︎",
+  treasure: "✦︎",
+  oracle: "◎︎",
+  contract: "✶︎",
+  forge: "⚒︎",
+  secret: "◈︎",
+  pawnshop: "▱︎",
+  gamble: "⚄︎",
+  library: "▥︎",
+  hunt: "⌖︎",
+  rift: "◈︎",
+  recruit: "☺︎",
   empty: "·",
 };

@@ -1,7 +1,8 @@
 import { playCue } from "../notifications";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Snapshot } from "../../domain/protocol";
+import type { ChatMessage } from "../../domain/social";
 import { partyAppearance, type PartyEvent } from "../../domain/party";
 import type { Preferences } from "../preferences";
 import { useMotion } from "../use-motion";
@@ -13,16 +14,19 @@ import {
   PartyPlayback,
 } from "./timeline";
 import type { PartyScene } from "./scene";
+import { achievementStageEvents } from "./achievement-stage";
 import "./party.css";
 export type PartyPresentation = Pick<
   Snapshot,
   "actor" | "partyActor" | "seats" | "spectators" | "serverTime"
 > & {
+  chat?: ChatMessage[];
   party: Pick<Snapshot["party"], "events" | "minigames"> &
     Partial<Pick<Snapshot["party"], "enabled">>;
 };
 interface RuntimeProps {
   snapshot: PartyPresentation;
+  stageEvents?: PartyEvent[];
   preview?: boolean;
   preferences: Preferences;
   mobile: boolean;
@@ -46,13 +50,33 @@ function VoiceStage({ preferences }: { preferences: Preferences }) {
   return null;
 }
 export function PartyRuntime(props: RuntimeProps) {
+  const achievementEvents = useMemo(
+    () =>
+      props.preferences.achievementStage
+        ? achievementStageEvents(
+            props.snapshot.chat ?? [],
+            props.snapshot.serverTime,
+          )
+        : [],
+    [
+      props.snapshot.chat,
+      props.snapshot.serverTime,
+      props.preferences.achievementStage,
+    ],
+  );
+  const stageEvents = useMemo(
+    () => [...(props.stageEvents ?? []), ...achievementEvents],
+    [props.stageEvents, achievementEvents],
+  );
   return props.snapshot.party.enabled ||
-    props.snapshot.party.events.length > 0 ? (
-    <ActivePartyRuntime {...props} />
+    props.snapshot.party.events.length > 0 ||
+    stageEvents.length > 0 ? (
+    <ActivePartyRuntime {...props} stageEvents={stageEvents} />
   ) : null;
 }
 function ActivePartyRuntime({
   snapshot,
+  stageEvents = [],
   preferences,
   mobile,
   playback,
@@ -83,10 +107,18 @@ function ActivePartyRuntime({
   }, [sourceTime, rate, clock]);
   foldedState.current = folded;
   const motion = useMotion(true, false),
-    reduced = !motion || preferences.party.quality === "text" || failed;
+    reduced =
+      (!preview && !motion) || preferences.party.quality === "text" || failed;
+  const partyEvents = useMemo(
+    () =>
+      [...snapshot.party.events, ...stageEvents].sort(
+        (left, right) => left.time - right.time,
+      ),
+    [snapshot.party.events, stageEvents],
+  );
   const now = clock.now(),
     projection = presentation.project(
-      snapshot.party.events,
+      partyEvents,
       clock.now(),
       reduced || ready,
       !!playback,
@@ -284,7 +316,7 @@ function Caption({
           ? event.caption.split("！")[0]
           : item.name}
       </strong>
-      {(fromName || targetName) && (
+      {event.plugin?.id !== "achievement" && (fromName || targetName) && (
         <small className="party-participants">
           {fromName} → {targetName}
         </small>

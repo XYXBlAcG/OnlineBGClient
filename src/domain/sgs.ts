@@ -24,7 +24,11 @@ export class SgsRules {
   finished(state: SgsState): boolean {
     return state.view.stage === this.constants.PR.FINISH;
   }
-  actionWindow(state:SgsState,action:Action):string|undefined {return action.type === "sgs-hero" && [1,2].includes(state.view.stage) ? `heroes:${state.view.stage}` : undefined;}
+  actionWindow(state: SgsState, action: Action): string | undefined {
+    return action.type === "sgs-hero" && [1, 2].includes(state.view.stage)
+      ? `heroes:${state.view.stage}`
+      : undefined;
+  }
   actors(state: SgsState): number[] {
     if (this.finished(state)) return [];
     const view = state.view;
@@ -50,7 +54,7 @@ export class SgsRules {
       !this.finished(state)
     );
   }
-  resolve(state: SgsState, seed: string): SgsState {
+  resolve(state: SgsState, _seed: string): SgsState {
     if (!this.needsResolution(state) || state.kind !== "sgs")
       throw new Error("没有待结算的无懈可击阶段");
     const next = structuredClone(state.view);

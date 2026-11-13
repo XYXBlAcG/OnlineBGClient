@@ -5,7 +5,7 @@ export const diceCards = {
     name: "掷骰准备",
     cost: 0,
     target: "self",
-    icon: "⚄",
+    icon: "⚄︎",
     effects: [
       { kind: "dice", amount: 2 },
       { kind: "draw", amount: 1 },
@@ -16,7 +16,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 1,
     target: "enemy",
-    icon: "➶",
+    icon: "➶︎",
     effects: [{ kind: "damage", amount: 7, scale: "dice" }],
   },
   dice_guard: {
@@ -24,14 +24,14 @@ export const diceCards = {
     cost: 1,
     diceCost: 1,
     target: "self",
-    icon: "⛨",
+    icon: "⛨︎",
     effects: [{ kind: "block", amount: 7, scale: "dice" }],
   },
   dice_reroll: {
     name: "重掷未来",
     cost: 0,
     target: "self",
-    icon: "↻",
+    icon: "↻︎",
     effects: [
       { kind: "dice", amount: 3 },
       { kind: "draw", amount: 1 },
@@ -43,7 +43,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 2,
     target: "enemy",
-    icon: "Ⅱ",
+    icon: "Ⅱ︎",
     effects: [{ kind: "damage", amount: 12 }],
   },
   dice_odd: {
@@ -51,7 +51,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 1,
     target: "enemy",
-    icon: "Ⅲ",
+    icon: "Ⅲ︎",
     effects: [{ kind: "damage", amount: 5, hits: 2 }],
   },
   dice_sixes: {
@@ -59,7 +59,7 @@ export const diceCards = {
     cost: 2,
     diceCost: 3,
     target: "enemy",
-    icon: "⚅",
+    icon: "⚅︎",
     effects: [{ kind: "damage", amount: 18 }],
   },
   dice_safe: {
@@ -67,7 +67,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 1,
     target: "self",
-    icon: "▣",
+    icon: "▣︎",
     effects: [{ kind: "block", amount: 12 }],
   },
   dice_gamble: {
@@ -75,14 +75,14 @@ export const diceCards = {
     cost: 0,
     diceCost: 2,
     target: "self",
-    icon: "ϟ",
+    icon: "ϟ︎",
     effects: [{ kind: "energy", amount: 2 }],
   },
   dice_loaded: {
     name: "灌铅骰",
     cost: 1,
     target: "self",
-    icon: "▰",
+    icon: "▰︎",
     effects: [
       { kind: "dice", amount: 2 },
       { kind: "strength", amount: 1 },
@@ -93,7 +93,7 @@ export const diceCards = {
     cost: 2,
     diceCost: 2,
     target: "all-enemies",
-    icon: "⋰",
+    icon: "⋰︎",
     effects: [{ kind: "damage", amount: 4 }],
   },
   dice_screen: {
@@ -101,7 +101,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 1,
     target: "self",
-    icon: "⌗",
+    icon: "⌗︎",
     effects: [
       { kind: "block", amount: 6 },
       { kind: "dice", amount: 1 },
@@ -112,7 +112,7 @@ export const diceCards = {
     cost: 2,
     diceCost: 2,
     target: "enemy",
-    icon: "✦",
+    icon: "✦︎",
     effects: [{ kind: "damage", amount: 10, scale: "dice" }],
   },
   dice_shell: {
@@ -120,7 +120,7 @@ export const diceCards = {
     cost: 2,
     diceCost: 2,
     target: "self",
-    icon: "⬡",
+    icon: "⬡︎",
     effects: [{ kind: "block", amount: 8, scale: "dice" }],
   },
   dice_mirror: {
@@ -128,7 +128,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 2,
     target: "self",
-    icon: "◎",
+    icon: "◎︎",
     effects: [{ kind: "echo", amount: 10 }],
   },
   dice_focus: {
@@ -136,14 +136,14 @@ export const diceCards = {
     cost: 1,
     diceCost: 1,
     target: "self",
-    icon: "◇",
+    icon: "◇︎",
     effects: [{ kind: "focus", amount: 1 }],
   },
   dice_cleanse: {
     name: "洗点",
     cost: 1,
     target: "ally",
-    icon: "◌",
+    icon: "◌︎",
     effects: [
       { kind: "cleanse", amount: 1 },
       { kind: "dice", amount: 2 },
@@ -154,7 +154,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 1,
     target: "enemy",
-    icon: "☣",
+    icon: "☣︎",
     effects: [{ kind: "poison", amount: 3 }],
   },
   dice_volley: {
@@ -162,7 +162,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 2,
     target: "enemy",
-    icon: "⋮",
+    icon: "⋮︎",
     effects: [{ kind: "damage", amount: 4, hits: 2 }],
   },
   dice_jackpot: {
@@ -170,7 +170,7 @@ export const diceCards = {
     cost: 3,
     diceCost: 4,
     target: "enemy",
-    icon: "★",
+    icon: "★︎",
     effects: [{ kind: "damage", amount: 24 }],
     exhaust: true,
   },
@@ -178,7 +178,7 @@ export const diceCards = {
     name: "骰库",
     cost: 0,
     target: "self",
-    icon: "▤",
+    icon: "▤︎",
     effects: [{ kind: "dice", amount: 4 }],
     exhaust: true,
   },
@@ -187,7 +187,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 1,
     target: "self",
-    icon: "♩",
+    icon: "♩︎",
     effects: [{ kind: "draw", amount: 2 }],
   },
   dice_last: {
@@ -195,7 +195,7 @@ export const diceCards = {
     cost: 2,
     diceCost: 3,
     target: "enemy",
-    icon: "◆",
+    icon: "◆︎",
     effects: [{ kind: "damage", amount: 16 }],
   },
   dice_ward: {
@@ -203,7 +203,7 @@ export const diceCards = {
     cost: 1,
     diceCost: 2,
     target: "ally",
-    icon: "✦",
+    icon: "✦︎",
     effects: [
       { kind: "block", amount: 10 },
       { kind: "cleanse", amount: 1 },

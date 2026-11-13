@@ -22,7 +22,7 @@ export function UnoTeamPanel({
           <span>
             {snapshot.seats
               .filter((_, index) => view.teams?.[index] === team)
-              .map((seat, index) => {
+              .map((seat) => {
                 const actor = snapshot.seats.findIndex(
                   (item) => item.id === seat.id,
                 );

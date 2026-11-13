@@ -23,6 +23,10 @@ export const themeSchema = z.object({
       focus: color,
       disabled: color,
       "disabled-text": color,
+      info: color,
+      success: color,
+      warning: color,
+      danger: color,
     })
     .strict(),
 });
@@ -62,6 +66,10 @@ export const lightTheme: ThemePlugin = {
     focus: "#aa6c19",
     disabled: "#e4e7ec",
     "disabled-text": "#687282",
+    info: "#3f87c7",
+    success: "#2e9c72",
+    warning: "#bf861c",
+    danger: "#b64040",
   },
 };
 export const darkTheme: ThemePlugin = {
@@ -83,6 +91,10 @@ export const darkTheme: ThemePlugin = {
     focus: "#efbf69",
     disabled: "#30343d",
     "disabled-text": "#a0a9b8",
+    info: "#7db8ea",
+    success: "#7ac9a7",
+    warning: "#efbf69",
+    danger: "#ffaaa1",
   },
 };
 export const themes = new ThemeRegistry();

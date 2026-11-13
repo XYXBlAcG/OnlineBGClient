@@ -1,0 +1,270 @@
+.pool-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 8px;
+}
+.pool-heading,
+.pool-hud,
+.pool-controls,
+.pool-spin,
+.pool-elevation,
+.pool-pockets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pool-heading {
+  justify-content: space-between;
+  padding: 0 4px;
+}
+.pool-heading > div {
+  display: grid;
+  gap: 2px;
+}
+.pool-heading small,
+.pool-message {
+  color: var(--muted);
+  font-size: 12px;
+}
+.pool-canvas {
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  touch-action: none;
+  border-radius: var(--radius-panel);
+  cursor: crosshair;
+}
+.pool-canvas:active {
+  cursor: grabbing;
+}
+.pool-canvas[data-cursor="default"] {
+  cursor: crosshair;
+}
+.pool-canvas[data-cursor="grab"] {
+  cursor: grab;
+}
+.pool-canvas[data-cursor="grabbing"] {
+  cursor: grabbing;
+}
+.pool-canvas[data-cursor="not-allowed"] {
+  cursor: not-allowed;
+}
+.pool-canvas-3d {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--canvas);
+  touch-action: none;
+  cursor: crosshair;
+}
+.pool-canvas-3d canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: inherit;
+}
+.pool-table-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--canvas);
+  color: var(--muted);
+}
+.pool-hud {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.pool-pockets {
+  flex-wrap: wrap;
+  min-height: 26px;
+}
+.pool-pockets span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--field);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+}
+.pool-controls {
+  flex: 1;
+  justify-content: end;
+  flex-wrap: wrap;
+}
+.pool-power {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 132px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+}
+.pool-power-track {
+  width: 64px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--field);
+}
+.pool-power-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+.pool-hint {
+  color: var(--muted);
+  font-size: 11px;
+}
+.pool-spin,
+.pool-elevation {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pool-spin button,
+.pool-elevation button {
+  min-height: 30px;
+  padding: 4px 9px;
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .pool-controls {
+    justify-content: stretch;
+  }
+  .pool-hint {
+    flex-basis: 100%;
+  }
+}
+
+.app-shell.pool-preview {
+  box-sizing: border-box;
+  height: 100dvh;
+  min-height: 0;
+  padding: var(--space-4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--canvas);
+}
+.pool-preview > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.pool-preview h1 {
+  margin: 0;
+}
+.pool-preview p {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+}
+.pool-preview-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.pool-preview-notice {
+  margin: 0;
+  color: var(--action-danger);
+  font-size: var(--font-size-aux);
+}
+.pool-preview-result {
+  margin: 0;
+  color: var(--accent);
+  font-size: var(--font-size-group);
+  font-weight: 700;
+}
+.pool-preview .pool-table {
+  flex: 1;
+  min-height: 0;
+}
+.pool-clock {
+  margin-right: 8px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.pool-preview-3d {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--canvas);
+}
+.pool-preview-3d canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pool-3d-status {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--canvas) 88%, transparent);
+}
+.pool-3d-status strong {
+  color: var(--text);
+  font-size: var(--font-size-group);
+}
+.pool-3d-status-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pool-3d-debug {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 3;
+  max-width: min(380px, calc(100% - var(--space-4)));
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--canvas) 86%, transparent);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-aux);
+  pointer-events: none;
+}
+.pool-3d-debug dl {
+  margin: 0;
+}
+.pool-3d-debug dl div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: var(--space-2);
+}
+.pool-3d-debug dt {
+  color: var(--muted);
+}
+.pool-3d-debug dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

@@ -4,7 +4,7 @@ export const prayerCards = {
     name: "微光打击",
     cost: 1,
     target: "enemy",
-    icon: "☀",
+    icon: "☀︎",
     effects: [
       {
         kind: "damage",
@@ -21,7 +21,7 @@ export const prayerCards = {
     name: "祈愿护符",
     cost: 1,
     target: "ally",
-    icon: "✚",
+    icon: "✚︎",
     effects: [
       {
         kind: "block",
@@ -37,7 +37,7 @@ export const prayerCards = {
     name: "治愈祷文",
     cost: 1,
     target: "ally",
-    icon: "✚",
+    icon: "✚︎",
     effects: [
       {
         kind: "heal",
@@ -49,7 +49,7 @@ export const prayerCards = {
     name: "晨祷",
     cost: 1,
     target: "self",
-    icon: "✦",
+    icon: "✦︎",
     effects: [
       {
         kind: "blessing",
@@ -68,7 +68,7 @@ export const prayerCards = {
     name: "惩戒",
     cost: 2,
     target: "enemy",
-    icon: "ϟ",
+    icon: "ϟ︎",
     effects: [
       {
         kind: "damage",
@@ -84,7 +84,7 @@ export const prayerCards = {
     name: "恩泽",
     cost: 2,
     target: "self",
-    icon: "✧",
+    icon: "✧︎",
     effects: [
       {
         kind: "heal",
@@ -102,7 +102,7 @@ export const prayerCards = {
     name: "净祷",
     cost: 0,
     target: "ally",
-    icon: "✚",
+    icon: "✚︎",
     effects: [
       {
         kind: "cleanse",
@@ -119,7 +119,7 @@ export const prayerCards = {
     name: "庇护誓言",
     cost: 2,
     target: "self",
-    icon: "⬡",
+    icon: "⬡︎",
     effects: [
       {
         kind: "block",
@@ -138,7 +138,7 @@ export const prayerCards = {
     name: "荆棘圣印",
     cost: 1,
     target: "ally",
-    icon: "♠",
+    icon: "♠︎",
     effects: [
       {
         kind: "thorns",
@@ -155,7 +155,7 @@ export const prayerCards = {
     name: "复苏之歌",
     cost: 2,
     target: "self",
-    icon: "♬",
+    icon: "♬︎",
     effects: [
       {
         kind: "regen",
@@ -169,7 +169,7 @@ export const prayerCards = {
     name: "长明烛",
     cost: 1,
     target: "self",
-    icon: "☀",
+    icon: "☀︎",
     effects: [
       {
         kind: "blessing",
@@ -186,7 +186,7 @@ export const prayerCards = {
     name: "圣光裁决",
     cost: 3,
     target: "enemy",
-    icon: "⚖",
+    icon: "⚖︎",
     effects: [
       {
         kind: "damage",
@@ -204,7 +204,7 @@ export const prayerCards = {
     name: "避难所",
     cost: 1,
     target: "ally",
-    icon: "⌂",
+    icon: "⌂︎",
     effects: [
       {
         kind: "block",
@@ -216,7 +216,7 @@ export const prayerCards = {
     name: "反照护盾",
     cost: 2,
     target: "ally",
-    icon: "◈",
+    icon: "◈︎",
     effects: [
       {
         kind: "block",
@@ -232,7 +232,7 @@ export const prayerCards = {
     name: "鼓舞圣歌",
     cost: 1,
     target: "self",
-    icon: "♬",
+    icon: "♬︎",
     effects: [
       {
         kind: "strength",
@@ -251,7 +251,7 @@ export const prayerCards = {
     name: "及时援手",
     cost: 0,
     target: "ally",
-    icon: "✚",
+    icon: "✚︎",
     effects: [
       {
         kind: "heal",
@@ -268,7 +268,7 @@ export const prayerCards = {
     name: "破晓光束",
     cost: 1,
     target: "enemy",
-    icon: "↗",
+    icon: "↗︎",
     effects: [
       {
         kind: "damage",
@@ -285,7 +285,7 @@ export const prayerCards = {
     name: "汇聚信念",
     cost: 1,
     target: "self",
-    icon: "✦",
+    icon: "✦︎",
     effects: [
       {
         kind: "draw",
@@ -301,7 +301,7 @@ export const prayerCards = {
     name: "暮色谴责",
     cost: 1,
     target: "all-enemies",
-    icon: "☾",
+    icon: "☾︎",
     effects: [
       {
         kind: "damage",
@@ -317,7 +317,7 @@ export const prayerCards = {
     name: "生命连锁",
     cost: 2,
     target: "self",
-    icon: "⌁",
+    icon: "⌁︎",
     effects: [
       {
         kind: "heal",
@@ -336,7 +336,7 @@ export const prayerCards = {
     name: "圣域",
     cost: 3,
     target: "self",
-    icon: "⬡",
+    icon: "⬡︎",
     effects: [
       {
         kind: "blessing",
@@ -355,7 +355,7 @@ export const prayerCards = {
     name: "坚定信仰",
     cost: 1,
     target: "self",
-    icon: "♜",
+    icon: "♜︎",
     effects: [
       {
         kind: "block",
@@ -372,7 +372,7 @@ export const prayerCards = {
     name: "圣辉脉冲",
     cost: 2,
     target: "all-enemies",
-    icon: "✺",
+    icon: "✺︎",
     effects: [
       {
         kind: "damage",
@@ -389,7 +389,7 @@ export const prayerCards = {
     name: "温柔庇护",
     cost: 1,
     target: "ally",
-    icon: "☂",
+    icon: "☂︎",
     effects: [
       {
         kind: "blessing",

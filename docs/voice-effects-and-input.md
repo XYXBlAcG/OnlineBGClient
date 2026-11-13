@@ -27,7 +27,7 @@
 | 输出能力和默认路由 | [输出策略](../src/client/voice/audio-output.ts)、[媒体](../src/client/voice/livekit.ts)、[会话](../src/client/voice/session.ts) |
 | 组合键格式、注册快照和录入 | [命令](../src/client/commands.ts)、[编辑器](../src/client/KeyBindingEditor.tsx) |
 | 社交动画与发送颜色 | [动画策略](../src/client/motion-policy.ts)、[横幅](../src/client/social/BannerLayer.tsx)、[解析与校验](../src/domain/banner.ts) |
-| 处理器实际样本检查 | [离线脚本](../scripts/verify-voice-effects.mjs)、[结果](../artifacts/voice-effects/dsp.json) |
+| 处理器实际样本检查 | [离线脚本](../scripts/verify-voice-effects.mjs) |
 | 生命周期与设备边界 | [处理链检查](../tests/voice-effect-lifecycle.test.ts)、[入口检查](../tests/voice-ui-repair.test.tsx)、[会话](../tests/voice-session.test.ts) |
 
 离线脚本执行安装包中的真实 AudioWorklet 算法，不启动浏览器或麦克风。测量包括频率、有效信号时长、处理器内部起始缓冲与离线执行耗时，不代表声卡延迟、设备 CPU 占用、跨网络延迟或真人音质。当前跨网连麦仍需用户验收。

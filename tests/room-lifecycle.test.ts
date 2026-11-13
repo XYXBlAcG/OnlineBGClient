@@ -3,20 +3,69 @@ import { Room } from '../src/domain/room';
 import { Gateway } from '../src/domain/gateway';
 
 describe('human readiness and room persistence', () => {
-  it('requires connected ready humans and releases a seat only outside a running round', () => {
+  it('requires connected ready humans and hands a leaving seat to normal AI', () => {
     const room = new Room('table', { kind: 'uno', humans: 2, ai: [], team: false, training: false });
     const alice = room.claim('Alice');
     const bob = room.claim('Bob');
     expect(() => room.start(alice)).toThrow('准备');
     room.setReady(alice, true); room.setReady(bob, true); room.start(alice);
-    expect(() => room.leave(bob)).toThrow('结束');
-    room.disconnect(bob);
-    expect(room.snapshot(alice).paused).toBe(true);
-    expect(() => room.act(alice, 'blocked', room.version, { type: 'uno-start' })).toThrow('掉线');
-    room.claim('Bob', bob);
-    room.end(alice); room.leave(bob);
+    room.leave(bob);
+    const snapshot = room.snapshot(alice);
+    expect(snapshot.seats[1].difficulty).toBe('normal');
+    expect(snapshot.seats[1].online).toBe(true);
+    expect(snapshot.paused).toBe(false);
+    room.end(alice);
+  });
+
+  it('releases a seat outside a running round', () => {
+    const room = new Room('waiting', { kind: 'uno', humans: 2, ai: [], team: false, training: false });
+    const alice = room.claim('Alice');
+    const bob = room.claim('Bob');
+    room.setReady(alice, true); room.setReady(bob, true);
+    room.leave(bob);
     expect(room.claim('Carol')).not.toBe(bob);
   });
+
+  it("syncs host AI tempo to every snapshot and keeps guests read-only", () => {
+    const room = new Room("pace", {
+      kind: "uno",
+      humans: 2,
+      ai: [{ difficulty: "easy", name: "" }],
+      team: false,
+      training: false,
+    });
+    const alice = room.claim("Alice");
+    const bob = room.claim("Bob");
+    const version = room.version;
+    expect(room.snapshot(bob).config.aiDelayMs).toBe(1500);
+    room.setTempo(alice, 3000);
+    expect(room.version).toBe(version + 1);
+    expect(room.snapshot(bob).config.aiDelayMs).toBe(3000);
+    expect(() => room.setTempo(bob, 500)).toThrow("房主");
+  });
+
+  it("joins and leaves a spectator without taking a seat", () => {
+    const room = new Room("watch", {
+      kind: "uno",
+      humans: 2,
+      ai: [],
+      team: false,
+      training: false,
+    });
+    const alice = room.claim("Alice");
+    room.claim("Bob");
+    const watcher = room.watch("观战者");
+    expect(room.identity(watcher)).toBeLessThan(-1);
+    expect(room.snapshot(watcher).spectators).toHaveLength(1);
+    expect(
+      room
+        .snapshot(watcher)
+        .seats.every((seat) => seat.name !== "观战者"),
+    ).toBe(true);
+    room.leave(watcher);
+    expect(room.snapshot(alice).spectators).toHaveLength(0);
+  });
+
   it('restores authoritative state and deduplication without leaking live hidden history', () => {
     const room = new Room('saved', { kind: 'uno', humans: 1, ai: [{ difficulty: 'easy', name: '' }], team: false, training: false });
     const token = room.claim('Alice'); room.setReady(token, true); room.start(token);

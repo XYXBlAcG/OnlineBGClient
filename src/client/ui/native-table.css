@@ -5,6 +5,50 @@
   padding: 0;
 }
 
+.native-room-shell {
+  height: var(--mobile-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.native-room-shell > .app-toolbar {
+  display: none;
+}
+
+.native-room-shell .room-layout {
+  height: 100%;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.native-room-shell .game-area {
+  flex: 1;
+  min-height: 0;
+}
+
+.native-room-shell .game-stage {
+  flex: 1;
+  min-height: 0;
+}
+
+.native-room-shell .original-game {
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+.native-room-shell .original-game > [data-table-region="hand"],
+.native-room-shell .table-hand-region,
+.native-room-shell .sgs-hand-panel,
+.native-room-shell .scmj-hand,
+.native-room-shell .dominion-hand,
+.native-room-shell .exp-table-hand {
+  margin-top: auto;
+}
+
 .native-table-shell > .app-toolbar {
   display: none;
 }
@@ -32,8 +76,21 @@
 }
 
 .native-table-shell .game-status-row,
-.native-table-shell .room-navigation,
-.native-table-shell .room-sidebar {
+.native-table-shell .room-navigation {
+  display: none;
+}
+
+.native-table-shell .focus-controls > button:not([data-room-action="end"]) {
+  display: none;
+}
+
+.native-room-shell
+  .focus-controls
+  > button:not([data-room-action="end"]):not(.immersive-chat) {
+  display: none;
+}
+
+:root[data-native-shell="true"] .error-notification {
   display: none;
 }
 
@@ -57,5 +114,89 @@
 .native-table-loading {
   height: 100%;
   min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   background: var(--canvas);
+  color: var(--muted);
+  font-size: 14px;
+}
+.native-table-loading.original-game-loading {
+  min-height: 240px;
+}
+
+.native-table-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: native-table-spin 900ms linear infinite;
+}
+
+@keyframes native-table-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+:root[data-mobile-orientation="landscape"] .native-room-shell .room-toolbar {
+  min-height: 40px;
+}
+
+:root[data-mobile-orientation="landscape"]
+  .native-room-shell
+  .room-heading
+  small {
+  display: none;
+}
+
+.native-runs-shell {
+  height: var(--mobile-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.native-runs-shell > .app-toolbar {
+  display: none;
+}
+
+.native-runs-shell .native-runs-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px max(14px, env(safe-area-inset-right))
+    calc(24px + env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.native-runs-page .native-runs-lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.native-runs-page .run-shelf {
+  gap: 12px;
+}
+
+.native-runs-page .run-shelf .record-row {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+
+.native-runs-page .run-shelf .record-row > button:first-child {
+  min-height: 56px;
+}
+
+.native-runs-page .run-shelf .record-row > button:last-child {
+  min-height: 44px;
+  padding: 8px 12px;
 }

@@ -4,7 +4,7 @@ export const starCards = {
     name: "星芒",
     cost: 1,
     target: "enemy",
-    icon: "✦",
+    icon: "✦︎",
     effects: [
       {
         kind: "damage",
@@ -21,7 +21,7 @@ export const starCards = {
     name: "星纱",
     cost: 1,
     target: "self",
-    icon: "☽",
+    icon: "☽︎",
     effects: [
       {
         kind: "block",
@@ -37,7 +37,7 @@ export const starCards = {
     name: "延迟回响",
     cost: 1,
     target: "self",
-    icon: "◷",
+    icon: "◷︎",
     effects: [
       {
         kind: "echo",
@@ -49,7 +49,7 @@ export const starCards = {
     name: "观星图谱",
     cost: 1,
     target: "self",
-    icon: "✧",
+    icon: "✧︎",
     effects: [
       {
         kind: "draw",
@@ -66,7 +66,7 @@ export const starCards = {
     name: "彗尾",
     cost: 2,
     target: "enemy",
-    icon: "☄",
+    icon: "☄︎",
     effects: [
       {
         kind: "damage",
@@ -83,7 +83,7 @@ export const starCards = {
     name: "月蚀",
     cost: 1,
     target: "enemy",
-    icon: "☾",
+    icon: "☾︎",
     effects: [
       {
         kind: "weak",
@@ -100,7 +100,7 @@ export const starCards = {
     name: "环星屏障",
     cost: 2,
     target: "self",
-    icon: "◎",
+    icon: "◎︎",
     effects: [
       {
         kind: "block",
@@ -117,7 +117,7 @@ export const starCards = {
     name: "余晖储能",
     cost: 0,
     target: "self",
-    icon: "✦",
+    icon: "✦︎",
     effects: [
       {
         kind: "focus",
@@ -130,7 +130,7 @@ export const starCards = {
     name: "巡天",
     cost: 0,
     target: "self",
-    icon: "✧",
+    icon: "✧︎",
     effects: [
       {
         kind: "draw",
@@ -143,7 +143,7 @@ export const starCards = {
     name: "流星雨",
     cost: 2,
     target: "all-enemies",
-    icon: "✺",
+    icon: "✺︎",
     effects: [
       {
         kind: "damage",
@@ -160,7 +160,7 @@ export const starCards = {
     name: "聚星透镜",
     cost: 1,
     target: "self",
-    icon: "◈",
+    icon: "◈︎",
     effects: [
       {
         kind: "strength",
@@ -177,7 +177,7 @@ export const starCards = {
     name: "静月",
     cost: 1,
     target: "ally",
-    icon: "☽",
+    icon: "☽︎",
     effects: [
       {
         kind: "block",
@@ -193,7 +193,7 @@ export const starCards = {
     name: "双星",
     cost: 1,
     target: "enemy",
-    icon: "✧",
+    icon: "✧︎",
     effects: [
       {
         kind: "damage",
@@ -209,7 +209,7 @@ export const starCards = {
     name: "陨落预兆",
     cost: 2,
     target: "enemy",
-    icon: "◷",
+    icon: "◷︎",
     effects: [
       {
         kind: "vulnerable",
@@ -226,7 +226,7 @@ export const starCards = {
     name: "黎明潮",
     cost: 2,
     target: "self",
-    icon: "☀",
+    icon: "☀︎",
     effects: [
       {
         kind: "heal",
@@ -243,7 +243,7 @@ export const starCards = {
     name: "超新星",
     cost: 3,
     target: "all-enemies",
-    icon: "✹",
+    icon: "✹︎",
     effects: [
       {
         kind: "damage",
@@ -261,7 +261,7 @@ export const starCards = {
     name: "星核脉动",
     cost: 1,
     target: "self",
-    icon: "✦",
+    icon: "✦︎",
     effects: [
       {
         kind: "block",
@@ -281,7 +281,7 @@ export const starCards = {
     name: "光桥",
     cost: 1,
     target: "ally",
-    icon: "⌁",
+    icon: "⌁︎",
     effects: [
       {
         kind: "draw",
@@ -297,7 +297,7 @@ export const starCards = {
     name: "澄澈夜空",
     cost: 1,
     target: "self",
-    icon: "☾",
+    icon: "☾︎",
     effects: [
       {
         kind: "cleanse",
@@ -314,7 +314,7 @@ export const starCards = {
     name: "星轨汇聚",
     cost: 2,
     target: "self",
-    icon: "◎",
+    icon: "◎︎",
     effects: [
       {
         kind: "echo",
@@ -327,7 +327,7 @@ export const starCards = {
     name: "守望星辰",
     cost: 1,
     target: "self",
-    icon: "✧",
+    icon: "✧︎",
     effects: [
       {
         kind: "regen",
@@ -344,7 +344,7 @@ export const starCards = {
     name: "远日点",
     cost: 2,
     target: "enemy",
-    icon: "⊙",
+    icon: "⊙︎",
     effects: [
       {
         kind: "damage",
@@ -361,7 +361,7 @@ export const starCards = {
     name: "深空透镜",
     cost: 1,
     target: "self",
-    icon: "◎",
+    icon: "◎︎",
     effects: [
       {
         kind: "draw",
@@ -377,7 +377,7 @@ export const starCards = {
     name: "星界锚定",
     cost: 2,
     target: "self",
-    icon: "◈",
+    icon: "◈︎",
     effects: [
       {
         kind: "block",

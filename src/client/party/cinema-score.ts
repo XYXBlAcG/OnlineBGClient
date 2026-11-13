@@ -181,6 +181,33 @@ export function cinemaScore(
       duration: enter * 1.2,
       ease: "outBack",
     };
+  if (scene.startsWith("achievement")) {
+    motions.scene = {
+      scale: [0.88, 1.04, 1],
+      rotate: [-1.5, 0],
+      duration: enter * 1.1,
+      ease: "outCubic",
+    };
+    motions.pulse = {
+      scale: [0.94, 1.07, 0.94],
+      duration: 1700,
+      loop: true,
+      ease: "inOutSine",
+    };
+    motions.expand = {
+      scale: [0.5, 1.45],
+      opacity: [0.9, 0],
+      duration: 1500,
+      loop: true,
+      ease: "outCubic",
+    };
+    motions.spin = {
+      rotate: [0, 360],
+      duration: 11000,
+      loop: true,
+      ease: "linear",
+    };
+  }
   if (scene === "rocket" || scene === "runway")
     motions.launch = {
       keyframes: [

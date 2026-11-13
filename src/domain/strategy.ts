@@ -119,7 +119,7 @@ export class Strategy {
     action: Action,
     indexes: number[],
   ): SampleValue[] {
-    const { observation, actor, seed, difficulty } = request;
+    const { observation, actor, seed } = request;
     const budget = this.budget(request);
     return indexes.map((index) => {
       let sampled = this.sample(observation, actor, `${seed}:sample:${index}`);
@@ -285,7 +285,8 @@ export class Strategy {
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
       observation.kind === "ccbs" ||
-      observation.kind === "graphwar"
+      observation.kind === "graphwar" ||
+      observation.kind === "pool"
     )
       throw new Error("该游戏 AI 尚未接入");
     const state = structuredClone(observation);
@@ -335,8 +336,7 @@ export class Strategy {
       view.cardList = Array(108).fill(15);
       for (const card of view.playedCards) view.cardList[card] = 0;
       view.playerCards = view.playerCards.map((cards, id) =>
-        id === actor ||
-        (teamMode && teams?.[id] === teams?.[actor])
+        id === actor || (teamMode && teams?.[id] === teams?.[actor])
           ? cards
           : pool.splice(0, cards.length),
       );
@@ -418,7 +418,8 @@ export class Strategy {
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
       observation.kind === "ccbs" ||
-      observation.kind === "graphwar"
+      observation.kind === "graphwar" ||
+      observation.kind === "pool"
     )
       throw new Error("该游戏 AI 尚未接入");
     if (actor === target) return -1;
@@ -453,7 +454,8 @@ export class Strategy {
       observation.kind === "ktd" ||
       observation.kind === "scmj" ||
       observation.kind === "ccbs" ||
-      observation.kind === "graphwar"
+      observation.kind === "graphwar" ||
+      observation.kind === "pool"
     )
       throw new Error("该游戏 AI 尚未接入");
     const features: Feature[] = [];
@@ -783,6 +785,7 @@ export class Strategy {
         ? 100
         : this.engine.flight.progress(state.view, actor) -
             this.engine.flight.risk(state.view, actor);
+    if (state.kind === "pool") return 0;
     const view = state.view;
     if (this.engine.finished(state))
       return view.winners.includes(actor) ? 100 : -100;

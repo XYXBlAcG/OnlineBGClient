@@ -5,7 +5,7 @@ import {
   enemyThornsRule,
   resourceEffects,
 } from "./resources";
-import { relics, potions, type RelicId, type RelicDefinition } from "./world";
+import { relics, potions, type RelicDefinition } from "./world";
 import { shuffled } from "./random";
 import {
   cards,
@@ -14,7 +14,6 @@ import {
   heroContent,
   encounters,
   type CardInstance,
-  type CardId,
   type Effect,
   type EncounterDefinition,
   type EncounterMechanicDefinition,
@@ -1265,7 +1264,6 @@ export class ExpeditionRules {
     effects: readonly Effect[],
     targets: Target[],
   ) {
-    const hero = state.heroes[actor];
     for (const effect of effects) {
       const recipients: Target[] =
         effect.target === "party"
@@ -1325,9 +1323,12 @@ export class ExpeditionRules {
       if (relic.goldEnergyPer) {
         const amount = Math.floor(hero.gold / relic.goldEnergyPer);
         if (amount > 0)
-          this.effects(state, actor, [{ kind: "energy", amount }], [
-            { side: "hero", index: actor },
-          ]);
+          this.effects(
+            state,
+            actor,
+            [{ kind: "energy", amount }],
+            [{ side: "hero", index: actor }],
+          );
         continue;
       }
       this.effects(state, actor, relic.effects, [
@@ -1749,7 +1750,7 @@ export class ExpeditionRules {
     }
     if (this.victory(state)) return;
     state.heroes.forEach((hero) => (hero.ready = hero.hp <= 0));
-    state.enemies.forEach((enemy, index) => {
+    state.enemies.forEach((enemy) => {
       enemy.vulnerable = Math.max(0, enemy.vulnerable - 1);
       enemy.weak = Math.max(0, enemy.weak - 1);
       const pattern =

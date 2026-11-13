@@ -27,8 +27,10 @@ export class PartyCinema {
         root.setAttribute("viewBox", "0 0 1000 700");
         root.setAttribute("preserveAspectRatio", "xMidYMid meet");
         root.classList.add("party-cinematic");
+        const art = resolvePartyArt(event);
+        root.dataset.scene = art.scene;
         root.innerHTML = cinemaArtwork(
-          resolvePartyArt(event).scene,
+          art.scene,
           partyAppearance(event).color,
           `party-${crypto.randomUUID()}`,
           event.seed,

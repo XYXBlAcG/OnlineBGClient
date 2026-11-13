@@ -25,7 +25,7 @@ function Impact({ state, target }: { state: ExpeditionState; target: Target }) {
           className={`exp-float exp-float-${event.kind}`}
           style={{ animationDelay: `${index * 45}ms` }}
         >
-          {event.kind === "damage" ? "−" : event.kind === "heal" ? "+" : "◈"}
+          {event.kind === "damage" ? "−" : event.kind === "heal" ? "+" : "◈︎"}
           {event.amount}
         </div>
       ))}
@@ -50,7 +50,7 @@ function Health({ fighter }: { fighter: Fighter }) {
         {fighter.hp}
         <small> / {fighter.maxHp}</small>
       </b>
-      {fighter.block > 0 && <em>◈ {fighter.block}</em>}
+      {fighter.block > 0 && <em>◈︎ {fighter.block}</em>}
     </div>
   );
 }
@@ -324,7 +324,7 @@ function SceneMarks({
             mark.target.index === target.index,
         )
         .map((mark) => (
-          <small key={mark.label}>⚑ {mark.label}</small>
+          <small key={mark.label}>⚑︎ {mark.label}</small>
         ))}
     </div>
   );

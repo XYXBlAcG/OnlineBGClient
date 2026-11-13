@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ClientStore } from "../storage";
 import type { Snapshot } from "../../domain/protocol";
-import type { PartyAction, PartyContext } from "../../domain/party";
+import type { PartyAction } from "../../domain/party";
 export function RoomWorkshop({
   snapshot,
   send,

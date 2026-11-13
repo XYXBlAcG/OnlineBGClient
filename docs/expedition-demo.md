@@ -4,7 +4,7 @@
 
 ## 运行与审核
 
-- `npm run demo:expedition`：生成可直接打开的 [HTML](../artifacts/demo/expedition/index.html)，不需要在线资源。
+- `npm run demo:expedition`：[构建脚本](../scripts/build-expedition-demo.mjs) 生成可直接打开的 HTML，不需要在线资源。
 - 选择卡牌，再点击高亮目标。自身与全体效果再次点击卡牌或点击使用确认；两个角色都结束行动后进入敌方阶段。
 - 数字键选牌，Enter 使用自身／全体效果，E 结束行动，Esc 取消选择。角色页签切换控制对象。
 - “AI 执行一步”显示当前建议与理由；“自动试玩”连续完成战斗和奖励，可随时暂停。
@@ -23,7 +23,7 @@
 | 战斗界面与图形 | [界面](../src/client/expedition/ExpeditionDemo.tsx)、[场景](../src/client/expedition/BattleScene.tsx) |
 | 单元验证 | [测试](../tests/expedition.test.ts)，`npx vitest run tests/expedition.test.ts` |
 | 隔离浏览器验证 | [脚本](../scripts/verify-expedition-demo.mjs)，`npm run verify:expedition`；非默认浏览器位置使用 `CHROME_PATH` |
-| 实际渲染截图与几何记录 | [截图目录](../artifacts/demo/expedition/screenshots/) |
+| 实际渲染截图与几何记录 | 由 `npm run verify:expedition` 生成，`SCREENSHOT_DIR` 可指定输出目录 |
 
 基准分别使用共同种子组和独立复核组。平均剩余生命包含失败局；实际格挡仅计吸收的伤害；批次耗时包含规则模拟及决策。启发式策略不读取未来抽牌顺序。数据仅描述本 Demo 的自动策略表现，不代表真人胜率或原作平衡。浏览器重测使用本机 Worker，耗时与 Node 环境报告分开呈现。
 

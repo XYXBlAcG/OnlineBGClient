@@ -1,6 +1,7 @@
 import { createUseGesture, dragAction, pinchAction } from "@use-gesture/react";
 import {
   mapZoom,
+  readingMapZoom,
   mapDisplayScale,
   fitMapZoom,
   zoomScroll,
@@ -16,6 +17,8 @@ import {
   type ReactElement,
   type ReactNode,
   type HTMLAttributes,
+  type CSSProperties,
+  type SyntheticEvent,
 } from "react";
 
 const readBounds = (box: HTMLElement): MapViewBounds => ({
@@ -36,31 +39,64 @@ export function MapViewport({
   naturalSize,
   initialZoom,
   fitWidthOnMount = false,
+  fitContainOnMount = false,
   focusLabel = "当前士兵",
   overlay,
   onMoveModeChange,
+  readingSize,
 }: {
   children: ReactElement<HTMLAttributes<HTMLDivElement>>;
+  readingSize?: { width: number; height: number };
   overlay?: ReactNode;
   focusTarget?: string;
   compact?: boolean;
   naturalSize?: { width: number; height: number };
   initialZoom?: number;
   fitWidthOnMount?: boolean;
+  fitContainOnMount?: boolean;
   focusLabel?: string;
-  onMoveModeChange?: (moving:boolean)=>void;
+  onMoveModeChange?: (moving: boolean) => void;
 }) {
   const [zoom, setZoom] = useState(initialZoom ?? (focusTarget ? 1.6 : 1));
   const [moving, setMoving] = useState(false);
   const [focusRequest, setFocusRequest] = useState(focusTarget ? 1 : 0);
+  const [following, setFollowing] = useState(true);
+  const [overview, setOverview] = useState(false);
+  const previousView = useRef<{ zoom: number; left: number; top: number }>();
+  const restoreView = useRef(false);
+  const lastFocusRequest = useRef(0);
+  const dragOrigin = useRef<{ x: number; y: number }>();
+  const blockedUntil = useRef(0);
+  const guardClick = (event: SyntheticEvent) => {
+    if (moving || performance.now() < blockedUntil.current) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
   const viewport = useRef<HTMLDivElement>(null);
-  useLayoutEffect(()=>{onMoveModeChange?.(moving);},[moving,onMoveModeChange]);
+  useLayoutEffect(() => {
+    onMoveModeChange?.(moving);
+  }, [moving, onMoveModeChange]);
   const anchor = useRef<MapAnchor>();
   const bounds = useRef<MapViewBounds>();
   useLayoutEffect(() => {
     const box = viewport.current;
     if (!box) return;
-    if (fitWidthOnMount && naturalSize)
+    if (readingSize)
+      setZoom(
+        readingMapZoom(
+          { width: box.clientWidth, height: box.clientHeight },
+          readingSize,
+        ),
+      );
+    else if (fitContainOnMount && naturalSize)
+      setZoom(
+        fitMapZoom(
+          { width: box.clientWidth, height: box.clientHeight },
+          naturalSize,
+        ),
+      );
+    else if (fitWidthOnMount && naturalSize)
       setZoom(
         mapZoom(
           Math.min(initialZoom ?? 1, box.clientWidth / naturalSize.width),
@@ -152,6 +188,13 @@ export function MapViewport({
   }, [zoom]);
   useLayoutEffect(() => {
     if (!focusTarget || !focusRequest || !viewport.current) return;
+    if (
+      readingSize &&
+      (!following || overview) &&
+      lastFocusRequest.current === focusRequest
+    )
+      return;
+    lastFocusRequest.current = focusRequest;
     const box = viewport.current;
     const frame = requestAnimationFrame(() => {
       const target = box.querySelector(focusTarget)?.getBoundingClientRect(),
@@ -170,12 +213,21 @@ export function MapViewport({
         });
     });
     return () => cancelAnimationFrame(frame);
-  }, [focusRequest, focusTarget]);
+  }, [focusRequest, focusTarget, following, overview]);
+  useLayoutEffect(() => {
+    if (restoreView.current && previousView.current && viewport.current) {
+      viewport.current.scrollTo(
+        previousView.current.left,
+        previousView.current.top,
+      );
+      restoreView.current = false;
+    }
+  }, [zoom, overview]);
   const tools = (
     <div className="map-tools" aria-label="地图视图">
       <button
         aria-label="缩小地图"
-        disabled={zoom === 0.25}
+        disabled={zoom <= 0.25}
         onClick={() => setZoom(mapZoom(zoom - 0.5))}
       >
         −
@@ -191,7 +243,19 @@ export function MapViewport({
       {focusTarget && (
         <button
           onClick={() => {
-            if (naturalSize && viewport.current)
+            setFollowing(true);
+            setOverview(false);
+            if (readingSize && viewport.current)
+              setZoom(
+                readingMapZoom(
+                  {
+                    width: viewport.current.clientWidth,
+                    height: viewport.current.clientHeight,
+                  },
+                  readingSize,
+                ),
+              );
+            else if (naturalSize && viewport.current)
               setZoom(
                 mapZoom(
                   Math.min(
@@ -206,25 +270,61 @@ export function MapViewport({
           {focusLabel}
         </button>
       )}
-      <button
-        onClick={() => {
-          setZoom(
-            naturalSize && viewport.current
-              ? fitMapZoom(
-                  {
-                    width: viewport.current.clientWidth,
-                    height: viewport.current.clientHeight,
-                  },
+      {readingSize && (
+        <button
+          aria-pressed={overview}
+          onClick={() => {
+            const box = viewport.current;
+            if (!box || !naturalSize) return;
+            if (!overview) {
+              previousView.current = {
+                zoom,
+                left: box.scrollLeft,
+                top: box.scrollTop,
+              };
+              setFollowing(false);
+              setOverview(true);
+              setZoom(
+                fitMapZoom(
+                  { width: box.clientWidth, height: box.clientHeight },
                   naturalSize,
-                )
-              : 1,
-          );
-          setMoving(false);
-          viewport.current?.scrollTo(0, 0);
-        }}
-      >
-        适配窗口
-      </button>
+                  0.05,
+                ),
+              );
+              box.scrollTo(0, 0);
+            } else {
+              setOverview(false);
+              if (previousView.current) {
+                restoreView.current = true;
+                setZoom(previousView.current.zoom);
+              }
+            }
+          }}
+        >
+          {overview ? "返回局部" : "全图总览"}
+        </button>
+      )}
+      {!readingSize && (
+        <button
+          onClick={() => {
+            setZoom(
+              naturalSize && viewport.current
+                ? fitMapZoom(
+                    {
+                      width: viewport.current.clientWidth,
+                      height: viewport.current.clientHeight,
+                    },
+                    naturalSize,
+                  )
+                : 1,
+            );
+            setMoving(false);
+            viewport.current?.scrollTo(0, 0);
+          }}
+        >
+          适配窗口
+        </button>
+      )}
       <button aria-pressed={moving} onClick={() => setMoving(!moving)}>
         移动地图
       </button>
@@ -254,13 +354,31 @@ export function MapViewport({
           )
             bounds.current = next;
         }}
-        className={`map-scroll ${moving ? "map-moving" : ""}`}
-        onClickCapture={(event) => {
-          if (moving) {
-            event.preventDefault();
-            event.stopPropagation();
+        onWheelCapture={() => {
+          if (readingSize) setFollowing(false);
+        }}
+        onPointerDownCapture={(event) => {
+          dragOrigin.current = { x: event.clientX, y: event.clientY };
+        }}
+        onPointerMoveCapture={(event) => {
+          const origin = dragOrigin.current;
+          if (
+            origin &&
+            Math.hypot(event.clientX - origin.x, event.clientY - origin.y) >= 8
+          ) {
+            blockedUntil.current = performance.now() + 400;
+            if (readingSize) setFollowing(false);
           }
         }}
+        onPointerUpCapture={() => {
+          dragOrigin.current = undefined;
+        }}
+        onPointerCancel={() => {
+          dragOrigin.current = undefined;
+        }}
+        onDoubleClickCapture={guardClick}
+        className={`map-scroll ${moving ? "map-moving" : ""}`}
+        onClickCapture={guardClick}
       >
         <div
           className="map-canvas"
@@ -280,9 +398,10 @@ export function MapViewport({
             className: `${children.props.className || ""} fitted-map`,
             style: {
               ...children.props.style,
+              "--map-zoom": zoom,
               width: naturalSize ? "100%" : `${Math.min(1, zoom) * 100}%`,
               height: naturalSize ? "100%" : `${Math.min(1, zoom) * 100}%`,
-            },
+            } as CSSProperties,
           })}
           {overlay}
         </div>

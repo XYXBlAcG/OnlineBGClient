@@ -1,6 +1,7 @@
 import { expeditionGuide } from "./expedition/guide";
 import { dominionGuide } from "./dominion/guide";
 import { graphwarGuide } from "./graphwar/guide";
+import { poolGuide } from "./pool/guide";
 import type { GameKind } from "../domain/catalogue";
 
 import type { GuideTargetKey } from "./guide-targets";
@@ -29,6 +30,7 @@ export const beginnerGuides: Partial<Record<GameKind, BeginnerGuide>> = {
   expedition: expeditionGuide,
   dominion: dominionGuide,
   graphwar: graphwarGuide,
+  pool: poolGuide,
   fxq: {
     goal: "先完成掷骰、起飞、移动和进入终点，再认识风暴航线的天气与战术资源。",
     steps: [

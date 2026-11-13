@@ -97,9 +97,9 @@ it("rejects overcrowding atomically and accepts AI only in supported games", () 
     humans: 1,
     ai: [{ name: "云雀", difficulty: "hard" }],
   });
-  expect(() =>
-    configSchema.parse({ ...aiRoom.config, kind: "ddz", humans: 2 }),
-  ).toThrow();
+  expect(
+    configSchema.parse({ ...aiRoom.config, kind: "ddz", humans: 2 }).ai,
+  ).toHaveLength(1);
   aiRoom.changeGame(
     owner,
     setup(aiRoom, { ...aiRoom.config, kind: "ddz", humans: 3, ai: [] }),
@@ -134,7 +134,10 @@ it("changes game and roster atomically while keeping the room invitation", () =>
   room.changeGame(owner, setup(room, config, true, retain));
   expect(room.seats).toHaveLength(4);
   expect(room.identity(guest)).toBe(1);
-  expect(() => room.identity(removed)).toThrow();
+  expect(room.identity(removed)).toBeLessThan(-1);
+  expect(
+    room.snapshot(removed).spectators?.some((member) => member.name === "丙"),
+  ).toBe(true);
   expect(room.claim("丁")).toBeTypeOf("string");
   expect(room.snapshot(owner).records[0].config.kind).toBe("uno");
   expect(room.snapshot(owner).room).toBe("roster");

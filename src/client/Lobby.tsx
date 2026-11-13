@@ -1,3 +1,5 @@
+import { ExpeditionJournalPanel } from "./expedition/ExpeditionJournalPanel";
+import { useExpeditionJournal } from "./expedition/use-expedition-journal";
 import { useSceneTransition } from "./scene-transition";
 import { usePresentation } from "./motion";
 import { GameLibrary } from "./lobby/GameLibrary";
@@ -11,6 +13,8 @@ import {
 import { expeditionOptionsSchema } from "../domain/expedition/adventure-types";
 import { DominionOptionsControl } from "./dominion/DominionOptionsControl";
 import { dominionOptionsSchema } from "../domain/dominion/types";
+import { poolOptionsSchema } from "../domain/pool/types";
+import { PoolOptionsControl } from "./pool/PoolOptionsControl";
 import { balanceSeats } from "../domain/room-balance";
 import { fitSeats } from "../domain/room-seats";
 import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
@@ -31,6 +35,7 @@ import { Button, Select, Slider, Switch, TextField } from "./ui/Controls";
 import { useEffect, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { gameCatalogue, gameKinds, type GameKind } from "../domain/catalogue";
+import { prefetchGameSurface } from "./OriginalGameLazy";
 import { configSchema, type RoomConfig } from "../domain/protocol";
 import type { Difficulty } from "../domain/types";
 import { difficultyNames } from "./game-difficulty";
@@ -84,7 +89,9 @@ export function Lobby({
     expeditionOptionsSchema.parse({}),
   );
   const [dominion, setDominion] = useState(dominionOptionsSchema.parse({}));
+  const [pool, setPool] = useState(poolOptionsSchema.parse({}));
   const [mahjong, setMahjong] = useState(mahjongOptionsSchema.parse({}));
+  const expeditionJournal = useExpeditionJournal(kind === "expedition");
   const [catanTrades, setCatanTrades] = useState(true);
   const [team, setTeam] = useState(false);
   const [liteMotion, setLiteMotion] = useState(false);
@@ -150,6 +157,7 @@ export function Lobby({
     );
   const changeGame = (next: GameKind) => {
     const max = gameCatalogue[next].maxPlayers;
+    prefetchGameSurface();
     setKind(next);
     setNetworkPage("create");
     setHumans(
@@ -218,6 +226,16 @@ export function Lobby({
                   : "粘贴邀请链接"}
               </p>
             </div>
+            {creating && kind === "expedition" && (
+              <ExpeditionJournalPanel
+                journal={expeditionJournal.journal}
+                error={expeditionJournal.error}
+                loading={expeditionJournal.loading}
+                onUpgrade={expeditionJournal.upgrade}
+                onImport={expeditionJournal.importJournal}
+                onRefresh={expeditionJournal.refresh}
+              />
+            )}
           </div>
         </LobbySetupTransition>
         <div className="segmented">
@@ -379,6 +397,7 @@ export function Lobby({
                   "graphwar",
                   "expedition",
                   "dominion",
+                  "pool",
                   "scmj",
                   "fxq",
                   "tq",
@@ -410,6 +429,11 @@ export function Lobby({
                       <ExpeditionOptionsControl
                         value={expedition}
                         onChange={setExpedition}
+                        journal={
+                          expeditionJournal.loading
+                            ? undefined
+                            : expeditionJournal.journal
+                        }
                       />
                     )}
                     {kind === "dominion" && (
@@ -417,6 +441,9 @@ export function Lobby({
                         value={dominion}
                         onChange={setDominion}
                       />
+                    )}
+                    {kind === "pool" && (
+                      <PoolOptionsControl value={pool} onChange={setPool} />
                     )}
                     {kind === "scmj" && (
                       <MahjongOptionsControl
@@ -574,7 +601,12 @@ export function Lobby({
                 variant="primary"
                 className={busy ? "operation-working" : ""}
                 aria-busy={busy}
-                disabled={busy || !name.trim() || total < game.minPlayers}
+                disabled={
+                  busy ||
+                  !name.trim() ||
+                  total < game.minPlayers ||
+                  (kind === "expedition" && expeditionJournal.loading)
+                }
                 onClick={() =>
                   onCreate(
                     configSchema.parse({
@@ -586,8 +618,12 @@ export function Lobby({
                       aiDelayMs,
                       auditEnabled: preferences.auditVisible,
                       catanTrades,
-                      expedition,
+                      expedition: {
+                        ...expedition,
+                        legacy: expeditionJournal.journal.legacy,
+                      },
                       dominion,
+                      pool,
                       mahjong,
                       graphwar,
                       flight,

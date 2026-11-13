@@ -18,6 +18,7 @@ it("registers actionable guides for the supported games", () => {
     "fxq",
     "graphwar",
     "ktd",
+    "pool",
     "scmj",
     "sgs",
     "tq",

@@ -13,6 +13,7 @@ it("clips effects to the visible game area in viewport coordinates", () => {
 it("keeps switch labels out of ordinary form layout and uses a shrinkable emoji grid", () => {
   const css =
     readFileSync("src/styles.css", "utf8") +
+    readFileSync("src/client/ui/design-tokens.css", "utf8") +
     readFileSync("src/client/lobby/lobby.css", "utf8");
   expect(css).toContain("label:not(.checkbox, .ui-switch-label, .setting-row)");
   expect(css).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");

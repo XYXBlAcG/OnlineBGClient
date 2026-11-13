@@ -2,16 +2,17 @@ import { useState } from "react";
 import type { Preferences } from "../preferences";
 import {
   gameCatalogue,
-  gameKinds,
+  mobileGameKinds,
   type GameKind,
 } from "../../domain/catalogue";
 import type { RoomConfig } from "../../domain/protocol";
 import { MobileJoin } from "../MobileJoin";
 import { MobileLobby } from "./MobileLobby";
 import { localRoomConfig } from "./local-room";
+import { useExpeditionJournal } from "../expedition/use-expedition-journal";
 
 function latestGame(preferences: Preferences): GameKind {
-  const played = gameKinds
+  const played = mobileGameKinds
     .filter((kind) => preferences.gameStats[kind])
     .sort(
       (a, b) =>
@@ -42,6 +43,7 @@ export function MobileHome({
 }) {
   const [view, setView] = useState<"home" | "join" | "local">("home");
   const lastGame = latestGame(preferences);
+  const expeditionJournal = useExpeditionJournal(lastGame === "expedition");
   const lastRoom = localStorage.getItem("onlinebg.last-room");
   if (room) {
     return (
@@ -101,7 +103,17 @@ export function MobileHome({
         <button
           type="button"
           className="primary-button"
-          onClick={() => onStartLocal(localRoomConfig(lastGame))}
+          disabled={lastGame === "expedition" && expeditionJournal.loading}
+          onClick={() =>
+            onStartLocal(
+              localRoomConfig(lastGame, {
+                expeditionLegacy:
+                  lastGame === "expedition"
+                    ? expeditionJournal.journal.legacy
+                    : undefined,
+              }),
+            )
+          }
         >
           {gameCatalogue[lastGame].ai ? "和 AI 玩" : "同屏开局"}
         </button>

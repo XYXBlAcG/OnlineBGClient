@@ -20,10 +20,8 @@ if (!udid)
   throw new Error("没有连接手机。解锁手机、信任此电脑并重新连接 USB。");
 
 const team = process.env.DEVELOPMENT_TEAM ?? "DBV9QXGHLB";
-const lan =
-  process.env.SHELL_BASE_URL ??
-  `http://${capture("ipconfig", ["getifaddr", "en0"]).trim()}:1420`;
 
+run("npm", ["run", "build"], root);
 run("xcodegen", ["generate"], shellPath);
 run(
   "xcodebuild",
@@ -40,7 +38,6 @@ run(
     ".build-device",
     "-allowProvisioningUpdates",
     `DEVELOPMENT_TEAM=${team}`,
-    `SHELL_BASE_URL=${lan}`,
     "build",
   ],
   shellPath,
@@ -59,4 +56,4 @@ try {
     "安装完成。命令行启动需要匹配的 Developer Disk Image，请直接在手机上打开 OnlineBG Shell。",
   );
 }
-console.log(`Installed on ${udid}; WebView base ${lan}`);
+console.log(`Installed on ${udid}; bundled web, no Mac server required.`);

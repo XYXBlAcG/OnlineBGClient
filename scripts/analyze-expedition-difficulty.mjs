@@ -101,8 +101,7 @@ const mean = (values) =>
       .length *
       10;
 
-const runs = [],
-  startedAt = new Date();
+const runs = [];
 for (const difficulty of difficulties)
   for (const ascension of ascensions)
     for (const players of playersList) {
