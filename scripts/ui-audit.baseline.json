@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-13T12:26:15.517Z",
+  "generatedAt": "2026-11-13T12:34:31.996Z",
   "findings": [
     {
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [1/3]|div.z-10.text-black",
       "game": "ddz",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "div.ddz-poker.ddz-poker-0 [1/3] / div.z-10.text-black"
     },
@@ -14,7 +14,7 @@
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [2/3]|div.z-10.text-black",
       "game": "ddz",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "div.ddz-poker.ddz-poker-0 [2/3] / div.z-10.text-black"
     },
@@ -22,7 +22,7 @@
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [3/3]|div.z-10.text-black",
       "game": "ddz",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "div.ddz-poker.ddz-poker-0 [3/3] / div.z-10.text-black"
     },
@@ -350,7 +350,7 @@
       "id": "ddz|landscape|blocked|div.ddz-poker.ddz-poker-0 [1/3]|div.z-10.text-black",
       "game": "ddz",
       "viewport": "landscape",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "div.ddz-poker.ddz-poker-0 [1/3] / div.z-10.text-black"
     },
@@ -358,7 +358,7 @@
       "id": "ddz|landscape|blocked|div.ddz-poker.ddz-poker-0 [2/3]|div.z-10.text-black",
       "game": "ddz",
       "viewport": "landscape",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "div.ddz-poker.ddz-poker-0 [2/3] / div.z-10.text-black"
     },
@@ -486,7 +486,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [1/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [1/7]"
     },
@@ -494,7 +494,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [2/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [2/7]"
     },
@@ -502,7 +502,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [3/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [3/7]"
     },
@@ -510,7 +510,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [4/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [4/7]"
     },
@@ -518,7 +518,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [5/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [5/7]"
     },
@@ -526,7 +526,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [6/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [6/7]"
     },
@@ -534,7 +534,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [7/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [7/7]"
     },
@@ -627,14 +627,6 @@
       "element": "div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [3/4] / div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [4/4]"
     },
     {
-      "id": "dy|landscape|clipped|div.original-game|hidden",
-      "game": "dy",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game"
-    },
-    {
       "id": "dy|landscape|overlap|div.dy-card.dy-card-1.border[data-guide-target=\"dy.card\"] [1/4]|div.dy-card.dy-card-1.border[data-guide-target=\"dy.card\"] [2/4]",
       "game": "dy",
       "viewport": "landscape",
@@ -723,18 +715,10 @@
       "element": "div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [3/4] / div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [4/4]"
     },
     {
-      "id": "expedition|landscape|clipped|div.original-game|hidden",
-      "game": "expedition",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game / button / button / button"
-    },
-    {
       "id": "graphwar|desktop|blocked|button.game-avatar [1/3]|strong",
       "game": "graphwar",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "button.game-avatar [1/3] / strong"
     },
@@ -742,7 +726,7 @@
       "id": "graphwar|desktop|blocked|button.game-avatar [2/3]|div.gw-player-status",
       "game": "graphwar",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "button.game-avatar [2/3] / div.gw-player-status"
     },
@@ -750,23 +734,15 @@
       "id": "graphwar|desktop|blocked|button.game-avatar [3/3]|div.gw-player-status",
       "game": "graphwar",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "button.game-avatar [3/3] / div.gw-player-status"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button.game-avatar|form.gw-input-row",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button.game-avatar / form.gw-input-row"
     },
     {
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [1/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [1/9]"
     },
@@ -774,7 +750,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [2/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [2/9]"
     },
@@ -782,7 +758,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [3/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [3/9]"
     },
@@ -790,7 +766,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [4/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [4/9]"
     },
@@ -798,7 +774,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [5/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [5/9]"
     },
@@ -806,7 +782,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [6/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [6/9]"
     },
@@ -814,7 +790,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [7/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [7/9]"
     },
@@ -822,7 +798,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [8/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [8/9]"
     },
@@ -830,7 +806,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [9/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [9/9]"
     },
@@ -838,7 +814,7 @@
       "id": "ktd|landscape|clipped|div.relative.overflow-hidden [1/2]|hidden",
       "game": "ktd",
       "viewport": "landscape",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [1/2]"
     },
@@ -846,25 +822,9 @@
       "id": "ktd|landscape|clipped|div.relative.overflow-hidden [2/2]|hidden",
       "game": "ktd",
       "viewport": "landscape",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [2/2]"
-    },
-    {
-      "id": "sgs|landscape|clipped|div.original-game|hidden",
-      "game": "sgs",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game / div.sgs-hero.relative.flex.flex-col / div.sgs-hero.relative.flex.flex-col / div.sgs-hero.relative.flex.flex-col / div.sgs-hero.relative.flex.flex-col"
-    },
-    {
-      "id": "tq|landscape|clipped|div.original-game|hidden",
-      "game": "tq",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game"
     },
     {
       "id": "uno|desktop|overlap|div.uno-bg [10/10]|div.uno-bg [9/10]",

@@ -154,6 +154,16 @@
 }
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
+  .playing-room
+  .original-game[data-renderer="upstream"],
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .original-game[data-game="expedition"] {
+  overflow-y: auto;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
   .original-game
   > .button-container {
   display: none;
@@ -572,6 +582,12 @@
   grid-column: 1;
   grid-row: 2;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-board-space {
+  min-width: 0;
+  overflow: hidden;
 }
 :root[data-mobile-orientation="landscape"] .mobile-shell .gw-shot-panel {
   display: none;
