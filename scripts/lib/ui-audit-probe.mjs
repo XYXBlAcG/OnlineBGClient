@@ -298,9 +298,16 @@ export function probePage() {
       hit.contains(element)
     )
       continue;
+    const coverControl = hit.closest(
+      "button, a[href], [role=button], [role=tab], [role=option]",
+    );
     blocked.push({
       target: describe(element),
       cover: describe(hit),
+      stacked:
+        Boolean(coverControl) &&
+        coverControl !== element &&
+        element.parentElement === coverControl.parentElement,
       point: [Math.round(x), Math.round(y)],
       rect: rectArray(rect),
       clamped:

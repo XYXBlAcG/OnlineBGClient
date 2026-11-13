@@ -60,17 +60,20 @@ export function classifyScreen(screen) {
     });
   }
   for (const item of screen.probe.blocked) {
-    const actionable = item.target.buttonish && isActionTarget(item.target);
+    const actionable =
+      !item.stacked && item.target.buttonish && isActionTarget(item.target);
     findings.push({
       ...base,
-      severity: actionable ? "P0" : "P1",
-      category: "blocked",
-      fingerprint: `${base.game}|${base.viewport}|blocked|${normalizeSelector(item.target.selector)}|${normalizeSelector(item.cover.selector)}`,
+      severity: actionable ? "P0" : item.stacked ? "P2" : "P1",
+      category: item.stacked ? "overlap" : "blocked",
+      fingerprint: `${base.game}|${base.viewport}|${item.stacked ? "overlap" : "blocked"}|${normalizeSelector(item.target.selector)}|${normalizeSelector(item.cover.selector)}`,
       title: `${describeTarget(item.target)} 中心点 (${item.point[0]}, ${item.point[1]}) 被 ${item.cover.selector} 遮挡`,
       selectors: [item.target.selector, item.cover.selector],
       note: actionable
         ? "操作类按钮被遮挡，判 P0"
-        : "无法判定为主操作按钮，归 P1",
+        : item.stacked
+          ? "同父级且同为可点击控件，判定为扇形/叠放设计，归 P2"
+          : "无法判定为主操作按钮，归 P1",
       detail: item,
     });
   }
