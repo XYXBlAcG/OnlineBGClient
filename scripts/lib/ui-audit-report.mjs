@@ -62,7 +62,7 @@ export function classifyScreen(screen) {
   for (const item of screen.probe.blocked) {
     const actionable =
       !item.stacked &&
-      !item.coverControl &&
+      item.coverControl &&
       item.target.buttonish &&
       isActionTarget(item.target);
     findings.push({

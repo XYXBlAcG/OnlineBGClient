@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-13T12:34:31.996Z",
+  "generatedAt": "2026-11-13T12:53:12.364Z",
   "findings": [
     {
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [1/3]|div.z-10.text-black",
@@ -713,6 +713,14 @@
       "severity": "P2",
       "category": "overlap",
       "element": "div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [3/4] / div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [4/4]"
+    },
+    {
+      "id": "fxq|landscape|blocked|button.inline-block.flex-shrink-0.overflow-hidden.whitespace-nowrap|use",
+      "game": "fxq",
+      "viewport": "landscape",
+      "severity": "P2",
+      "category": "blocked",
+      "element": "button.inline-block.flex-shrink-0.overflow-hidden.whitespace-nowrap / use"
     },
     {
       "id": "graphwar|desktop|blocked|button.game-avatar [1/3]|strong",
