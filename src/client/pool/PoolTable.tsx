@@ -11,6 +11,7 @@ import { POOL_PLAYBACK_RATE, interpolateBalls } from "./frames";
 import { poolBallColors } from "./colors";
 import { poolAudio } from "./audio";
 import { poolBallCursor, type PoolCursor } from "./aim";
+import { ballAtPoint } from "./hit-ball";
 import { predictShot, type PoolPrediction } from "./prediction";
 import { usePoolAim } from "./use-pool-aim";
 import { usePoolClock } from "./use-pool-clock";
@@ -333,6 +334,11 @@ export function PoolTable({
   const [elapsed, setElapsed] = useState(0);
   const [resize, setResize] = useState(0);
   const [cursor, setCursor] = useState<PoolCursor>("default");
+  const [hoverBall, setHoverBall] = useState<{
+    id: number;
+    x: number;
+    y: number;
+  } | null>(null);
   const [strike, setStrike] = useState<{ at: number; power: number } | null>(
     null,
   );
@@ -548,6 +554,20 @@ export function PoolTable({
   const move = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!event.isPrimary) return;
     const point = pointAt(event);
+    if (animating) {
+      setHoverBall(null);
+    } else {
+      const id = ballAtPoint(view.balls, point);
+      if (id === null) setHoverBall(null);
+      else {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setHoverBall({
+          id,
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        });
+      }
+    }
     setCursor(
       poolBallCursor(
         point,
@@ -575,6 +595,7 @@ export function PoolTable({
     setStrikeProgress(0);
   };
   const leave = () => {
+    setHoverBall(null);
     if (!aim.pulling && !aim.placing) setCursor("default");
   };
   const hint = view.ballInHand
@@ -601,7 +622,8 @@ export function PoolTable({
       disabled={!own || animating}
       replay={replay}
     >
-      <canvas
+      <div className="pool-canvas-wrap">
+        <canvas
         ref={canvas}
         className="pool-canvas"
         data-cursor={cursor}
@@ -612,7 +634,18 @@ export function PoolTable({
         onPointerLeave={leave}
         onPointerCancel={cancel}
         aria-label="台球桌"
-      />
+        />
+        {hoverBall && (
+          <span
+            className="pool-ball-tip"
+            data-ball={hoverBall.id}
+            style={{ left: hoverBall.x, top: hoverBall.y }}
+            aria-hidden="true"
+          >
+            {hoverBall.id === 0 ? "白球" : `${hoverBall.id} 号球`}
+          </span>
+        )}
+      </div>
     </PoolTableShell>
   );
 }

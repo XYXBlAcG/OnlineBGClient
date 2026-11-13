@@ -24,11 +24,13 @@ import type {
 
 const STEP = 1 / 240;
 const SAMPLE_EVERY = 4;
-const MAX_STEPS = 240 * 8;
-const STOP_SPEED = 0.015;
+const MAX_STEPS = 240 * 20;
+const STOP_SPEED = 0.002;
+const STOP_SPIN = 0.08;
 const SLIDING_FRICTION = 1.8;
-const ROLLING_RESISTANCE = 0.8;
+const ROLLING_RESISTANCE = 0.6;
 const SPIN_DECAY = 1.1;
+const CLOTH_SPIN_DECEL = 9;
 const CONTACT_SLIP = 0.02;
 const BALL_BALL_FRICTION = 0.06;
 const RAIL_FRICTION = 0.18;
@@ -498,16 +500,25 @@ export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
           spin.y = velocity.x / BALL_RADIUS;
         }
       }
-      spin.z *= Math.exp(-SPIN_DECAY * STEP);
+      const onCloth = height.z <= 1e-4 && height.vz <= 0;
+      if (onCloth) {
+        const decay = Math.min(
+          Math.abs(spin.z),
+          CLOTH_SPIN_DECEL * STEP,
+        );
+        spin.z -= Math.sign(spin.z) * decay;
+      } else {
+        spin.z *= Math.exp(-SPIN_DECAY * STEP);
+      }
       if (
         distance(velocity.x, velocity.y) <= STOP_SPEED &&
-        height.z <= 1e-4 &&
-        height.vz <= 0
+        onCloth
       ) {
         velocity.x = 0;
         velocity.y = 0;
         spin.x = 0;
         spin.y = 0;
+        if (Math.abs(spin.z) <= STOP_SPIN) spin.z = 0;
       }
       body.setLinearVelocity(velocity);
       body.setAngularVelocity(spin.z);
@@ -552,6 +563,7 @@ export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
         height = heights.get(id);
       if (
         distance(velocity.x, velocity.y) > STOP_SPEED ||
+        Math.abs(spins.get(id)?.z ?? 0) > STOP_SPIN ||
         (height?.z ?? 0) > 1e-4 ||
         (height?.vz ?? 0) > 0
       ) {

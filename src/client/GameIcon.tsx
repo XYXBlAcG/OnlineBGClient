@@ -204,6 +204,44 @@ export function GameIcon({ kind }: { kind: GameKind }) {
           />
           <circle cx="24" cy="24" r="3" fill="currentColor" />
         </svg>
+      ) : kind === "pool" ? (
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <circle
+            cx="26"
+            cy="26"
+            r="15"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          />
+          <circle
+            cx="26"
+            cy="26"
+            r="7"
+            fill="var(--cover-bg,var(--surface))"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+          <circle
+            cx="26"
+            cy="22.6"
+            r="2.1"
+            stroke="currentColor"
+            strokeWidth="1.7"
+          />
+          <circle
+            cx="26"
+            cy="29.4"
+            r="2.1"
+            stroke="currentColor"
+            strokeWidth="1.7"
+          />
+          <path
+            d="M7 9.5 14.8 17.3"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </svg>
       ) : kind === "ddz" ? (
         <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
           <rect
