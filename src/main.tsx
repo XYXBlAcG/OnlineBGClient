@@ -2108,6 +2108,7 @@ function App() {
                                 <RoundContinuation
                                   snapshot={snapshot}
                                   pending={!!pendingOperation}
+                                  series={snapshot.series}
                                   onStart={restart}
                                   onReady={(ready) => {
                                     if (session.current)

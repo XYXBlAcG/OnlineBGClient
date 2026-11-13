@@ -39,6 +39,8 @@ import { Replay, type ReplayRecord } from "./replay";
 import { automaticNames, seatDisplayName } from "./names";
 import type { z } from "zod";
 import { GameEngine } from "./engine";
+import { gameWinners } from "./game-result";
+import { createSeries, recordSeriesRound, type Series } from "./series";
 import {
   protocolVersion,
   configSchema,
@@ -136,6 +138,7 @@ export class Room {
   private chatEventTimes = new Map<string, number>();
   private messages: ChatMessage[] = [];
   private party = new PartyLedger();
+  series: Series | null = null;
   private decisions: Decision[] = [];
   private summaries: DecisionSummary[] = [];
   private accepted = new Set<string>();
@@ -298,6 +301,12 @@ export class Room {
         this.config.team,
         this.config,
       );
+      this.series =
+        this.series &&
+        this.series.kind === this.config.kind &&
+        this.series.wins.length === this.seats.length
+          ? this.series
+          : createSeries(this.config.kind, this.seats.length);
       this.replay = {
         format: 1,
         room: this.id,
@@ -483,7 +492,9 @@ export class Room {
       this.partyContext(),
       this.version + 1,
     );
+    const seriesBefore = this.state;
     this.state = next;
+    this.recordSeriesFinish(seriesBefore);
     this.queued = null;
     this.lastMoveAt = Date.now();
     this.actionReadyAt = this.lastMoveAt + this.engine.actionDelay(this.state);
@@ -870,12 +881,14 @@ export class Room {
       return false;
     const previous = this.state;
     const oldWindow = this.engine.actionWindow(this.state, decision.chosen);
+    const seriesBefore = this.state;
     this.state = this.engine.apply(
       this.state,
       decision.actor,
       decision.chosen,
       `${this.seed}:move:${this.version}`,
     );
+    this.recordSeriesFinish(seriesBefore);
     this.challenges = advanceChallenges(
       this.challenges,
       previous,
@@ -953,6 +966,7 @@ export class Room {
       this.state,
       `${this.seed}:resolve:${this.version}`,
     );
+    this.recordSeriesFinish(previous);
     this.party.trigger(
       partySignals(previous, this.state, -1, undefined, this.engine),
       this.partyContext(),
@@ -969,6 +983,23 @@ export class Room {
     this.actionReadyAt = 0;
     this.updateResolution();
     return true;
+  }
+
+  private recordSeriesFinish(previous: GameState | null): void {
+    if (
+      !previous ||
+      !this.state ||
+      this.ended ||
+      this.engine.finished(previous) ||
+      !this.engine.finished(this.state)
+    )
+      return;
+    this.series = recordSeriesRound(
+      this.series,
+      this.config.kind,
+      this.seats.length,
+      gameWinners(this.state, this.seats.length),
+    );
   }
 
   snapshot(token: string): Snapshot {
@@ -1062,6 +1093,7 @@ export class Room {
       summaries: this.summaries.slice(-30),
       challenges: this.challenges,
       finished,
+      series: this.series ? structuredClone(this.series) : null,
       resolving:
         !!this.state &&
         this.engine.needsResolution(this.state) &&
@@ -1300,6 +1332,7 @@ export class Room {
       messages: this.messages,
       decisions: this.decisions,
       summaries: this.summaries,
+      series: this.series ? structuredClone(this.series) : null,
       accepted: [...this.accepted],
     };
   }
@@ -1354,6 +1387,7 @@ export class Room {
     room.decisions = room.config.auditEnabled ? archive.decisions : [];
     room.summaries = room.config.auditEnabled ? archive.summaries : [];
     room.accepted = new Set(archive.accepted);
+    room.series = archive.series ? structuredClone(archive.series) : null;
     if (archive.replay) {
       const replay = new Replay(archive.replay);
       room.state = archive.pendingResume
@@ -1440,5 +1474,6 @@ export interface RoomArchive {
   messages: ChatMessage[];
   decisions: Decision[];
   summaries: DecisionSummary[];
+  series?: Series | null;
   accepted: string[];
 }

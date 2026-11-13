@@ -7,3 +7,7 @@
 .root > span {
   color: var(--muted);
 }
+.series {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
