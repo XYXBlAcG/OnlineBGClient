@@ -11,6 +11,7 @@ import { POOL_PLAYBACK_RATE } from "./frames";
 import { poolAudio } from "./audio";
 import { poolBallCursor, type PoolCursor } from "./aim";
 import { ballAtPoint } from "./hit-ball";
+import { poolBallLabel } from "./labels";
 import {
   PoolScene3D,
   type PoolSceneInputMode,
@@ -337,7 +338,7 @@ export function PoolTable3D({
             style={{ left: hoverBall.x, top: hoverBall.y }}
             aria-hidden="true"
           >
-            {hoverBall.id === 0 ? "白球" : `${hoverBall.id} 号球`}
+            {poolBallLabel(view, hoverBall.id)}
           </span>
         ) : null}
         {status.phase !== "ready" ? (

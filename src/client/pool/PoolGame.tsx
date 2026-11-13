@@ -43,10 +43,7 @@ export function PoolGame({
     setOverride(null);
     setFallback(false);
   }, [renderer]);
-  const kind =
-    props.view.mode === "party"
-      ? "2d"
-      : resolvePoolRenderer(preference, fallback, environment);
+  const kind = resolvePoolRenderer(preference, fallback, environment);
   const change = (next: PoolRenderer) => {
     setOverride(next);
     setFallback(false);
@@ -76,11 +73,7 @@ export function PoolGame({
     <PoolTable
       {...props}
       playback={playback}
-      onRendererToggle={
-        environment.webgl && props.view.mode !== "party"
-          ? () => change("3d")
-          : undefined
-      }
+      onRendererToggle={environment.webgl ? () => change("3d") : undefined}
     />
   );
 }

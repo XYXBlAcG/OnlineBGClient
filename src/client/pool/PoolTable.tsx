@@ -15,6 +15,7 @@ import { poolBallColors } from "./colors";
 import { poolAudio } from "./audio";
 import { poolBallCursor, type PoolCursor } from "./aim";
 import { ballAtPoint } from "./hit-ball";
+import { poolBallLabel } from "./labels";
 import { predictShot, type PoolPrediction } from "./prediction";
 import { usePoolAim } from "./use-pool-aim";
 import { usePoolClock } from "./use-pool-clock";
@@ -122,16 +123,6 @@ function drawPrediction(
     context.stroke();
     context.setLineDash([]);
   }
-}
-
-function ballLabel(view: PoolView, id: number): string {
-  if (view.mode === "party" && view.party) {
-    const special = view.party.specials.find((item) => item.id === id);
-    if (special) return special.kind === "bolt" ? "闪电球" : "金球";
-    const owner = view.party.owners.findIndex((ids) => ids.includes(id));
-    if (owner >= 0) return `${id} 号球 · 玩家${owner + 1}`;
-  }
-  return id === 0 ? "白球" : `${id} 号球`;
 }
 
 function drawTable(
@@ -692,7 +683,7 @@ export function PoolTable({
             style={{ left: hoverBall.x, top: hoverBall.y }}
             aria-hidden="true"
           >
-            {ballLabel(view, hoverBall.id)}
+            {poolBallLabel(view, hoverBall.id)}
           </span>
         )}
       </div>

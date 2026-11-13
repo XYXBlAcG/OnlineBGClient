@@ -135,7 +135,7 @@ export function Lobby({
   const game = gameCatalogue[kind];
   const aiDifficultyNames =
     kind === "expedition" ? expeditionAiDifficultyNames : difficultyNames;
-  const fitted = fitSeats({ kind, humans, ai, checkers });
+  const fitted = fitSeats({ kind, humans, ai, checkers, pool });
   const displayHumans = fitted.humans;
   const displayAi = balanceSeats({
     kind,
@@ -144,7 +144,13 @@ export function Lobby({
   }).ai;
   const total = displayHumans + displayAi.length;
   const seatCap =
-    kind === "tq" && checkers.mode === "siege" ? 2 : game.maxPlayers;
+    kind === "tq" && checkers.mode === "siege"
+      ? 2
+      : kind === "pool"
+        ? pool.mode === "party"
+          ? 4
+          : 2
+        : game.maxPlayers;
   const humanFloor = ["tq", "scmj"].includes(kind)
     ? 0
     : game.ai
