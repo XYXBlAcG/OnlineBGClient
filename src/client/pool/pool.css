@@ -291,3 +291,23 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
+.pool-party-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.pool-party-status span[data-turn="true"] {
+  color: var(--accent);
+  font-weight: 700;
+}
+.pool-party-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  vertical-align: -1px;
+}

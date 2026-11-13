@@ -17,6 +17,7 @@ import {
   type PoolSceneStatus,
 } from "./render3d/PoolScene3D";
 import { PoolTableShell } from "./PoolTableShell";
+import { poolLayout } from "../../domain/pool/table";
 import { predictShot } from "./prediction";
 import { usePoolAim } from "./use-pool-aim";
 import { usePoolClock } from "./use-pool-clock";
@@ -103,7 +104,13 @@ export function PoolTable3D({
   }, []);
   const prediction =
     predict && interactive && aim.cue
-      ? predictShot(view.balls, aim.cue, aim.aim, aim.power)
+      ? predictShot(
+          view.balls,
+          aim.cue,
+          aim.aim,
+          aim.power,
+          poolLayout(view.mode),
+        )
       : null;
   useLayoutEffectSafe(() => {
     if (!host.current) return;

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { PoolView } from "../../domain/pool/types";
 import { Button } from "../ui/Controls";
+import { poolBallColors } from "./colors";
 
 const spinOptions: [string, number, number][] = [
   ["高杆", 0, 0.8],
@@ -74,6 +75,37 @@ export function PoolTableShell({
           {view.message}
         </span>
       </header>
+      {view.mode === "party" && view.party && (
+        <div
+          className="pool-party-status"
+          role="status"
+          aria-label="派对台球进度"
+        >
+          {view.party.owners.map((ids, index) => {
+            const left = ids.filter(
+              (id) =>
+                !view.balls.find((ball) => ball.id === id)?.pocketed,
+            ).length;
+            return (
+              <span
+                key={index}
+                data-player={index}
+                data-turn={view.turn === index}
+              >
+                <b
+                  className="pool-party-dot"
+                  style={{
+                    background: poolBallColors[ids[0]] ?? "transparent",
+                  }}
+                  aria-hidden="true"
+                />
+                玩家 {index + 1} 剩 {left}
+              </span>
+            );
+          })}
+          <span>⚡ 闪电球 · ★ 金球</span>
+        </div>
+      )}
       {children}
       <div className="pool-hud">
         <div className="pool-pockets" data-guide-target="pool.pockets">

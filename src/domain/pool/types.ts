@@ -3,7 +3,7 @@ import { z } from "zod";
 export const POOL_OPPONENT_LEAD_IN = 260;
 export const POOL_PLAYBACK_RATE = 1.5;
 
-export const poolModes = ["eight-ball", "nine-ball"] as const;
+export const poolModes = ["eight-ball", "nine-ball", "party"] as const;
 export type PoolMode = (typeof poolModes)[number];
 
 export const poolOptionsSchema = z.object({
@@ -115,6 +115,11 @@ export interface PoolView {
   mode: PoolMode;
   options: PoolOptions;
   balls: PoolBall[];
+  players: number;
+  party?: {
+    owners: number[][];
+    specials: { id: number; kind: "bolt" | "gold" }[];
+  };
   turn: number;
   groups: [number | null, number | null];
   openTable: boolean;

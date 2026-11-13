@@ -4,7 +4,10 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { POOL_TABLE, poolJaws, poolPockets } from "../../domain/pool/table";
+import {
+  poolLayout,
+  type PoolTableLayout,
+} from "../../domain/pool/table";
 import type { PoolBall, PoolShot, PoolView } from "../../domain/pool/types";
 import type { Action } from "../../domain/types";
 import { POOL_PLAYBACK_RATE, interpolateBalls } from "./frames";
@@ -36,14 +39,22 @@ function drawBall(
   width: number,
   height: number,
   scale: number,
+  layout: PoolTableLayout,
+  eightBall: boolean,
+  special?: "bolt" | "gold",
 ) {
-  const radius = POOL_TABLE.ballRadius * scale,
+  const radius = layout.table.ballRadius * scale,
     [x, y] = tablePoint(ball.x, ball.y, width, height, scale),
-    stripe = ball.id >= 9;
+    stripe = eightBall && ball.id >= 9 && ball.id <= 15;
   context.save();
   context.beginPath();
   context.arc(x, y, radius, 0, Math.PI * 2);
-  context.fillStyle = poolBallColors[ball.id] ?? "#ddd";
+  context.fillStyle =
+    special === "bolt"
+      ? "#2f80ed"
+      : special === "gold"
+        ? "#f2c94c"
+        : (poolBallColors[ball.id] ?? "#ddd");
   context.fill();
   context.strokeStyle = "#233142";
   context.lineWidth = Math.max(1, radius * 0.05);
@@ -63,7 +74,11 @@ function drawBall(
     context.font = `700 ${Math.max(8, radius * 0.42)}px sans-serif`;
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.fillText(String(ball.id), x, y + radius * 0.02);
+    context.fillText(
+      special === "bolt" ? "⚡" : special === "gold" ? "★" : String(ball.id),
+      x,
+      y + radius * 0.02,
+    );
   }
   context.restore();
 }
@@ -74,6 +89,7 @@ function drawPrediction(
   width: number,
   height: number,
   scale: number,
+  layout: PoolTableLayout,
 ) {
   const drawPath = (path: { x: number; y: number }[], color: string) => {
     if (path.length < 2) return;
@@ -100,12 +116,22 @@ function drawPrediction(
     );
     context.beginPath();
     context.setLineDash([4, 4]);
-    context.arc(x, y, POOL_TABLE.ballRadius * scale, 0, Math.PI * 2);
+    context.arc(x, y, layout.table.ballRadius * scale, 0, Math.PI * 2);
     context.strokeStyle = "#f5d37a";
     context.lineWidth = 1.5;
     context.stroke();
     context.setLineDash([]);
   }
+}
+
+function ballLabel(view: PoolView, id: number): string {
+  if (view.mode === "party" && view.party) {
+    const special = view.party.specials.find((item) => item.id === id);
+    if (special) return special.kind === "bolt" ? "闪电球" : "金球";
+    const owner = view.party.owners.findIndex((ids) => ids.includes(id));
+    if (owner >= 0) return `${id} 号球 · 玩家${owner + 1}`;
+  }
+  return id === 0 ? "白球" : `${id} 号球`;
 }
 
 function drawTable(
@@ -131,17 +157,18 @@ function drawTable(
   if (canvas.height !== Math.round(height * dpr))
     canvas.height = Math.round(height * dpr);
   if (width < 80 || height < 80) return;
+  const layout = poolLayout(view.mode);
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
   context.clearRect(0, 0, width, height);
   const padding = 36,
     scale = Math.min(
-      (width - padding * 2) / POOL_TABLE.width,
-      (height - padding * 2) / POOL_TABLE.height,
+      (width - padding * 2) / layout.table.width,
+      (height - padding * 2) / layout.table.height,
     );
   context.save();
   const [left, top] = tablePoint(
-    -POOL_TABLE.width / 2,
-    -POOL_TABLE.height / 2,
+    -layout.table.width / 2,
+    -layout.table.height / 2,
     width,
     height,
     scale,
@@ -150,8 +177,8 @@ function drawTable(
   context.roundRect(
     left - 18,
     top - 18,
-    POOL_TABLE.width * scale + 36,
-    POOL_TABLE.height * scale + 36,
+    layout.table.width * scale + 36,
+    layout.table.height * scale + 36,
     26,
   );
   context.fill();
@@ -159,24 +186,24 @@ function drawTable(
   context.roundRect(
     left,
     top,
-    POOL_TABLE.width * scale,
-    POOL_TABLE.height * scale,
+    layout.table.width * scale,
+    layout.table.height * scale,
     10,
   );
   context.fill();
   context.strokeStyle = "#0a3f39";
   context.lineWidth = 3;
   context.stroke();
-  for (const pocket of poolPockets) {
+  for (const pocket of layout.pockets) {
     const [x, y] = tablePoint(pocket.x, pocket.y, width, height, scale);
     context.beginPath();
-    context.arc(x, y, POOL_TABLE.pocketRadius * scale, 0, Math.PI * 2);
+    context.arc(x, y, layout.table.pocketRadius * scale, 0, Math.PI * 2);
     context.fillStyle = "#02070b";
     context.fill();
   }
   context.strokeStyle = "#0a3f39";
   context.lineWidth = Math.max(2, 0.01 * scale);
-  for (const jaw of poolJaws) {
+  for (const jaw of layout.jaws) {
     const [ax, ay] = tablePoint(jaw.a.x, jaw.a.y, width, height, scale),
       [bx, by] = tablePoint(jaw.b.x, jaw.b.y, width, height, scale);
     context.beginPath();
@@ -184,13 +211,27 @@ function drawTable(
     context.lineTo(bx, by);
     context.stroke();
   }
-  if (prediction) drawPrediction(context, prediction, width, height, scale);
+  if (prediction)
+    drawPrediction(context, prediction, width, height, scale, layout);
   const balls =
     shot && animating
       ? interpolateBalls(shot, elapsed)
       : view.balls.filter((ball) => ball.id !== 0);
+  const specials = new Map(
+    (view.party?.specials ?? []).map((special) => [special.id, special.kind]),
+  );
   for (const ball of balls)
-    if (!ball.pocketed) drawBall(context, ball, width, height, scale);
+    if (!ball.pocketed)
+      drawBall(
+        context,
+        ball,
+        width,
+        height,
+        scale,
+        layout,
+        view.mode === "eight-ball",
+        specials.get(ball.id),
+      );
   if (!animating && cueBall)
     drawBall(
       context,
@@ -198,14 +239,16 @@ function drawTable(
       width,
       height,
       scale,
+      layout,
+      view.mode === "eight-ball",
     );
   if (stick) {
     const direction = { x: Math.cos(aim), y: Math.sin(aim) },
       stickPower = strike?.power ?? power,
-      pulled = POOL_TABLE.ballRadius * 1.35 + stickPower * 0.42,
+      pulled = layout.table.ballRadius * 1.35 + stickPower * 0.42,
       reach =
         pulled +
-        (POOL_TABLE.ballRadius * 1.02 - pulled) * (strike?.progress ?? 0),
+        (layout.table.ballRadius * 1.02 - pulled) * (strike?.progress ?? 0),
       [tipX, tipY] = tablePoint(
         stick.x - direction.x * reach,
         stick.y - direction.y * reach,
@@ -229,8 +272,8 @@ function drawTable(
         scale,
       );
       const [aimStartX, aimStartY] = tablePoint(
-        stick.x + direction.x * POOL_TABLE.ballRadius,
-        stick.y + direction.y * POOL_TABLE.ballRadius,
+        stick.x + direction.x * layout.table.ballRadius,
+        stick.y + direction.y * layout.table.ballRadius,
         width,
         height,
         scale,
@@ -248,22 +291,22 @@ function drawTable(
     context.moveTo(buttX, buttY);
     context.lineTo(tipX, tipY);
     context.strokeStyle = "#d9b37a";
-    context.lineWidth = Math.max(5, POOL_TABLE.ballRadius * scale * 0.34);
+    context.lineWidth = Math.max(5, layout.table.ballRadius * scale * 0.34);
     context.lineCap = "round";
     context.stroke();
     context.beginPath();
     context.arc(
       tipX,
       tipY,
-      Math.max(2, POOL_TABLE.ballRadius * scale * 0.14),
+      Math.max(2, layout.table.ballRadius * scale * 0.14),
       0,
       Math.PI * 2,
     );
     context.fillStyle = "#f4f1e6";
     context.fill();
     const [ballX, ballY] = tablePoint(
-      stick.x - direction.x * POOL_TABLE.ballRadius,
-      stick.y - direction.y * POOL_TABLE.ballRadius,
+      stick.x - direction.x * layout.table.ballRadius,
+      stick.y - direction.y * layout.table.ballRadius,
       width,
       height,
       scale,
@@ -288,7 +331,7 @@ function drawTable(
       context.arc(
         impactX,
         impactY,
-        POOL_TABLE.ballRadius * scale * (1 + (strike.progress - 0.55) * 3.2),
+        layout.table.ballRadius * scale * (1 + (strike.progress - 0.55) * 3.2),
         0,
         Math.PI * 2,
       );
@@ -339,6 +382,7 @@ export function PoolTable({
     x: number;
     y: number;
   } | null>(null);
+  const layout = poolLayout(view.mode);
   const [strike, setStrike] = useState<{ at: number; power: number } | null>(
     null,
   );
@@ -379,7 +423,13 @@ export function PoolTable({
   const remaining = usePoolClock(turnDeadline, serverTime, paused);
   const prediction =
     predict && aim.cue && own
-      ? predictShot(view.balls, aim.cue, aim.aim, aim.power)
+      ? predictShot(
+          view.balls,
+          aim.cue,
+          aim.aim,
+          aim.power,
+          poolLayout(view.mode),
+        )
       : null;
   const cueVisible = own || (pending && !!strike && !animating);
   useEffect(() => {
@@ -533,8 +583,8 @@ export function PoolTable({
       width = rect.width,
       height = rect.height,
       scale = Math.min(
-        (width - 72) / POOL_TABLE.width,
-        (height - 72) / POOL_TABLE.height,
+        (width - 72) / layout.table.width,
+        (height - 72) / layout.table.height,
       );
     if (scale <= 0) return { x: 0, y: 0 };
     return {
@@ -642,7 +692,7 @@ export function PoolTable({
             style={{ left: hoverBall.x, top: hoverBall.y }}
             aria-hidden="true"
           >
-            {hoverBall.id === 0 ? "白球" : `${hoverBall.id} 号球`}
+            {ballLabel(view, hoverBall.id)}
           </span>
         )}
       </div>

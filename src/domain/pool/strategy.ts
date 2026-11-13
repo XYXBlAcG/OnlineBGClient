@@ -11,7 +11,7 @@ import { simulateShot } from "./physics";
 import {
   POOL_TABLE,
   cuePlacementValid,
-  poolPockets,
+  poolLayout,
   type PoolPoint,
 } from "./table";
 import type { PoolBall, PoolView } from "./types";
@@ -25,19 +25,25 @@ const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y);
 
 function ballInHandPlacement(view: PoolView, cue: PoolPoint): PoolPoint | null {
-  if (cuePlacementValid(view.balls, cue)) return { ...cue };
+  const layout = poolLayout(view.mode),
+    width = layout.table.width,
+    height = layout.table.height;
+  if (cuePlacementValid(view.balls, cue, layout)) return { ...cue };
   const candidates: PoolPoint[] = [
     { x: 0, y: 0 },
-    { x: -POOL_TABLE.width / 4, y: 0 },
-    { x: POOL_TABLE.width / 4, y: 0 },
-    { x: 0, y: -POOL_TABLE.height / 4 },
-    { x: 0, y: POOL_TABLE.height / 4 },
-    { x: -POOL_TABLE.width / 3, y: -POOL_TABLE.height / 4 },
-    { x: -POOL_TABLE.width / 3, y: POOL_TABLE.height / 4 },
-    { x: POOL_TABLE.width / 3, y: -POOL_TABLE.height / 4 },
-    { x: POOL_TABLE.width / 3, y: POOL_TABLE.height / 4 },
+    { x: -width / 4, y: 0 },
+    { x: width / 4, y: 0 },
+    { x: 0, y: -height / 4 },
+    { x: 0, y: height / 4 },
+    { x: -width / 3, y: -height / 4 },
+    { x: -width / 3, y: height / 4 },
+    { x: width / 3, y: -height / 4 },
+    { x: width / 3, y: height / 4 },
   ];
-  return candidates.find((cue) => cuePlacementValid(view.balls, cue)) ?? null;
+  return (
+    candidates.find((cue) => cuePlacementValid(view.balls, cue, layout)) ??
+    null
+  );
 }
 
 function segmentDistance(
@@ -71,6 +77,13 @@ function clearPath(
 
 function targetIds(view: PoolView): number[] {
   const balls = activeBalls(view);
+  if (view.mode === "party") {
+    const own = view.party?.owners[view.turn] ?? [],
+      specials = new Set(view.party?.specials.map((special) => special.id));
+    return balls
+      .map((ball) => ball.id)
+      .filter((id) => own.includes(id) || specials.has(id));
+  }
   if (view.mode === "nine-ball") {
     const lowest = Math.min(...balls.map((ball) => ball.id));
     return Number.isFinite(lowest) ? [lowest] : [];
@@ -92,13 +105,14 @@ function shotCandidates(view: PoolView): Candidate[] {
   const balls = activeBalls(view),
     targets = targetIds(view),
     placement = view.ballInHand ? ballInHandPlacement(view, cue) : null,
+    layout = poolLayout(view.mode),
     origin = placement ?? cue,
     candidates: Candidate[] = [];
   if (view.phase === "break")
     candidates.push({
       action: {
         type: "pool-shot",
-        aim: Math.atan2(0 - origin.y, POOL_TABLE.width / 4 - origin.x),
+        aim: Math.atan2(0 - origin.y, layout.table.width / 4 - origin.x),
         power: 0.95,
         spin: { x: 0, y: 0 },
         ...(placement ? { cue: placement } : {}),
@@ -108,7 +122,7 @@ function shotCandidates(view: PoolView): Candidate[] {
   for (const targetId of targets) {
     const target = balls.find((ball) => ball.id === targetId);
     if (!target) continue;
-    for (const pocket of poolPockets) {
+    for (const pocket of layout.pockets) {
       const dx = pocket.x - target.x,
         dy = pocket.y - target.y,
         length = Math.hypot(dx, dy);
@@ -118,8 +132,8 @@ function shotCandidates(view: PoolView): Candidate[] {
         y: target.y - (dy / length) * radius * 2,
       };
       if (
-        Math.abs(ghost.x) > POOL_TABLE.width / 2 - radius ||
-        Math.abs(ghost.y) > POOL_TABLE.height / 2 - radius
+        Math.abs(ghost.x) > layout.table.width / 2 - radius ||
+        Math.abs(ghost.y) > layout.table.height / 2 - radius
       )
         continue;
       const cut =
@@ -187,7 +201,7 @@ function evaluateCandidate(
           : ball,
       )
     : view.balls;
-  const shot = simulateShot(balls, action);
+  const shot = simulateShot(balls, action, poolLayout(view.mode));
   const next = applyOutcome(view, actor, shot);
   const target = Number(candidate.label.match(/\d+/)?.[0] ?? -1);
   const pocketed = shot.pocketed.some((item) => item.id === target);

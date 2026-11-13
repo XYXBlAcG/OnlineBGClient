@@ -21,6 +21,7 @@ export function PoolOptionsControl({
         >
           <option value="eight-ball">8 球</option>
           <option value="nine-ball">9 球</option>
+          <option value="party">派对台球（3–4 人）</option>
         </Select>
       </label>
       <label className="setting-row">
