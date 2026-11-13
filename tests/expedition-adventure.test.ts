@@ -9,9 +9,9 @@ import {
 } from "../src/domain/expedition/world";
 const rules = new ExpeditionAdventure();
 it("defines the complete chapter content without duplicate identifiers", () => {
-  expect(Object.keys(cards)).toHaveLength(218);
-  expect(heroContent).toHaveLength(8);
-  expect(Object.keys(relics)).toHaveLength(60);
+  expect(Object.keys(cards)).toHaveLength(240);
+  expect(heroContent).toHaveLength(9);
+  expect(Object.keys(relics)).toHaveLength(71);
   expect(Object.keys(potions)).toHaveLength(8);
   expect(Object.keys(storyEvents)).toHaveLength(10);
   expect(

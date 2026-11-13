@@ -37,6 +37,20 @@ export const chapters = [
   },
 ] as const;
 export type Biome = (typeof chapters)[number]["biome"];
+export const chapterCount = chapters.length;
+export const chapterAt = (chapter: number) =>
+  chapters[((chapter % chapterCount) + chapterCount) % chapterCount];
+export const endlessTier = (chapter: number) =>
+  Math.floor(chapter / chapterCount);
+export const endlessScale = (chapter: number) => {
+  const tier = endlessTier(chapter);
+  return {
+    health: 1 + tier * 0.4,
+    attack: 1 + tier * 0.32,
+    boss: 1 + tier * 0.5,
+  };
+};
+
 export const waystationRecovery = 0.3;
 export const advancementChoices = {
   vitality: "体魄进阶 · 最大生命 +4",

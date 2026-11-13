@@ -32,6 +32,26 @@ it("celebrates the conquered spire with the run summary", () => {
   expect(html).toContain("走到了最后");
 });
 
+it("settles an endless run with a score panel", () => {
+  const rules = new ExpeditionAdventure(() => 0.42);
+  const run = structuredClone(
+    rules.create(1, false, {
+      expedition: { difficulty: "challenge", endless: true },
+    }).view,
+  );
+  run.phase = "lost";
+  run.chapter = 5;
+  run.path = Array.from({ length: 18 }, (_, index) => `${index}`);
+  run.combat.metrics.battlesWon = 11;
+  run.combat.metrics.cards = 96;
+  const html = renderToStaticMarkup(<ExpeditionVictory run={run} />);
+  expect(html).toContain("远征止步");
+  expect(html).toContain("本次得分");
+  expect(html).toContain("累计层数");
+  expect(html).toContain("无尽挑战 · 第 2 轮");
+  expect(html).toContain("无尽回廊仍在向更深处延伸");
+});
+
 it("keeps the defeat summary calm and factual", () => {
   const html = renderToStaticMarkup(
     <ExpeditionVictory run={finishedRun("lost")} />,

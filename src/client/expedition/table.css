@@ -2702,3 +2702,33 @@
     animation: none;
   }
 }
+.exp-victory-score {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: min(320px, 100%);
+  margin-top: 2px;
+  padding: 12px 22px;
+  border: 1px solid rgba(245, 211, 122, 0.4);
+  border-radius: 16px;
+  background: rgba(245, 211, 122, 0.08);
+}
+.exp-victory-score span {
+  color: rgba(246, 236, 216, 0.72);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+}
+.exp-victory-score strong {
+  color: rgb(245 211 122);
+  font-size: clamp(34px, 5vw, 54px);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.exp-victory-score small {
+  color: rgba(246, 236, 216, 0.8);
+  font-size: 12px;
+}
+.exp-victory-score[data-best="true"] strong {
+  text-shadow: 0 0 24px rgba(245, 211, 122, 0.65);
+}

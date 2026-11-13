@@ -21,6 +21,7 @@ type ExpeditionOptionValue = {
   difficulty: ResolvedExpeditionOptions["difficulty"];
   ascension: number;
   advanced?: boolean;
+  endless: boolean;
   legacy: LegacyNodeId[];
 };
 export function ExpeditionOptionsControl({
@@ -46,6 +47,11 @@ export function ExpeditionOptionsControl({
         label="进阶机制：协作契约、机关与罗盘补给"
         checked={value.advanced ?? false}
         onCheckedChange={(advanced) => onChange({ ...value, advanced })}
+      />
+      <Switch
+        label="无尽模式：无限层挑战，止步时结算分数"
+        checked={value.endless}
+        onCheckedChange={(endless) => onChange({ ...value, endless })}
       />
       <label className="setting-row">
         远征难度

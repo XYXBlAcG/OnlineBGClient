@@ -5,7 +5,11 @@ import {
   advanceTeamContract,
 } from "./advanced";
 import { ballotOption, ballotResult, routeLabel } from "./ballot";
-import { chapters, advancementChoices, waystationRecovery } from "./chapters";
+import {
+  chapters,
+  advancementChoices,
+  waystationRecovery,
+} from "./chapters";
 import { ascensionProfile } from "./ascension";
 import { legacyProfile, normalizeLegacy } from "./legacy";
 import { cardServices, campRecovery } from "./card-services";
@@ -63,6 +67,7 @@ const startingRelics: readonly RelicId[] = [
   "battery",
   "prism",
   "salve",
+  "abyss_lamp",
   "lockpick",
   "secondFate",
 ];
@@ -104,6 +109,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       seed,
       difficulty: config.difficulty,
       ascension: config.ascension,
+      endless: config.endless,
       legacy: normalizeLegacy(config.legacy),
       legacyFreeRerolls: Array(players).fill(legacy.freeRerolls),
       phase: "profession",
@@ -928,7 +934,10 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.hunt = false;
     }
     if (currentNode!.kind === "boss") {
-      if (run.campaignVersion === 1 || run.chapter === chapters.length - 1) {
+      if (
+        run.campaignVersion === 1 ||
+        (!run.endless && run.chapter === chapters.length - 1)
+      ) {
         run.phase = "won";
         return;
       }
@@ -960,7 +969,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.phase === "reward" &&
       run.map.flat().find((node) => node.id === run.current)?.kind === "boss" &&
       run.campaignVersion === 2 &&
-      run.chapter < chapters.length - 1
+      (run.endless || run.chapter < chapters.length - 1)
     ) {
       this.recordNodeResult(run);
       run.phase = "waystation";

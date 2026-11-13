@@ -19,9 +19,9 @@ it("renders the archive overview, tabs and growth explanation", () => {
   expect(html).toContain("探索次数");
   expect(html).toContain("局外传承");
   expect(html).toContain("单局成长");
-  expect(html).toMatch(/职业(<!-- -->)? 0\/8/);
-  expect(html).toMatch(/卡牌(<!-- -->)? 0\/218/);
-  expect(html).toMatch(/遗物(<!-- -->)? 0\/60/);
+  expect(html).toMatch(/职业(<!-- -->)? 0\/9/);
+  expect(html).toMatch(/卡牌(<!-- -->)? 0\/240/);
+  expect(html).toMatch(/遗物(<!-- -->)? 0\/71/);
 });
 
 it("renders every legacy node as a tiered tech tree", () => {
@@ -90,7 +90,7 @@ it("renders all cards with a discovered card selected", () => {
       (node) =>
         node.type === "button" && node.props.className === "exp-journal-card",
     ),
-  ).toHaveLength(218);
+  ).toHaveLength(240);
   expect(
     tree.root.findByProps({ className: "exp-journal-detail" }),
   ).toBeTruthy();
@@ -102,6 +102,7 @@ it("shows the host legacy bonuses in expedition options", () => {
       value={{
         difficulty: "standard",
         ascension: 0,
+        endless: false,
         legacy: [...legacyNodeIds],
       }}
       onChange={() => {}}

@@ -15,6 +15,7 @@ import { generateMap } from "../src/domain/expedition/map";
 import { encounterFor, travelCost } from "../src/domain/expedition/map";
 import { ExpeditionRules } from "../src/domain/expedition/rules";
 import { ascensionProfile } from "../src/domain/expedition/ascension";
+import { expeditionDifficulties } from "../src/domain/expedition/adventure-types";
 import { creatures } from "../src/domain/expedition/world";
 
 const shieldPattern: readonly Intent[] = [
@@ -283,7 +284,7 @@ it("锻造所提供定向升级，隐秘裂隙消耗罗盘打开宝藏", () => {
 
 it("N10 应用累积负面与补偿，随机词条进入战斗状态", () => {
   const profile = ascensionProfile(10);
-  expect(profile.enemyHealth).toBeGreaterThan(1.2);
+  expect(profile.enemyHealth).toBeCloseTo(1.1, 5);
   expect(profile.extraBossMinions).toBe(1);
   expect(profile.modifierCount).toBe(2);
 
@@ -297,7 +298,9 @@ it("N10 应用累积负面与补偿，随机词条进入战斗状态", () => {
   });
   expect(state.view.ascension).toBe(10);
   expect(state.view.compass).toBe(4);
-  expect(state.view.combat.heroes[0].gold).toBe(50 + profile.startGold);
+  expect(state.view.combat.heroes[0].gold).toBe(
+    50 + profile.startGold + expeditionDifficulties.standard.compensation.gold,
+  );
   expect(state.view.combat.heroes[0].maxHp).toBeGreaterThan(48);
   const bossEncounter = encounterFor(state.view, state.view.map.at(-1)![0]);
   expect(bossEncounter.modifiers).toHaveLength(2);

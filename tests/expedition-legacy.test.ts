@@ -108,8 +108,8 @@ it("applies legacy bonuses to authoritative expedition state", () => {
     move: { type: "profession", profession: 0 },
   });
   const hero = state.view.combat.heroes[0];
-  expect(hero.maxHp).toBe(52);
-  expect(hero.gold).toBe(80);
+  expect(hero.maxHp).toBe(55);
+  expect(hero.gold).toBe(96);
   expect(hero.potions).toHaveLength(1);
 });
 

@@ -1,4 +1,4 @@
-import { chapters } from "./chapters";
+import { chapterAt, endlessScale } from "./chapters";
 import {
   expeditionDifficulties,
   type ExpeditionRun,
@@ -21,7 +21,7 @@ export function generateMap(
   layout: 1 | 2 = 2,
   chapter = 0,
 ): MapNode[][] {
-  const theme = chapters[chapter];
+  const theme = chapterAt(chapter);
   const widthCap = Math.min(5, 4 + Math.floor(chapter / 2)),
     rawWidths = Array.from({ length: theme.depth }, (_, floor) => {
       if (layout === 1) return 3;
@@ -316,7 +316,7 @@ export function encounterFor(
       (run.campaignVersion === 1
         ? legacyCreatureIds.has(id)
         : ((creatures[id] as Creature).biome ?? "ruins") ===
-          chapters[run.chapter].biome),
+          chapterAt(run.chapter).biome),
   );
   const routeElite: Partial<Record<RouteProfileId, CreatureId>> = {
     gambit: "marketReaver",
@@ -337,10 +337,14 @@ export function encounterFor(
     profile = expeditionDifficulties[run.difficulty],
     multiplier =
       run.tuning === 2 ? profile.multiplier : profile.legacyMultiplier,
-    difficulty = multiplier * ascension.enemyHealth,
-    attackDifficulty = multiplier * ascension.enemyAttack;
+    endless = run.endless
+      ? endlessScale(run.chapter)
+      : { health: 1, attack: 1, boss: 1 },
+    difficulty = multiplier * ascension.enemyHealth * endless.health,
+    attackDifficulty = multiplier * ascension.enemyAttack * endless.attack;
   const boss = creatures[choices[0]] as Creature;
-  const bossDifficulty = difficulty * ascension.bossHealth;
+  const bossDifficulty =
+    difficulty * ascension.bossHealth * endless.boss;
   const definitions: EnemyDefinition[] =
     rank === "boss"
       ? [
@@ -364,7 +368,7 @@ export function encounterFor(
       partyAttack = rank === "boss" ? 1 + (players - 2) * 0.09 : 1;
     const budget =
       run.campaignVersion === 2
-        ? chapters[run.chapter]
+        ? chapterAt(run.chapter)
         : { health: 1, attack: 1 };
     return {
       name: base.name,
@@ -470,7 +474,7 @@ export function encounterFor(
         ? enemies[0].name
         : rank === "elite"
           ? "精英 · " + enemies[0].name
-          : `第 ${node.floor + 1} 节点 · ${chapters[run.chapter].name}`,
+          : `第 ${node.floor + 1} 节点 · ${chapterAt(run.chapter).name}`,
     subtitle:
       rank === "boss"
         ? "章末决战"

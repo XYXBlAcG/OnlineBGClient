@@ -2,7 +2,7 @@ import { advancedBalance } from "../../domain/expedition/advanced";
 import { ExpeditionHint } from "./ExpeditionHint";
 import { VoteStatus } from "./VoteStatus";
 import { ballotPhase } from "../../domain/expedition/ballot";
-import { chapters, waystationRecovery } from "../../domain/expedition/chapters";
+import { chapterAt, waystationRecovery } from "../../domain/expedition/chapters";
 import { ascensionProfile } from "../../domain/expedition/ascension";
 import {
   legacyEffectLines,
@@ -381,7 +381,7 @@ export function ExpeditionTable({
           <small
             title={`第 ${run.chapter + 1} 大层 / 第 ${Math.max(1, run.floor + 1)} 站，共 ${run.map.length} 站`}
           >
-            {chapters[run.chapter].name} 第 {Math.max(1, run.floor + 1)} 站
+            {chapterAt(run.chapter).name} 第 {Math.max(1, run.floor + 1)} 站
           </small>
           <strong>
             {phaseNames[run.phase]}
@@ -547,8 +547,8 @@ export function ExpeditionTable({
         )}
       {run.phase === "waystation" && (
         <section className="exp-waystation">
-          <h3>下一大层 · {chapters[run.chapter + 1].name}</h3>
-          <p>{chapters[run.chapter + 1].rule}</p>
+          <h3>下一大层 · {chapterAt(run.chapter + 1).name}</h3>
+          <p>{chapterAt(run.chapter + 1).rule}</p>
           <div className="exp-station-recovery">
             {run.combat.heroes.map((member, index) => (
               <span key={index}>

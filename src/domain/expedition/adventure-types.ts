@@ -8,13 +8,14 @@ export const expeditionOptionsSchema = z.object({
   difficulty: z.enum(["story", "standard", "challenge"]).default("standard"),
   advanced: z.boolean().optional(),
   ascension: z.number().int().min(0).max(10).default(0),
+  endless: z.boolean().default(false),
   legacy: z.array(z.enum(legacyNodeIds)).default([]),
 });
 export const expeditionDifficulties = {
   story: {
     label: "旅途",
-    multiplier: 0.84,
-    legacyMultiplier: 0.87,
+    multiplier: 0.82,
+    legacyMultiplier: 0.85,
     compensation: { maxHp: 0, gold: 0, luck: 0, compass: 0 },
   },
   standard: {
@@ -35,6 +36,7 @@ export type ExpeditionOptions = {
   difficulty: ResolvedExpeditionOptions["difficulty"];
   ascension?: number;
   advanced?: boolean;
+  endless?: boolean;
   legacy?: LegacyNodeId[];
 };
 const targetSchema = z.object({
@@ -240,6 +242,7 @@ export interface ExpeditionRun {
   seed: string;
   difficulty: ResolvedExpeditionOptions["difficulty"];
   ascension: number;
+  endless?: boolean;
   legacy?: LegacyNodeId[];
   legacyFreeRerolls?: number[];
   phase:
