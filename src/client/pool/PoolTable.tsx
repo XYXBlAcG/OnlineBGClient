@@ -356,6 +356,7 @@ export function PoolTable({
     : 0;
   const own =
     !replay &&
+    !paused &&
     !pending &&
     view.phase !== "finished" &&
     view.turn === actor &&

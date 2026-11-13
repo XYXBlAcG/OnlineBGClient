@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { GameSnapshot } from "../OriginalGame";
 import { AvatarSurface, type AvatarSurfaceProps } from "../AvatarSurface";
 import type { Action } from "../../domain/types";
+import { tableInteractive } from "../game-sizing/table-state";
 import {
   SichuanRules,
   responseChoices,
@@ -67,9 +68,7 @@ export function SichuanTable({
     v = state.view,
     me = Math.max(0, snapshot.actor),
     interactive =
-      !replay &&
-      !snapshot.finished &&
-      snapshot.actor >= 0 &&
+      tableInteractive(snapshot, replay) &&
       !snapshot.seats[me].difficulty &&
       !snapshot.seats[me].autoplay,
     turn = interactive && rules.actors(state).includes(me),

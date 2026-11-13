@@ -12,5 +12,8 @@ export function toGameSnapshot(snapshot: Snapshot): GameSnapshot {
     state: snapshot.state,
     candidates: snapshot.candidates,
     finished: snapshot.finished,
+    paused: snapshot.paused,
+    turnDeadline: snapshot.turnDeadline,
+    serverTime: snapshot.serverTime,
   };
 }

@@ -15,6 +15,7 @@ import { EnemyIntentStrip } from "./BattleScene";
 import { ExpeditionMap } from "./ExpeditionMap";
 import { useGameCommands } from "../use-game-commands";
 import { lazy, Suspense, useState, useEffect } from "react";
+import { tableInteractive } from "../game-sizing/table-state";
 import type { GameSnapshot } from "../OriginalGame";
 import { AvatarSurface, type AvatarSurfaceProps } from "../AvatarSurface";
 import type { Action } from "../../domain/types";
@@ -152,7 +153,9 @@ export function ExpeditionTable({
     setSelected((value) => (value?.startsWith("potion:") ? null : value));
   }, [hero?.potions.join(":")]);
   const candidates =
-    !replay && !pending && !snapshot.seats[actor]?.autoplay
+    tableInteractive(snapshot, replay) &&
+    !pending &&
+    !snapshot.seats[actor]?.autoplay
       ? rules.candidates(state, actor)
       : [];
   const moves = candidates.flatMap((c) =>
