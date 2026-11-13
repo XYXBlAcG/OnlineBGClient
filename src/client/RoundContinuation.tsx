@@ -20,7 +20,7 @@ export function RoundContinuation({
       <span role="status">{readiness.message}</span>
       {seat && !seat.difficulty && (
         <Button disabled={pending} onClick={() => onReady(!seat.ready)}>
-          {seat.ready ? "取消准备" : "准备下一局"}
+          {seat.ready ? "取消再来一局" : "再来一局"}
         </Button>
       )}
       {snapshot.canManage && (

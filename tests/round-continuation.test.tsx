@@ -19,4 +19,5 @@ it("shows the missing readiness and disables starting until guests are ready", (
   );
   expect(html).toContain("等待乙准备");
   expect(html).toMatch(/disabled=""[^>]*>开始下一局/);
+  expect(html).toContain("再来一局");
 });

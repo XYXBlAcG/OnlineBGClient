@@ -20,7 +20,7 @@ const chrome = (overrides: Partial<Snapshot>) =>
 it("derives one status for the table chrome with a fixed priority", () => {
   expect(tableChromeStatus(chrome({}), true)).toEqual({
     state: "pending",
-    label: "操作确认中…",
+    label: "动作已发送，等待服务器确认…",
   });
   expect(
     tableChromeStatus(chrome({ paused: true, candidates: [{}] as never }), false),

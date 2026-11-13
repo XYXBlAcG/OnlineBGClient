@@ -66,6 +66,11 @@ import { ErrorBoundary } from "./client/ui/ErrorBoundary";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { About } from "./client/About";
 import { TableChrome } from "./client/TableChrome";
+import {
+  connectionPhase,
+  connectionPhaseLabels,
+  isRecoveredTransition,
+} from "./client/connection-phase";
 import { Records } from "./client/Records";
 import { ClientStore } from "./client/storage";
 import {
@@ -224,6 +229,13 @@ function App() {
   const [latencyMs, setLatencyMs] = useState<number>();
   const dismissNotice = useCallback(() => setNotice(""), []);
   const [status, setStatus] = useState("本地");
+  const connectionPhaseRef = useRef(connectionPhase("本地"));
+  useEffect(() => {
+    const next = connectionPhase(status);
+    if (isRecoveredTransition(connectionPhaseRef.current, next))
+      setNotice("连接已恢复");
+    connectionPhaseRef.current = next;
+  }, [status]);
   const operation = useRef(new RoomOperation()).current;
   const pendingOperation = useSyncExternalStore(
     operation.subscribe,
@@ -1783,7 +1795,9 @@ function App() {
           <Notices
             notice={notice}
             progress={
-              busy || /连接中|重连中|连接中断/.test(status) ? status : ""
+              busy || connectionPhase(status) !== "online"
+                ? connectionPhaseLabels[connectionPhase(status)]
+                : ""
             }
             onDismiss={dismissNotice}
             onCancel={() =>

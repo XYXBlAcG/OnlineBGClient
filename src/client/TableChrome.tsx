@@ -11,7 +11,8 @@ export function tableChromeStatus(
   >,
   pending: boolean,
 ): { state: TableChromeState; label: string } {
-  if (pending) return { state: "pending", label: "操作确认中…" };
+  if (pending)
+    return { state: "pending", label: "动作已发送，等待服务器确认…" };
   if (snapshot.paused)
     return {
       state: "paused",
