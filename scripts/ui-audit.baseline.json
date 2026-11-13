@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-13T11:36:13.740Z",
+  "generatedAt": "2026-11-13T12:02:27.135Z",
   "findings": [
     {
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [1/3]|div.z-10.text-black",
@@ -643,38 +643,6 @@
       "element": "span.dominion-card-text [7/7]"
     },
     {
-      "id": "dominion|landscape|blocked|button [1/3]|span.dominion-card-heading",
-      "game": "dominion",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [1/3] / span.dominion-card-heading"
-    },
-    {
-      "id": "dominion|landscape|blocked|button [2/3]|span.dominion-card-heading",
-      "game": "dominion",
-      "viewport": "landscape",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button [2/3] / span.dominion-card-heading"
-    },
-    {
-      "id": "dominion|landscape|blocked|button [3/3]|span.dominion-card-heading",
-      "game": "dominion",
-      "viewport": "landscape",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button [3/3] / span.dominion-card-heading"
-    },
-    {
-      "id": "dominion|landscape|blocked|button.primary-button|b",
-      "game": "dominion",
-      "viewport": "landscape",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button.primary-button / b"
-    },
-    {
       "id": "dy|desktop|overlap|div.dy-card.dy-card-1.border[data-guide-target=\"dy.card\"] [1/4]|div.dy-card.dy-card-1.border[data-guide-target=\"dy.card\"] [2/4]",
       "game": "dy",
       "viewport": "desktop",
@@ -875,46 +843,6 @@
       "element": "div.original-game"
     },
     {
-      "id": "graphwar|desktop|blocked|button [1/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [1/5] / canvas"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [2/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [2/5] / canvas"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [3/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [3/5] / canvas"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [4/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [4/5] / canvas"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [5/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button [5/5] / canvas"
-    },
-    {
       "id": "graphwar|desktop|blocked|button.game-avatar [1/3]|strong",
       "game": "graphwar",
       "viewport": "desktop",
@@ -937,46 +865,6 @@
       "severity": "P1",
       "category": "blocked",
       "element": "button.game-avatar [3/3] / div.gw-player-status"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [1/5]|canvas",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [1/5] / canvas"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [2/5]|canvas",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [2/5] / canvas"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [3/5]|canvas",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [3/5] / canvas"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [4/5]|canvas",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [4/5] / canvas"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [5/5]|div.gw-player-status",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button [5/5] / div.gw-player-status"
     },
     {
       "id": "graphwar|landscape|blocked|button.game-avatar [1/3]|form.gw-input-row",
