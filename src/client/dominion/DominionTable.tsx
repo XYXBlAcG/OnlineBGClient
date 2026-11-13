@@ -77,7 +77,7 @@ export function DominionTable({
     <section className="dominion-table" aria-label="领土牌桌">
       <header className="dominion-status" data-guide-target="dominion.status">
         <div>
-          <small>DOMINION · 第 {view.round} 轮</small>
+          <small>第 {view.round} 轮</small>
           <strong>
             {view.phase === "finished"
               ? `胜者：${view.winners.map((index) => snapshot.seats[index].name).join("、")}`

@@ -288,14 +288,14 @@ export function PoolTable3D({
   };
   const hint =
     cameraMode === "orbit"
-      ? "拖动旋转视角，滚轮缩放，点“返回击球”继续"
+      ? "拖动旋转视角"
       : view.ballInHand
         ? aim.placement
           ? aim.pulling
             ? "松手击球"
-            : "白球已放置，按住拖动蓄力"
-          : "自由球：点击台面放置白球"
-        : "移动瞄准，按住拖动蓄力，右键/中键旋转，滚轮缩放";
+            : "拖动蓄力"
+          : "点击台面放置白球"
+        : "拖动蓄力，右键旋转视角";
   return (
     <PoolTableShell
       view={view}

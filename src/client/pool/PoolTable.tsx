@@ -652,9 +652,9 @@ export function PoolTable({
     ? aim.placement
       ? aim.pulling
         ? "松手击球"
-        : "白球已放置，按住拖动蓄力"
-      : "自由球：点击台面放置白球"
-    : "按住桌面向后拖动，松手击球";
+        : "拖动蓄力"
+      : "点击台面放置白球"
+    : "拖动蓄力，松手击球";
   return (
     <PoolTableShell
       view={view}

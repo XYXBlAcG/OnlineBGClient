@@ -46,7 +46,8 @@ it("renders a real game surface, soldier targets, formula controls and meaningfu
   expect(html).toContain('class="gw-player-status"');
   expect(html).toContain('data-relation="ally"');
   expect(html).toContain('data-relation="enemy"');
-  expect(html).toContain("gw-relation-legend");
+  expect(html).not.toContain("gw-relation-legend");
+  expect(html).toContain("蓝队 3");
   expect(html).not.toContain('class="gw-roster"');
   expect(beginnerGuides.graphwar!.steps.length).toBeGreaterThanOrEqual(4);
   expect(guidePosition(s).length).toBeGreaterThan(0);

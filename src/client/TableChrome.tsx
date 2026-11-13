@@ -34,6 +34,7 @@ export function TableChrome({
   snapshot,
   pending,
   finishedActions,
+  showTurn = true,
 }: {
   snapshot: Pick<
     Snapshot,
@@ -41,6 +42,7 @@ export function TableChrome({
   >;
   pending: boolean;
   finishedActions?: ReactNode;
+  showTurn?: boolean;
 }) {
   const { state, label } = tableChromeStatus(snapshot, pending);
   const banner = state === "paused" || state === "resolving";
@@ -55,7 +57,7 @@ export function TableChrome({
           {label}
         </div>
       )}
-      {snapshot.playing && !snapshot.finished && (
+      {snapshot.playing && !snapshot.finished && (showTurn || state === "pending") && (
         <div className="game-status-row" data-chrome-state={state}>
           <span
             className="game-turn-indicator"

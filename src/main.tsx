@@ -2099,6 +2099,10 @@ function App() {
                           <TableChrome
                             snapshot={snapshot}
                             pending={actionPending}
+                            showTurn={
+                              gameCatalogue[snapshot.kind].presentation
+                                .kind === "upstream"
+                            }
                             finishedActions={
                               <>
                                 {!mobile &&

@@ -60,9 +60,8 @@ export function PoolTableShell({
     <section className="pool-table" data-renderer={renderer}>
       <header className="pool-heading" data-guide-target="pool.status">
         <div>
-          <strong>台球</strong>
           <small>
-            玩家 {view.turn + 1} 击球 · 第 {view.shotNumber + 1} 杆
+            玩家 {view.turn + 1} · 第 {view.shotNumber + 1} 杆
             {view.mode === "eight-ball" &&
               !view.openTable &&
               ` · ${view.groups[0] === 0 ? "玩家 1 全色" : "玩家 1 花色"} / ${view.groups[1] === 0 ? "玩家 2 全色" : "玩家 2 花色"}`}
@@ -72,7 +71,9 @@ export function PoolTableShell({
           {remaining !== null && (
             <time className="pool-clock">{remaining}s</time>
           )}
-          {view.message}
+          {!/^(开球|玩家 \d+ (击球|继续击球))$/.test(view.message)
+            ? view.message
+            : ""}
         </span>
       </header>
       {view.mode === "party" && view.party && (

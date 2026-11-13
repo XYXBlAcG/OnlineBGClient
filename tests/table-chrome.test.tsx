@@ -80,3 +80,22 @@ it("renders paused, turn, and finished chrome from the same component", () => {
   expect(finished).toContain("对局已结束");
   expect(finished).toContain("查看回放");
 });
+
+it("hides the generic turn row when the table shows its own status", () => {
+  const hidden = renderToStaticMarkup(
+    <TableChrome
+      snapshot={chrome({ candidates: [{}] as never }) as never}
+      pending={false}
+      showTurn={false}
+    />,
+  );
+  expect(hidden).not.toContain("轮到你了");
+  const pending = renderToStaticMarkup(
+    <TableChrome
+      snapshot={chrome({}) as never}
+      pending
+      showTurn={false}
+    />,
+  );
+  expect(pending).toContain("动作已发送，等待服务器确认…");
+});

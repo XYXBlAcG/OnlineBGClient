@@ -224,7 +224,6 @@ export function SichuanTable({
   return (
     <section className="scmj-table">
       <header className="scmj-heading">
-        <span>{modeName}</span>
         <div>
           {!replay &&
             !snapshot.finished &&
@@ -246,6 +245,7 @@ export function SichuanTable({
             余牌 <strong>{v.wall.length}</strong>
           </span>
           <strong role="status">{title}</strong>
+          <small>{modeName}</small>
           {v.match && (
             <div className="scmj-match" data-guide-target="scmj.match">
               <strong>
@@ -494,13 +494,6 @@ export function SichuanTable({
                 定缺：{v.lacks[me] < 0 ? "未选" : suitNames[v.lacks[me]]}
               </span>
             )}
-            <span>
-              {phase === "exchange"
-                ? "先选三张同色牌，再确认"
-                : mustLack
-                  ? "金色标记为缺门，须优先打出"
-                  : "选择手牌后出牌"}
-            </span>
             {waits.length > 0 && (
               <details>
                 <summary>听牌提示</summary>

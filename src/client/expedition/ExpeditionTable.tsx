@@ -585,7 +585,6 @@ export function ExpeditionTable({
             >
               <span>{h.icon}</span>
               <h2>{h.name}</h2>
-              <p>{h.title}</p>
               <small>{h.maxHp} 生命 · 10 张起始牌</small>
             </button>
           ))}
