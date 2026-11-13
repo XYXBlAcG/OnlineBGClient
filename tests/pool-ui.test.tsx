@@ -25,6 +25,26 @@ it("renders the pool prototype with both rule modes and table controls", () => {
   expect(html).not.toContain('aria-label="击球力度"');
 });
 
+it("shows the assigned eight-ball groups once the table closes", () => {
+  const rules = new PoolRules(() => 0.42);
+  const closed = rules.create(2, false, {
+    pool: { mode: "eight-ball", shotSeconds: 60, assist: true },
+  }).view;
+  closed.openTable = false;
+  closed.groups = [0, 1];
+  const html = renderToStaticMarkup(
+    <PoolGame
+      view={closed}
+      actor={0}
+      act={() => {}}
+      replay={false}
+      pending={false}
+    />,
+  );
+  expect(html).toContain("玩家 1 全色");
+  expect(html).toContain("玩家 2 花色");
+});
+
 it("falls back to the 2D renderer when no 3D environment is available", () => {
   const view = new PoolRules(() => 0.42).create(2, false, {
     pool: { mode: "eight-ball", shotSeconds: 60, assist: true },

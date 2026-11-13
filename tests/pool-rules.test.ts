@@ -168,6 +168,59 @@ it("wins with the eight after clearing the group", () => {
   expect(win.winner).toBe(0);
 });
 
+it("wins when the last group ball and the eight drop in the same shot", () => {
+  const base = view();
+  base.shotNumber = 1;
+  base.groups = [0, 1];
+  base.openTable = false;
+  base.balls = base.balls.map((ball) =>
+    ball.id !== 0 && ball.id !== 8 && ball.id !== 7 && ball.id <= 7
+      ? { ...ball, pocketed: true }
+      : ball,
+  );
+  const win = applyOutcome(
+    base,
+    0,
+    pocket(base, [7, 8], { firstHit: 7 }),
+  );
+  expect(win.phase).toBe("finished");
+  expect(win.winner).toBe(0);
+});
+
+it("wins with the eight when the table stayed open but one group is cleared", () => {
+  const base = view();
+  base.shotNumber = 1;
+  base.balls = base.balls.map((ball) =>
+    ball.id !== 0 && ball.id !== 8 && ball.id <= 7
+      ? { ...ball, pocketed: true }
+      : ball,
+  );
+  const win = applyOutcome(
+    base,
+    0,
+    pocket(base, [8], { firstHit: 8, railAfterContact: false }),
+  );
+  expect(win.winner).toBe(0);
+});
+
+it("still loses when the eight drops before the group is cleared", () => {
+  const base = view();
+  base.shotNumber = 1;
+  base.groups = [0, 1];
+  base.openTable = false;
+  base.balls = base.balls.map((ball) =>
+    ball.id !== 0 && ball.id !== 8 && ball.id !== 3 && ball.id <= 7
+      ? { ...ball, pocketed: true }
+      : ball,
+  );
+  const loss = applyOutcome(
+    base,
+    0,
+    pocket(base, [8], { firstHit: 8, railAfterContact: false }),
+  );
+  expect(loss.winner).toBe(1);
+});
+
 it("enforces the lowest-ball rule in nine-ball", () => {
   const base = view("nine-ball");
   base.shotNumber = 1;

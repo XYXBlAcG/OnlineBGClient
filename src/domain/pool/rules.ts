@@ -33,11 +33,19 @@ const cleared = (view: PoolView, actor: number) => {
   );
 };
 const player = (actor: number) => `玩家 ${actor + 1}`;
+const remainingGroupCount = (balls: PoolBall[]) =>
+  new Set(
+    objectBalls(balls)
+      .map((ball) => groupOf(ball.id))
+      .filter((group) => group !== null),
+  ).size;
 
 function legalFirstHit(view: PoolView, actor: number, firstHit: number | null) {
   if (firstHit === null) return false;
   if (view.mode === "nine-ball") return firstHit === lowest(view.balls);
-  if (view.groups[actor] === null) return firstHit !== 8;
+  if (view.groups[actor] === null)
+    return firstHit !== 8 ||
+      (view.openTable && remainingGroupCount(view.balls) <= 1);
   if (cleared(view, actor)) return firstHit === 8;
   return groupOf(firstHit) === view.groups[actor];
 }
@@ -107,10 +115,19 @@ export function applyOutcome(
   const eight = pocketedObjects.includes(8);
   if (eight && breakShot) next.balls = respot(next.balls, 8);
   if (eight && !breakShot) {
-    if (foul || !cleared(view, actor)) {
+    const remainingGroups = new Set(
+      objectBalls(next.balls)
+        .map((ball) => groupOf(ball.id))
+        .filter((group) => group !== null),
+    );
+    const clearedAfterShot = cleared({ ...view, balls: next.balls }, actor);
+    if (foul || !(clearedAfterShot || (view.openTable && remainingGroups.size <= 1))) {
       next.phase = "finished";
       next.winner = opponent(actor);
-      next.message = `${player(actor)} 提前打进 8 号球，${player(next.winner)} 获胜`;
+      next.message =
+        foul && clearedAfterShot
+          ? `${player(actor)} 犯规打进 8 号球，${player(next.winner)} 获胜`
+          : `${player(actor)} 提前打进 8 号球，${player(next.winner)} 获胜`;
       next.ballInHand = false;
       return next;
     }
