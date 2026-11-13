@@ -67,6 +67,19 @@ export function ExpeditionOptionsControl({
           ))}
         </Select>
       </label>
+      {(() => {
+        const compensation =
+          expeditionDifficulties[value.difficulty].compensation;
+        const lines = [
+          compensation.maxHp > 0 && `最大生命 +${compensation.maxHp}`,
+          compensation.gold > 0 && `金币 +${compensation.gold}`,
+          compensation.luck > 0 && `幸运筹码 +${compensation.luck}`,
+          compensation.compass > 0 && `罗盘 +${compensation.compass}`,
+        ].filter(Boolean);
+        return lines.length ? (
+          <small className="muted">开局补偿：{lines.join(" · ")}</small>
+        ) : null;
+      })()}
       <label className="setting-row">
         进阶阶位
         <Select

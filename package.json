@@ -43,6 +43,7 @@
     "desktop:prepare": "npm run upstream:build && npm run build && npm run hosting:build",
     "verify:smoke": "node scripts/verify-smoke.mjs",
     "benchmark:expedition-chapter": "node scripts/benchmark-expedition-chapter.mjs",
+    "verify:expedition-difficulty": "node scripts/verify-expedition-difficulty.mjs",
     "analyze:expedition-experience": "node scripts/analyze-expedition-experience.mjs",
     "analyze:expedition-difficulty": "node scripts/analyze-expedition-difficulty.mjs",
     "analyze:expedition-difficulty:python": "python3 scripts/run_expedition_difficulty.py",

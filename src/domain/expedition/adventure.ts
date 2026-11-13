@@ -34,6 +34,7 @@ import {
   type EventEffect,
 } from "./world";
 import {
+  expeditionDifficulties,
   expeditionOptionsSchema,
   type ExpeditionRun,
   type ExpeditionGameState,
@@ -80,7 +81,9 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     const seed = `${this.random()}:${this.random()}`,
       config = expeditionOptionsSchema.parse(options?.expedition ?? {}),
       ascension = ascensionProfile(config.ascension),
-      legacy = legacyProfile(config.legacy);
+      legacy = legacyProfile(config.legacy),
+      difficultyCompensation =
+        expeditionDifficulties[config.difficulty].compensation;
     const view: ExpeditionRun = {
       advanced: config.advanced,
       rulesVersion: 1,
@@ -91,7 +94,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       luck: Array(players).fill(
         (options?.expeditionCampaign === 1 ? 0 : 1) +
           ascension.startLuck +
-          legacy.startLuck,
+          legacy.startLuck +
+          difficultyCompensation.luck,
       ),
       rerolls: Array(players).fill(0),
       eventRerolls: 0,
@@ -146,7 +150,11 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       companionBattle: null,
       nodeStart: null,
       lastNodeResult: null,
-      compass: 2 + ascension.startCompass + legacy.startCompass,
+      compass:
+        2 +
+        ascension.startCompass +
+        legacy.startCompass +
+        difficultyCompensation.compass,
       sequence: 0,
       marks: [],
     };
@@ -611,9 +619,16 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         const profile = ascensionProfile(run.ascension),
           legacy = legacyProfile(run.legacy ?? []);
         run.combat.heroes.forEach((h, index) => {
-          h.maxHp += profile.startMaxHp + legacy.startMaxHp;
+          h.maxHp +=
+            profile.startMaxHp +
+            legacy.startMaxHp +
+            expeditionDifficulties[run.difficulty].compensation.maxHp;
           h.hp = h.maxHp;
-          h.gold = 50 + profile.startGold + legacy.startGold;
+          h.gold =
+            50 +
+            profile.startGold +
+            legacy.startGold +
+            expeditionDifficulties[run.difficulty].compensation.gold;
           h.relics = [startingRelics[h.profession] ?? "salve"];
           for (let count = 0; count < legacy.startPotions; count++) {
             const id = shuffled(

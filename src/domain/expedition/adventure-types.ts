@@ -11,9 +11,24 @@ export const expeditionOptionsSchema = z.object({
   legacy: z.array(z.enum(legacyNodeIds)).default([]),
 });
 export const expeditionDifficulties = {
-  story: { label: "旅途", multiplier: 0.82, legacyMultiplier: 0.85 },
-  standard: { label: "标准", multiplier: 1.11, legacyMultiplier: 1.15 },
-  challenge: { label: "挑战", multiplier: 1.37, legacyMultiplier: 1.42 },
+  story: {
+    label: "旅途",
+    multiplier: 0.84,
+    legacyMultiplier: 0.87,
+    compensation: { maxHp: 0, gold: 0, luck: 0, compass: 0 },
+  },
+  standard: {
+    label: "标准",
+    multiplier: 1.06,
+    legacyMultiplier: 1.1,
+    compensation: { maxHp: 3, gold: 16, luck: 0, compass: 0 },
+  },
+  challenge: {
+    label: "挑战",
+    multiplier: 1.14,
+    legacyMultiplier: 1.18,
+    compensation: { maxHp: 8, gold: 40, luck: 2, compass: 1 },
+  },
 } as const;
 export type ResolvedExpeditionOptions = z.infer<typeof expeditionOptionsSchema>;
 export type ExpeditionOptions = {
