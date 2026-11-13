@@ -2,6 +2,8 @@ import { expect, it } from "vitest";
 import { PoolRules } from "../src/domain/pool/rules";
 import { poolLayout, standardPoolLayout } from "../src/domain/pool/table";
 import type { PoolShot, PoolView } from "../src/domain/pool/types";
+import { PoolStrategy } from "../src/domain/pool/strategy";
+import type { SearchRequest } from "../src/domain/strategy";
 
 const rules = new PoolRules(() => 0.42);
 const view = (players: 3 | 4) =>
@@ -121,4 +123,24 @@ it("finishes when a player clears all owned balls", () => {
   );
   expect(next.view.phase).toBe("finished");
   expect(next.view.winner).toBe(0);
+});
+
+it("produces legal party shots through the shared AI", () => {
+  const state = rules.create(3, false, {
+    pool: { mode: "party", shotSeconds: 60, assist: true },
+  });
+  const strategy = new PoolStrategy();
+  const request: SearchRequest = {
+    observation: state,
+    actor: 0,
+    difficulty: "normal",
+    seed: "party-ai",
+    audit: true,
+  };
+  const candidates = strategy.candidates(request);
+  expect(candidates.length).toBeGreaterThan(0);
+  const decision = strategy.decide(state, 0, "normal", "party-ai");
+  expect(decision.chosen.type).toBe("pool-shot");
+  if (decision.chosen.type !== "pool-shot") throw new Error("动作错误");
+  expect(rules.apply(state, 0, decision.chosen).kind).toBe("pool");
 });
