@@ -2573,13 +2573,6 @@
   filter: drop-shadow(0 0 14px rgba(245, 211, 122, 0.55));
   animation: exp-victory-breathe 3.6s ease-in-out infinite;
 }
-.exp-victory-kicker {
-  margin: 0;
-  color: rgba(246, 236, 216, 0.72);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.32em;
-}
 .exp-victory h2 {
   margin: 0;
   color: rgb(245 211 122);
@@ -2589,12 +2582,6 @@
   text-shadow:
     0 0 18px rgba(245, 211, 122, 0.45),
     0 0 60px rgba(245, 211, 122, 0.22);
-}
-.exp-victory-subtitle {
-  margin: 0;
-  color: rgba(246, 236, 216, 0.82);
-  font-size: 13px;
-  letter-spacing: 0.08em;
 }
 .exp-victory-stats {
   display: grid;
@@ -2622,11 +2609,6 @@
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
-.exp-victory-party {
-  margin: 0;
-  color: rgba(246, 236, 216, 0.72);
-  font-size: 13px;
-}
 .exp-victory::after {
   content: "";
   position: absolute;
@@ -2648,59 +2630,34 @@
   animation: exp-victory-sparks 9s linear infinite;
   pointer-events: none;
 }
-.exp-victory-line {
-  max-width: 560px;
-  margin: 4px 0 0;
-  color: rgba(246, 236, 216, 0.86);
-  font-size: 14px;
-  line-height: 1.7;
-}
 .exp-victory[data-outcome="lost"] {
-  background: radial-gradient(
-    circle at 50% -10%,
-    rgb(51 37 58) 0%,
-    rgb(28 22 36) 48%,
-    rgb(16 13 21) 100%
-  );
-}
-.exp-victory[data-outcome="lost"] .exp-victory-crown {
-  color: rgba(246, 236, 216, 0.55);
-  animation: none;
+  background:
+    radial-gradient(circle at 50% -10%, rgb(52 18 20) 0%, rgb(26 13 15) 42%, rgb(11 8 9) 100%);
+  border: 1px solid rgba(180, 77, 70, 0.28);
 }
 .exp-victory[data-outcome="lost"] h2 {
-  color: rgba(246, 236, 216, 0.88);
+  color: rgb(196 126 120);
+  font-size: clamp(24px, 3.6vw, 36px);
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 18px rgba(160, 60, 55, 0.25);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-stats > div {
+  border-color: rgba(180, 77, 70, 0.18);
+  background: rgba(255, 255, 255, 0.025);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-stats dt {
+  color: rgba(246, 236, 216, 0.45);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-stats dd {
+  color: rgba(246, 236, 216, 0.72);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-score {
+  border-color: rgba(180, 77, 70, 0.22);
+  background: rgba(180, 77, 70, 0.06);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-score strong {
+  color: rgb(206 150 142);
   text-shadow: none;
-}
-@keyframes exp-victory-sparks {
-  to {
-    background-position:
-      190px 380px,
-      320px 640px,
-      470px 700px;
-  }
-}
-@keyframes exp-victory-turn {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes exp-victory-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.92;
-  }
-  50% {
-    transform: scale(1.06);
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .exp-victory-rays,
-  .exp-victory-crown,
-  .exp-victory::after {
-    animation: none;
-  }
 }
 .exp-victory-score {
   display: grid;
