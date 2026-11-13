@@ -65,6 +65,7 @@ import { Button, Panel } from "./client/ui/Controls";
 import { ErrorBoundary } from "./client/ui/ErrorBoundary";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { About } from "./client/About";
+import { TableChrome } from "./client/TableChrome";
 import { Records } from "./client/Records";
 import { ClientStore } from "./client/storage";
 import {
@@ -2059,79 +2060,53 @@ function App() {
                         </div>
                       ) : (
                         <>
-                          {snapshot.paused && (
-                            <div className="resolution-status">
-                              {snapshot.aiPaused
-                                ? "AI 性能测试已暂停"
-                                : "有玩家掉线，等待恢复连接"}
-                            </div>
-                          )}
-                          {snapshot.finished && (
-                            <div className="finish-banner">
-                              <strong>对局已结束</strong>
-                              {!mobile &&
-                                preferences.auditVisible &&
-                                gameCatalogue[snapshot.kind].ai && (
-                                  <button onClick={() => setTab("audit")}>
-                                    审核 AI 决策
+                          <TableChrome
+                            snapshot={snapshot}
+                            pending={actionPending}
+                            finishedActions={
+                              <>
+                                {!mobile &&
+                                  preferences.auditVisible &&
+                                  gameCatalogue[snapshot.kind].ai && (
+                                    <button onClick={() => setTab("audit")}>
+                                      审核 AI 决策
+                                    </button>
+                                  )}
+                                {!mobile && (
+                                  <button onClick={() => setRecordsOpen(true)}>
+                                    查看回放
                                   </button>
                                 )}
-                              {!mobile && (
-                                <button onClick={() => setRecordsOpen(true)}>
-                                  查看回放
-                                </button>
-                              )}
-                              {!!snapshot.partyQueue?.entries.length && (
-                                <PartyQueue
-                                  compact
+                                {!!snapshot.partyQueue?.entries.length && (
+                                  <PartyQueue
+                                    compact
+                                    snapshot={snapshot}
+                                    onError={setNotice}
+                                    send={(command) => {
+                                      if (session.current)
+                                        connection.current?.send({
+                                          ...command,
+                                          token: session.current.token,
+                                        });
+                                    }}
+                                  />
+                                )}
+                                <RoundContinuation
                                   snapshot={snapshot}
-                                  onError={setNotice}
-                                  send={(command) => {
+                                  pending={!!pendingOperation}
+                                  onStart={restart}
+                                  onReady={(ready) => {
                                     if (session.current)
                                       connection.current?.send({
-                                        ...command,
+                                        type: "ready",
                                         token: session.current.token,
+                                        ready,
                                       });
                                   }}
                                 />
-                              )}
-                              <RoundContinuation
-                                snapshot={snapshot}
-                                pending={!!pendingOperation}
-                                onStart={restart}
-                                onReady={(ready) => {
-                                  if (session.current)
-                                    connection.current?.send({
-                                      type: "ready",
-                                      token: session.current.token,
-                                      ready,
-                                    });
-                                }}
-                              />
-                            </div>
-                          )}
-                          {snapshot.resolving && !snapshot.finished && (
-                            <div className="resolution-status">
-                              等待无懈可击响应，房间服务自动结算
-                            </div>
-                          )}
-                          {snapshot.playing && (
-                            <div className="game-status-row">
-                              <span
-                                className="game-turn-indicator"
-                                aria-live="polite"
-                                role="status"
-                              >
-                                {actionPending
-                                  ? "操作确认中…"
-                                  : snapshot.playing &&
-                                      !snapshot.paused &&
-                                      snapshot.candidates.length
-                                    ? "轮到你了"
-                                    : ""}
-                              </span>
-                            </div>
-                          )}
+                              </>
+                            }
+                          />
                           <div
                             className="game-stage"
                             aria-busy={actionPending}
