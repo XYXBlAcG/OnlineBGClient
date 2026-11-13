@@ -71,7 +71,16 @@ export function probePage() {
     };
   };
 
+  const inClosedDetails = (element) => {
+    const details = element.closest("details");
+    if (!details || details.open) return false;
+    const summary = details.querySelector(":scope > summary");
+    return !(summary && (element === summary || summary.contains(element)));
+  };
+
   const isVisible = (element) => {
+    if (inClosedDetails(element)) return false;
+    if (element.closest("[hidden]")) return false;
     if (element.getClientRects().length === 0) return false;
     const style = getComputedStyle(element);
     if (style.display === "none" || style.visibility === "hidden") return false;
