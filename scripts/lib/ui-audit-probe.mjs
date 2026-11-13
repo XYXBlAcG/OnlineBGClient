@@ -210,6 +210,10 @@ export function probePage() {
           }
           clipped.push({
             el: describe(element),
+            lineClamp: style.webkitLineClamp,
+            insideAriaHidden: Boolean(
+              element.closest('[aria-hidden="true"]'),
+            ),
             overflowY: style.overflowY,
             scrollHeight: element.scrollHeight,
             clientHeight: element.clientHeight,
@@ -304,6 +308,7 @@ export function probePage() {
     blocked.push({
       target: describe(element),
       cover: describe(hit),
+      coverControl: Boolean(coverControl),
       stacked:
         Boolean(coverControl) &&
         coverControl !== element &&
