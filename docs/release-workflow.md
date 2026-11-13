@@ -45,15 +45,15 @@ git tag -a vX.Y.Z -m "OnlineBGClient X.Y.Z"
 gh push origin vX.Y.Z
 ```
 
-标签 `v*` 触发 [Desktop packages](../.github/workflows/desktop.yml) 的统一发布构建：macOS、Windows 与 iOS 在同一工作流运行，由 release job 汇总到同一个 GitHub Release。iOS 构建复用 [iOS IPA](../.github/workflows/ios.yml)，也可手动触发只产出 Actions artifact，不创建独立 Release。
+标签 `v*` 触发 [Desktop packages](../.github/workflows/desktop.yml) 的统一发布构建：只构建 macOS 与 Windows，由 release job 汇总到同一个 GitHub Release。iOS 不在发布构建范围内，不产出 IPA，也不进入 Release 资产。
 
 ## Release 格式
 
 每个版本只有一个 Release：标签 `vX.Y.Z`，标题 `OnlineBGClient X.Y.Z`。资产命名、说明、`latest.json` 和 `SHA256SUMS.txt` 由 [发布资产脚本](../scripts/release-assets.mjs) 生成，草稿、上传和发布由 [发布脚本](../scripts/publish-release.mjs) 执行。
 
 - 资产统一为 `OnlineBGClient-X.Y.Z-<平台>-<架构>[-unsigned].<扩展名>`。
-- 说明固定包含「更新内容」和「下载」，下载表覆盖 Windows、macOS、iOS 与可选共享资源。
-- iOS 资产为未签名 arm64 IPA，与桌面产物属于同一个版本和 Release。
+- 说明固定包含「更新内容」和「下载」，下载表覆盖 Windows、macOS 与可选共享资源。
+- 发布资产只有 Windows 与 macOS；iOS 构建与 IPA 不参与发布。
 - 不在 GitHub 手工维护第二套资产名或说明格式。
 
 ## 共享字体包
@@ -116,7 +116,7 @@ gh run list --workflow desktop.yml --limit 3
 确认：
 
 - Release 不是 draft，标题和标签符合 `OnlineBGClient X.Y.Z` / `vX.Y.Z`。
-- Windows `.exe`、macOS `.app.tar.gz`、iOS `.ipa`、签名、`latest.json`、`SHA256SUMS.txt` 均存在。
+- Windows `.exe`、macOS `.app.tar.gz`、签名、`latest.json`、`SHA256SUMS.txt` 均存在；Release 中不应出现 `.ipa`。
 - 所有 job 完成且 release job 成功。
 - 客户端自动更新所需的签名和版本号一致。
 - 不存在独立的 `ios-*` Release。

@@ -2,7 +2,7 @@
 
 ## 使用
 
-从 [Release](https://github.com/XYXBlAcG/OnlineBGClient/releases) 获取安装包。0.2.0 之前的客户端没有更新器，需要手动安装一次。Windows 下载 `.exe`；macOS 下载 `.app.tar.gz`，解压后将应用移到 Applications；iOS 下载未签名 `.ipa`，使用 Sideloadly、AltStore 或自有证书签名安装。`.sig` 与 `latest.json` 供桌面客户端更新器使用；macOS 更新器复用同一归档。
+从 [Release](https://github.com/XYXBlAcG/OnlineBGClient/releases) 获取安装包。0.2.0 之前的客户端没有更新器，需要手动安装一次。Windows 下载 `.exe`；macOS 下载 `.app.tar.gz`，解压后将应用移到 Applications。`.sig` 与 `latest.json` 供桌面客户端更新器使用；macOS 更新器复用同一归档。iOS 不在确认发布资产中，不提供 IPA 下载。
 
 客户端默认启动检查并提醒。发现新版本或开始下载时自动打开「设置 → 软件更新」，同一版本只自动打开一次；下载页显示百分比、已下载量、速度、剩余时间、签名与安装状态。许可后下载、校验并在空闲时安装重启。在设置中可以手动检查、关闭启动检查或新版本提醒，也可预先允许自动安装。房间、托管服务或连麦仍在使用时等待安装；重启后按实际运行版本显示更新结果。手机浏览器使用房主服务提供的版本。
 

@@ -40,8 +40,8 @@ targets:
       path: OnlineBGShell/Info.plist
       properties:
         CFBundleDisplayName: OnlineBG Shell
-        CFBundleShortVersionString: "0.5.0"
-        CFBundleVersion: "11"
+        CFBundleShortVersionString: "0.6.0"
+        CFBundleVersion: "12"
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:

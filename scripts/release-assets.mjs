@@ -27,8 +27,7 @@ export async function prepareRelease(input, output, version, tag, repo) {
     return matches[0];
   };
   const windows = unique(".exe", "Windows 安装包"),
-    updater = unique(".app.tar.gz", "macOS 更新包"),
-    ipa = unique(".ipa", "iOS 安装包");
+    updater = unique(".app.tar.gz", "macOS 更新包");
   const pairs = [
     {
       source: windows,
@@ -47,16 +46,6 @@ export async function prepareRelease(input, output, version, tag, repo) {
       platform: "darwin-aarch64",
       label: "macOS",
       install: "解压后移到「应用程序」",
-    },
-    {
-      source: ipa,
-      name: `OnlineBGClient-${version}-iOS-arm64-unsigned.ipa`,
-      format: "iOS 安装包",
-      valid: (bytes) =>
-        bytes.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])),
-      label: "iOS（未签名）",
-      install:
-        "使用 Sideloadly、AltStore 或自有 Apple Developer 证书签名安装；最低 iOS 17，仅 iPhone",
     },
   ];
   await mkdir(out, { recursive: true });

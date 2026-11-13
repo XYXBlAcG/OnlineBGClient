@@ -3,13 +3,12 @@ import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, basename } from "node:path";
 import { prepareRelease } from "../scripts/release-assets.mjs";
-it("requires both signed desktop platforms and the iOS package", async () => {
+it("requires both signed desktop platforms and ignores iOS packages", async () => {
   const root = await mkdtemp(join(tmpdir(), "onlinebg-release-"));
   try {
     const exe = join(root, "setup.exe"),
       mac = join(root, "app.dmg"),
       update = join(root, "OnlineBGClient.app.tar.gz"),
-      ipa = join(root, "OnlineBGClient-unsigned.ipa"),
       output = join(root, "out");
     await writeFile(exe, "MZinstaller");
     await writeFile(
@@ -30,11 +29,6 @@ it("requires both signed desktop platforms and the iOS package", async () => {
     await expect(
       prepareRelease(root, output, "0.2.0", "v0.3.0", "owner/repo"),
     ).rejects.toThrow("版本");
-    await writeFile(ipa, "not a package");
-    await expect(
-      prepareRelease(root, output, "0.2.0", "v0.2.0", "owner/repo"),
-    ).rejects.toThrow("iOS 安装包");
-    await writeFile(ipa, Buffer.from([0x50, 0x4b, 0x03, 0x04]));
     const result = await prepareRelease(
       root,
       output,
@@ -53,21 +47,15 @@ it("requires both signed desktop platforms and the iOS package", async () => {
     expect(manifest.platforms["darwin-aarch64"].url).toContain(
       "/v0.2.0/OnlineBGClient-0.2.0-macOS-arm64.app.tar.gz",
     );
-    expect(result.assets.map((path) => basename(path))).toContain(
-      "OnlineBGClient-0.2.0-iOS-arm64-unsigned.ipa",
-    );
+    expect(
+      result.assets.some((path) => path.endsWith(".ipa")),
+    ).toBe(false);
     expect(result.assets.map((path) => basename(path))).not.toContain(
       expect.stringContaining(".zip"),
     );
     expect(result.assets.some((path) => path.endsWith(".dmg"))).toBe(false);
     expect(result.notes).toContain("## 更新内容");
-    expect(result.notes).toContain("| iOS（未签名） |");
-    expect(result.notes).toContain(
-      "OnlineBGClient-0.2.0-iOS-arm64-unsigned.ipa",
-    );
-    expect(await readFile(join(output, "SHA256SUMS.txt"), "utf8")).toContain(
-      "  OnlineBGClient-0.2.0-iOS-arm64-unsigned.ipa",
-    );
+    expect(result.notes).not.toContain("iOS");
     await writeFile(mac, "unused disk image");
     const { createHash } = await import("node:crypto");
     const pack = Buffer.from("optional emoji fixture");
