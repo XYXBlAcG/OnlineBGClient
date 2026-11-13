@@ -166,6 +166,13 @@ const DevStageGallery = import.meta.env.DEV
       })),
     )
   : null;
+const DevExpeditionDataEditor = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/ExpeditionDataEditor").then((module) => ({
+        default: module.ExpeditionDataEditor,
+      })),
+    )
+  : null;
 const DevExpeditionVictoryPreview = import.meta.env.DEV
   ? React.lazy(() =>
       import("./client/dev/ExpeditionVictoryPreview").then((module) => ({
@@ -207,6 +214,12 @@ const devPool3D = import.meta.env.DEV && invited.get("dev") === "pool3d";
 const devPoolPlay = import.meta.env.DEV && invited.get("dev") === "poolplay";
 const devExpeditionVictory =
   import.meta.env.DEV && invited.get("dev") === "expedition-victory";
+const devExpeditionEditor =
+  import.meta.env.DEV && invited.get("dev") === "expedition-editor";
+if (import.meta.env.DEV)
+  void import("./client/dev/expedition-overrides").then((module) =>
+    module.applyStoredExpeditionOverrides(),
+  );
 const initialService =
   invited.get("service") ||
   (!isTauri() &&
@@ -2386,6 +2399,10 @@ createRoot(document.getElementById("root")!).render(
         ) : devNativeShell && DevNativeShell ? (
           <React.Suspense fallback={null}>
             <DevNativeShell />
+          </React.Suspense>
+        ) : devExpeditionEditor && DevExpeditionDataEditor ? (
+          <React.Suspense fallback={null}>
+            <DevExpeditionDataEditor />
           </React.Suspense>
         ) : devExpeditionVictory && DevExpeditionVictoryPreview ? (
           <React.Suspense fallback={null}>

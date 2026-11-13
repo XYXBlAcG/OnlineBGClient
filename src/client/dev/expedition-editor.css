@@ -1,0 +1,77 @@
+.exp-editor {
+  display: grid;
+  gap: 16px;
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: 20px;
+}
+.exp-editor-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.exp-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.exp-editor-section {
+  display: grid;
+  gap: 8px;
+}
+.exp-editor-status {
+  margin: 0;
+  color: var(--muted);
+}
+.exp-editor-row {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+.exp-editor-row summary {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  cursor: pointer;
+}
+.exp-editor-row summary span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.exp-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.exp-editor-field {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.exp-editor-effects {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.exp-editor-effect {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+.exp-editor-json {
+  width: 100%;
+  min-height: 160px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--canvas);
+  color: var(--text);
+  font: 12px/1.5 ui-monospace, monospace;
+  resize: vertical;
+}

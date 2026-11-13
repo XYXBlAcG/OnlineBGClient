@@ -60,7 +60,7 @@ import {
 } from "./map";
 import { shuffled } from "./random";
 const combat = new ExpeditionRules();
-const startingRelics: readonly RelicId[] = [
+export const expeditionStartingRelics: RelicId[] = [
   "shell",
   "lens",
   "salve",
@@ -635,7 +635,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
             profile.startGold +
             legacy.startGold +
             expeditionDifficulties[run.difficulty].compensation.gold;
-          h.relics = [startingRelics[h.profession] ?? "salve"];
+          h.relics = [expeditionStartingRelics[h.profession] ?? "salve"];
           for (let count = 0; count < legacy.startPotions; count++) {
             const id = shuffled(
               (Object.keys(potions) as PotionId[]).filter(
