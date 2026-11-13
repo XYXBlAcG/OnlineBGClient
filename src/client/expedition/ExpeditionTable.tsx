@@ -44,6 +44,7 @@ import { ProfessionDetail } from "./ProfessionDetail";
 import { RelicGainedOverlay } from "./RelicGainedOverlay";
 import { CompanionRoster } from "./CompanionRoster";
 import { ExpeditionDrawer } from "./ExpeditionDrawer";
+import { ExpeditionVictory } from "./ExpeditionVictory";
 import "./expedition.css";
 import "./table.css";
 const DevExpeditionController = import.meta.env.DEV
@@ -1144,13 +1145,7 @@ export function ExpeditionTable({
         </small>
       )}
       {(run.phase === "won" || run.phase === "lost") && (
-        <div className="exp-node-content">
-          <h2>{run.phase === "won" ? "秘塔已被征服" : "这一次旅程停在这里"}</h2>
-          <p>
-            经过 {run.path.length} 层 · 打出 {run.combat.metrics.cards} 张牌 ·
-            完成 {run.combat.metrics.battlesWon} 场战斗
-          </p>
-        </div>
+        <ExpeditionVictory run={run} />
       )}
       <Inventory
         hero={inspect !== null ? run.combat.heroes[inspect] : undefined}

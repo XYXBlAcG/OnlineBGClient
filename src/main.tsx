@@ -166,6 +166,13 @@ const DevStageGallery = import.meta.env.DEV
       })),
     )
   : null;
+const DevExpeditionVictoryPreview = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/ExpeditionVictoryPreview").then((module) => ({
+        default: module.ExpeditionVictoryPreview,
+      })),
+    )
+  : null;
 const DevPoolPreview = import.meta.env.DEV
   ? React.lazy(() =>
       import("./client/dev/PoolPreview").then((module) => ({
@@ -198,6 +205,8 @@ const devStage = import.meta.env.DEV && invited.get("dev") === "stage";
 const devPool = import.meta.env.DEV && invited.get("dev") === "pool";
 const devPool3D = import.meta.env.DEV && invited.get("dev") === "pool3d";
 const devPoolPlay = import.meta.env.DEV && invited.get("dev") === "poolplay";
+const devExpeditionVictory =
+  import.meta.env.DEV && invited.get("dev") === "expedition-victory";
 const initialService =
   invited.get("service") ||
   (!isTauri() &&
@@ -2377,6 +2386,10 @@ createRoot(document.getElementById("root")!).render(
         ) : devNativeShell && DevNativeShell ? (
           <React.Suspense fallback={null}>
             <DevNativeShell />
+          </React.Suspense>
+        ) : devExpeditionVictory && DevExpeditionVictoryPreview ? (
+          <React.Suspense fallback={null}>
+            <DevExpeditionVictoryPreview />
           </React.Suspense>
         ) : devPool3D && DevPool3DPreview ? (
           <React.Suspense fallback={null}>
