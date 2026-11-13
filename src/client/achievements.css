@@ -1,7 +1,7 @@
 .achievement-toasts {
   position: fixed;
-  top: calc(var(--app-toolbar-height) + 14px);
   right: 18px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
   z-index: var(--layer-notice);
   display: grid;
   gap: 10px;
@@ -279,7 +279,7 @@
   inset: auto -26px -44px auto;
   width: 102px;
   height: 102px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--rarity-color) 16%, transparent);
   filter: blur(16px);
   pointer-events: none;
@@ -305,7 +305,7 @@
   top: 9px;
   right: 9px;
   padding: 2px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--text) 8%, transparent);
   color: var(--muted);
   font-size: 9px;

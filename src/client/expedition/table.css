@@ -122,7 +122,7 @@
 .exp-relic-layer {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: var(--layer-celebration);
   display: grid;
   place-items: center;
   padding: 16px;
@@ -198,7 +198,7 @@
   align-items: baseline;
   gap: 3px;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--field);
   color: var(--muted);
   font-size: 12px;
@@ -311,7 +311,7 @@
 .exp-shop-raid-countdown {
   align-self: center;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--exp-red) 14%, transparent);
   color: var(--exp-red);
   font-size: 11px;
@@ -607,7 +607,7 @@
 .exp-mechanic-meter {
   height: 5px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--line) 62%, transparent);
 }
 .exp-mechanic-meter > span {
@@ -640,7 +640,7 @@
   left: 50%;
   top: calc(100% + 8px);
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--exp-ink);
   font-size: 12px;
@@ -668,7 +668,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--surface) 90%, transparent);
   box-shadow: 0 4px 14px #111b241a;
 }
@@ -697,7 +697,7 @@
 }
 .exp-modifier-board span {
   padding: 3px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   color: var(--exp-red);
   font-size: 10px;
@@ -1452,7 +1452,7 @@
 }
 .exp-route-modifiers span {
   padding: 2px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--exp-red) 12%, transparent);
   color: var(--exp-red);
   font-size: 10px;
@@ -1738,7 +1738,7 @@
 .exp-ascension-badge {
   align-self: center;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--exp-red) 14%, transparent);
   color: var(--exp-red);
   font-size: 11px;
@@ -1747,7 +1747,7 @@
 .exp-legacy-badge {
   align-self: center;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--exp-green) 12%, transparent);
   color: var(--exp-green);
   font-size: 11px;
@@ -1760,7 +1760,7 @@
 .exp-side-badge {
   align-self: center;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, #7c6cff 18%, transparent);
   color: #6b5ce7;
   font-size: 11px;
@@ -2217,7 +2217,7 @@
   gap: 4px;
   min-height: 30px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--field);
   color: var(--muted);
   font-size: 11px;
@@ -2286,7 +2286,7 @@
   justify-content: center;
   min-height: 30px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--field);
   color: var(--text);
   font-size: 11px;
@@ -2351,7 +2351,7 @@
 .exp-drawer-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: var(--layer-drawer);
   display: flex;
   align-items: flex-end;
   background: rgb(7 16 24 / 28%);

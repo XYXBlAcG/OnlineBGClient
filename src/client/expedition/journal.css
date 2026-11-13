@@ -24,6 +24,7 @@
   font-size: 12px;
 }
 .exp-journal-header {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 18px;
@@ -85,6 +86,7 @@
   font-size: 12px;
 }
 .exp-journal-tabs {
+  flex: none;
   display: flex;
   gap: 4px;
   overflow-x: auto;
@@ -93,7 +95,7 @@
 .exp-journal-tabs button {
   flex: none;
   padding: 7px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--muted);
   font-size: 12px;
@@ -103,6 +105,7 @@
   color: var(--accent-contrast, #fff);
 }
 .exp-journal-overview {
+  flex: 1;
   display: grid;
   gap: 12px;
   min-height: 0;
@@ -143,7 +146,7 @@
   width: 100%;
   height: 7px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   background: var(--field);
 }
@@ -249,6 +252,7 @@
   font-weight: 500;
 }
 .exp-journal-legacy {
+  flex: 1;
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   gap: 12px;
@@ -391,7 +395,10 @@
   font-size: 10px;
 }
 .exp-journal-catalog {
+  flex: 1;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 12px;
   min-height: 0;
@@ -568,6 +575,7 @@
   }
   .exp-journal-catalog {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
   }
   .exp-journal-detail {
     max-height: 220px;

@@ -206,6 +206,8 @@
 | 颜色主题 token  | [主题注册与浅深主题](../src/client/themes.ts)                        |
 | 结构/层级 token | [设计变量](../src/client/ui/design-tokens.css)                       |
 | 级联顺序        | [层级定义](../src/client/ui/layers.css)                              |
+| 级联顺序契约    | [契约测试](../tests/style-cascade-order.test.ts)                     |
+| 层级契约        | [契约测试](../tests/style-layer-contract.test.ts)                     |
 | 断点常量        | [断点](../src/client/ui/breakpoints.ts)                              |
 | 新样式护栏      | [Stylelint 配置](../stylelint.config.mjs)、[违规基线门禁](../scripts/style-lint-gate.mjs)、`npm run style:lint` |
 | 违规基线        | [基线](../scripts/style-lint.baseline.json)                           |
@@ -213,6 +215,10 @@
 | 文档完整性      | [文档检查](../scripts/doc-check.mjs)、`npm run doc:check`            |
 | 样式陈列页      | [陈列页](../src/client/dev/StyleGallery.tsx)、开发路由 `?dev=styles` |
 | token/层级契约  | [样式系统测试](../tests/style-system.test.tsx)                       |
+
+## 层级契约
+
+层级 token 的唯一来源是[设计变量](../src/client/ui/design-tokens.css)，顺序由低到高固定为 chat < effects < practice < party < dialog-overlay < drawer < celebration < dialog < popover < notice；桌面与手机共享同一顺序。新增浮层只允许复用 token，不写裸 z-index；共享浮层与实际层级的对应关系由[层级契约测试](../tests/style-layer-contract.test.ts)锁定。
 
 ## 陈列页人工审核
 
@@ -246,6 +252,7 @@
 ### 阶段 2：通用 primitive 与级联分层（重点）
 
 - 先锁定“基础层 → 模块层”的加载顺序不变式并加测试；当前模块 CSS 可能先于 `src/styles.css` 注入，直接包 layer 会反转优先级。
+- 按钮已收口为 `data-button-variant` 单一入口（[控件](../src/client/ui/Controls.tsx)）；`.primary-button` 只作为原站与旧调用点的别名，与主按钮共享同一套 token 声明。
 - 新控件使用 CSS Modules 或明确的 `data-ui` 作用域。
 - 先迁移设置、聊天、大厅、弹窗、更新页等应用层；游戏牌桌暂不重写。
 - 逐批把全局 `styles.css` 中的通用选择器移入 `primitives`/`app` layer。

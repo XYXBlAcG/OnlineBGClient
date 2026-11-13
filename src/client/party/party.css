@@ -177,7 +177,7 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: var(--layer-party, 75);
+  z-index: var(--layer-party);
   isolation: isolate;
   overflow: hidden;
 }
@@ -435,7 +435,7 @@
 
 .party-participants {
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #0b1520b8;
   color: #dcecff;
   font-size: 12px;

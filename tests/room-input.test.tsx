@@ -305,7 +305,7 @@ it("retains the game library across mode changes and creates with settings-owned
   act(() =>
     tree.root
       .findAllByType("button")
-      .find((button) => button.props.className?.startsWith("primary-button"))!
+      .find((button) => button.props["data-button-variant"] === "primary")!
       .props.onClick(),
   );
   expect(onCreate).toHaveBeenCalledWith(
@@ -321,7 +321,7 @@ it("retains the game library across mode changes and creates with settings-owned
   expect(
     tree.root
       .findAllByType("button")
-      .find((button) => button.props.className?.startsWith("primary-button"))!
+      .find((button) => button.props["data-button-variant"] === "primary")!
       .props["aria-busy"],
   ).toBe(true);
   act(() => tree.unmount());

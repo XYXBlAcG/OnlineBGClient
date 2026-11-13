@@ -151,23 +151,27 @@ textarea {
   line-height: var(--line-height-group);
   margin: 0;
 }
-:is(.app-shell, .ui-panel, .ui-popover, .native-window-root) .primary-button {
-  background: var(--accent);
-  color: var(--accent-text);
-  padding: 10px 18px;
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  button.primary-button:not(.original-game[data-renderer="upstream"] button) {
+  background: var(--action-primary);
+  color: var(--action-foreground);
 }
 :is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
-  .primary-button:hover {
-  background: color-mix(in srgb, var(--accent) 88%, #000);
-  filter: none;
+  button.primary-button:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.07);
+}
+:is(.app-shell, .ui-panel, .ui-popover, .native-window-root)
+  button.primary-button:active:not(:disabled) {
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.14);
 }
 .app-toolbar {
-  height: var(--app-toolbar-height);
+  height: var(--app-toolbar-total);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 24px;
+  padding: var(--safe-top) calc(24px + var(--safe-right)) 0
+    calc(24px + var(--safe-left));
   background: var(--surface);
   position: sticky;
   top: 0;
@@ -293,7 +297,7 @@ small,
   width: 100%;
   margin: 0 auto;
   padding: 10px;
-  height: calc(100dvh - var(--app-toolbar-height));
+  height: calc(100dvh - var(--app-toolbar-total));
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(
       260px,
@@ -477,7 +481,7 @@ small,
 }
 .pregame-brief > span {
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--canvas);
   color: var(--muted);
   font-size: 12px;
@@ -954,15 +958,14 @@ details[open] > summary + * {
 .ui-overlay {
   position: fixed;
   inset: 0;
-  z-index: 40;
   animation: fade 180ms;
 }
+
 .ui-panel {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 50;
   width: min(480px, calc(100vw - 32px));
   max-height: 82vh;
   overflow: auto;
@@ -1128,7 +1131,6 @@ kbd {
   border-radius: 14px;
   box-shadow: 0 12px 40px #0003;
   padding: 16px;
-  z-index: 40;
   max-width: calc(100vw - 24px);
 }
 .ui-tooltip {
@@ -1271,16 +1273,6 @@ kbd {
   min-width: 0;
   flex: 1;
 }
-.mobile-shell .chat-panel {
-  min-height: 0;
-  position: fixed;
-  inset: auto 0 0;
-  height: min(75dvh, 620px);
-  z-index: 20;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -10px 40px #0003;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
-}
 .mobile-shell .original-game {
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -1353,10 +1345,6 @@ kbd {
   touch-action: pan-y !important;
 }
 
-.mobile-shell .chat-panel {
-  bottom: var(--mobile-keyboard-bottom, 0px);
-  max-height: var(--mobile-chat-height, 75dvh);
-}
 .mobile-shell .dictionary .terms-grid {
   grid-template-columns: 1fr;
 }
@@ -1374,11 +1362,11 @@ kbd {
   min-width: 0;
   isolation: isolate;
 }
-.mobile-shell .chat-panel {
-  z-index: var(--layer-chat);
-}
 .ui-overlay {
   z-index: var(--layer-dialog-overlay);
+}
+.ui-overlay.nested-dialog-overlay {
+  background: transparent;
 }
 .ui-panel {
   z-index: var(--layer-dialog);
@@ -1386,11 +1374,11 @@ kbd {
 .ui-popover,
 .ui-tooltip,
 .ui-select-menu {
-  z-index: var(--layer-menu);
+  z-index: var(--layer-popover);
 }
 .notification-stack {
   position: fixed;
-  top: calc(70px + env(safe-area-inset-top));
+  top: calc(var(--app-toolbar-total) + 12px);
   right: 20px;
   width: min(420px, calc(100vw - 32px));
   display: grid;
@@ -1707,7 +1695,7 @@ kbd {
 .beginner-guide-progress i {
   flex: 1;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--line);
   transition: background var(--motion-control);
 }
@@ -1846,7 +1834,7 @@ kbd {
 .guide-chip,
 .guide-badge {
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent);
   color: var(--accent-text);
   font-size: 11px;
@@ -2308,8 +2296,11 @@ kbd {
   }
   .room-sidebar {
     position: fixed;
-    inset: auto 8px 8px;
-    height: min(70dvh, 620px);
+    inset: auto calc(8px + var(--safe-right))
+      calc(8px + var(--safe-bottom) + var(--mobile-keyboard-bottom, 0px))
+      calc(8px + var(--safe-left));
+    height: min(var(--mobile-chat-height, 70dvh), 620px);
+    max-height: calc(var(--mobile-height, 100dvh) - 16px);
     z-index: var(--layer-chat);
     padding: 10px;
     border-radius: 16px;
@@ -2972,7 +2963,7 @@ kbd {
   justify-content: center;
   min-height: calc(40px * var(--ui-scale));
   padding: calc(8px * var(--ui-scale)) 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--field);
   color: var(--text);
   font-size: 13px;
@@ -3012,7 +3003,7 @@ kbd {
   height: 8px;
   overflow: hidden;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--progress-track);
   color: var(--progress-fill);
 }
@@ -3021,7 +3012,7 @@ kbd {
   height: 8px;
   overflow: hidden;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--progress-track);
   color: var(--progress-fill);
 }
@@ -3157,7 +3148,7 @@ progress::-moz-progress-bar {
 .connection-status-dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--muted);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--muted) 12%, transparent);
 }

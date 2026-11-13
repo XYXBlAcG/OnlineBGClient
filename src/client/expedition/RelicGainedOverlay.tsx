@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { ExpeditionNodeResult } from "../../domain/expedition/adventure-types";
 import { relics, relicText } from "../../domain/expedition/world";
 
@@ -25,7 +26,7 @@ export function RelicGainedOverlay({
     return () => window.removeEventListener("keydown", close);
   }, [onClose]);
   if (!gained.length || !after) return null;
-  return (
+  return createPortal(
     <div
       className="exp-relic-layer"
       role="dialog"
@@ -54,6 +55,7 @@ export function RelicGainedOverlay({
         </div>
         <small>点击任意位置关闭</small>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -67,7 +67,7 @@ it("declares structural and layer tokens once in the design token source", () =>
   const layers = [...tokens.matchAll(/--layer-([a-z-]+):/g)].map(
     (match) => match[1],
   );
-  expect(layers).toHaveLength(8);
+  expect(layers).toHaveLength(10);
   expect(new Set(layers).size).toBe(layers.length);
   expect(read("src/styles.css")).not.toMatch(/--layer-[a-z-]+\s*:/);
 });

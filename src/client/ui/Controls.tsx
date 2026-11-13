@@ -368,7 +368,7 @@ export const Button = React.forwardRef<
       ref={ref}
       type={type}
       data-button-variant={variant}
-      className={`${variant === "primary" ? "primary-button " : ""}${className}`.trim()}
+      className={className}
     />
   );
 });

@@ -85,7 +85,12 @@ export function RoomToolbar({
         )));
   const controls = (
     <>
-      <PartyQueue snapshot={snapshot} send={send} onError={onError} />
+      <PartyQueue
+        snapshot={snapshot}
+        send={send}
+        onError={onError}
+        nestedDialogs
+      />
       <section className="room-drawer-section">
         {guideAvailable && (
           <Button
@@ -170,6 +175,7 @@ export function RoomToolbar({
             binding={preferences.bindings["room.setup"] ?? ""}
             snapshot={snapshot}
             onError={onError}
+            overlayClassName="nested-dialog-overlay"
             onApply={(setup) => {
               send({ type: "game", setup });
               setOpen(false);

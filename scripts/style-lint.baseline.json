@@ -1,6 +1,6 @@
 {
   "src/styles.css": {
-    "color-no-hex": 51,
+    "color-no-hex": 49,
     "declaration-no-important": 14,
     "media-feature-name-value-allowed-list": 5,
     "selector-max-id": 1,
@@ -13,6 +13,11 @@
     "color-no-hex": 9,
     "declaration-no-important": 1,
     "media-feature-name-value-allowed-list": 1,
+    "selector-max-universal": 1
+  },
+  "src/client/flight/flight.css": {
+    "color-no-hex": 39,
+    "declaration-no-important": 1,
     "selector-max-universal": 1
   },
   "src/client/expedition/cards.css": {
@@ -39,7 +44,7 @@
     "color-no-hex": 10
   },
   "src/client/graphwar/graphwar.css": {
-    "color-no-hex": 28
+    "color-no-hex": 27
   },
   "src/client/lobby/lobby.css": {
     "color-no-hex": 34,
@@ -71,7 +76,7 @@
     "color-no-hex": 9
   },
   "src/client/ui/experience.css": {
-    "color-no-hex": 26,
+    "color-no-hex": 22,
     "declaration-no-important": 7,
     "media-feature-name-value-allowed-list": 1,
     "selector-max-universal": 2
@@ -119,11 +124,6 @@
   "src/client/voice/voice.css": {
     "color-no-hex": 2,
     "media-feature-name-value-allowed-list": 1,
-    "selector-max-universal": 1
-  },
-  "src/client/flight/flight.css": {
-    "color-no-hex": 39,
-    "declaration-no-important": 1,
     "selector-max-universal": 1
   }
 }

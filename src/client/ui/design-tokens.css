@@ -26,6 +26,11 @@
   --control-padding-y: calc(8px * var(--ui-scale));
   --control-padding-x: calc(12px * var(--ui-scale));
   --app-toolbar-height: calc(58px * var(--ui-scale));
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --app-toolbar-total: calc(var(--app-toolbar-height) + var(--safe-top));
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -65,14 +70,16 @@
   --shadow-med: var(--shadow);
   --shadow-high: var(--shadow);
   --radius-pill: 999px;
+  --layer-chat: 10;
   --layer-effects: 20;
   --layer-practice: 35;
-  --layer-party: 75;
-  --layer-chat: 10;
-  --layer-notice: 80;
+  --layer-party: 40;
+  --layer-drawer: 45;
+  --layer-celebration: 48;
   --layer-dialog-overlay: 50;
   --layer-dialog: 60;
-  --layer-menu: 70;
+  --layer-popover: 70;
+  --layer-notice: 80;
 }
 :root[data-color-scheme="dark"] {
   --link: #9bbdff;

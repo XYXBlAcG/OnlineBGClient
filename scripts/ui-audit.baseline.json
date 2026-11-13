@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-13T10:24:19.481Z",
+  "generatedAt": "2026-11-13T11:36:13.740Z",
   "findings": [
     {
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [1/3]|div.z-10.text-black",
@@ -643,12 +643,12 @@
       "element": "span.dominion-card-text [7/7]"
     },
     {
-      "id": "dominion|landscape|blocked|button [1/3]|span.dominion-price",
+      "id": "dominion|landscape|blocked|button [1/3]|span.dominion-card-heading",
       "game": "dominion",
       "viewport": "landscape",
       "severity": "P1",
       "category": "blocked",
-      "element": "button [1/3] / span.dominion-price"
+      "element": "button [1/3] / span.dominion-card-heading"
     },
     {
       "id": "dominion|landscape|blocked|button [2/3]|span.dominion-card-heading",
@@ -915,20 +915,28 @@
       "element": "button [5/5] / canvas"
     },
     {
-      "id": "graphwar|desktop|blocked|button.game-avatar [1/2]|strong",
+      "id": "graphwar|desktop|blocked|button.game-avatar [1/3]|strong",
       "game": "graphwar",
       "viewport": "desktop",
       "severity": "P1",
       "category": "blocked",
-      "element": "button.game-avatar [1/2] / strong"
+      "element": "button.game-avatar [1/3] / strong"
     },
     {
-      "id": "graphwar|desktop|blocked|button.game-avatar [2/2]|div.gw-player-status",
+      "id": "graphwar|desktop|blocked|button.game-avatar [2/3]|div.gw-player-status",
       "game": "graphwar",
       "viewport": "desktop",
       "severity": "P1",
       "category": "blocked",
-      "element": "button.game-avatar [2/2] / div.gw-player-status"
+      "element": "button.game-avatar [2/3] / div.gw-player-status"
+    },
+    {
+      "id": "graphwar|desktop|blocked|button.game-avatar [3/3]|div.gw-player-status",
+      "game": "graphwar",
+      "viewport": "desktop",
+      "severity": "P1",
+      "category": "blocked",
+      "element": "button.game-avatar [3/3] / div.gw-player-status"
     },
     {
       "id": "graphwar|landscape|blocked|button [1/5]|canvas",

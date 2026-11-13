@@ -117,7 +117,7 @@ it("uses stable settings, neutral buttons and readable shortcut chips", () => {
   expect(css).not.toContain('button[data-button-variant="tool"]');
   expect(settings).toContain("height: min(760px, calc(100dvh - 48px))");
   expect(settings).toContain("overflow-y: auto");
-  expect(css).toContain("border-radius: 999px");
+  expect(css).toContain("var(--radius-pill)");
   expect(lobby).toContain(".club-empty button");
   expect(tokens).toContain("--font-ui");
   expect(tokens).toContain("--font-size-control");

@@ -51,7 +51,7 @@ function createRoom(tree: ReturnType<typeof create>) {
   act(() =>
     tree.root
       .findAllByType("button")
-      .find((button) => button.props.className?.startsWith("primary-button"))!
+      .find((button) => button.props["data-button-variant"] === "primary")!
       .props.onClick(),
   );
 }

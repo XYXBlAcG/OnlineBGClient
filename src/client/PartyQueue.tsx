@@ -12,8 +12,10 @@ export function PartyQueue({
   send,
   onError,
   compact = false,
+  nestedDialogs = false,
 }: {
   compact?: boolean;
+  nestedDialogs?: boolean;
   snapshot: Snapshot;
   send: (command: QueueCommand) => void;
   onError: (message: string) => void;
@@ -76,6 +78,9 @@ export function PartyQueue({
                       snapshot={snapshot}
                       proposedConfig={item.config}
                       onError={onError}
+                      overlayClassName={
+                        nestedDialogs ? "nested-dialog-overlay" : undefined
+                      }
                       onApply={(setup) =>
                         send({
                           type: "queue-apply",
@@ -97,6 +102,9 @@ export function PartyQueue({
           snapshot={snapshot}
           purpose="enqueue"
           onError={onError}
+          overlayClassName={
+            nestedDialogs ? "nested-dialog-overlay" : undefined
+          }
           onApply={(setup) =>
             send({
               type: "queue-set",

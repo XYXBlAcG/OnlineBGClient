@@ -114,7 +114,7 @@
     0 2px 6px #0002;
 }
 .original-game .gw-soldier .game-avatar:focus-visible {
-  outline: 2px solid #2379d2;
+  outline: 2px solid var(--focus);
   outline-offset: -2px;
 }
 .gw-terrain-anchor {
@@ -592,7 +592,7 @@
 .gw-relation-legend i {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--line);
 }
 .gw-relation-legend i[data-relation="ally"] {
@@ -610,7 +610,7 @@
   place-items: center;
   width: 14px;
   height: 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: #fff;
   font-size: 8px;
   font-weight: 800;

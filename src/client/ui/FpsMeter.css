@@ -4,7 +4,7 @@
   bottom: calc(12px + env(safe-area-inset-bottom));
   left: 12px;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--muted);
   box-shadow: var(--shadow-soft);

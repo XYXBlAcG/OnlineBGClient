@@ -49,7 +49,7 @@
 }
 .lobby-shell .category-tabs button {
   background: transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 7px 13px;
   font-size: 13px;
 }

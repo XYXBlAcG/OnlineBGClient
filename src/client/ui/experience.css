@@ -188,19 +188,19 @@
   line-height: 16px;
 }
 .original-game .game-avatar.is-turn {
-  outline-color: #2379d2;
-  box-shadow: 0 0 0 6px #2379d214;
+  outline-color: var(--focus);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--focus) 8%, transparent);
 }
 .original-game button:focus-visible,
 .original-game [role="button"]:focus-visible {
-  outline: 2px solid #2379d2;
+  outline: 2px solid var(--focus);
   outline-offset: 3px;
 }
 .original-game :is(.uno, .ddz-poker, .sgs-card, .dy-card) {
   box-shadow: 0 1px 3px #15263c24;
 }
 .original-game :is(.sgs-select, .ccbs-candidate) {
-  outline: 2px solid #2478c9;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 .original-game .ccbs-score {

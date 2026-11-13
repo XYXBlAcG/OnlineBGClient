@@ -31,6 +31,7 @@ export function RoomSetup({
   onApply,
   onError,
   onClose,
+  overlayClassName,
   purpose = "game",
   proposedConfig,
 }: {
@@ -42,6 +43,7 @@ export function RoomSetup({
   onApply: (setup: Setup) => void;
   onError: (message: string) => void;
   onClose?: () => void;
+  overlayClassName?: string;
 }) {
   const [open, setOpen] = useState(auxiliaryView === "roomsetup"),
     [draftConfig, updateConfig] = useState(proposedConfig ?? snapshot.config),
@@ -146,6 +148,7 @@ export function RoomSetup({
             if (!value) onClose?.();
           }}
           title={purpose === "enqueue" ? "规划下一局" : "确认游戏与真人席位"}
+          overlayClassName={overlayClassName}
         >
           <label className="setting-row">
             游戏
