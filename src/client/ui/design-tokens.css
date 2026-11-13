@@ -104,6 +104,7 @@
   button[data-button-variant="primary"] {
   background: var(--action-primary);
   color: var(--action-foreground);
+  padding: 10px 18px;
 }
 :is(.app-shell, .native-window-root, .ui-panel)
   button[data-button-variant="danger"] {

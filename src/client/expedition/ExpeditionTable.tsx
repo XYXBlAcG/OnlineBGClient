@@ -2,7 +2,7 @@ import { advancedBalance } from "../../domain/expedition/advanced";
 import { ExpeditionHint } from "./ExpeditionHint";
 import { VoteStatus } from "./VoteStatus";
 import { ballotPhase } from "../../domain/expedition/ballot";
-import { chapters, waystationRecovery } from "../../domain/expedition/chapters";
+import { chapterAt, waystationRecovery } from "../../domain/expedition/chapters";
 import { ascensionProfile } from "../../domain/expedition/ascension";
 import {
   legacyEffectLines,
@@ -15,6 +15,7 @@ import { EnemyIntentStrip } from "./BattleScene";
 import { ExpeditionMap } from "./ExpeditionMap";
 import { useGameCommands } from "../use-game-commands";
 import { lazy, Suspense, useState, useEffect } from "react";
+import { tableInteractive } from "../game-sizing/table-state";
 import type { GameSnapshot } from "../OriginalGame";
 import { AvatarSurface, type AvatarSurfaceProps } from "../AvatarSurface";
 import type { Action } from "../../domain/types";
@@ -43,6 +44,7 @@ import { ProfessionDetail } from "./ProfessionDetail";
 import { RelicGainedOverlay } from "./RelicGainedOverlay";
 import { CompanionRoster } from "./CompanionRoster";
 import { ExpeditionDrawer } from "./ExpeditionDrawer";
+import { ExpeditionVictory } from "./ExpeditionVictory";
 import "./expedition.css";
 import "./table.css";
 const DevExpeditionController = import.meta.env.DEV
@@ -152,7 +154,9 @@ export function ExpeditionTable({
     setSelected((value) => (value?.startsWith("potion:") ? null : value));
   }, [hero?.potions.join(":")]);
   const candidates =
-    !replay && !pending && !snapshot.seats[actor]?.autoplay
+    tableInteractive(snapshot, replay) &&
+    !pending &&
+    !snapshot.seats[actor]?.autoplay
       ? rules.candidates(state, actor)
       : [];
   const moves = candidates.flatMap((c) =>
@@ -377,7 +381,7 @@ export function ExpeditionTable({
           <small
             title={`第 ${run.chapter + 1} 大层 / 第 ${Math.max(1, run.floor + 1)} 站，共 ${run.map.length} 站`}
           >
-            {chapters[run.chapter].name} 第 {Math.max(1, run.floor + 1)} 站
+            {chapterAt(run.chapter).name} 第 {Math.max(1, run.floor + 1)} 站
           </small>
           <strong>
             {phaseNames[run.phase]}
@@ -543,8 +547,8 @@ export function ExpeditionTable({
         )}
       {run.phase === "waystation" && (
         <section className="exp-waystation">
-          <h3>下一大层 · {chapters[run.chapter + 1].name}</h3>
-          <p>{chapters[run.chapter + 1].rule}</p>
+          <h3>下一大层 · {chapterAt(run.chapter + 1).name}</h3>
+          <p>{chapterAt(run.chapter + 1).rule}</p>
           <div className="exp-station-recovery">
             {run.combat.heroes.map((member, index) => (
               <span key={index}>
@@ -581,7 +585,6 @@ export function ExpeditionTable({
             >
               <span>{h.icon}</span>
               <h2>{h.name}</h2>
-              <p>{h.title}</p>
               <small>{h.maxHp} 生命 · 10 张起始牌</small>
             </button>
           ))}
@@ -1141,13 +1144,7 @@ export function ExpeditionTable({
         </small>
       )}
       {(run.phase === "won" || run.phase === "lost") && (
-        <div className="exp-node-content">
-          <h2>{run.phase === "won" ? "秘塔已被征服" : "这一次旅程停在这里"}</h2>
-          <p>
-            经过 {run.path.length} 层 · 打出 {run.combat.metrics.cards} 张牌 ·
-            完成 {run.combat.metrics.battlesWon} 场战斗
-          </p>
-        </div>
+        <ExpeditionVictory run={run} />
       )}
       <Inventory
         hero={inspect !== null ? run.combat.heroes[inspect] : undefined}

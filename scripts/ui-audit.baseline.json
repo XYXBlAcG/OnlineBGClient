@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-13T11:36:13.740Z",
+  "generatedAt": "2026-11-13T12:53:12.364Z",
   "findings": [
     {
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [1/3]|div.z-10.text-black",
       "game": "ddz",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "div.ddz-poker.ddz-poker-0 [1/3] / div.z-10.text-black"
     },
@@ -14,7 +14,7 @@
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [2/3]|div.z-10.text-black",
       "game": "ddz",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "div.ddz-poker.ddz-poker-0 [2/3] / div.z-10.text-black"
     },
@@ -22,121 +22,9 @@
       "id": "ddz|desktop|blocked|div.ddz-poker.ddz-poker-0 [3/3]|div.z-10.text-black",
       "game": "ddz",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "div.ddz-poker.ddz-poker-0 [3/3] / div.z-10.text-black"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#1.ddz-poker.ddz-poker-1.ddz-my-poker|div#27.ddz-poker.ddz-poker-27.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#1.ddz-poker.ddz-poker-1.ddz-my-poker / div#27.ddz-poker.ddz-poker-27.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#11.ddz-poker.ddz-poker-11.ddz-my-poker|div#23.ddz-poker.ddz-poker-23.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#11.ddz-poker.ddz-poker-11.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#12.ddz-poker.ddz-poker-12.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#12.ddz-poker.ddz-poker-12.ddz-my-poker / div#50.ddz-poker.ddz-poker-50.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#17.ddz-poker.ddz-poker-17.ddz-my-poker|div#3.ddz-poker.ddz-poker-3.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#17.ddz-poker.ddz-poker-17.ddz-my-poker / div#3.ddz-poker.ddz-poker-3.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#23.ddz-poker.ddz-poker-23.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#23.ddz-poker.ddz-poker-23.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#24.ddz-poker.ddz-poker-24.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#24.ddz-poker.ddz-poker-24.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#27.ddz-poker.ddz-poker-27.ddz-my-poker|div#39.ddz-poker.ddz-poker-39.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#27.ddz-poker.ddz-poker-27.ddz-my-poker / div#39.ddz-poker.ddz-poker-39.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#39.ddz-poker.ddz-poker-39.ddz-my-poker|div#51.ddz-poker.ddz-poker-51.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#39.ddz-poker.ddz-poker-39.ddz-my-poker / div#51.ddz-poker.ddz-poker-51.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#40.ddz-poker.ddz-poker-40.ddz-my-poker|div#39.ddz-poker.ddz-poker-39.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#40.ddz-poker.ddz-poker-40.ddz-my-poker / div#39.ddz-poker.ddz-poker-39.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#44.ddz-poker.ddz-poker-44.ddz-my-poker|div#17.ddz-poker.ddz-poker-17.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#44.ddz-poker.ddz-poker-44.ddz-my-poker / div#17.ddz-poker.ddz-poker-17.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#5.ddz-poker.ddz-poker-5.ddz-my-poker|div#17.ddz-poker.ddz-poker-17.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#5.ddz-poker.ddz-poker-5.ddz-my-poker / div#17.ddz-poker.ddz-poker-17.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#50.ddz-poker.ddz-poker-50.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#50.ddz-poker.ddz-poker-50.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#51.ddz-poker.ddz-poker-51.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#50.ddz-poker.ddz-poker-50.ddz-my-poker"
-    },
-    {
-      "id": "ddz|desktop|blocked|div#8.ddz-poker.ddz-poker-8.ddz-my-poker|div#34.ddz-poker.ddz-poker-34.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#8.ddz-poker.ddz-poker-8.ddz-my-poker / div#34.ddz-poker.ddz-poker-34.ddz-my-poker"
     },
     {
       "id": "ddz|desktop|overlap|div#1.ddz-poker.ddz-poker-1.ddz-my-poker|div#27.ddz-poker.ddz-poker-27.ddz-my-poker",
@@ -147,12 +35,28 @@
       "element": "div#27.ddz-poker.ddz-poker-27.ddz-my-poker / div#1.ddz-poker.ddz-poker-1.ddz-my-poker"
     },
     {
+      "id": "ddz|desktop|overlap|div#1.ddz-poker.ddz-poker-1.ddz-my-poker|div#27.ddz-poker.ddz-poker-27.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#1.ddz-poker.ddz-poker-1.ddz-my-poker / div#27.ddz-poker.ddz-poker-27.ddz-my-poker"
+    },
+    {
       "id": "ddz|desktop|overlap|div#11.ddz-poker.ddz-poker-11.ddz-my-poker|div#12.ddz-poker.ddz-poker-12.ddz-my-poker",
       "game": "ddz",
       "viewport": "desktop",
       "severity": "P2",
       "category": "overlap",
       "element": "div#12.ddz-poker.ddz-poker-12.ddz-my-poker / div#11.ddz-poker.ddz-poker-11.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#11.ddz-poker.ddz-poker-11.ddz-my-poker|div#23.ddz-poker.ddz-poker-23.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#11.ddz-poker.ddz-poker-11.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
     },
     {
       "id": "ddz|desktop|overlap|div#11.ddz-poker.ddz-poker-11.ddz-my-poker|div#23.ddz-poker.ddz-poker-23.ddz-my-poker",
@@ -195,12 +99,28 @@
       "element": "div#12.ddz-poker.ddz-poker-12.ddz-my-poker / div#50.ddz-poker.ddz-poker-50.ddz-my-poker"
     },
     {
+      "id": "ddz|desktop|overlap|div#12.ddz-poker.ddz-poker-12.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#12.ddz-poker.ddz-poker-12.ddz-my-poker / div#50.ddz-poker.ddz-poker-50.ddz-my-poker"
+    },
+    {
       "id": "ddz|desktop|overlap|div#12.ddz-poker.ddz-poker-12.ddz-my-poker|div#51.ddz-poker.ddz-poker-51.ddz-my-poker",
       "game": "ddz",
       "viewport": "desktop",
       "severity": "P2",
       "category": "overlap",
       "element": "div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#12.ddz-poker.ddz-poker-12.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#17.ddz-poker.ddz-poker-17.ddz-my-poker|div#3.ddz-poker.ddz-poker-3.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#17.ddz-poker.ddz-poker-17.ddz-my-poker / div#3.ddz-poker.ddz-poker-3.ddz-my-poker"
     },
     {
       "id": "ddz|desktop|overlap|div#17.ddz-poker.ddz-poker-17.ddz-my-poker|div#3.ddz-poker.ddz-poker-3.ddz-my-poker",
@@ -243,12 +163,28 @@
       "element": "div#36.ddz-poker.ddz-poker-36.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
     },
     {
+      "id": "ddz|desktop|overlap|div#23.ddz-poker.ddz-poker-23.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#23.ddz-poker.ddz-poker-23.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
+    },
+    {
       "id": "ddz|desktop|overlap|div#23.ddz-poker.ddz-poker-23.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
       "game": "ddz",
       "viewport": "desktop",
       "severity": "P2",
       "category": "overlap",
       "element": "div#50.ddz-poker.ddz-poker-50.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#24.ddz-poker.ddz-poker-24.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#24.ddz-poker.ddz-poker-24.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
     },
     {
       "id": "ddz|desktop|overlap|div#24.ddz-poker.ddz-poker-24.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
@@ -273,6 +209,14 @@
       "severity": "P2",
       "category": "overlap",
       "element": "div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#24.ddz-poker.ddz-poker-24.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#27.ddz-poker.ddz-poker-27.ddz-my-poker|div#39.ddz-poker.ddz-poker-39.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#27.ddz-poker.ddz-poker-27.ddz-my-poker / div#39.ddz-poker.ddz-poker-39.ddz-my-poker"
     },
     {
       "id": "ddz|desktop|overlap|div#27.ddz-poker.ddz-poker-27.ddz-my-poker|div#39.ddz-poker.ddz-poker-39.ddz-my-poker",
@@ -323,12 +267,52 @@
       "element": "div#39.ddz-poker.ddz-poker-39.ddz-my-poker / div#51.ddz-poker.ddz-poker-51.ddz-my-poker"
     },
     {
+      "id": "ddz|desktop|overlap|div#39.ddz-poker.ddz-poker-39.ddz-my-poker|div#51.ddz-poker.ddz-poker-51.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#39.ddz-poker.ddz-poker-39.ddz-my-poker / div#51.ddz-poker.ddz-poker-51.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#40.ddz-poker.ddz-poker-40.ddz-my-poker|div#39.ddz-poker.ddz-poker-39.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#40.ddz-poker.ddz-poker-40.ddz-my-poker / div#39.ddz-poker.ddz-poker-39.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#44.ddz-poker.ddz-poker-44.ddz-my-poker|div#17.ddz-poker.ddz-poker-17.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#44.ddz-poker.ddz-poker-44.ddz-my-poker / div#17.ddz-poker.ddz-poker-17.ddz-my-poker"
+    },
+    {
       "id": "ddz|desktop|overlap|div#44.ddz-poker.ddz-poker-44.ddz-my-poker|div#5.ddz-poker.ddz-poker-5.ddz-my-poker",
       "game": "ddz",
       "viewport": "desktop",
       "severity": "P2",
       "category": "overlap",
       "element": "div#44.ddz-poker.ddz-poker-44.ddz-my-poker / div#5.ddz-poker.ddz-poker-5.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#5.ddz-poker.ddz-poker-5.ddz-my-poker|div#17.ddz-poker.ddz-poker-17.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#5.ddz-poker.ddz-poker-5.ddz-my-poker / div#17.ddz-poker.ddz-poker-17.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#50.ddz-poker.ddz-poker-50.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#50.ddz-poker.ddz-poker-50.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
     },
     {
       "id": "ddz|desktop|overlap|div#50.ddz-poker.ddz-poker-50.ddz-my-poker|div#51.ddz-poker.ddz-poker-51.ddz-my-poker",
@@ -339,52 +323,52 @@
       "element": "div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#50.ddz-poker.ddz-poker-50.ddz-my-poker"
     },
     {
-      "id": "ddz|landscape|blocked|button.game-avatar.is-turn|div.mx-4.flex.justify-center.space-x-8",
+      "id": "ddz|desktop|overlap|div#51.ddz-poker.ddz-poker-51.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#50.ddz-poker.ddz-poker-50.ddz-my-poker"
+    },
+    {
+      "id": "ddz|desktop|overlap|div#8.ddz-poker.ddz-poker-8.ddz-my-poker|div#34.ddz-poker.ddz-poker-34.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "desktop",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#8.ddz-poker.ddz-poker-8.ddz-my-poker / div#34.ddz-poker.ddz-poker-34.ddz-my-poker"
+    },
+    {
+      "id": "ddz|landscape|blocked|button.game-avatar|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
       "game": "ddz",
       "viewport": "landscape",
       "severity": "P1",
       "category": "blocked",
-      "element": "button.game-avatar.is-turn / div.mx-4.flex.justify-center.space-x-8"
+      "element": "button.game-avatar / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
     },
     {
-      "id": "ddz|landscape|blocked|button.game-avatar|div.mx-4.flex.justify-center.space-x-8",
+      "id": "ddz|landscape|blocked|div.ddz-poker.ddz-poker-0 [1/3]|div.z-10.text-black",
+      "game": "ddz",
+      "viewport": "landscape",
+      "severity": "P2",
+      "category": "blocked",
+      "element": "div.ddz-poker.ddz-poker-0 [1/3] / div.z-10.text-black"
+    },
+    {
+      "id": "ddz|landscape|blocked|div.ddz-poker.ddz-poker-0 [2/3]|div.z-10.text-black",
+      "game": "ddz",
+      "viewport": "landscape",
+      "severity": "P2",
+      "category": "blocked",
+      "element": "div.ddz-poker.ddz-poker-0 [2/3] / div.z-10.text-black"
+    },
+    {
+      "id": "ddz|landscape|blocked|div.ddz-poker.ddz-poker-0 [3/3]|div#34.ddz-poker.ddz-poker-34.ddz-my-poker",
       "game": "ddz",
       "viewport": "landscape",
       "severity": "P1",
       "category": "blocked",
-      "element": "button.game-avatar / div.mx-4.flex.justify-center.space-x-8"
-    },
-    {
-      "id": "ddz|landscape|blocked|div#1.ddz-poker.ddz-poker-1.ddz-my-poker|div#27.ddz-poker.ddz-poker-27.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#1.ddz-poker.ddz-poker-1.ddz-my-poker / div#27.ddz-poker.ddz-poker-27.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|blocked|div#11.ddz-poker.ddz-poker-11.ddz-my-poker|div#23.ddz-poker.ddz-poker-23.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "div#11.ddz-poker.ddz-poker-11.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|clipped|div.ddz-poker-list.mx-auto.mb-4|hidden",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.ddz-poker-list.mx-auto.mb-4 / div#25.ddz-poker.ddz-poker-25 / div#26.ddz-poker.ddz-poker-26 / div#31.ddz-poker.ddz-poker-31"
-    },
-    {
-      "id": "ddz|landscape|clipped|div.original-game|hidden",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game / div#40.ddz-poker.ddz-poker-40.ddz-my-poker / div#27.ddz-poker.ddz-poker-27.ddz-my-poker / div#39.ddz-poker.ddz-poker-39.ddz-my-poker / div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#12.ddz-poker.ddz-poker-12.ddz-my-poker"
+      "element": "div.ddz-poker.ddz-poker-0 [3/3] / div#34.ddz-poker.ddz-poker-34.ddz-my-poker"
     },
     {
       "id": "ddz|landscape|overlap|div#1.ddz-poker.ddz-poker-1.ddz-my-poker|div#27.ddz-poker.ddz-poker-27.ddz-my-poker",
@@ -392,15 +376,7 @@
       "viewport": "landscape",
       "severity": "P2",
       "category": "overlap",
-      "element": "div#27.ddz-poker.ddz-poker-27.ddz-my-poker / div#1.ddz-poker.ddz-poker-1.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#11.ddz-poker.ddz-poker-11.ddz-my-poker|div#12.ddz-poker.ddz-poker-12.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#12.ddz-poker.ddz-poker-12.ddz-my-poker / div#11.ddz-poker.ddz-poker-11.ddz-my-poker"
+      "element": "div#1.ddz-poker.ddz-poker-1.ddz-my-poker / div#27.ddz-poker.ddz-poker-27.ddz-my-poker"
     },
     {
       "id": "ddz|landscape|overlap|div#11.ddz-poker.ddz-poker-11.ddz-my-poker|div#23.ddz-poker.ddz-poker-23.ddz-my-poker",
@@ -411,44 +387,12 @@
       "element": "div#11.ddz-poker.ddz-poker-11.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
     },
     {
-      "id": "ddz|landscape|overlap|div#11.ddz-poker.ddz-poker-11.ddz-my-poker|div#24.ddz-poker.ddz-poker-24.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#24.ddz-poker.ddz-poker-24.ddz-my-poker / div#11.ddz-poker.ddz-poker-11.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#12.ddz-poker.ddz-poker-12.ddz-my-poker|div#24.ddz-poker.ddz-poker-24.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#12.ddz-poker.ddz-poker-12.ddz-my-poker / div#24.ddz-poker.ddz-poker-24.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#12.ddz-poker.ddz-poker-12.ddz-my-poker|div#39.ddz-poker.ddz-poker-39.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#39.ddz-poker.ddz-poker-39.ddz-my-poker / div#12.ddz-poker.ddz-poker-12.ddz-my-poker"
-    },
-    {
       "id": "ddz|landscape|overlap|div#12.ddz-poker.ddz-poker-12.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
       "game": "ddz",
       "viewport": "landscape",
       "severity": "P2",
       "category": "overlap",
       "element": "div#12.ddz-poker.ddz-poker-12.ddz-my-poker / div#50.ddz-poker.ddz-poker-50.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#12.ddz-poker.ddz-poker-12.ddz-my-poker|div#51.ddz-poker.ddz-poker-51.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#12.ddz-poker.ddz-poker-12.ddz-my-poker"
     },
     {
       "id": "ddz|landscape|overlap|div#17.ddz-poker.ddz-poker-17.ddz-my-poker|div#3.ddz-poker.ddz-poker-3.ddz-my-poker",
@@ -459,44 +403,12 @@
       "element": "div#17.ddz-poker.ddz-poker-17.ddz-my-poker / div#3.ddz-poker.ddz-poker-3.ddz-my-poker"
     },
     {
-      "id": "ddz|landscape|overlap|div#17.ddz-poker.ddz-poker-17.ddz-my-poker|div#44.ddz-poker.ddz-poker-44.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#44.ddz-poker.ddz-poker-44.ddz-my-poker / div#17.ddz-poker.ddz-poker-17.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#17.ddz-poker.ddz-poker-17.ddz-my-poker|div#5.ddz-poker.ddz-poker-5.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#5.ddz-poker.ddz-poker-5.ddz-my-poker / div#17.ddz-poker.ddz-poker-17.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#23.ddz-poker.ddz-poker-23.ddz-my-poker|div#24.ddz-poker.ddz-poker-24.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#24.ddz-poker.ddz-poker-24.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
-    },
-    {
       "id": "ddz|landscape|overlap|div#23.ddz-poker.ddz-poker-23.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
       "game": "ddz",
       "viewport": "landscape",
       "severity": "P2",
       "category": "overlap",
-      "element": "div#36.ddz-poker.ddz-poker-36.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#23.ddz-poker.ddz-poker-23.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#50.ddz-poker.ddz-poker-50.ddz-my-poker / div#23.ddz-poker.ddz-poker-23.ddz-my-poker"
+      "element": "div#23.ddz-poker.ddz-poker-23.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
     },
     {
       "id": "ddz|landscape|overlap|div#24.ddz-poker.ddz-poker-24.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
@@ -507,60 +419,12 @@
       "element": "div#24.ddz-poker.ddz-poker-24.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
     },
     {
-      "id": "ddz|landscape|overlap|div#24.ddz-poker.ddz-poker-24.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#50.ddz-poker.ddz-poker-50.ddz-my-poker / div#24.ddz-poker.ddz-poker-24.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#24.ddz-poker.ddz-poker-24.ddz-my-poker|div#51.ddz-poker.ddz-poker-51.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#24.ddz-poker.ddz-poker-24.ddz-my-poker"
-    },
-    {
       "id": "ddz|landscape|overlap|div#27.ddz-poker.ddz-poker-27.ddz-my-poker|div#39.ddz-poker.ddz-poker-39.ddz-my-poker",
       "game": "ddz",
       "viewport": "landscape",
       "severity": "P2",
       "category": "overlap",
       "element": "div#27.ddz-poker.ddz-poker-27.ddz-my-poker / div#39.ddz-poker.ddz-poker-39.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#27.ddz-poker.ddz-poker-27.ddz-my-poker|div#40.ddz-poker.ddz-poker-40.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#40.ddz-poker.ddz-poker-40.ddz-my-poker / div#27.ddz-poker.ddz-poker-27.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#34.ddz-poker.ddz-poker-34.ddz-my-poker|div#8.ddz-poker.ddz-poker-8.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#34.ddz-poker.ddz-poker-34.ddz-my-poker / div#8.ddz-poker.ddz-poker-8.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#36.ddz-poker.ddz-poker-36.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#50.ddz-poker.ddz-poker-50.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
-    },
-    {
-      "id": "ddz|landscape|overlap|div#39.ddz-poker.ddz-poker-39.ddz-my-poker|div#40.ddz-poker.ddz-poker-40.ddz-my-poker",
-      "game": "ddz",
-      "viewport": "landscape",
-      "severity": "P2",
-      "category": "overlap",
-      "element": "div#40.ddz-poker.ddz-poker-40.ddz-my-poker / div#39.ddz-poker.ddz-poker-39.ddz-my-poker"
     },
     {
       "id": "ddz|landscape|overlap|div#39.ddz-poker.ddz-poker-39.ddz-my-poker|div#51.ddz-poker.ddz-poker-51.ddz-my-poker",
@@ -571,15 +435,39 @@
       "element": "div#39.ddz-poker.ddz-poker-39.ddz-my-poker / div#51.ddz-poker.ddz-poker-51.ddz-my-poker"
     },
     {
-      "id": "ddz|landscape|overlap|div#44.ddz-poker.ddz-poker-44.ddz-my-poker|div#5.ddz-poker.ddz-poker-5.ddz-my-poker",
+      "id": "ddz|landscape|overlap|div#40.ddz-poker.ddz-poker-40.ddz-my-poker|div#39.ddz-poker.ddz-poker-39.ddz-my-poker",
       "game": "ddz",
       "viewport": "landscape",
       "severity": "P2",
       "category": "overlap",
-      "element": "div#44.ddz-poker.ddz-poker-44.ddz-my-poker / div#5.ddz-poker.ddz-poker-5.ddz-my-poker"
+      "element": "div#40.ddz-poker.ddz-poker-40.ddz-my-poker / div#39.ddz-poker.ddz-poker-39.ddz-my-poker"
     },
     {
-      "id": "ddz|landscape|overlap|div#50.ddz-poker.ddz-poker-50.ddz-my-poker|div#51.ddz-poker.ddz-poker-51.ddz-my-poker",
+      "id": "ddz|landscape|overlap|div#44.ddz-poker.ddz-poker-44.ddz-my-poker|div#17.ddz-poker.ddz-poker-17.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "landscape",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#44.ddz-poker.ddz-poker-44.ddz-my-poker / div#17.ddz-poker.ddz-poker-17.ddz-my-poker"
+    },
+    {
+      "id": "ddz|landscape|overlap|div#5.ddz-poker.ddz-poker-5.ddz-my-poker|div#17.ddz-poker.ddz-poker-17.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "landscape",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#5.ddz-poker.ddz-poker-5.ddz-my-poker / div#17.ddz-poker.ddz-poker-17.ddz-my-poker"
+    },
+    {
+      "id": "ddz|landscape|overlap|div#50.ddz-poker.ddz-poker-50.ddz-my-poker|div#36.ddz-poker.ddz-poker-36.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "landscape",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#50.ddz-poker.ddz-poker-50.ddz-my-poker / div#36.ddz-poker.ddz-poker-36.ddz-my-poker"
+    },
+    {
+      "id": "ddz|landscape|overlap|div#51.ddz-poker.ddz-poker-51.ddz-my-poker|div#50.ddz-poker.ddz-poker-50.ddz-my-poker",
       "game": "ddz",
       "viewport": "landscape",
       "severity": "P2",
@@ -587,10 +475,18 @@
       "element": "div#51.ddz-poker.ddz-poker-51.ddz-my-poker / div#50.ddz-poker.ddz-poker-50.ddz-my-poker"
     },
     {
+      "id": "ddz|landscape|overlap|div#8.ddz-poker.ddz-poker-8.ddz-my-poker|div#34.ddz-poker.ddz-poker-34.ddz-my-poker",
+      "game": "ddz",
+      "viewport": "landscape",
+      "severity": "P2",
+      "category": "overlap",
+      "element": "div#8.ddz-poker.ddz-poker-8.ddz-my-poker / div#34.ddz-poker.ddz-poker-34.ddz-my-poker"
+    },
+    {
       "id": "dominion|desktop|clipped|span.dominion-card-text [1/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [1/7]"
     },
@@ -598,7 +494,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [2/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [2/7]"
     },
@@ -606,7 +502,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [3/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [3/7]"
     },
@@ -614,7 +510,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [4/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [4/7]"
     },
@@ -622,7 +518,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [5/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [5/7]"
     },
@@ -630,7 +526,7 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [6/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [6/7]"
     },
@@ -638,41 +534,9 @@
       "id": "dominion|desktop|clipped|span.dominion-card-text [7/7]|hidden",
       "game": "dominion",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "span.dominion-card-text [7/7]"
-    },
-    {
-      "id": "dominion|landscape|blocked|button [1/3]|span.dominion-card-heading",
-      "game": "dominion",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [1/3] / span.dominion-card-heading"
-    },
-    {
-      "id": "dominion|landscape|blocked|button [2/3]|span.dominion-card-heading",
-      "game": "dominion",
-      "viewport": "landscape",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button [2/3] / span.dominion-card-heading"
-    },
-    {
-      "id": "dominion|landscape|blocked|button [3/3]|span.dominion-card-heading",
-      "game": "dominion",
-      "viewport": "landscape",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button [3/3] / span.dominion-card-heading"
-    },
-    {
-      "id": "dominion|landscape|blocked|button.primary-button|b",
-      "game": "dominion",
-      "viewport": "landscape",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button.primary-button / b"
     },
     {
       "id": "dy|desktop|overlap|div.dy-card.dy-card-1.border[data-guide-target=\"dy.card\"] [1/4]|div.dy-card.dy-card-1.border[data-guide-target=\"dy.card\"] [2/4]",
@@ -763,14 +627,6 @@
       "element": "div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [3/4] / div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [4/4]"
     },
     {
-      "id": "dy|landscape|clipped|div.original-game|hidden",
-      "game": "dy",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game"
-    },
-    {
       "id": "dy|landscape|overlap|div.dy-card.dy-card-1.border[data-guide-target=\"dy.card\"] [1/4]|div.dy-card.dy-card-1.border[data-guide-target=\"dy.card\"] [2/4]",
       "game": "dy",
       "viewport": "landscape",
@@ -859,66 +715,18 @@
       "element": "div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [3/4] / div.dy-card.dy-card-3.border[data-guide-target=\"dy.card\"] [4/4]"
     },
     {
-      "id": "expedition|landscape|clipped|div.original-game|hidden",
-      "game": "expedition",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game"
-    },
-    {
-      "id": "fxq|landscape|clipped|div.original-game|hidden",
+      "id": "fxq|landscape|blocked|button.inline-block.flex-shrink-0.overflow-hidden.whitespace-nowrap|use",
       "game": "fxq",
       "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [1/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
-      "element": "button [1/5] / canvas"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [2/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [2/5] / canvas"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [3/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [3/5] / canvas"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [4/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [4/5] / canvas"
-    },
-    {
-      "id": "graphwar|desktop|blocked|button [5/5]|canvas",
-      "game": "graphwar",
-      "viewport": "desktop",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button [5/5] / canvas"
+      "element": "button.inline-block.flex-shrink-0.overflow-hidden.whitespace-nowrap / use"
     },
     {
       "id": "graphwar|desktop|blocked|button.game-avatar [1/3]|strong",
       "game": "graphwar",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "button.game-avatar [1/3] / strong"
     },
@@ -926,7 +734,7 @@
       "id": "graphwar|desktop|blocked|button.game-avatar [2/3]|div.gw-player-status",
       "game": "graphwar",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "button.game-avatar [2/3] / div.gw-player-status"
     },
@@ -934,79 +742,15 @@
       "id": "graphwar|desktop|blocked|button.game-avatar [3/3]|div.gw-player-status",
       "game": "graphwar",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "blocked",
       "element": "button.game-avatar [3/3] / div.gw-player-status"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [1/5]|canvas",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [1/5] / canvas"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [2/5]|canvas",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [2/5] / canvas"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [3/5]|canvas",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [3/5] / canvas"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [4/5]|canvas",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button [4/5] / canvas"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button [5/5]|div.gw-player-status",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P0",
-      "category": "blocked",
-      "element": "button [5/5] / div.gw-player-status"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button.game-avatar [1/3]|form.gw-input-row",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button.game-avatar [1/3] / form.gw-input-row"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button.game-avatar [2/3]|div.gw-controls[data-guide-target=\"gw.controls\"]",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button.game-avatar [2/3] / div.gw-controls[data-guide-target=\"gw.controls\"]"
-    },
-    {
-      "id": "graphwar|landscape|blocked|button.game-avatar [3/3]|div.gw-tactical-status",
-      "game": "graphwar",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "blocked",
-      "element": "button.game-avatar [3/3] / div.gw-tactical-status"
     },
     {
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [1/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [1/9]"
     },
@@ -1014,7 +758,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [2/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [2/9]"
     },
@@ -1022,7 +766,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [3/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [3/9]"
     },
@@ -1030,7 +774,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [4/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [4/9]"
     },
@@ -1038,7 +782,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [5/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [5/9]"
     },
@@ -1046,7 +790,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [6/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [6/9]"
     },
@@ -1054,7 +798,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [7/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [7/9]"
     },
@@ -1062,7 +806,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [8/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [8/9]"
     },
@@ -1070,7 +814,7 @@
       "id": "ktd|desktop|clipped|div.relative.overflow-hidden [9/9]|hidden",
       "game": "ktd",
       "viewport": "desktop",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [9/9]"
     },
@@ -1078,7 +822,7 @@
       "id": "ktd|landscape|clipped|div.relative.overflow-hidden [1/2]|hidden",
       "game": "ktd",
       "viewport": "landscape",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [1/2]"
     },
@@ -1086,25 +830,9 @@
       "id": "ktd|landscape|clipped|div.relative.overflow-hidden [2/2]|hidden",
       "game": "ktd",
       "viewport": "landscape",
-      "severity": "P1",
+      "severity": "P2",
       "category": "clipped",
       "element": "div.relative.overflow-hidden [2/2]"
-    },
-    {
-      "id": "sgs|landscape|clipped|div.original-game|hidden",
-      "game": "sgs",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game / div.sgs-hero.relative.flex.flex-col / div.rounded-full.leading-5.text-center.text-xs / div.sgs-hero.relative.flex.flex-col / div.rounded-full.leading-5.text-center.text-xs / div.sgs-hero.relative.flex.flex-col"
-    },
-    {
-      "id": "tq|landscape|clipped|div.original-game|hidden",
-      "game": "tq",
-      "viewport": "landscape",
-      "severity": "P1",
-      "category": "clipped",
-      "element": "div.original-game"
     },
     {
       "id": "uno|desktop|overlap|div.uno-bg [10/10]|div.uno-bg [9/10]",

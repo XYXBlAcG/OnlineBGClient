@@ -266,3 +266,53 @@ it("supports side and follow spin without losing the cue ball", () => {
     result.finalBalls.filter((ball) => !ball.pocketed).length,
   );
 });
+
+function tailRotationChange(shot: ReturnType<typeof simulateShot>, frames = 4) {
+  const tail = shot.frames.slice(-frames);
+  let change = 0;
+  for (let i = 1; i < tail.length; i += 1) {
+    const before = new Map(
+      tail[i - 1].balls.map((ball) => [ball.id, ball.rotation]),
+    );
+    for (const ball of tail[i].balls) {
+      const previous = before.get(ball.id);
+      if (!previous || !ball.rotation) continue;
+      const dot = Math.abs(
+        previous.x * ball.rotation.x +
+          previous.y * ball.rotation.y +
+          previous.z * ball.rotation.z +
+          previous.w * ball.rotation.w,
+      );
+      change = Math.max(change, 1 - Math.min(1, dot));
+    }
+  }
+  return change;
+}
+
+it("rolls the cue ball out instead of truncating its kinetic energy", () => {
+  const balls = [{ id: 0, x: -0.4, y: -0.1, pocketed: false }];
+  const shot = simulateShot(balls, {
+    aim: 0.3,
+    power: 0.75,
+    spin: { x: 0, y: 0 },
+  });
+  expect(shot.frames.at(-1)!.t).toBeGreaterThan(4000);
+  const tail = shot.frames.slice(-5);
+  const lastTwo = [tail[tail.length - 2], tail[tail.length - 1]];
+  for (const ball of lastTwo[1].balls) {
+    const before = lastTwo[0].balls.find((item) => item.id === ball.id);
+    if (!before) continue;
+    expect(Math.abs(ball.x - before.x)).toBeLessThan(0.01);
+    expect(Math.abs(ball.y - before.y)).toBeLessThan(0.01);
+  }
+});
+
+it("settles cloth spin together with the ball instead of spinning in place", () => {
+  const balls = rackBalls("eight-ball", "spin-settle");
+  const shot = simulateShot(balls, {
+    aim: 0,
+    power: 0.8,
+    spin: { x: 0.8, y: 0 },
+  });
+  expect(tailRotationChange(shot)).toBeLessThan(0.01);
+});

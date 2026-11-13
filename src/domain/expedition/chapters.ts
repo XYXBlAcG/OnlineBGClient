@@ -12,8 +12,8 @@ export const chapters = [
     name: "菌蚀花园",
     biome: "garden",
     depth: 14,
-    health: 1.35,
-    attack: 1.12,
+    health: 1.18,
+    attack: 1.05,
     width: 8,
     rule: "孢子与根须：净化孢子、斩断连接，并决定先击破哪一具双生身体。",
   },
@@ -21,8 +21,8 @@ export const chapters = [
     name: "齿轮熔炉",
     biome: "forge",
     depth: 14,
-    health: 1.75,
-    attack: 1.25,
+    health: 1.38,
+    attack: 1.1,
     width: 8,
     rule: "熔炉与节拍：开关冷却阀管理热量，控制出牌数量避免时钟过载。",
   },
@@ -30,13 +30,27 @@ export const chapters = [
     name: "镜月回廊",
     biome: "mirror",
     depth: 16,
-    health: 2.2,
-    attack: 1.4,
+    health: 1.58,
+    attack: 1.16,
     width: 8,
     rule: "镜面与月潮：切换攻击和技能打断回响，在满潮前安排爆发与防护。",
   },
 ] as const;
 export type Biome = (typeof chapters)[number]["biome"];
+export const chapterCount = chapters.length;
+export const chapterAt = (chapter: number) =>
+  chapters[((chapter % chapterCount) + chapterCount) % chapterCount];
+export const endlessTier = (chapter: number) =>
+  Math.floor(chapter / chapterCount);
+export const endlessScale = (chapter: number) => {
+  const tier = endlessTier(chapter);
+  return {
+    health: 1 + tier * 0.4,
+    attack: 1 + tier * 0.32,
+    boss: 1 + tier * 0.5,
+  };
+};
+
 export const waystationRecovery = 0.3;
 export const advancementChoices = {
   vitality: "体魄进阶 · 最大生命 +4",

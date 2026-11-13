@@ -7,11 +7,9 @@ import {
   type Contact,
 } from "planck";
 import {
-  POOL_TABLE,
+  standardPoolLayout,
   jawPolygon,
-  poolJaws,
-  poolPockets,
-  poolRails,
+  type PoolTableLayout,
 } from "./table";
 import type {
   PoolBall,
@@ -24,20 +22,22 @@ import type {
 
 const STEP = 1 / 240;
 const SAMPLE_EVERY = 4;
-const MAX_STEPS = 240 * 8;
-const STOP_SPEED = 0.015;
+const MAX_STEPS = 240 * 20;
+const STOP_SPEED = 0.002;
+const STOP_SPIN = 0.08;
 const SLIDING_FRICTION = 1.8;
-const ROLLING_RESISTANCE = 0.8;
+const ROLLING_RESISTANCE = 0.6;
 const SPIN_DECAY = 1.1;
+const CLOTH_SPIN_DECEL = 9;
 const CONTACT_SLIP = 0.02;
 const BALL_BALL_FRICTION = 0.06;
 const RAIL_FRICTION = 0.18;
-const BALL_RADIUS = POOL_TABLE.ballRadius;
+const BALL_RADIUS = standardPoolLayout.table.ballRadius;
 const BALL_INERTIA = (2 / 5) * BALL_RADIUS * BALL_RADIUS;
 const GRAVITY = 9.81;
 const JUMP_RESTITUTION = 0.32;
 const JUMP_SETTLE = 0.16;
-const POCKET_CAPTURE_RADIUS = POOL_TABLE.pocketRadius;
+
 const POCKET_CAPTURE_HEIGHT = 0.02;
 const MASSE_CURVE = 2.6;
 const MASSE_DECAY = 1.4;
@@ -89,7 +89,11 @@ function rotate(
   };
 }
 
-export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
+export function simulateShot(
+  balls: PoolBall[],
+  shot: PoolShotInput,
+  layout: PoolTableLayout = standardPoolLayout,
+): PoolShot {
   Settings.velocityThreshold = 0;
   Settings.linearSlop = 0.0005;
   const world = new World({
@@ -113,7 +117,7 @@ export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
   let cuePocketed = false;
   let time = 0;
 
-  for (const rail of poolRails) {
+  for (const rail of layout.rails) {
     const body = world.createBody({ type: "static" });
     body.createFixture({
       shape: new Polygon(rail.points.map((point) => ({ ...point }))),
@@ -122,7 +126,7 @@ export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
       userData: { type: "rail" } satisfies ContactData,
     });
   }
-  for (const jaw of poolJaws) {
+  for (const jaw of layout.jaws) {
     const body = world.createBody({ type: "static" });
     body.createFixture({
       shape: new Polygon(jawPolygon(jaw).map((point) => ({ ...point }))),
@@ -141,7 +145,7 @@ export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
     });
     body.setSleepingAllowed(false);
     body.createFixture({
-      shape: new Circle(POOL_TABLE.ballRadius),
+      shape: new Circle(layout.table.ballRadius),
       density: 1,
       friction: 0,
       restitution: 0.96,
@@ -426,10 +430,10 @@ export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
       if ((heights.get(id)?.z ?? 0) > POCKET_CAPTURE_HEIGHT) continue;
       const position = body.getPosition();
       if (
-        poolPockets.some(
+        layout.pockets.some(
           (pocket) =>
             Math.hypot(position.x - pocket.x, position.y - pocket.y) <=
-            POCKET_CAPTURE_RADIUS,
+            layout.table.pocketRadius,
         )
       )
         pocketBall(id, body);
@@ -498,16 +502,25 @@ export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
           spin.y = velocity.x / BALL_RADIUS;
         }
       }
-      spin.z *= Math.exp(-SPIN_DECAY * STEP);
+      const onCloth = height.z <= 1e-4 && height.vz <= 0;
+      if (onCloth) {
+        const decay = Math.min(
+          Math.abs(spin.z),
+          CLOTH_SPIN_DECEL * STEP,
+        );
+        spin.z -= Math.sign(spin.z) * decay;
+      } else {
+        spin.z *= Math.exp(-SPIN_DECAY * STEP);
+      }
       if (
         distance(velocity.x, velocity.y) <= STOP_SPEED &&
-        height.z <= 1e-4 &&
-        height.vz <= 0
+        onCloth
       ) {
         velocity.x = 0;
         velocity.y = 0;
         spin.x = 0;
         spin.y = 0;
+        if (Math.abs(spin.z) <= STOP_SPIN) spin.z = 0;
       }
       body.setLinearVelocity(velocity);
       body.setAngularVelocity(spin.z);
@@ -552,6 +565,7 @@ export function simulateShot(balls: PoolBall[], shot: PoolShotInput): PoolShot {
         height = heights.get(id);
       if (
         distance(velocity.x, velocity.y) > STOP_SPEED ||
+        Math.abs(spins.get(id)?.z ?? 0) > STOP_SPIN ||
         (height?.z ?? 0) > 1e-4 ||
         (height?.vz ?? 0) > 0
       ) {

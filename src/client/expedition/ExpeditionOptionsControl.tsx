@@ -21,6 +21,7 @@ type ExpeditionOptionValue = {
   difficulty: ResolvedExpeditionOptions["difficulty"];
   ascension: number;
   advanced?: boolean;
+  endless: boolean;
   legacy: LegacyNodeId[];
 };
 export function ExpeditionOptionsControl({
@@ -47,6 +48,11 @@ export function ExpeditionOptionsControl({
         checked={value.advanced ?? false}
         onCheckedChange={(advanced) => onChange({ ...value, advanced })}
       />
+      <Switch
+        label="无尽模式：无限层挑战，止步时结算分数"
+        checked={value.endless}
+        onCheckedChange={(endless) => onChange({ ...value, endless })}
+      />
       <label className="setting-row">
         远征难度
         <Select
@@ -67,6 +73,19 @@ export function ExpeditionOptionsControl({
           ))}
         </Select>
       </label>
+      {(() => {
+        const compensation =
+          expeditionDifficulties[value.difficulty].compensation;
+        const lines = [
+          compensation.maxHp > 0 && `最大生命 +${compensation.maxHp}`,
+          compensation.gold > 0 && `金币 +${compensation.gold}`,
+          compensation.luck > 0 && `幸运筹码 +${compensation.luck}`,
+          compensation.compass > 0 && `罗盘 +${compensation.compass}`,
+        ].filter(Boolean);
+        return lines.length ? (
+          <small className="muted">开局补偿：{lines.join(" · ")}</small>
+        ) : null;
+      })()}
       <label className="setting-row">
         进阶阶位
         <Select

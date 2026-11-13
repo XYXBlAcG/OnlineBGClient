@@ -48,8 +48,46 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  min-height: 44px;
+  min-height: 32px;
   gap: 8px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .room-toolbar
+  button {
+  min-height: 28px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .resolution-status {
+  margin-top: 0;
+  padding: 2px 8px;
+  min-height: 22px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .game-status-row {
+  min-height: 0;
+  padding: 1px 6px;
+  font-size: 11px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="ddz"]
+  > div {
+  zoom: 0.70;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="fxq"] {
+  overflow-y: auto;
 }
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
@@ -113,6 +151,16 @@
   padding: 3px 5px;
   overflow: hidden;
   gap: 4px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .original-game[data-renderer="upstream"],
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .playing-room
+  .original-game[data-game="expedition"] {
+  overflow-y: auto;
 }
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
@@ -474,6 +522,7 @@
   .original-game[data-game="fxq"] {
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 :root[data-mobile-orientation="landscape"]
   .mobile-shell
@@ -533,6 +582,12 @@
   grid-column: 1;
   grid-row: 2;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+:root[data-mobile-orientation="landscape"] .mobile-shell .gw-board-space {
+  min-width: 0;
+  overflow: hidden;
 }
 :root[data-mobile-orientation="landscape"] .mobile-shell .gw-shot-panel {
   display: none;

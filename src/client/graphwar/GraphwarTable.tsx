@@ -208,12 +208,6 @@ export function GraphwarTable({
         <strong role="status">{roundTitle}</strong>
         <span className="gw-team-blue">蓝队 {alive[0]}</span>
         <span className="gw-team-orange">橙队 {alive[1]}</span>
-        <span className="gw-relation-legend" aria-label="友军与敌军标记">
-          <i data-relation="ally" />
-          友军
-          <i data-relation="enemy" />
-          敌军
-        </span>
         {!replay && !snapshot.finished && <TurnClock snapshot={snapshot} />}
         <small
           data-guide-target={
@@ -285,8 +279,8 @@ export function GraphwarTable({
         {moveSequence === view.sequence && turn
           ? verdict
             ? `${verdict.allowed ? "可移动" : verdict.reason} · ${verdict.distance.toFixed(1)} / ${balance.moveDistance} · ${destination ? "请确认目的地" : "点击选择目的地"}`
-            : "绿色区域可移动：点击空地，再确认；方向键微调，Escape 取消"
-          : `${selected ? `已选自己的第 ${view.soldiers.filter((s) => s.player === snapshot.actor).findIndex((s) => s.id === selected.id) + 1} 名士兵 · 点击自己的地图头像切换` : "点击地图头像互动"}${openingProtected(view) ? " · 首轮护阵生效" : ""}`}
+            : "点击空地选择目的地"
+          : `${selected ? `已选第 ${view.soldiers.filter((s) => s.player === snapshot.actor).findIndex((s) => s.id === selected.id) + 1} 名士兵` : "点击地图头像"}${openingProtected(view) ? " · 首轮护阵" : ""}`}
       </div>
       <div className="gw-player-status" aria-label="两队玩家状态">
         {snapshot.seats.map((seat, player) => (
@@ -418,9 +412,7 @@ export function GraphwarTable({
               preview.error ||
               (preview.shot
                 ? `预计命中 ${preview.shot.impacts.length} 名士兵（含队友） · ${preview.shot.reason === "terrain" ? "将撞上障碍" : preview.shot.reason === "undefined" ? "途中存在无定义值" : preview.shot.reason === "limit" ? "达到轨迹上限" : preview.shot.reason === "penetration" ? "穿透次数耗尽" : "飞出战场"}`
-                : turn
-                  ? "函数会平移到当前士兵；常数项不会改变射击曲线"
-                  : "可提前编辑函数，等待轮到自己")}
+                : "")}
           </p>
           <div className="gw-control-row">
             {view.options.preview && (
@@ -431,11 +423,6 @@ export function GraphwarTable({
                 onCheckedChange={setShowPreview}
               />
             )}
-            <span className="gw-help">
-              {view.options.preview
-                ? "虚线是预览；实线是实际射击"
-                : "本房关闭弹道预览"}
-            </span>
           </div>
         </div>
       )}

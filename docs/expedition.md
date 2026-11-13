@@ -10,6 +10,9 @@
 | 契刃客与骰术师职业牌                     | [契刃客卡池](../src/domain/expedition/covenant-cards.ts)、[骰术师卡池](../src/domain/expedition/dice-cards.ts)                                                                                                     |
 | 多层主题与进阶                           | [主题](../src/domain/expedition/chapters.ts)                                                                                                                                                                       |
 | 远征 N0–N10 阶位                         | [进阶规则](../src/domain/expedition/ascension.ts)                                                                                                                                                                  |
+| 无尽模式与分数                           | [无尽规则与计分](../src/domain/expedition/endless.ts)、[章节循环与递增](../src/domain/expedition/chapters.ts)、[结算画面](../src/client/expedition/ExpeditionVictory.tsx)                                                       |
+| 无尽新增卡牌与职业                       | [无尽卡牌](../src/domain/expedition/endless-cards.ts)、[渊行者职业牌](../src/domain/expedition/abyss-cards.ts)、[遗物](../src/domain/expedition/world.ts)                                                        |
+| 难度补偿与曲线校验                       | [难度补偿](../src/domain/expedition/adventure-types.ts)、[曲线校验](../scripts/verify-expedition-difficulty.mjs)                                                                                                  |
 | 炮台、热量、蓄能、回响、祝福与骰子       | [资源规则](../src/domain/expedition/resources.ts)                                                                                                                                                                  |
 | 多级强化与预览                           | [强化规则](../src/domain/expedition/content.ts)、[服务界面](../src/client/expedition/CardService.tsx)                                                                                                              |
 | 旧存档读入                               | [迁移入口](../src/domain/expedition/migration.ts)、[房间恢复](../src/domain/room.ts)                                                                                                                               |
@@ -33,6 +36,12 @@
 | 继续和放弃入口                           | [恢复抽屉](../src/client/lobby/ResumeDrawer.tsx)、[存档列表](../src/client/expedition/RunShelf.tsx)                                                                                                                |
 | 权威存档与恢复身份                       | [房间](../src/domain/room.ts)、[网关](../src/domain/gateway.ts)、[SQLite](../src/server/storage.ts)、[本机存储](../src/client/storage.ts)                                                                          |
 | 按需回放与检查点                         | [回放](../src/domain/replay.ts)、[后台取帧](../src/client/replay-worker.ts)                                                                                                                                        |
+
+## 难度与阶位
+
+旅途/标准/挑战由敌人属性倍率区分，标准与挑战附带开局补偿（生命、金币、幸运筹码、罗盘），挑战档 N0 保持可玩并随 N 阶下降；阶位惩罚与补偿逐级叠加。曲线不设硬性胜率数字，校验入口：`npm run verify:expedition-difficulty`（挑战档 N0 非零、标准/挑战随 N 递减）。
+
+无尽模式为房间选项开关：四章循环无限推进，每轮循环提升敌人生命、攻击与首领强度；队伍全灭即止步，按累计层数、战斗胜场、打出卡牌、遗物与轮次结算分数，最佳分数保存在本机。无尽新增卡牌进入通用卡池，渊行者作为可选职业加入；数值与内容以领域代码为准。
 
 ## 保存与继续
 

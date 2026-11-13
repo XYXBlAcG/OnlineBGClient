@@ -338,7 +338,7 @@ it("当铺、赌局、禁书库、追猎台与深渊裂隙通过真实冒险动�
   expect(riftState.view.side).toBe(false);
   expect(riftState.view.map).toEqual(parentMap);
   expect(riftState.view.phase).toBe("map");
-  expect(riftState.view.combat.heroes[0].gold).toBe(130);
+  expect(riftState.view.combat.heroes[0].gold).toBe(146);
 });
 
 it("两个新职业各有 24 张独立职业牌并进入统一卡池", () => {
@@ -346,7 +346,7 @@ it("两个新职业各有 24 张独立职业牌并进入统一卡池", () => {
     "契刃客",
     "骰术师",
   ]);
-  expect(cardPools).toHaveLength(8);
+  expect(cardPools).toHaveLength(9);
   expect(
     Object.keys(cards).filter((id) => id.startsWith("covenant_")),
   ).toHaveLength(24);

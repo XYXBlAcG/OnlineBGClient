@@ -570,14 +570,16 @@ export function Records({
           )}
           {loading && <p role="status">正在定位回放…</p>}
           {preview && (
-            <OriginalGameLazy
-              replay
-              animationActive={playing}
-              animationRate={speed}
-              snapshot={preview}
-              act={() => {}}
-              end={() => {}}
-            />
+            <div className="playing-room replay-stage">
+              <OriginalGameLazy
+                replay
+                animationActive={playing}
+                animationRate={speed}
+                snapshot={preview}
+                act={() => {}}
+                end={() => {}}
+              />
+            </div>
           )}
         </Panel>
       )}

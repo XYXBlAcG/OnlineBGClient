@@ -71,7 +71,16 @@ export function probePage() {
     };
   };
 
+  const inClosedDetails = (element) => {
+    const details = element.closest("details");
+    if (!details || details.open) return false;
+    const summary = details.querySelector(":scope > summary");
+    return !(summary && (element === summary || summary.contains(element)));
+  };
+
   const isVisible = (element) => {
+    if (inClosedDetails(element)) return false;
+    if (element.closest("[hidden]")) return false;
     if (element.getClientRects().length === 0) return false;
     const style = getComputedStyle(element);
     if (style.display === "none" || style.visibility === "hidden") return false;
@@ -201,6 +210,10 @@ export function probePage() {
           }
           clipped.push({
             el: describe(element),
+            lineClamp: style.webkitLineClamp,
+            insideAriaHidden: Boolean(
+              element.closest('[aria-hidden="true"]'),
+            ),
             overflowY: style.overflowY,
             scrollHeight: element.scrollHeight,
             clientHeight: element.clientHeight,
@@ -289,9 +302,17 @@ export function probePage() {
       hit.contains(element)
     )
       continue;
+    const coverControl = hit.closest(
+      "button, a[href], [role=button], [role=tab], [role=option]",
+    );
     blocked.push({
       target: describe(element),
       cover: describe(hit),
+      coverControl: Boolean(coverControl),
+      stacked:
+        Boolean(coverControl) &&
+        coverControl !== element &&
+        element.parentElement === coverControl.parentElement,
       point: [Math.round(x), Math.round(y)],
       rect: rectArray(rect),
       clamped:

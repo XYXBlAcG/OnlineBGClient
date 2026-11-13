@@ -1,4 +1,5 @@
 import { useGameScale } from "./game-sizing/GameSizing";
+import { tableInteractive } from "./game-sizing/table-state";
 import { ExpeditionTable } from "./expedition/ExpeditionTable";
 import { DominionTable } from "./dominion/DominionTable";
 import { GraphwarTable } from "./graphwar/GraphwarTable";
@@ -97,6 +98,7 @@ export const OriginalGame = memo(function OriginalGame({
   ) => void;
 }) {
   replay ||= snapshot.actor < 0;
+  const interactive = tableInteractive(snapshot, replay);
   const { game: gameMotion } = usePresentation();
   const surface = useRef<HTMLDivElement>(null);
   const [flightPlayersCollapsed, setFlightPlayersCollapsed] = useState(false);
@@ -180,10 +182,14 @@ export const OriginalGame = memo(function OriginalGame({
     onInteract: replay ? undefined : onInteract,
   };
   runtime.bridge.avatarContext = avatarContext;
+  const dispatch = (action: Action) => {
+    if (!interactive) return;
+    act(action);
+  };
   runtime.bridge.sink = (action) => {
     if (replay) return;
     if ((action as { type: string }).type === "round-restart") restart?.();
-    else if (!snapshot.finished) act(action as Action);
+    else if (!snapshot.finished) dispatch(action as Action);
   };
   const presentation = gameCatalogue[snapshot.kind].presentation;
   const flightOverlay =
@@ -242,6 +248,7 @@ export const OriginalGame = memo(function OriginalGame({
           : undefined
       }
       data-renderer={presentation.kind === "upstream" ? "upstream" : "client"}
+      data-paused={snapshot.paused ? "true" : undefined}
       data-game-version={snapshot.version}
       onKeyDown={(event) => {
         if (
@@ -277,7 +284,7 @@ export const OriginalGame = memo(function OriginalGame({
           <ExpeditionTable
             onAutoplay={onAutoplay}
             snapshot={snapshot}
-            act={act}
+            act={dispatch}
             replay={replay}
             avatar={avatarContext}
             pending={pending}
@@ -286,7 +293,7 @@ export const OriginalGame = memo(function OriginalGame({
           snapshot.state?.kind === "dominion" ? (
           <DominionTable
             snapshot={snapshot}
-            act={act}
+            act={dispatch}
             replay={replay}
             avatar={avatarContext}
             pending={pending}
@@ -296,7 +303,7 @@ export const OriginalGame = memo(function OriginalGame({
           <GraphwarTable
             view={snapshot.state.view}
             snapshot={snapshot}
-            act={act}
+            act={dispatch}
             replay={replay}
             avatar={avatarContext}
             pending={pending}
@@ -306,7 +313,7 @@ export const OriginalGame = memo(function OriginalGame({
         ) : presentation.kind === "sichuan" ? (
           <SichuanTable
             snapshot={snapshot}
-            act={act}
+            act={dispatch}
             replay={replay}
             onAutoplay={onAutoplay}
             avatar={avatarContext}
@@ -315,7 +322,7 @@ export const OriginalGame = memo(function OriginalGame({
           <PoolGame
             view={snapshot.state.view}
             actor={snapshot.actor}
-            act={act}
+            act={dispatch}
             replay={replay}
             pending={pending}
             turnDeadline={snapshot.turnDeadline}
@@ -332,7 +339,7 @@ export const OriginalGame = memo(function OriginalGame({
               <FlightSpecialPanel
                 view={snapshot.state.view}
                 snapshot={snapshot}
-                act={act}
+                act={dispatch}
                 replay={replay}
                 playersCollapsed={flightPlayersCollapsed}
                 onTogglePlayers={() =>

@@ -10,12 +10,15 @@ import { Button } from "../ui/Controls";
 import { POOL_PLAYBACK_RATE } from "./frames";
 import { poolAudio } from "./audio";
 import { poolBallCursor, type PoolCursor } from "./aim";
+import { ballAtPoint } from "./hit-ball";
+import { poolBallLabel } from "./labels";
 import {
   PoolScene3D,
   type PoolSceneInputMode,
   type PoolSceneStatus,
 } from "./render3d/PoolScene3D";
 import { PoolTableShell } from "./PoolTableShell";
+import { poolLayout } from "../../domain/pool/table";
 import { predictShot } from "./prediction";
 import { usePoolAim } from "./use-pool-aim";
 import { usePoolClock } from "./use-pool-clock";
@@ -69,6 +72,11 @@ export function PoolTable3D({
   const [predict, setPredict] = useState(false);
   const [cameraMode, setCameraMode] = useState<PoolSceneInputMode>("aim");
   const [cursor, setCursor] = useState<PoolCursor>("default");
+  const [hoverBall, setHoverBall] = useState<{
+    id: number;
+    x: number;
+    y: number;
+  } | null>(null);
   const [status, setStatus] = useState<PoolSceneStatus>({
     phase: "loading",
     message: "正在初始化 3D 桌面",
@@ -97,7 +105,13 @@ export function PoolTable3D({
   }, []);
   const prediction =
     predict && interactive && aim.cue
-      ? predictShot(view.balls, aim.cue, aim.aim, aim.power)
+      ? predictShot(
+          view.balls,
+          aim.cue,
+          aim.aim,
+          aim.power,
+          poolLayout(view.mode),
+        )
       : null;
   useLayoutEffectSafe(() => {
     if (!host.current) return;
@@ -204,6 +218,26 @@ export function PoolTable3D({
     event.currentTarget.setPointerCapture(event.pointerId);
   };
   const move = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const hostRect = host.current?.getBoundingClientRect();
+    if (
+      hostRect &&
+      status.phase === "ready" &&
+      !playbackActive(playback)
+    ) {
+      const point = scene.current?.pointAt(event.clientX, event.clientY);
+      const id = point ? ballAtPoint(view.balls, point) : null;
+      setHoverBall(
+        id === null
+          ? null
+          : {
+              id,
+              x: event.clientX - hostRect.left,
+              y: event.clientY - hostRect.top,
+            },
+      );
+    } else {
+      setHoverBall(null);
+    }
     if (cameraMode !== "aim") return;
     if (
       !event.isPrimary ||
@@ -250,18 +284,19 @@ export function PoolTable3D({
     setCursor("default");
   };
   const leave = () => {
+    setHoverBall(null);
     if (!aim.pulling && !aim.placing) setCursor("default");
   };
   const hint =
     cameraMode === "orbit"
-      ? "拖动旋转视角，滚轮缩放，点“返回击球”继续"
+      ? "拖动旋转视角"
       : view.ballInHand
         ? aim.placement
           ? aim.pulling
             ? "松手击球"
-            : "白球已放置，按住拖动蓄力"
-          : "自由球：点击台面放置白球"
-        : "移动瞄准，按住拖动蓄力，右键/中键旋转，滚轮缩放";
+            : "拖动蓄力"
+          : "点击台面放置白球"
+        : "拖动蓄力，右键旋转视角";
   return (
     <PoolTableShell
       view={view}
@@ -296,6 +331,16 @@ export function PoolTable3D({
         onPointerCancel={cancel}
         onContextMenu={(event) => event.preventDefault()}
       >
+        {hoverBall ? (
+          <span
+            className="pool-ball-tip"
+            data-ball={hoverBall.id}
+            style={{ left: hoverBall.x, top: hoverBall.y }}
+            aria-hidden="true"
+          >
+            {poolBallLabel(view, hoverBall.id)}
+          </span>
+        ) : null}
         {status.phase !== "ready" ? (
           <div className="pool-3d-status" role="status" aria-live="polite">
             <strong>

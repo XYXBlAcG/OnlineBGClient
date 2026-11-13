@@ -27,7 +27,7 @@ import {
   type CardId,
 } from "../../domain/expedition/content";
 import { relics, relicText, type RelicId } from "../../domain/expedition/world";
-import { chapters } from "../../domain/expedition/chapters";
+import { chapterAt } from "../../domain/expedition/chapters";
 import "./journal.css";
 
 type JournalTab =
@@ -54,7 +54,7 @@ const tabLabels: [JournalTab, string][] = [
 
 const professionName = (id: number) =>
   heroContent[id]?.name ?? `职业 ${id + 1}`;
-const chapterName = (id: number) => chapters[id]?.name ?? `第 ${id + 1} 章`;
+const chapterName = (id: number) => chapterAt(id).name;
 const cardTargetName = (target: string) =>
   target === "enemy"
     ? "敌方"

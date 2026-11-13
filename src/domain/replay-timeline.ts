@@ -1,5 +1,5 @@
 import { Replay } from "./replay";
-import { chapters } from "./expedition/chapters";
+import { chapterAt } from "./expedition/chapters";
 import { nodeNames } from "./expedition/map";
 export interface ReplayMarker {
   frame: number;
@@ -27,7 +27,7 @@ export class ReplayTimeline {
         this.markers.push({
           frame: this.index,
           kind: "chapter",
-          label: `第 ${run.chapter + 1} 大层 · ${chapters[run.chapter]?.name ?? "远征"}`,
+          label: `第 ${run.chapter + 1} 大层 · ${chapterAt(run.chapter).name}`,
         });
       }
       const node = `${run.chapter}:${run.current}`;

@@ -33,6 +33,8 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 本地存档与记录                   | [IndexedDB](../src/client/storage.ts)                                                                                                                                          |
 | 关于与作者主页                   | [资料](../src/client/about.json)、[关于页](../src/client/About.tsx)、[原生菜单与链接](../src-tauri/src/desktop.rs)                                                             |
 | 回放播放与导入导出               | [回放格式](../src/domain/replay.ts)、[记录界面](../src/client/Records.tsx)、[文件](../src/client/files.ts)                                                                     |
+| 连续聚会、开房预设与多局记分     | [房主预设](../src/client/lobby/room-preset.ts)、[多局记分](../src/domain/series.ts)、[结算与再来一局](../src/client/RoundContinuation.tsx)、[下一局队列](../src/client/PartyQueue.tsx) |
+| 连接恢复阶段与提示               | [阶段归并](../src/client/connection-phase.ts)、[连接状态机](../src/client/connection.ts) |
 | 卡坦岛真人规则与界面动作         | [规则](../src/domain/catan.ts)、[动作类型](../src/domain/catan-actions.ts)、[界面意图](../src/domain/catan-intent.ts)                                                          |
 | 璀璨宝石规则与界面动作           | [规则](../src/domain/splendor.ts)、[动作](../src/domain/splendor-actions.ts)                                                                                                   |
 | 卡坦岛与璀璨宝石搜索             | [公共信息集搜索](../src/domain/economic-strategy.ts)、[卡坦岛](../src/domain/catan-strategy.ts)、[璀璨宝石](../src/domain/splendor-strategy.ts)                                |

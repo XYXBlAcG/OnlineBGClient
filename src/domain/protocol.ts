@@ -325,6 +325,7 @@ export interface Snapshot {
   summaries: DecisionSummary[];
   challenges?: ChallengeBoard | null;
   finished: boolean;
+  series?: import("./series").Series | null;
   resolving: boolean;
   turnDeadline?: number;
   paused: boolean;

@@ -39,6 +39,7 @@ import { prefetchGameSurface } from "./OriginalGameLazy";
 import { configSchema, type RoomConfig } from "../domain/protocol";
 import type { Difficulty } from "../domain/types";
 import { difficultyNames } from "./game-difficulty";
+import { readRoomPreset, saveRoomPreset } from "./lobby/room-preset";
 export function Lobby({
   service,
   initialRoom,
@@ -64,7 +65,8 @@ export function Lobby({
   ) => void;
   onJoin: (name: string, invitation: string, spectator?: boolean) => void;
 }) {
-  const [kind, setKind] = useState<GameKind>("uno");
+  const [initialPreset] = useState(() => readRoomPreset());
+  const [kind, setKind] = useState<GameKind>(initialPreset?.kind ?? "uno");
   const [spectator, setSpectator] = useState(false);
   const [networkPage, setNetworkPage] = useState<"join" | "create">("join");
   const [mode, setMode] = useState<"local" | "network">(
@@ -76,12 +78,14 @@ export function Lobby({
     usePresentation().ui,
   );
   const [name, setName] = useState(localStorage.getItem("player-name") || "我");
-  const [humans, setHumans] = useState(1);
-  const [ai, setAi] = useState<RoomConfig["ai"]>([
-    { difficulty: "normal", name: "" },
-    { difficulty: "normal", name: "" },
-  ]);
-  const [aiDelayMs, setDelay] = useState(1500);
+  const [humans, setHumans] = useState(initialPreset?.humans ?? 1);
+  const [ai, setAi] = useState<RoomConfig["ai"]>(
+    initialPreset?.ai ?? [
+      { difficulty: "normal", name: "" },
+      { difficulty: "normal", name: "" },
+    ],
+  );
+  const [aiDelayMs, setDelay] = useState(initialPreset?.aiDelayMs ?? 1500);
   const [graphwar, setGraphwar] = useState(graphwarOptionsSchema.parse({}));
   const [flight, setFlight] = useState(flightOptionsSchema.parse({}));
   const [checkers, setCheckers] = useState(checkersOptionsSchema.parse({}));
@@ -93,7 +97,7 @@ export function Lobby({
   const [mahjong, setMahjong] = useState(mahjongOptionsSchema.parse({}));
   const expeditionJournal = useExpeditionJournal(kind === "expedition");
   const [catanTrades, setCatanTrades] = useState(true);
-  const [team, setTeam] = useState(false);
+  const [team, setTeam] = useState(initialPreset?.team ?? false);
   const [liteMotion, setLiteMotion] = useState(false);
   useEffect(() => {
     if (!preferences.lobbySwitchMotion) {
@@ -131,7 +135,7 @@ export function Lobby({
   const game = gameCatalogue[kind];
   const aiDifficultyNames =
     kind === "expedition" ? expeditionAiDifficultyNames : difficultyNames;
-  const fitted = fitSeats({ kind, humans, ai, checkers });
+  const fitted = fitSeats({ kind, humans, ai, checkers, pool });
   const displayHumans = fitted.humans;
   const displayAi = balanceSeats({
     kind,
@@ -140,7 +144,13 @@ export function Lobby({
   }).ai;
   const total = displayHumans + displayAi.length;
   const seatCap =
-    kind === "tq" && checkers.mode === "siege" ? 2 : game.maxPlayers;
+    kind === "tq" && checkers.mode === "siege"
+      ? 2
+      : kind === "pool"
+        ? pool.mode === "party"
+          ? 4
+          : 2
+        : game.maxPlayers;
   const humanFloor = ["tq", "scmj"].includes(kind)
     ? 0
     : game.ai
@@ -607,7 +617,14 @@ export function Lobby({
                   total < game.minPlayers ||
                   (kind === "expedition" && expeditionJournal.loading)
                 }
-                onClick={() =>
+                onClick={() => {
+                  saveRoomPreset({
+                    kind,
+                    humans: displayHumans,
+                    ai: displayAi,
+                    team,
+                    aiDelayMs,
+                  });
                   onCreate(
                     configSchema.parse({
                       kind,
@@ -636,8 +653,8 @@ export function Lobby({
                     temporary,
                     mode === "network" && hostOnly,
                     mode === "network" && localDebug,
-                  )
-                }
+                  );
+                }}
               >
                 {busy
                   ? "正在准备房间…"

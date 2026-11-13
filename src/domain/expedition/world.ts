@@ -463,6 +463,85 @@ export const relics = {
       per100Cards: 20,
     },
   },
+
+  abyss_lamp: {
+    name: "深渊提灯",
+    icon: "☾︎",
+    trigger: "start",
+    effects: [
+      { kind: "regen", amount: 2 },
+      { kind: "draw", amount: 1 },
+    ],
+  },
+  deep_lamp: {
+    name: "深灯",
+    icon: "☼︎",
+    trigger: "start",
+    effects: [{ kind: "draw", amount: 2 }],
+  },
+  echo_bell: {
+    name: "回声钟",
+    icon: "♢︎",
+    trigger: "start",
+    effects: [{ kind: "echo", amount: 1 }],
+  },
+  cold_iron: {
+    name: "冷铁护腕",
+    icon: "⬢︎",
+    trigger: "start",
+    effects: [{ kind: "dexterity", amount: 2 }],
+  },
+  night_compass: {
+    name: "夜航罗盘",
+    icon: "✧︎",
+    trigger: "start",
+    effects: [
+      { kind: "draw", amount: 1 },
+      { kind: "regen", amount: 1 },
+    ],
+  },
+  tower_shard: {
+    name: "塔心碎片",
+    icon: "◆︎",
+    trigger: "round",
+    effects: [{ kind: "block", amount: 4 }],
+  },
+  endless_thread_relic: {
+    name: "无尽纺锤",
+    icon: "≋︎",
+    trigger: "round",
+    effects: [
+      { kind: "block", amount: 3 },
+      { kind: "thorns", amount: 1 },
+    ],
+  },
+  kill_ember: {
+    name: "猎杀余烬",
+    icon: "✹︎",
+    trigger: "kill",
+    effects: [{ kind: "strength", amount: 1 }],
+  },
+  mirror_ward: {
+    name: "镜面护符",
+    icon: "◌︎",
+    trigger: "start",
+    effects: [
+      { kind: "block", amount: 6 },
+      { kind: "thorns", amount: 1 },
+    ],
+  },
+  sealed_coin: {
+    name: "封存钱币",
+    icon: "◎︎",
+    trigger: "loot",
+    effects: [{ kind: "draw", amount: 1 }],
+  },
+  victory_fungus: {
+    name: "凯旋菌伞",
+    icon: "❖︎",
+    trigger: "victory",
+    effects: [{ kind: "regen", amount: 3 }],
+  },
 } as const satisfies Record<string, RelicDefinition>;
 export type RelicId = keyof typeof relics;
 export interface RelicValueProgress {

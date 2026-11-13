@@ -13,10 +13,19 @@ it("shows the missing readiness and disables starting until guests are ready", (
         ],
       }}
       pending={false}
+      series={{
+        kind: "uno",
+        rounds: 2,
+        wins: [1, 1],
+        draws: 0,
+      }}
       onStart={() => {}}
       onReady={() => {}}
     />,
   );
   expect(html).toContain("等待乙准备");
   expect(html).toMatch(/disabled=""[^>]*>开始下一局/);
+  expect(html).toContain("再来一局");
+  expect(html).toContain("第 3 局");
+  expect(html).toContain("甲 1 胜");
 });

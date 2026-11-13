@@ -1,8 +1,8 @@
 import { gameCatalogue, gameKinds, type GameKind } from "./catalogue";
 import type { ReplayRecord } from "./replay";
 import { Replay } from "./replay";
-import { catanVictoryPoints } from "./catan";
 import type { GameState } from "./types";
+import { gameWinner } from "./game-result";
 
 import type { AchievementGame, AchievementRarity } from "./achievement-types";
 export type { AchievementGame, AchievementRarity } from "./achievement-types";
@@ -889,52 +889,6 @@ const played = (steps: ActionStep[], actor: number) =>
 function rank(card: number) {
   return Math.floor((card - 1) / 4);
 }
-function unoWinner(state: GameState, actor: number) {
-  if (state.kind !== "uno") return false;
-  const view = state.view;
-  return view.teamMode
-    ? view.teamWinner === view.teams?.[actor]
-    : view.isEnd && (view.playerFinish[actor] ?? 0) > 0;
-}
-function isWinner(state: GameState, actor: number) {
-  switch (state.kind) {
-    case "uno":
-      return unoWinner(state, actor);
-    case "ddz":
-      return state.view.isFinish && state.view.winner === actor + 1;
-    case "ccbs":
-      return state.view.winner.includes(actor);
-    case "dominion":
-      return state.view.winners.includes(actor);
-    case "graphwar":
-      return state.view.winner === actor;
-    case "fxq":
-      return state.view.winners.includes(actor);
-    case "scmj":
-      return state.view.wins.some((win) => win.player === actor);
-    case "tq":
-      return state.view.winnerId.includes(actor);
-    case "sgs":
-      return state.view.winners.includes(actor);
-    case "expedition":
-      return state.view.phase === "won";
-    case "dy":
-      return (
-        state.view.finish === 1 &&
-        state.view.scores[actor] <= Math.min(...state.view.scores)
-      );
-    case "ktd": {
-      const scores = state.view.playerData.map((_, index) =>
-        catanVictoryPoints(state.view, index),
-      );
-      return scores[actor] === Math.max(...scores);
-    }
-    case "pool":
-      return state.view.winner === actor;
-  }
-  return false;
-}
-
 function fxqAchievements(steps: ActionStep[], final: GameState, actor: number) {
   const result: AchievementId[] = [];
   const rolls = played(steps, actor).filter(
@@ -976,7 +930,7 @@ function fxqAchievements(steps: ActionStep[], final: GameState, actor: number) {
   if (
     final.kind === "fxq" &&
     final.view.special &&
-    isWinner(final, actor) &&
+    gameWinner(final, actor) &&
     abilities.has("boost") &&
     abilities.has("shield")
   )
@@ -992,8 +946,8 @@ function fxqAchievements(steps: ActionStep[], final: GameState, actor: number) {
       )
         crashed = true;
   }
-  if (!crashed && isWinner(final, actor)) result.push("fxq.zero-crash");
-  if (final.kind === "fxq" && isWinner(final, actor)) {
+  if (!crashed && gameWinner(final, actor)) result.push("fxq.zero-crash");
+  if (final.kind === "fxq" && gameWinner(final, actor)) {
     for (const step of played(steps, actor)) {
       if (step.event.action.type !== "fxq-move") continue;
       if (step.before.kind !== "fxq" || step.after.kind !== "fxq") continue;
@@ -1014,7 +968,7 @@ function fxqAchievements(steps: ActionStep[], final: GameState, actor: number) {
 
 function unoAchievements(steps: ActionStep[], final: GameState, actor: number) {
   const result: AchievementId[] = [];
-  if (!unoWinner(final, actor)) return result;
+  if (!gameWinner(final, actor)) return result;
   const own = played(steps, actor);
   const wild = own.some(
     (step) =>
@@ -1152,7 +1106,7 @@ function ccbsAchievements(
   final: GameState,
   actor: number,
 ) {
-  if (!isWinner(final, actor) || final.kind !== "ccbs") return [];
+  if (!gameWinner(final, actor) || final.kind !== "ccbs") return [];
   const result: AchievementId[] = [];
   const view = final.view;
   if (view.playerScore[actor] >= 15 && !view.playerNoble[actor].length)
@@ -1180,7 +1134,7 @@ function ccbsAchievements(
 }
 
 function ktdAchievements(steps: ActionStep[], final: GameState, actor: number) {
-  if (final.kind !== "ktd" || !isWinner(final, actor)) return [];
+  if (final.kind !== "ktd" || !gameWinner(final, actor)) return [];
   const result: AchievementId[] = [];
   const view = final.view,
     player = view.playerData[actor];
@@ -1215,7 +1169,7 @@ function ktdAchievements(steps: ActionStep[], final: GameState, actor: number) {
 }
 
 function dyAchievements(final: GameState, actor: number) {
-  if (final.kind !== "dy" || !isWinner(final, actor)) return [];
+  if (final.kind !== "dy" || !gameWinner(final, actor)) return [];
   const result: AchievementId[] = [];
   const view = final.view;
   if (view.scores[actor] === 0) result.push("dy.zero");
@@ -1244,7 +1198,7 @@ function dyAchievements(final: GameState, actor: number) {
 }
 
 function sgsAchievements(steps: ActionStep[], final: GameState, actor: number) {
-  if (final.kind !== "sgs" || !isWinner(final, actor)) return [];
+  if (final.kind !== "sgs" || !gameWinner(final, actor)) return [];
   const result: AchievementId[] = [];
   const view = final.view;
   if (
@@ -1275,7 +1229,7 @@ function sgsAchievements(steps: ActionStep[], final: GameState, actor: number) {
 }
 
 function tqAchievements(steps: ActionStep[], final: GameState, actor: number) {
-  if (final.kind !== "tq" || !isWinner(final, actor)) return [];
+  if (final.kind !== "tq" || !gameWinner(final, actor)) return [];
   const result: AchievementId[] = [];
   const moves = played(steps, actor).filter(
     (step) => step.event.action.type === "tq-move",
@@ -1329,7 +1283,7 @@ function graphwarAchievements(
   final: GameState,
   actor: number,
 ) {
-  if (final.kind !== "graphwar" || !isWinner(final, actor)) return [];
+  if (final.kind !== "graphwar" || !gameWinner(final, actor)) return [];
   const result: AchievementId[] = [];
   let friendly = false,
     hits = 0,
@@ -1441,7 +1395,7 @@ function dominionAchievements(
   final: GameState,
   actor: number,
 ) {
-  if (final.kind !== "dominion" || !isWinner(final, actor)) return [];
+  if (final.kind !== "dominion" || !gameWinner(final, actor)) return [];
   const result: AchievementId[] = [];
   const buys = played(steps, actor).filter(
     (step) =>
@@ -1537,7 +1491,7 @@ export function evaluateReplay(
   if (!final || !replay.engine.finished(final))
     return { achievements: [], winner: false };
   const steps = actionSteps(record, frames);
-  const winner = isWinner(final, actor);
+  const winner = gameWinner(final, actor);
   switch (final.kind) {
     case "fxq":
       return { achievements: fxqAchievements(steps, final, actor), winner };

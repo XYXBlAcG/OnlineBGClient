@@ -65,6 +65,12 @@ import { Button, Panel } from "./client/ui/Controls";
 import { ErrorBoundary } from "./client/ui/ErrorBoundary";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { About } from "./client/About";
+import { TableChrome } from "./client/TableChrome";
+import {
+  connectionPhase,
+  connectionPhaseLabels,
+  isRecoveredTransition,
+} from "./client/connection-phase";
 import { Records } from "./client/Records";
 import { ClientStore } from "./client/storage";
 import {
@@ -160,6 +166,20 @@ const DevStageGallery = import.meta.env.DEV
       })),
     )
   : null;
+const DevExpeditionDataEditor = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/ExpeditionDataEditor").then((module) => ({
+        default: module.ExpeditionDataEditor,
+      })),
+    )
+  : null;
+const DevExpeditionVictoryPreview = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("./client/dev/ExpeditionVictoryPreview").then((module) => ({
+        default: module.ExpeditionVictoryPreview,
+      })),
+    )
+  : null;
 const DevPoolPreview = import.meta.env.DEV
   ? React.lazy(() =>
       import("./client/dev/PoolPreview").then((module) => ({
@@ -192,6 +212,14 @@ const devStage = import.meta.env.DEV && invited.get("dev") === "stage";
 const devPool = import.meta.env.DEV && invited.get("dev") === "pool";
 const devPool3D = import.meta.env.DEV && invited.get("dev") === "pool3d";
 const devPoolPlay = import.meta.env.DEV && invited.get("dev") === "poolplay";
+const devExpeditionVictory =
+  import.meta.env.DEV && invited.get("dev") === "expedition-victory";
+const devExpeditionEditor =
+  import.meta.env.DEV && invited.get("dev") === "expedition-editor";
+if (import.meta.env.DEV)
+  void import("./client/dev/expedition-overrides").then((module) =>
+    module.applyStoredExpeditionOverrides(),
+  );
 const initialService =
   invited.get("service") ||
   (!isTauri() &&
@@ -223,6 +251,13 @@ function App() {
   const [latencyMs, setLatencyMs] = useState<number>();
   const dismissNotice = useCallback(() => setNotice(""), []);
   const [status, setStatus] = useState("本地");
+  const connectionPhaseRef = useRef(connectionPhase("本地"));
+  useEffect(() => {
+    const next = connectionPhase(status);
+    if (isRecoveredTransition(connectionPhaseRef.current, next))
+      setNotice("连接已恢复");
+    connectionPhaseRef.current = next;
+  }, [status]);
   const operation = useRef(new RoomOperation()).current;
   const pendingOperation = useSyncExternalStore(
     operation.subscribe,
@@ -1782,7 +1817,9 @@ function App() {
           <Notices
             notice={notice}
             progress={
-              busy || /连接中|重连中|连接中断/.test(status) ? status : ""
+              busy || connectionPhase(status) !== "online"
+                ? connectionPhaseLabels[connectionPhase(status)]
+                : ""
             }
             onDismiss={dismissNotice}
             onCancel={() =>
@@ -2059,79 +2096,58 @@ function App() {
                         </div>
                       ) : (
                         <>
-                          {snapshot.paused && (
-                            <div className="resolution-status">
-                              {snapshot.aiPaused
-                                ? "AI 性能测试已暂停"
-                                : "有玩家掉线，等待恢复连接"}
-                            </div>
-                          )}
-                          {snapshot.finished && (
-                            <div className="finish-banner">
-                              <strong>对局已结束</strong>
-                              {!mobile &&
-                                preferences.auditVisible &&
-                                gameCatalogue[snapshot.kind].ai && (
-                                  <button onClick={() => setTab("audit")}>
-                                    审核 AI 决策
+                          <TableChrome
+                            snapshot={snapshot}
+                            pending={actionPending}
+                            showTurn={
+                              gameCatalogue[snapshot.kind].presentation
+                                .kind === "upstream"
+                            }
+                            finishedActions={
+                              <>
+                                {!mobile &&
+                                  preferences.auditVisible &&
+                                  gameCatalogue[snapshot.kind].ai && (
+                                    <button onClick={() => setTab("audit")}>
+                                      审核 AI 决策
+                                    </button>
+                                  )}
+                                {!mobile && (
+                                  <button onClick={() => setRecordsOpen(true)}>
+                                    查看回放
                                   </button>
                                 )}
-                              {!mobile && (
-                                <button onClick={() => setRecordsOpen(true)}>
-                                  查看回放
-                                </button>
-                              )}
-                              {!!snapshot.partyQueue?.entries.length && (
-                                <PartyQueue
-                                  compact
+                                {!!snapshot.partyQueue?.entries.length && (
+                                  <PartyQueue
+                                    compact
+                                    snapshot={snapshot}
+                                    onError={setNotice}
+                                    send={(command) => {
+                                      if (session.current)
+                                        connection.current?.send({
+                                          ...command,
+                                          token: session.current.token,
+                                        });
+                                    }}
+                                  />
+                                )}
+                                <RoundContinuation
                                   snapshot={snapshot}
-                                  onError={setNotice}
-                                  send={(command) => {
+                                  pending={!!pendingOperation}
+                                  series={snapshot.series}
+                                  onStart={restart}
+                                  onReady={(ready) => {
                                     if (session.current)
                                       connection.current?.send({
-                                        ...command,
+                                        type: "ready",
                                         token: session.current.token,
+                                        ready,
                                       });
                                   }}
                                 />
-                              )}
-                              <RoundContinuation
-                                snapshot={snapshot}
-                                pending={!!pendingOperation}
-                                onStart={restart}
-                                onReady={(ready) => {
-                                  if (session.current)
-                                    connection.current?.send({
-                                      type: "ready",
-                                      token: session.current.token,
-                                      ready,
-                                    });
-                                }}
-                              />
-                            </div>
-                          )}
-                          {snapshot.resolving && !snapshot.finished && (
-                            <div className="resolution-status">
-                              等待无懈可击响应，房间服务自动结算
-                            </div>
-                          )}
-                          {snapshot.playing && (
-                            <div className="game-status-row">
-                              <span
-                                className="game-turn-indicator"
-                                aria-live="polite"
-                                role="status"
-                              >
-                                {actionPending
-                                  ? "操作确认中…"
-                                  : snapshot.playing &&
-                                      !snapshot.paused &&
-                                      snapshot.candidates.length
-                                    ? "轮到你了"
-                                    : ""}
-                              </span>
-                            </div>
-                          )}
+                              </>
+                            }
+                          />
                           <div
                             className="game-stage"
                             aria-busy={actionPending}
@@ -2387,6 +2403,14 @@ createRoot(document.getElementById("root")!).render(
         ) : devNativeShell && DevNativeShell ? (
           <React.Suspense fallback={null}>
             <DevNativeShell />
+          </React.Suspense>
+        ) : devExpeditionEditor && DevExpeditionDataEditor ? (
+          <React.Suspense fallback={null}>
+            <DevExpeditionDataEditor />
+          </React.Suspense>
+        ) : devExpeditionVictory && DevExpeditionVictoryPreview ? (
+          <React.Suspense fallback={null}>
+            <DevExpeditionVictoryPreview />
           </React.Suspense>
         ) : devPool3D && DevPool3DPreview ? (
           <React.Suspense fallback={null}>

@@ -2541,3 +2541,151 @@
     min-height: 30px;
   }
 }
+.exp-victory {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 30px 22px 26px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% -10%, rgb(60 42 99) 0%, rgb(34 23 56) 45%, rgb(18 13 29) 100%);
+  color: rgb(246 236 216);
+  text-align: center;
+}
+.exp-victory-rays {
+  position: absolute;
+  inset: -55%;
+  z-index: -1;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(245, 211, 122, 0.14) 0deg 5deg,
+    transparent 5deg 26deg
+  );
+  mask-image: radial-gradient(circle at 50% 40%, rgb(0 0 0) 0%, transparent 62%);
+  animation: exp-victory-turn 32s linear infinite;
+}
+.exp-victory-crown {
+  width: 58px;
+  color: rgb(245 211 122);
+  filter: drop-shadow(0 0 14px rgba(245, 211, 122, 0.55));
+  animation: exp-victory-breathe 3.6s ease-in-out infinite;
+}
+.exp-victory h2 {
+  margin: 0;
+  color: rgb(245 211 122);
+  font-size: clamp(26px, 4.4vw, 44px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 0 18px rgba(245, 211, 122, 0.45),
+    0 0 60px rgba(245, 211, 122, 0.22);
+}
+.exp-victory-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
+  width: min(620px, 100%);
+  margin: 6px 0 0;
+}
+.exp-victory-stats > div {
+  display: grid;
+  gap: 2px;
+  padding: 10px 8px;
+  border: 1px solid rgba(245, 211, 122, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+}
+.exp-victory-stats dt {
+  color: rgba(246, 236, 216, 0.66);
+  font-size: 12px;
+}
+.exp-victory-stats dd {
+  margin: 0;
+  color: rgb(245 211 122);
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.exp-victory::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle, rgba(255, 236, 179, 0.9) 0 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255, 236, 179, 0.7) 0 1.2px, transparent 2px),
+    radial-gradient(circle, rgba(255, 236, 179, 0.55) 0 1px, transparent 2px);
+  background-size:
+    190px 190px,
+    260px 260px,
+    330px 330px;
+  background-position:
+    0 0,
+    60px 120px,
+    140px 40px;
+  opacity: 0.55;
+  animation: exp-victory-sparks 9s linear infinite;
+  pointer-events: none;
+}
+.exp-victory[data-outcome="lost"] {
+  background:
+    radial-gradient(circle at 50% -10%, rgb(52 18 20) 0%, rgb(26 13 15) 42%, rgb(11 8 9) 100%);
+  border: 1px solid rgba(180, 77, 70, 0.28);
+}
+.exp-victory[data-outcome="lost"] h2 {
+  color: rgb(196 126 120);
+  font-size: clamp(24px, 3.6vw, 36px);
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 18px rgba(160, 60, 55, 0.25);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-stats > div {
+  border-color: rgba(180, 77, 70, 0.18);
+  background: rgba(255, 255, 255, 0.025);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-stats dt {
+  color: rgba(246, 236, 216, 0.45);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-stats dd {
+  color: rgba(246, 236, 216, 0.72);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-score {
+  border-color: rgba(180, 77, 70, 0.22);
+  background: rgba(180, 77, 70, 0.06);
+}
+.exp-victory[data-outcome="lost"] .exp-victory-score strong {
+  color: rgb(206 150 142);
+  text-shadow: none;
+}
+.exp-victory-score {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: min(320px, 100%);
+  margin-top: 2px;
+  padding: 12px 22px;
+  border: 1px solid rgba(245, 211, 122, 0.4);
+  border-radius: 16px;
+  background: rgba(245, 211, 122, 0.08);
+}
+.exp-victory-score span {
+  color: rgba(246, 236, 216, 0.72);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+}
+.exp-victory-score strong {
+  color: rgb(245 211 122);
+  font-size: clamp(34px, 5vw, 54px);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.exp-victory-score small {
+  color: rgba(246, 236, 216, 0.8);
+  font-size: 12px;
+}
+.exp-victory-score[data-best="true"] strong {
+  text-shadow: 0 0 24px rgba(245, 211, 122, 0.65);
+}

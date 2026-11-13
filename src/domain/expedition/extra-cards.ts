@@ -5,6 +5,8 @@ import { extensionCards } from "./extension-cards";
 import { statusCards } from "./status-cards";
 import { covenantCards } from "./covenant-cards";
 import { diceCards } from "./dice-cards";
+import { endlessCards } from "./endless-cards";
+import { abyssCards } from "./abyss-cards";
 export const extraCards = {
   ...mechanicCards,
   ...starCards,
@@ -12,5 +14,7 @@ export const extraCards = {
   ...extensionCards,
   ...covenantCards,
   ...diceCards,
+  ...endlessCards,
+  ...abyssCards,
   ...statusCards,
 };

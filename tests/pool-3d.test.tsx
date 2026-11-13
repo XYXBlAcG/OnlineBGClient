@@ -279,3 +279,20 @@ it("plays the recorded shot and reports its end", () => {
   expect(ended).toBe(1);
   scene.destroy();
 });
+
+it("builds the larger party table with its special balls in 3D", () => {
+  stubFrames();
+  const partyView = new PoolRules(() => 0.42).create(3, false, {
+    pool: { mode: "party", shotSeconds: 60, assist: true },
+  }).view;
+  const host = createHost(1024, 768);
+  const fake = createRenderer();
+  const scene = new PoolScene3D(host, partyView, {
+    rendererFactory: () => fake.renderer,
+  });
+  const metrics = scene.metrics();
+  expect(metrics.phase).toBe("ready");
+  expect(metrics.balls).toBe(12);
+  expect(metrics.camera.z).toBeGreaterThan(2);
+  scene.destroy();
+});

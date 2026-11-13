@@ -5,7 +5,11 @@ import {
   advanceTeamContract,
 } from "./advanced";
 import { ballotOption, ballotResult, routeLabel } from "./ballot";
-import { chapters, advancementChoices, waystationRecovery } from "./chapters";
+import {
+  chapters,
+  advancementChoices,
+  waystationRecovery,
+} from "./chapters";
 import { ascensionProfile } from "./ascension";
 import { legacyProfile, normalizeLegacy } from "./legacy";
 import { cardServices, campRecovery } from "./card-services";
@@ -34,6 +38,7 @@ import {
   type EventEffect,
 } from "./world";
 import {
+  expeditionDifficulties,
   expeditionOptionsSchema,
   type ExpeditionRun,
   type ExpeditionGameState,
@@ -55,13 +60,14 @@ import {
 } from "./map";
 import { shuffled } from "./random";
 const combat = new ExpeditionRules();
-const startingRelics: readonly RelicId[] = [
+export const expeditionStartingRelics: RelicId[] = [
   "shell",
   "lens",
   "salve",
   "battery",
   "prism",
   "salve",
+  "abyss_lamp",
   "lockpick",
   "secondFate",
 ];
@@ -80,7 +86,9 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
     const seed = `${this.random()}:${this.random()}`,
       config = expeditionOptionsSchema.parse(options?.expedition ?? {}),
       ascension = ascensionProfile(config.ascension),
-      legacy = legacyProfile(config.legacy);
+      legacy = legacyProfile(config.legacy),
+      difficultyCompensation =
+        expeditionDifficulties[config.difficulty].compensation;
     const view: ExpeditionRun = {
       advanced: config.advanced,
       rulesVersion: 1,
@@ -91,7 +99,8 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       luck: Array(players).fill(
         (options?.expeditionCampaign === 1 ? 0 : 1) +
           ascension.startLuck +
-          legacy.startLuck,
+          legacy.startLuck +
+          difficultyCompensation.luck,
       ),
       rerolls: Array(players).fill(0),
       eventRerolls: 0,
@@ -100,6 +109,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       seed,
       difficulty: config.difficulty,
       ascension: config.ascension,
+      endless: config.endless,
       legacy: normalizeLegacy(config.legacy),
       legacyFreeRerolls: Array(players).fill(legacy.freeRerolls),
       phase: "profession",
@@ -146,7 +156,11 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       companionBattle: null,
       nodeStart: null,
       lastNodeResult: null,
-      compass: 2 + ascension.startCompass + legacy.startCompass,
+      compass:
+        2 +
+        ascension.startCompass +
+        legacy.startCompass +
+        difficultyCompensation.compass,
       sequence: 0,
       marks: [],
     };
@@ -611,10 +625,17 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
         const profile = ascensionProfile(run.ascension),
           legacy = legacyProfile(run.legacy ?? []);
         run.combat.heroes.forEach((h, index) => {
-          h.maxHp += profile.startMaxHp + legacy.startMaxHp;
+          h.maxHp +=
+            profile.startMaxHp +
+            legacy.startMaxHp +
+            expeditionDifficulties[run.difficulty].compensation.maxHp;
           h.hp = h.maxHp;
-          h.gold = 50 + profile.startGold + legacy.startGold;
-          h.relics = [startingRelics[h.profession] ?? "salve"];
+          h.gold =
+            50 +
+            profile.startGold +
+            legacy.startGold +
+            expeditionDifficulties[run.difficulty].compensation.gold;
+          h.relics = [expeditionStartingRelics[h.profession] ?? "salve"];
           for (let count = 0; count < legacy.startPotions; count++) {
             const id = shuffled(
               (Object.keys(potions) as PotionId[]).filter(
@@ -913,7 +934,10 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.hunt = false;
     }
     if (currentNode!.kind === "boss") {
-      if (run.campaignVersion === 1 || run.chapter === chapters.length - 1) {
+      if (
+        run.campaignVersion === 1 ||
+        (!run.endless && run.chapter === chapters.length - 1)
+      ) {
         run.phase = "won";
         return;
       }
@@ -945,7 +969,7 @@ export class ExpeditionAdventure implements Rules<"expedition"> {
       run.phase === "reward" &&
       run.map.flat().find((node) => node.id === run.current)?.kind === "boss" &&
       run.campaignVersion === 2 &&
-      run.chapter < chapters.length - 1
+      (run.endless || run.chapter < chapters.length - 1)
     ) {
       this.recordNodeResult(run);
       run.phase = "waystation";

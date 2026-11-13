@@ -1,4 +1,8 @@
-import { POOL_TABLE, type PoolPoint } from "../../domain/pool/table";
+import {
+  standardPoolLayout,
+  type PoolPoint,
+  type PoolTableLayout,
+} from "../../domain/pool/table";
 import type { PoolBall } from "../../domain/pool/types";
 
 export interface PoolPrediction {
@@ -6,17 +10,18 @@ export interface PoolPrediction {
   ghost: PoolPoint | null;
 }
 
-const radius = POOL_TABLE.ballRadius;
+const radius = standardPoolLayout.table.ballRadius;
 
 function nextRail(
   point: PoolPoint,
   dx: number,
   dy: number,
+  layout: PoolTableLayout,
 ): { point: PoolPoint; x: boolean; y: boolean } | null {
-  const left = -POOL_TABLE.width / 2 + radius,
-    right = POOL_TABLE.width / 2 - radius,
-    top = -POOL_TABLE.height / 2 + radius,
-    bottom = POOL_TABLE.height / 2 - radius;
+  const left = -layout.table.width / 2 + radius,
+    right = layout.table.width / 2 - radius,
+    top = -layout.table.height / 2 + radius,
+    bottom = layout.table.height / 2 - radius;
   const hits: { distance: number; point: PoolPoint; x: boolean; y: boolean }[] =
     [];
   if (dx > 0.000001) {
@@ -69,6 +74,7 @@ function extendPath(
   dy: number,
   distance: number,
   bounces: number,
+  layout: PoolTableLayout,
 ): PoolPoint[] {
   const path: PoolPoint[] = [start];
   let point = start,
@@ -76,7 +82,7 @@ function extendPath(
     vy = dy,
     remaining = distance;
   for (let bounce = 0; bounce < bounces; bounce++) {
-    const hit = nextRail(point, vx, vy);
+    const hit = nextRail(point, vx, vy, layout);
     if (!hit) break;
     const segment = Math.hypot(hit.point.x - point.x, hit.point.y - point.y);
     if (segment >= remaining) {
@@ -100,6 +106,7 @@ export function predictShot(
   cue: PoolPoint,
   aim: number,
   power: number,
+  layout: PoolTableLayout = standardPoolLayout,
 ): PoolPrediction {
   const dx = Math.cos(aim),
     dy = Math.sin(aim),
@@ -128,7 +135,7 @@ export function predictShot(
   }
   if (!target)
     return {
-      cue: extendPath(cue, dx, dy, 4.6, 2),
+      cue: extendPath(cue, dx, dy, 4.6, 2, layout),
       ghost: null,
     };
   const contact = { x: cue.x + dx * nearest, y: cue.y + dy * nearest };
@@ -151,6 +158,7 @@ export function predictShot(
         tangentY / tangentLength,
         tangentDistance,
         1,
+        layout,
       ).slice(1),
     );
   }

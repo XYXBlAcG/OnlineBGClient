@@ -1,12 +1,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  POOL_TABLE,
+  standardPoolLayout,
+  poolLayout,
   jawPolygon,
-  poolJaws,
-  poolPockets,
-  poolRails,
   type PoolPoint,
+  type PoolTableLayout,
 } from "../../../domain/pool/table";
 import type { PoolBall, PoolShot, PoolView } from "../../../domain/pool/types";
 import { POOL_PLAYBACK_RATE, interpolateBalls } from "../frames";
@@ -14,9 +13,7 @@ import { poolBallColors } from "../colors";
 import type { PoolCursor } from "../aim";
 import type { PoolPrediction } from "../prediction";
 
-const tableWidth = POOL_TABLE.width;
-const tableHeight = POOL_TABLE.height;
-const ballRadius = POOL_TABLE.ballRadius;
+const ballRadius = standardPoolLayout.table.ballRadius;
 const railHeight = 0.065;
 const cueLength = 0.82;
 const cueTilt = 0.14;
@@ -97,15 +94,25 @@ export function sceneSize(
     : null;
 }
 
-function ballTexture(id: number): THREE.CanvasTexture {
+function ballTexture(
+  id: number,
+  eightBall: boolean,
+  special?: "bolt" | "gold",
+): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 128;
   const context = canvas.getContext("2d")!;
-  const color = poolBallColors[id] ?? "#ddd";
-  context.fillStyle = id >= 9 ? "#f8f7f2" : color;
+  const color =
+    special === "bolt"
+      ? "#2f80ed"
+      : special === "gold"
+        ? "#f2c94c"
+        : (poolBallColors[id] ?? "#ddd");
+  const striped = eightBall && id >= 9 && id <= 15;
+  context.fillStyle = striped ? "#f8f7f2" : color;
   context.fillRect(0, 0, canvas.width, canvas.height);
-  if (id >= 9) {
+  if (striped) {
     context.fillStyle = color;
     context.fillRect(0, 38, canvas.width, 52);
   }
@@ -118,7 +125,11 @@ function ballTexture(id: number): THREE.CanvasTexture {
     context.font = "700 28px sans-serif";
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.fillText(String(id), 128, 65);
+    context.fillText(
+      special === "bolt" ? "⚡" : special === "gold" ? "★" : String(id),
+      128,
+      65,
+    );
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -171,6 +182,9 @@ export class PoolScene3D {
   private controls?: OrbitControls;
   private observer?: ResizeObserver;
   private balls = new Map<number, THREE.Mesh>();
+  private layout: PoolTableLayout = standardPoolLayout;
+  private tableWidth = standardPoolLayout.table.width;
+  private tableHeight = standardPoolLayout.table.height;
   private previous = new Map<number, PoolPoint>();
   private ballGeometry = new THREE.SphereGeometry(
     ballRadius,
@@ -227,8 +241,17 @@ export class PoolScene3D {
     private options: PoolSceneOptions = {},
   ) {
     this.latestView = view;
+    this.layout = poolLayout(view.mode);
+    this.tableWidth = this.layout.table.width;
+    this.tableHeight = this.layout.table.height;
+    const tableScale = this.tableWidth / standardPoolLayout.table.width;
+    this.homePosition.set(0, 2.05 * tableScale, 1.85 * tableScale);
     this.scene.background = new THREE.Color("#111820");
-    this.scene.fog = new THREE.Fog("#111820", 4.5, 9);
+    this.scene.fog = new THREE.Fog(
+      "#111820",
+      4.5 * tableScale,
+      9 * tableScale,
+    );
     this.camera.position.copy(this.homePosition);
     this.ghost.visible = false;
     this.aimLine.visible = false;
@@ -255,8 +278,8 @@ export class PoolScene3D {
       this.controls = new OrbitControls(this.camera, renderer.domElement);
       this.controls.enableDamping = true;
       this.controls.enablePan = false;
-      this.controls.minDistance = 1.15;
-      this.controls.maxDistance = 4.2;
+      this.controls.minDistance = 1.15 * (this.tableWidth / standardPoolLayout.table.width);
+      this.controls.maxDistance = 4.2 * (this.tableWidth / standardPoolLayout.table.width);
       this.controls.minPolarAngle = 0.22;
       this.controls.maxPolarAngle = 1.34;
       this.controls.target.copy(this.homeTarget);
@@ -392,14 +415,18 @@ export class PoolScene3D {
       metalness: 0,
     });
     const frame = new THREE.Mesh(
-      new THREE.BoxGeometry(tableWidth + 0.16, 0.1, tableHeight + 0.16),
+      new THREE.BoxGeometry(
+        this.tableWidth + 0.16,
+        0.1,
+        this.tableHeight + 0.16,
+      ),
       wood,
     );
     frame.position.y = -0.075;
     frame.receiveShadow = true;
     this.scene.add(frame);
     const felt = new THREE.Mesh(
-      new THREE.BoxGeometry(tableWidth, 0.035, tableHeight),
+      new THREE.BoxGeometry(this.tableWidth, 0.035, this.tableHeight),
       cloth,
     );
     felt.position.y = -0.0175;
@@ -421,17 +448,18 @@ export class PoolScene3D {
       mesh.receiveShadow = true;
       this.scene.add(mesh);
     };
-    for (const rail of poolRails) railMesh(rail.points);
-    for (const jaw of poolJaws) railMesh(jawPolygon(jaw), railHeight * 0.94);
+    for (const rail of this.layout.rails) railMesh(rail.points);
+    for (const jaw of this.layout.jaws)
+      railMesh(jawPolygon(jaw), railHeight * 0.94);
     const pocketMaterial = new THREE.MeshStandardMaterial({
       color: "#05090c",
       roughness: 0.9,
     });
-    for (const pocket of poolPockets) {
+    for (const pocket of this.layout.pockets) {
       const hole = new THREE.Mesh(
         new THREE.CylinderGeometry(
-          POOL_TABLE.pocketRadius,
-          POOL_TABLE.pocketRadius,
+          this.layout.table.pocketRadius,
+          this.layout.table.pocketRadius,
           0.03,
           28,
         ),
@@ -441,7 +469,7 @@ export class PoolScene3D {
       this.scene.add(hole);
     }
     const floor = new THREE.Mesh(
-      new THREE.CircleGeometry(3.2, 64),
+      new THREE.CircleGeometry(3.2 * (this.tableWidth / standardPoolLayout.table.width), 64),
       new THREE.MeshStandardMaterial({ color: "#0a1117", roughness: 1 }),
     );
     floor.rotation.x = -Math.PI / 2;
@@ -451,8 +479,19 @@ export class PoolScene3D {
   }
 
   private setupBalls(balls: PoolBall[]) {
+    const party = this.latestView?.mode === "party";
+    const specials = new Map(
+      (this.latestView?.party?.specials ?? []).map((special) => [
+        special.id,
+        special.kind,
+      ]),
+    );
     for (const ball of balls) {
-      const texture = ballTexture(ball.id);
+      const texture = ballTexture(
+        ball.id,
+        !party,
+        specials.get(ball.id),
+      );
       const material = new THREE.MeshPhysicalMaterial({
         map: texture,
         color: "#ffffff",
@@ -819,13 +858,13 @@ export class PoolScene3D {
         const mesh = this.balls.get(pocket.id);
         if (mesh) {
           const from = { x: mesh.position.x, y: mesh.position.z };
-          const nearest = poolPockets.reduce(
+          const nearest = this.layout.pockets.reduce(
             (best, candidate) =>
               Math.hypot(candidate.x - from.x, candidate.y - from.y) <
               Math.hypot(best.x - from.x, best.y - from.y)
                 ? candidate
                 : best,
-            poolPockets[0],
+            this.layout.pockets[0],
           );
           this.drops.set(pocket.id, {
             started: now,

@@ -18,11 +18,12 @@ it("keeps one visual source for legacy primary buttons", () => {
   const legacyBlock = /button\.primary-button[^{]*\{[\s\S]*?\}/.exec(styles)?.[0];
   expect(legacyBlock).toBeDefined();
   expect(legacyBlock).toContain("background: var(--action-primary)");
-  expect(legacyBlock).not.toContain("padding");
+  expect(legacyBlock).toContain("padding: 10px 18px");
   const variantBlock =
     /button\[data-button-variant="primary"\][^{]*\{[\s\S]*?\}/.exec(
       read("src/client/ui/design-tokens.css"),
     )?.[0];
   expect(variantBlock).toContain("background: var(--action-primary)");
   expect(variantBlock).toContain("color: var(--action-foreground)");
+  expect(variantBlock).toContain("padding: 10px 18px");
 });
