@@ -773,9 +773,10 @@
   height: clamp(48px, 10dvh, 120px);
   aspect-ratio: auto;
 }
-.expedition-table .exp-figure {
+.expedition-table .exp-unit .exp-figure {
   width: 100%;
   height: 100%;
+  max-height: 100%;
 }
 .expedition-table .exp-unit-name {
   min-width: 0;
