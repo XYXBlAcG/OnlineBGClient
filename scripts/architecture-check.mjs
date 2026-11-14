@@ -1,8 +1,9 @@
 import { readdir, readFile } from "node:fs/promises";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import ts from "typescript";
 
 const root = process.cwd();
+const portablePath = (value) => value.split(sep).join("/");
 const sourceRoot = join(root, "src");
 const rules = [
   { directory: "src/domain", forbidden: ["src/client", "src/server"] },
@@ -62,11 +63,13 @@ for (const rule of rules) {
   for (const file of files.filter((path) => path.startsWith(directory))) {
     const source = await readFile(file, "utf8");
     for (const imported of importsOf(source, file)) {
-      const target = relative(root, resolve(dirname(file), imported.specifier));
+      const target = portablePath(
+        relative(root, resolve(dirname(file), imported.specifier)),
+      );
       for (const forbidden of rule.forbidden)
         if (target === forbidden || target.startsWith(`${forbidden}/`))
           violations.push({
-            file: relative(root, file),
+            file: portablePath(relative(root, file)),
             line: imported.line,
             specifier: imported.specifier,
             forbidden,
