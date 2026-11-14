@@ -52,7 +52,21 @@ it("racks a larger party table with owned balls and two specials", () => {
   ).toThrow();
 });
 
-it("keeps the turn on own balls and passes it on opponent balls", () => {
+it("treats potting an opponent ball as a foul", () => {
+  const base = view(3),
+    other = base.party!.owners[1][0];
+  const next = rules.apply(
+    { kind: "pool", view: base },
+    0,
+    { type: "pool-shot", aim: 0, power: 0.5, spin: { x: 0, y: 0 } },
+    shot(base, [other], { firstHit: other }),
+  );
+  expect(next.view.foul).toBe("打进对手的球");
+  expect(next.view.turn).toBe(1);
+  expect(next.view.ballInHand).toBe(true);
+});
+
+it("keeps the turn on own balls and passes it on misses", () => {
   const base = view(3),
     own = base.party!.owners[0][0],
     other = base.party!.owners[1][0];
@@ -68,7 +82,7 @@ it("keeps the turn on own balls and passes it on opponent balls", () => {
     { kind: "pool", view: base },
     0,
     { type: "pool-shot", aim: 0, power: 0.5, spin: { x: 0, y: 0 } },
-    shot(base, [other], { firstHit: other }),
+    shot(base, [], { firstHit: own, railAfterContact: true }),
   );
   expect(passed.view.turn).toBe(1);
 });

@@ -187,7 +187,23 @@ it("wins when the last group ball and the eight drop in the same shot", () => {
   expect(win.winner).toBe(0);
 });
 
-it("wins with the eight when the table stayed open but one group is cleared", () => {
+it("wins on an open table only when the shot clears a whole group", () => {
+  const base = view();
+  base.shotNumber = 1;
+  base.balls = base.balls.map((ball) =>
+    ball.id !== 0 && ball.id !== 3 && ball.id !== 8 && ball.id <= 7
+      ? { ...ball, pocketed: true }
+      : ball,
+  );
+  const win = applyOutcome(
+    base,
+    0,
+    pocket(base, [3, 8], { firstHit: 3, railAfterContact: false }),
+  );
+  expect(win.winner).toBe(0);
+});
+
+it("keeps the eight a loss when an already cleared group stays open", () => {
   const base = view();
   base.shotNumber = 1;
   base.balls = base.balls.map((ball) =>
@@ -195,12 +211,12 @@ it("wins with the eight when the table stayed open but one group is cleared", ()
       ? { ...ball, pocketed: true }
       : ball,
   );
-  const win = applyOutcome(
+  const loss = applyOutcome(
     base,
     0,
     pocket(base, [8], { firstHit: 8, railAfterContact: false }),
   );
-  expect(win.winner).toBe(0);
+  expect(loss.winner).toBe(1);
 });
 
 it("still loses when the eight drops before the group is cleared", () => {

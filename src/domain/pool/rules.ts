@@ -92,10 +92,21 @@ function applyPartyOutcome(
   const specials = view.party?.specials ?? [],
     own = partyBallIds(view, actor),
     pottedOwn = pocketedObjects.some((id) => own.includes(id)),
+    opponentPotted = pocketedObjects.some((id) => {
+      const owner =
+        view.party?.owners.findIndex((ids) => ids.includes(id)) ?? -1;
+      return owner >= 0 && owner !== actor;
+    }),
+    partyFoul = foul || opponentPotted,
     pottedSpecial = pocketedObjects.filter((id) =>
       specials.some((special) => special.id === id),
     );
-  if (!foul && pottedSpecial.includes(specials.find((special) => special.kind === "gold")?.id ?? -1)) {
+  if (
+    !partyFoul &&
+    pottedSpecial.includes(
+      specials.find((special) => special.kind === "gold")?.id ?? -1,
+    )
+  ) {
     const remaining = own.filter(
       (id) => !next.balls.find((ball) => ball.id === id)?.pocketed,
     );
@@ -110,22 +121,24 @@ function applyPartyOutcome(
     { length: view.players },
     (_, index) => index,
   ).filter((index) => partyCleared(next, index));
-  if (!foul && clearedPlayers.length) {
+  if (!partyFoul && clearedPlayers.length) {
     next.phase = "finished";
     next.winner = clearedPlayers.includes(actor) ? actor : clearedPlayers[0];
     next.ballInHand = false;
     next.message = `${player(next.winner)} 清空自己的球，获胜`;
     return next;
   }
-  if (foul) {
+  if (partyFoul) {
     next.turn = nextPlayer(view);
     next.ballInHand = true;
     next.phase = "ball-in-hand";
     next.foul = shot.cuePocketed
       ? "白球落袋"
-      : !legalFirstHit(view, actor, shot.firstHit)
-        ? "首次碰到不属于自己的球"
-        : "击球后没有球碰库或进袋";
+      : opponentPotted
+        ? "打进对手的球"
+        : !legalFirstHit(view, actor, shot.firstHit)
+          ? "首次碰到不属于自己的球"
+          : "击球后没有球碰库或进袋";
     next.message = `${player(actor)} 犯规，${player(next.turn)} 自由球`;
     return next;
   }
@@ -217,7 +230,24 @@ export function applyOutcome(
         .filter((group) => group !== null),
     );
     const clearedAfterShot = cleared({ ...view, balls: next.balls }, actor);
-    if (foul || !(clearedAfterShot || (view.openTable && remainingGroups.size <= 1))) {
+    const pocketedGroups = new Set(
+      pocketedObjects
+        .map((id) => groupOf(id))
+        .filter((group) => group !== null),
+    );
+    const clearedGroupThisShot = [...pocketedGroups].some(
+      (group) =>
+        !objectBalls(next.balls).some(
+          (ball) => groupOf(ball.id) === group,
+        ),
+    );
+    if (
+      foul ||
+      !(
+        clearedAfterShot ||
+        (view.openTable && remainingGroups.size <= 1 && clearedGroupThisShot)
+      )
+    ) {
       next.phase = "finished";
       next.winner = opponent(actor);
       next.message =
