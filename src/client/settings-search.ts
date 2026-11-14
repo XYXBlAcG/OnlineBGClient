@@ -51,6 +51,10 @@ export const settingsSearchSections: SettingsSearchSection[] = [
     terms:
       "CPU 加速 单线程 多线程 线程上限 显示计算详情 显示 AI 性能测试 记录并显示策略审核 策略审核",
   },
+  {
+    label: "接入 AI",
+    terms: "接入 AI AI 聊天 人设 搭话 模式 启用 模型",
+  },
   { label: "常用语", terms: "短语 快捷回复 分组 常用语" },
   { label: "数据", terms: "缓存 清理 媒体 回放 记录 存储 数据" },
   { label: "成就", terms: "成就 解锁 稀有度 游戏 进度 测试成就弹窗 搜索" },

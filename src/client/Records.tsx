@@ -280,6 +280,13 @@ export function Records({
           candidates: [],
           computation: null,
           aiPaused: false,
+          companion: {
+            enabled: false,
+            name: "",
+            avatar: "🤖",
+            configured: false,
+            available: false,
+          },
           bannerPolicy: { mode: "off", members: [] },
           party: new PartyLedger().snapshot({
             players: [],

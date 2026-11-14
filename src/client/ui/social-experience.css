@@ -65,7 +65,18 @@
   overflow: auto;
 }
 .chat-command-hints button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   text-align: left;
+}
+.chat-command-hints button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+.chat-command-hints button > span {
+  color: var(--muted);
+  font-size: 12px;
 }
 .chat-command-help {
   display: grid;

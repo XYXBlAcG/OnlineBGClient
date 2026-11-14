@@ -29,6 +29,8 @@ import { VoiceProvider, useVoiceActions } from "./client/voice/VoiceProvider";
 import { VoiceToolbar } from "./client/voice/VoiceControls";
 import { useMobileViewport } from "./client/use-mobile-viewport";
 import type { Attachment } from "./domain/attachments";
+import type { CompanionConfig } from "./domain/companion";
+import { loadAiConfig, saveAiConfig, type AiConfig } from "./client/ai-config";
 import { BannerLayer } from "./client/social/BannerLayer";
 import { useGameFeedback } from "./client/use-game-feedback";
 import { cuePlayer } from "./client/sound";
@@ -644,6 +646,43 @@ function App() {
         attachment,
       });
   }, []);
+  const sendCompanion = useCallback((config: CompanionConfig) => {
+    if (session.current)
+      connection.current?.send({
+        type: "companion",
+        token: session.current.token,
+        config,
+      });
+  }, []);
+  const saveAiProvider = useCallback((config: AiConfig) => {
+    saveAiConfig(config);
+    if (session.current)
+      connection.current?.send({
+        type: "ai-config",
+        token: session.current.token,
+        provider: config.provider,
+        apiKey: config.apiKey,
+      });
+  }, []);
+  const aiConfigSynced = useRef("");
+  useEffect(() => {
+    if (status !== "已连接") {
+      aiConfigSynced.current = "";
+      return;
+    }
+    if (!snapshot?.canManage || !session.current) return;
+    const local = loadAiConfig();
+    if (!local?.provider.model) return;
+    const key = `${snapshot.room}:${session.current.token}`;
+    if (aiConfigSynced.current === key) return;
+    aiConfigSynced.current = key;
+    connection.current?.send({
+      type: "ai-config",
+      token: session.current.token,
+      provider: local.provider,
+      apiKey: local.apiKey,
+    });
+  }, [status, snapshot?.room, snapshot?.canManage]);
   const receive = async (response: Response) => {
     if (nativeShell && (response.type === "closed" || response.type === "left"))
       postNativeShell({ type: "closed" });
@@ -1709,6 +1748,16 @@ function App() {
               (snapshot.canManage && (!snapshot.host || snapshot.actor < 0))
             }
             roomPerformance={snapshot?.config.performance}
+            companion={
+              snapshot
+                ? {
+                    config: snapshot.config.companion,
+                    status: snapshot.companion,
+                  }
+                : undefined
+            }
+            onCompanionChange={sendCompanion}
+            onSaveAiConfig={saveAiProvider}
             onError={setNotice}
             open={settingsOpen}
             onOpenChange={setSettingsOpen}

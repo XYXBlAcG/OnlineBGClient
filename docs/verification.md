@@ -12,6 +12,7 @@
 | 四川麻将真实服务三端＋AI、手机布局、结算和回放 | [浏览器验证](../scripts/verify-sichuan.mjs)、[审核入口](review-and-submit.md#本地-macos-审核应用)                                                                                                                                                    |
 | 四川麻将原生本地线程与真人操作                 | [原生验证](../scripts/native-mahjong-smoke.js)（`COMPANION_SMOKE_PROFILE=mahjong`）                                                                                                                                                                   |
 | 社交模型、消息序号与资源                       | [互动与消息](../tests/social.test.ts)、[阅读状态](../tests/chat-read.test.ts)、[旧存档升级](../tests/archive-upgrade.test.ts)                                                                                                                         |
+| AI 聊天、公开上下文与 Provider 回退            | [房间/协议测试](../tests/companion.test.ts)、[运行时测试](../tests/companion-runtime.test.ts)、[聊天补全](../tests/chat-suggestions.test.ts)、[键盘填充](../tests/chat-composer.test.tsx)、[AI 标记](../tests/companion-ui.test.tsx)、[Provider 适配器](../tests/ai-providers.test.ts)、[本机配置](../tests/ai-config.test.ts)、[真实服务烟测](../scripts/verify-companion.mjs)、[本机 Provider 烟测](../scripts/verify-companion.mjs) |
 | 服务身份与手机延迟链路                         | [权限和投影复用](../tests/service-host.test.ts)、[增量基线](../tests/snapshot-sync.test.ts)、[真实延迟代理与手机浏览器](../scripts/verify-mobile-host.mjs)                                                                                            |
 | 卡坦岛地图、交易、发展卡、强盗与回放           | [规则测试](../tests/catan.test.ts)、[事务与回放](../tests/catan-transactions.test.ts)、[三个真实浏览器牌桌](../scripts/verify-catan.mjs)                                                                                                              |
 | 常用语与扩展特效契约                           | [偏好和互动目录](../tests/social-preferences.test.ts)                                                                                                                                                                                                 |
@@ -56,6 +57,7 @@
 - 缓存：真实 IndexedDB 大小与清理、活动对局和身份保留；原生目录清理保留房间数据库。
 - 手机服务模式：电脑不占席位，两个手机布局客户端控制开局、同房切换与卡坦岛建造；服务管理窗口断开不暂停牌桌。人工增加 360 ms 往返延迟时，提示即时可见、重复点击只提交一次；聊天不再深拷贝牌桌，手机不自动覆盖服务计算配置。
 - 服务重启：实际 SQLite、原身份与暂停恢复、确定性回放重建、动作去重。
+- AI 聊天：共享内核 v0.1.0 的 52 个用例通过；游戏侧房间/协议、服务端运行时、@/指令补全与键盘填充、四种 Provider 适配器、本机 AI 配置测试通过；`npm run verify:companion` 使用真实房间服务、WebSocket 与 fake provider 跑通创建房间、AI 配置命令、聊天、AI 回复、AI 席位名称与快照配置状态；`npm run verify:companion:local` 用本机假 OpenAI 服务验证设置内 `ai-config` 与 OpenAI Provider 适配；`npm run verify:companion:real` 在设置 `COMPANION_LLM_*` 后通过 `ai-config` 验证真实模型链路。真实模型语气、频率、延迟与界面开关、AI 标记、停用行为由用户手动验收。
 
 手机网络优化测量见 [浏览器与延迟代理数据](benchmarks/mobile-network.json)：对同一组更新比较实际增量包与完整包，另测操作反馈时间；这是手机布局模拟，不是物理手机或公网实测。
 

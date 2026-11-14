@@ -17,7 +17,11 @@ import { resolve, extname, relative, sep, isAbsolute } from "node:path";
 import { Worker } from "node:worker_threads";
 import { WebSocketServer, WebSocket } from "ws";
 import { Gateway } from "../domain/gateway";
+import type { Room } from "../domain/room";
 import { protocolVersion, type Response } from "../domain/protocol";
+import { createCompanionRuntime, type CompanionRuntime } from "./companion";
+import { aiConfigCommandSchema } from "../domain/companion";
+import { createAiProvider } from "./ai-providers";
 
 const gateway = new Gateway();
 const voiceConfig =
@@ -175,6 +179,12 @@ const send = (socket: WebSocket, response: Response) => {
   if (socket.readyState === WebSocket.OPEN)
     socket.send(JSON.stringify(response));
 };
+let companionRuntime: CompanionRuntime | null = null;
+const snapshotOf = (room: Room, token: string) => {
+  const snapshot = room.snapshot(token);
+  snapshot.companion.configured = companionRuntime?.configured ?? false;
+  return snapshot;
+};
 const publish = (
   roomId: string,
   socket?: WebSocket,
@@ -204,7 +214,7 @@ const publish = (
       sessions.delete(socket);
       socket.close(4000, "Removed from room");
     } else
-      send(socket, streams.get(socket)!.next(room.snapshot(session.token)));
+      send(socket, streams.get(socket)!.next(snapshotOf(room, session.token)));
   }
 };
 const streams = new Map<WebSocket, SnapshotStream>();
@@ -216,6 +226,9 @@ const heartbeat = setInterval(() => {
   }
 }, 15000);
 heartbeat.unref();
+companionRuntime = createCompanionRuntime({
+  publish: (roomId) => publish(roomId),
+});
 sockets.on("connection", (socket) => {
   streams.set(socket, new SnapshotStream());
   let serial = Promise.resolve();
@@ -225,6 +238,31 @@ sockets.on("connection", (socket) => {
       try {
         const input = JSON.parse(data.toString());
         requestId = typeof input?.id === "string" ? input.id : undefined;
+        const aiConfig = aiConfigCommandSchema.safeParse(input);
+        if (aiConfig.success) {
+          const session = sessions.get(socket);
+          if (!session || aiConfig.data.token !== session.token)
+            throw new Error("连接身份不匹配");
+          const room = gateway.rooms.get(session.room);
+          if (!room) throw new Error("房间不存在");
+          if (!room.canManage(aiConfig.data.token))
+            throw new Error("只有房主可以配置 AI");
+          if (!companionRuntime) throw new Error("AI 服务未就绪");
+          const provider = createAiProvider(
+            aiConfig.data.provider,
+            aiConfig.data.apiKey,
+          );
+          room.setAiProvider(aiConfig.data.token, aiConfig.data.provider);
+          companionRuntime.configure(provider, aiConfig.data.provider);
+          publish(session.room);
+          return;
+        }
+        if (
+          input?.type === "companion" &&
+          input.config?.policy?.enabled === true &&
+          !companionRuntime?.configured
+        )
+          throw new Error("房主服务端未配置 AI 模型");
         if (input.type === "chat-image") {
           const session = sessions.get(socket);
           if (!session || session.token !== input.token)
@@ -295,11 +333,15 @@ sockets.on("connection", (socket) => {
             socket,
             streams
               .get(socket)!
-              .next(room.snapshot(result.session.token), true),
+              .next(snapshotOf(room, result.session.token), true),
           );
           return;
         }
         publish(result.session.room, socket, result.response);
+        if (result.chatMessage?.type === "text") {
+          const room = gateway.rooms.get(result.session.room);
+          if (room) void companionRuntime?.maybeReply(room, result.chatMessage);
+        }
         if (result.response?.type === "left") socket.close(4000, "Left room");
       } catch (error) {
         send(socket, {
@@ -313,7 +355,7 @@ sockets.on("connection", (socket) => {
           if (room)
             send(
               socket,
-              streams.get(socket)!.next(room.snapshot(session.token), true),
+              streams.get(socket)!.next(snapshotOf(room, session.token), true),
             );
         }
       }

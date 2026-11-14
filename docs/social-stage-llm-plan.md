@@ -1,6 +1,6 @@
 # 社交舞台、成就与 LLM 桌搭子计划
 
-状态：第一版舞台信号与成就广播已实现；LLM 部分仍待审核。现有派对、成就和 AI 计算入口分别见 [派对运行时](../src/client/party/PartyRuntime.tsx)、[成就领域](../src/domain/achievements.ts)、[计算协调器](../src/domain/compute.ts)。
+状态：第一版舞台信号与成就广播已实现；LLM 桌搭子聊天（共享内核 `companion-core`）已接入；舞台提示、主动搭话、混合决策仍待审核。现有派对、成就和 AI 计算入口分别见 [派对运行时](../src/client/party/PartyRuntime.tsx)、[成就领域](../src/domain/achievements.ts)、[计算协调器](../src/domain/compute.ts)。
 
 ## 结论
 
@@ -19,8 +19,16 @@
 | 成就专属场景       | [场景绘制](../src/client/party/cinema-art.ts)、[场景目录](../src/domain/party/stage.ts)           |
 | 舞台滤镜           | [滤镜](../src/client/party/filters.ts)                                                            |
 | 分享开关           | [偏好](../src/client/preferences.ts)、[设置](../src/client/Settings.tsx)                          |
+| AI 聊天共享内核     | [vendor 说明](../vendor/README.md)、https://github.com/XYXBlAcG/companion-core                     |
+| AI 聊天配置与上下文 | [领域](../src/domain/companion.ts)、[房间](../src/domain/room.ts)、[协议](../src/domain/protocol.ts) |
+| AI 聊天服务端运行时 | [运行时](../src/server/companion.ts)、[服务入口](../src/server/main.ts)                           |
+| AI 聊天设置与 AI 标记 | [设置组件](../src/client/AiSettings.tsx)、[设置入口](../src/client/Settings.tsx)、[消息组件](../src/client/social/ChatMessageView.tsx) |
+| AI 身份与聊天补全 | [AI 席位身份](../src/domain/room.ts)、[@/指令补全](../src/client/social/chat-suggestions.ts)、[聊天输入](../src/client/social/ChatComposer.tsx) |
+| AI 聊天验证         | [房间/协议测试](../tests/companion.test.ts)、[运行时测试](../tests/companion-runtime.test.ts)、[补全测试](../tests/chat-suggestions.test.ts)、[键盘填充](../tests/chat-composer.test.tsx)、[真实服务假模型烟测](../scripts/verify-companion.mjs) |
 
 第一版已实现：成就系统消息升级为带稀有度、符号和标题的聊天卡片；普通和稀有只保留聊天卡片，史诗、传说、神话从最近的成就消息派生舞台事件，播放 3 套专属场景，并叠加 Bloom/Glow 滤镜。舞台事件不写入权威房间状态，不改变对局结果。开发态可用 `?dev=stage` 验收成就舞台和全部派对/游戏特效。
+
+AI 聊天第一版只做聊天：设置分区为「接入 AI」，房主启用后默认 `mention-only`；聊天 AI 直接使用准备页面里第一个 AI 席位的名称与头像，不单独命名。服务端只读取公开房间信息，回复经 `source: "ai"` 写入现有聊天链路；不参与舞台、动作校验、回放或 AI 决策。模型在设置 → 接入 AI 中填写，支持 OpenAI 兼容、Anthropic、Gemini、Ollama 四种接口格式；`COMPANION_LLM_FAKE=1` 可用于真实服务烟测，真实模型用 `npm run verify:companion:real` 验收。
 
 ## 一、舞台动画
 
@@ -109,46 +117,42 @@
 - **策略决策**：可以接入，但不建议让 LLM 直接生成动作。正确做法是搜索/规则先产生合法候选，LLM 只在候选里选择或解释；超时、非法输出或未启用时回退搜索。
 - **本地对局**：桌面端可通过 Tauri 后端代理；浏览器本地对局没有安全保存密钥的位置，优先只支持服务端房间。
 
-### 架构
+### 架构（v1 已实现）
 
 ```text
-客户端聊天/设置
-      │
-      ▼
-房间服务 /ai/chat  ──►  ContextBuilder（公开信息过滤）
-      │                        │
-      │                        ▼
-      │                  LLM Provider（OpenAI 兼容 / 本地模型）
-      ▼
-结构化结果校验 → 房间聊天消息 → 舞台提示
+客户端设置 ── companion 命令 ──► Room.setCompanion
+客户端聊天 ── chat 命令 ──► Room.chat ──► CompanionRuntime.maybeReply
+                                          │
+                                          ├─ Room.publicContext() + trigger
+                                          │    -> buildCompanionView
+                                          ├─ compilePrompt
+                                          ├─ LlmProvider（OpenAI 兼容 / Anthropic / Gemini / Ollama）
+                                          ├─ sanitizeReply
+                                          └─ Room.addCompanionMessage -> publish
 ```
 
-- API 密钥只保存在房主服务端或 Tauri 后端，不进入浏览器、快照或聊天记录。
-- 密钥链路复用 LiveKit 的既有模式：[Tauri 系统凭据存储](../src-tauri/src/voice.rs) + [宿主进程环境变量](../src-tauri/src/hosting.rs)；网络房间由房主服务端持有，客户端只拿开关和状态。
-- Provider 采用 OpenAI 兼容协议，可接 DeepSeek、OpenAI、Moonshot 或本地 Ollama/LM Studio。
-- 服务端增加超时、重试、并发上限、每日 token 预算和熔断；失败时使用预设台词或保持沉默。
-- 输出使用 zod 校验：`reply`、`tone`、`targetSeat`、`stageCue`、`confidence`；限制长度，去掉 HTML/链接。
-- 聊天消息标记 `source: "ai"`，客户端显示“AI”标签并支持静音。
-- AI 消息通过 [房间聊天写入口](../src/domain/room.ts) 进入现有消息序号、未读和回放链路，不绕过权威房间状态。
+- 共享内核 `companion-core` 固定契约、Prompt 预算、参与策略、清洗与 Provider；游戏侧只做房间适配与服务端运行时。
+- AI 配置在设置 → 接入 AI 中填写：接口格式、接口地址、模型、API Key；非密钥字段保存在房间配置，Key 保存在本机 `localStorage` 与房主服务内存。
+- 保存时通过 host-only 的 `ai-config` 命令发送；Key 不进入快照、聊天、日志或房间配置。房主客户端重连时会自动重发本机配置。
+- 服务端按接口格式创建 Provider：OpenAI 兼容、Anthropic Messages、Gemini generateContent、Ollama 原生 chat。
+- 服务端有超时与失败静默；不重试风暴；同一房间最多一个生成请求。
+- v1 输出为纯文本，经 `sanitizeReply` 去 HTML/链接/@ 并限长；没有 `stageCue`、`tone`、`targetSeat` 等结构化字段。
+- 聊天消息标记 `source: "ai"`，客户端显示 AI 标记；房主可全局关闭。
+- AI 消息通过 [房间聊天写入口](../src/domain/room.ts) 进入现有序号与未读链路，不绕过权威房间状态；v1 不写入回放。
 
 ### 上下文边界
 
-| 场景        | 允许输入                                             | 禁止输入                         |
-| ----------- | ---------------------------------------------------- | -------------------------------- |
-| 桌面闲聊    | 游戏类型、阶段、公开动作、公开聊天、座位名、成就事件 | 任何未公开手牌、私聊、恢复凭据   |
-| AI 席位发言 | 该席位可见状态 + 公开信息                            | 其他玩家私有信息                 |
-| AI 混合决策 | 该席位可见状态 + 合法候选列表 + 搜索评分             | 其他玩家私有信息，除非规则已公开 |
-| 回放/审核   | 已记录的公开社交事件                                 | 重新请求 LLM 生成，避免不可重现  |
+v1 只读取 [Room.publicContext()](../src/domain/room.ts)：游戏名、阶段、玩家昵称、最近 20 条公开文本/系统/成就消息，以及当前触发消息。
 
-ContextBuilder 必须有单元测试，验证隐藏手牌、私聊、token 和未公开身份不会进入 prompt。
+明确禁止：隐藏手牌/身份、候选、决策、回放内部状态、房主 token、恢复凭据、私聊。`buildCompanionView` 有单元测试，验证隐藏信息不进入 prompt；AI 席位发言和混合决策的可见范围是后续阶段。
 
 ### 触发策略
 
-- 回合开始、关键出牌、胜负结算、成就解锁、玩家发言、长时间沉默。
-- 每个 AI 席位有发言冷却和每局上限；观众和玩家可静音。
-- “主动搭话”默认低频，先做事件驱动，不做固定间隔刷屏。
-- Prompt 中明确：只评论公开信息、不冒充真人、不指导作弊、不泄露隐藏信息。
-- 语气和人设由房主配置，AI 名称/头像沿用现有 AI 命名系统。
+- v1 只在玩家发送普通聊天后触发；默认 `mention-only`（文本包含 `@<AI名称>`），房主可切到 `chatty`。
+- 聊天输入支持 `@` 玩家列表和 `/` 指令补全：上下键选择、Tab 填充、Enter 发送；指令来自现有 `bannerCommands`。
+- 冷却、每分钟上限、每局上限由共享 `ParticipationPolicy` 控制；房间结束/暂停不生成。
+- 主动事件（回合开始、关键出牌、成就、沉默）是后续阶段，不在 v1。
+- Prompt 明确：只评论公开信息、不冒充真人、不指导作弊、不泄露隐藏信息；聊天内容视为不可信数据。
 
 ### 混合策略
 
@@ -168,35 +172,56 @@ LLM 选择候选（可选） → 服务端校验候选合法 → 执行
 
 ### 分阶段
 
-1. **Mock 与契约**：ContextBuilder、Provider 接口、结构化输出、超时/回退、设置界面；不接真实网络。
-2. **聊天接入**：网络房间房主配置 Provider，AI 在玩家发言后回复；只发送公开信息。
-3. **主动搭话**：事件触发、冷却、静音、AI 标签和聊天记录。
-4. **舞台联动**：LLM 返回 `stageCue`，交给 StageDirector；成就和聊天共用同一舞台。
-5. **混合决策**：先在单个游戏试点，保持搜索回退和审核一致。
-6. **本地桌面**：通过 Tauri 后端代理，密钥只在本机。
+| 阶段           | 状态                                      |
+| -------------- | ----------------------------------------- |
+| Mock 与契约    | 已完成：`companion-core` v0.1.0           |
+| 聊天接入       | 已完成：房间配置、公开上下文、AI 消息、失败静默、@/指令补全 |
+| 真实 Provider  | 已实现设置内多格式配置与 `verify:companion:real`；真实模型手动验收 |
+| 主动搭话       | 待审核                                    |
+| 舞台联动       | 待审核                                    |
+| 混合决策       | 待审核                                    |
+| 本地桌面代理   | 待审核                                    |
 
 ### 验收
 
-- 隐藏信息不会进入 prompt；有自动化测试。
-- 超时、限流、非法输出和 Provider 故障都能回退。
-- LLM 消息不改变房间状态、动作合法性、回放结果或成就判定。
-- 房主可关闭、玩家可静音；默认关闭。
-- 真实模型接入后由用户手动审核语气、频率和延迟。
+v1 已覆盖：
+
+- 隐藏信息测试：以三国杀验证公开上下文不包含手牌、身份或完整 state。
+- 补全测试：@ 玩家列表、AI 标记、指令过滤、参数输入后关闭。
+- Provider 适配器测试：四种格式的请求地址、请求头、响应解析与错误路径。
+- 本机 AI 配置测试：provider 设置与 Key 的本地存取、损坏数据忽略。
+- Provider 超时/取消/429/非法输出/网络错误映射。
+- 房主可启用/关闭；默认关闭；`mention-only` 与 `chatty`。
+- AI 消息序号、幂等、200 条上限；不改变房间状态、动作合法性或回放。
+- `npm run verify:companion` 用真实房间服务 + WebSocket + fake provider 验证聊天链路；`npm run verify:companion:local` 用本机假 OpenAI 服务验证设置内 `ai-config` 与真实 OpenAI Provider 适配；`npm run verify:companion:real` 用真实模型验证同一链路。
+
+M2 已提供设置内多格式 Provider 与 `verify:companion:real`；真实模型语气、频率和延迟由用户填写配置后手动验收。
+
+界面由用户手动验收：`COMPANION_LLM_FAKE=1 npm run server` 后打开房间服务页面，在设置 → 接入 AI 启用并选择搭话模式，发送聊天；确认 AI 标记、回复内容、@ 与 / 补全、停用后不再回复。自动化烟测只覆盖服务端链路与补全逻辑。
+
+真实模型验收（需要 key，不写入仓库；脚本通过 `ai-config` 命令把环境变量发送给房主服务）：
+
+```bash
+npm run server:build
+npm run verify:companion:local
+COMPANION_LLM_BASE_URL=... COMPANION_LLM_API_KEY=... COMPANION_LLM_MODEL=... npm run verify:companion:real
+```
 
 ## 推荐顺序
 
-1. **舞台信号与导演层** + **成就房间广播**：不依赖 LLM，先把社交事件流和舞台基础设施做出来。
-2. **LLM 聊天**：只做公开信息 + 房主配置 + 失败回退。
-3. **LLM 主动搭话与舞台提示**：复用第 1 步的 StageDirector。
-4. **LLM 混合策略**：单游戏试点，搜索始终兜底。
+1. **舞台信号与导演层** + **成就房间广播**：已完成。
+2. **LLM 聊天**：已完成 v1（公开信息 + 房主配置 + 失败回退）。
+3. **LLM 主动搭话与舞台提示**：复用舞台导演，待审核。
+4. **LLM 混合策略**：单游戏试点，搜索始终兜底，待审核。
 5. 观众互动、合作成就、成就展柜逐步扩展。
 
 ## 待确认
 
-- LLM Provider 和默认模型：OpenAI 兼容、DeepSeek、还是本地 Ollama？
-- 桌搭子默认关闭还是房主创建房间时选择？
-- 成就广播默认关闭还是按玩家偏好开启？
-- 舞台场景的付费边界：只复用现有派对物品，还是新增免费社交场景？
-- 是否允许观众触发舞台和 LLM 互动？
+- Provider 默认模型：v1 支持 OpenAI 兼容、Anthropic、Gemini、Ollama；具体模型由房主在设置中填写。
+- AI 聊天默认关闭，房主在「接入 AI」中启用（已实现）。
+- 成就广播默认关闭还是按玩家偏好开启（未变）。
+- 舞台场景的付费边界：只复用现有派对物品，还是新增免费社交场景（未变）。
+- 是否允许观众触发舞台和 LLM 互动（未变）。
+- 跨对局/跨产品记忆：未实现，需要身份与隐私设计。
 
 成就舞台由本机偏好 `achievementStage` 独立控制，默认关闭；不影响成就解锁、聊天成就卡片和其他派对特效。入口见 [偏好](../src/client/preferences.ts)、[设置](../src/client/Settings.tsx)、[舞台运行时](../src/client/party/PartyRuntime.tsx)。

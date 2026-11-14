@@ -24,6 +24,11 @@ import {
   type InteractionEvent,
 } from "./social";
 import type { ChallengeBoard } from "./challenges";
+import {
+  aiConfigCommandSchema,
+  companionConfigSchema,
+  defaultCompanionConfig,
+} from "./companion";
 export type { ChatMessage } from "./social";
 import type { ChatMessage } from "./social";
 import { actionSchema } from "./actions";
@@ -71,6 +76,7 @@ export const configSchema = z
     mahjong: mahjongOptionsSchema.default({ cap: 3, selfDraw: "base" }),
     catanTrades: z.boolean().default(true),
     performance: performanceSchema.default({ mode: "auto", threads: 8 }),
+    companion: companionConfigSchema.default(defaultCompanionConfig),
   })
   .transform(balanceSeats)
   .refine(
@@ -246,6 +252,12 @@ export const commandSchema = z.discriminatedUnion("type", [
     text: z.string().trim().min(1).max(500),
   }),
   z.object({
+    type: z.literal("companion"),
+    token: z.string(),
+    config: companionConfigSchema,
+  }),
+  aiConfigCommandSchema,
+  z.object({
     type: z.literal("achievement-chat"),
     token: z.string(),
     id: z.string().min(1).max(100),
@@ -314,6 +326,13 @@ export interface Snapshot {
   candidates: Candidate[];
   computation: AiComputation | null;
   aiPaused: boolean;
+  companion: {
+    enabled: boolean;
+    name: string;
+    avatar: string;
+    configured: boolean;
+    available: boolean;
+  };
   bannerPolicy: BannerPolicy;
   party: PartySnapshot;
   partyActor?: number;

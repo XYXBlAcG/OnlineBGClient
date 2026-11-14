@@ -6,6 +6,11 @@ import { preferencesSchema, type Preferences } from "../preferences";
 import { roomSetupSchema, type Snapshot } from "../../domain/protocol";
 import type { ComputeDiagnostic } from "../../domain/compute-diagnostics";
 import type { AppCommand } from "../commands";
+import {
+  companionConfigSchema,
+  type CompanionConfig,
+} from "../../domain/companion";
+import { aiConfigSchema } from "../ai-config";
 export const auxiliaryViews = [
   "settings",
   "about",
@@ -75,6 +80,16 @@ export const auxiliaryIntentSchema = z.discriminatedUnion("type", [
     binding: z.string(),
   }),
   z.object({
+    type: z.literal("companion"),
+    view: z.literal("settings"),
+    config: companionConfigSchema,
+  }),
+  z.object({
+    type: z.literal("ai-provider"),
+    view: z.literal("settings"),
+    config: aiConfigSchema,
+  }),
+  z.object({
     type: z.literal("setup"),
     view: z.literal("roomsetup"),
     setup: roomSetupSchema,
@@ -97,6 +112,10 @@ export type AuxiliaryPayload =
       mediaSession?: MediaSession;
       initialSection?: string;
       sizing?: GameSizing;
+      companion?: {
+        config: CompanionConfig;
+        status: Snapshot["companion"];
+      };
     }
   | {
       view: "chat";

@@ -174,8 +174,15 @@ export function AuxiliaryRoot() {
               mediaSession={payload.mediaSession}
               initialSection={payload.initialSection}
               sizing={payload.sizing}
+              companion={payload.companion}
               onChange={(preferences) =>
                 send({ view: "settings", type: "preferences", preferences })
+              }
+              onCompanionChange={(config) =>
+                send({ view: "settings", type: "companion", config })
+              }
+              onSaveAiConfig={(config) =>
+                send({ view: "settings", type: "ai-provider", config })
               }
               onBind={bindAuxiliary}
               onError={onError}

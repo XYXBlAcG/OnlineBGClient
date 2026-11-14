@@ -43,7 +43,12 @@ export function ChatMessageView({
       className={`chat-message ${message.sender === ownId ? "own-message" : ""}`}
     >
       <div className="chat-message-meta">
-        <small>{message.name}</small>
+        <small>
+          {message.name}
+          {message.source === "ai" && (
+            <span className="ai-badge"> AI</span>
+          )}
+        </small>
         {message.time ? (
           <time
             dateTime={new Date(message.time).toISOString()}

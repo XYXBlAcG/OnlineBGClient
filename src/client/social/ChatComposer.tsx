@@ -1,6 +1,6 @@
 import { withDefaultBannerColor } from "../../domain/banner";
 import * as Popover from "@radix-ui/react-popover";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import {
   imageProfiles,
   type ImageQuality,
@@ -14,6 +14,11 @@ import { PhraseMenu } from "../PhraseMenu";
 import type { Preferences } from "../preferences";
 import { Panel, Switch, Select } from "../ui/Controls";
 import { prepareImage, uploadImage, type MediaSession } from "./media";
+import {
+  applyChatSuggestion,
+  chatSuggestions,
+  type ChatSuggestion,
+} from "./chat-suggestions";
 
 export function ChatComposer({
   snapshot,
@@ -33,7 +38,10 @@ export function ChatComposer({
   onImageQuality?: (quality: ImageQuality) => void;
 }) {
   const [text, setText] = useState(""),
-    [help, setHelp] = useState(false);
+    [help, setHelp] = useState(false),
+    [caret, setCaret] = useState(0),
+    [activeSuggestion, setActiveSuggestion] = useState(0),
+    [dismissedSuggestion, setDismissedSuggestion] = useState("");
   const [prepared, setPrepared] = useState<File | null>(null),
     [preview, setPreview] = useState("");
   const [phase, setPhase] = useState<"idle" | "compress" | "upload" | "send">(
@@ -133,6 +141,8 @@ export function ChatComposer({
     if (snapshot && text.trim() === "/help") {
       setHelp(true);
       setText("");
+      setCaret(0);
+      setDismissedSuggestion("");
       return;
     }
     try {
@@ -142,6 +152,8 @@ export function ChatComposer({
       );
       setError("");
       setText("");
+      setCaret(0);
+      setDismissedSuggestion("");
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -157,6 +169,60 @@ export function ChatComposer({
         snapshot.bannerPolicy.members.includes(
           snapshot.seats[snapshot.actor]?.id,
         )));
+  const suggestions = useMemo(
+    () => (snapshot ? chatSuggestions(text, caret, snapshot) : []),
+    [text, caret, snapshot],
+  );
+  const suggestionKey = `${text}:${caret}`;
+  const suggestionsOpen =
+    suggestions.length > 0 &&
+    dismissedSuggestion !== suggestionKey &&
+    !prepared &&
+    phase === "idle";
+  useEffect(() => setActiveSuggestion(0), [text, caret]);
+  useEffect(() => {
+    if (!suggestionsOpen || typeof document === "undefined") return;
+    document
+      .getElementById(`chat-suggestion-${activeSuggestion}`)
+      ?.scrollIntoView?.({ block: "nearest" });
+  }, [activeSuggestion, suggestionsOpen]);
+  const commitSuggestion = (suggestion: ChatSuggestion) => {
+    const next = applyChatSuggestion(text, suggestion);
+    setText(next.text);
+    setCaret(next.caret);
+    setDismissedSuggestion(`${next.text}:${next.caret}`);
+    requestAnimationFrame(() => {
+      const element = input.current;
+      if (!element) return;
+      element.focus();
+      element.setSelectionRange(next.caret, next.caret);
+    });
+  };
+  const handleComposerKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!suggestionsOpen) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestion((value) => (value + 1) % suggestions.length);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestion(
+        (value) => (value - 1 + suggestions.length) % suggestions.length,
+      );
+      return;
+    }
+    if (event.key === "Tab") {
+      event.preventDefault();
+      const suggestion = suggestions[activeSuggestion];
+      if (suggestion) commitSuggestion(suggestion);
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setDismissedSuggestion(suggestionKey);
+    }
+  };
   return (
     <div className="chat-composer">
       <div className="chat-compose-tools">
@@ -286,29 +352,40 @@ export function ChatComposer({
           {error}
         </p>
       )}
-      {snapshot && text.startsWith("/") && !prepared && (
-        <div className="chat-command-hints">
+      {suggestionsOpen && (
+        <div
+          className="chat-command-hints"
+          id="chat-suggestions"
+          role="listbox"
+          aria-label={
+            suggestions[0]?.kind === "mention" ? "选择玩家" : "选择指令"
+          }
+        >
+          {suggestions.map((suggestion, index) => (
+            <button
+              type="button"
+              key={suggestion.id}
+              id={`chat-suggestion-${index}`}
+              role="option"
+              aria-selected={index === activeSuggestion}
+              onMouseDown={(event) => event.preventDefault()}
+              onMouseEnter={() => setActiveSuggestion(index)}
+              onClick={() => commitSuggestion(suggestion)}
+            >
+              <code>{suggestion.label}</code>
+              <span>{suggestion.detail}</span>
+            </button>
+          ))}
           {!allowed &&
-            bannerCommands.find(
-              (command) => command.command === text.split(/\s/u)[0],
-            )?.permission === "banner" && (
+            suggestions.some(
+              (suggestion) =>
+                suggestion.kind === "command" &&
+                bannerCommands.find(
+                  (item) => item.command === suggestion.label,
+                )?.permission === "banner",
+            ) && (
               <small>横幅需要房主授权，仍可使用聊天指令或查看帮助</small>
             )}
-          {bannerCommands
-            .filter((item) => item.command.startsWith(text.split(/\s/u)[0]))
-            .map((item) => (
-              <button
-                type="button"
-                key={item.command}
-                onClick={() =>
-                  setText(
-                    item.command === "/help" ? "/help" : `${item.command} `,
-                  )
-                }
-              >
-                {item.command} · {item.label}
-              </button>
-            ))}
         </div>
       )}
       <form
@@ -319,11 +396,28 @@ export function ChatComposer({
       >
         <input
           aria-label="消息"
-          placeholder="发消息，或输入 / 指令"
+          aria-autocomplete="list"
+          aria-expanded={suggestionsOpen}
+          aria-controls={suggestionsOpen ? "chat-suggestions" : undefined}
+          aria-activedescendant={
+            suggestionsOpen ? `chat-suggestion-${activeSuggestion}` : undefined
+          }
+          placeholder="发消息，@ 提及玩家，/ 指令"
           maxLength={500}
           value={text}
           disabled={!!prepared || phase !== "idle"}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            setText(value);
+            setCaret(event.currentTarget.selectionStart ?? value.length);
+          }}
+          onClick={(event) =>
+            setCaret(event.currentTarget.selectionStart ?? text.length)
+          }
+          onSelect={(event) =>
+            setCaret(event.currentTarget.selectionStart ?? text.length)
+          }
+          onKeyDown={handleComposerKeyDown}
           onPaste={(event) => {
             const file = event.clipboardData.files[0];
             if (file && session && onImage) {

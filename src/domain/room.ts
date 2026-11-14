@@ -57,6 +57,14 @@ import {
   createChallengeBoard,
   type ChallengeBoard,
 } from "./challenges";
+import {
+  aiProviderSettingsSchema,
+  companionConfigSchema,
+  type AiProviderSettings,
+  type CompanionConfig,
+  type PublicRoomContext,
+} from "./companion";
+import type { CompanionProfile } from "companion-core";
 
 export class Room {
   private partyQueue: PartyQueue = { revision: 0, entries: [] };
@@ -371,6 +379,9 @@ export class Room {
   get hasEnded(): boolean {
     return this.ended;
   }
+  get playId(): string | undefined {
+    return this.replay ? `${this.id}:${this.replay.startedAt}` : undefined;
+  }
   get pendingRunId(): string | undefined {
     return this.pendingResume?.kind === "expedition"
       ? this.pendingResume.view.runId
@@ -421,6 +432,7 @@ export class Room {
     Object.assign(this.config, next, {
       party: this.party.export().policy,
       plugins: this.party.export().plugins,
+      companion: this.config.companion,
     });
     for (const member of members.filter(
       (seat) => !setup.retain.includes(seat.id!),
@@ -520,14 +532,11 @@ export class Room {
     this.updateResolution();
   }
 
-  chat(token: string, id: string, text: string): void {
+  chat(token: string, id: string, text: string): ChatMessage | undefined {
     this.identity(token);
     if (this.accepted.has(`${token}:chat:${id}`)) return;
     const banner = parseChatCommand(text);
-    if (!banner) {
-      this.addMessage(token, id, { type: "text", text });
-      return;
-    }
+    if (!banner) return this.addMessage(token, id, { type: "text", text });
     const member = this.member(token);
     const permission = bannerCommands.find(
       (command) => command.kind === banner.kind,
@@ -545,19 +554,22 @@ export class Room {
         throw new Error("指令太快，请稍后再试");
       this.chatEventTimes.set(member.id!, now);
       if (banner.kind === "clear")
-        this.addMessage(token, id, { type: "clear", text: "清除了横幅" });
-      else if (banner.kind === "emote")
-        this.addMessage(token, id, { type: "emote", text: banner.text });
-      else {
-        const results = rollDice(banner.count, banner.sides);
-        this.addMessage(token, id, {
-          type: "roll",
-          sides: banner.sides,
-          results,
-          text: `🎲 ${banner.count}d${banner.sides}：${results.join("、")}，合计 ${results.reduce((sum, value) => sum + value, 0)}（娱乐）`,
+        return this.addMessage(token, id, {
+          type: "clear",
+          text: "清除了横幅",
         });
-      }
-      return;
+      if (banner.kind === "emote")
+        return this.addMessage(token, id, {
+          type: "emote",
+          text: banner.text,
+        });
+      const results = rollDice(banner.count, banner.sides);
+      return this.addMessage(token, id, {
+        type: "roll",
+        sides: banner.sides,
+        results,
+        text: `🎲 ${banner.count}d${banner.sides}：${results.join("、")}，合计 ${results.reduce((sum, value) => sum + value, 0)}（娱乐）`,
+      });
     }
     const policy = this.bannerPolicy;
     if (
@@ -571,7 +583,55 @@ export class Room {
     if (now - (this.bannerTimes.get(member.id!) ?? -Infinity) < 10000)
       throw new Error("横幅发送太快，请稍后再试");
     this.bannerTimes.set(member.id!, now);
-    this.addMessage(token, id, { type: "banner", text: banner.text, banner });
+    return this.addMessage(token, id, {
+      type: "banner",
+      text: banner.text,
+      banner,
+    });
+  }
+  setCompanion(token: string, input: CompanionConfig): void {
+    if (!this.canManage(token)) throw new Error("只有房主可以设置 AI");
+    const next: CompanionConfig = {
+      ...companionConfigSchema.parse(input),
+      provider: this.config.companion.provider,
+    };
+    if (JSON.stringify(next) === JSON.stringify(this.config.companion)) return;
+    const identity = this.companionProfile();
+    if (next.policy.enabled && !identity)
+      throw new Error("请先在准备页面添加 AI 席位");
+    const wasEnabled = this.config.companion.policy.enabled;
+    this.config.companion = next;
+    if (!wasEnabled && next.policy.enabled && identity)
+      this.addSystemMessage(
+        randomId().slice(0, 8),
+        `AI「${identity.name}」已接入聊天，@${identity.name} 可以搭话。`,
+      );
+    if (wasEnabled && !next.policy.enabled)
+      this.addSystemMessage(
+        randomId().slice(0, 8),
+        identity ? `AI「${identity.name}」已离开聊天。` : "AI 聊天已关闭。",
+      );
+    this.version++;
+  }
+  setAiProvider(token: string, provider: AiProviderSettings): void {
+    if (!this.canManage(token)) throw new Error("只有房主可以配置 AI");
+    const next = aiProviderSettingsSchema.parse(provider);
+    if (JSON.stringify(next) === JSON.stringify(this.config.companion.provider))
+      return;
+    this.config.companion.provider = next;
+    this.version++;
+  }
+  companionProfile(): CompanionProfile | null {
+    const index = this.seats.findIndex((seat) => seat.difficulty !== null);
+    if (index < 0) return null;
+    const seat = this.seats[index]!;
+    return {
+      id: this.config.companion.profile.id,
+      name: seatDisplayName(seat, index, this.state),
+      avatar: seatAvatar(seat),
+      persona: this.config.companion.profile.persona,
+      source: this.config.companion.profile.source,
+    };
   }
   setBannerPolicy(token: string, input: BannerPolicy): void {
     if (!this.canManage(token)) throw new Error("只有房主可以设置横幅权限");
@@ -624,6 +684,7 @@ export class Room {
       sender,
       name,
       time: Date.now(),
+      source: "system",
     });
     if (this.messages.length > 200) this.messages.shift();
     this.accepted.add(key);
@@ -641,13 +702,18 @@ export class Room {
       sender: "system",
       name: "系统",
       time: Date.now(),
+      source: "system",
     });
     if (this.messages.length > 200) this.messages.shift();
     this.accepted.add(key);
     if (this.accepted.size > 2048)
       this.accepted.delete(this.accepted.values().next().value!);
   }
-  private addMessage(token: string, id: string, content: ChatContent): void {
+  private addMessage(
+    token: string,
+    id: string,
+    content: ChatContent,
+  ): ChatMessage | undefined {
     const actor = this.identity(token);
     const key = `${token}:chat:${id}`;
     if (this.accepted.has(key)) return;
@@ -664,6 +730,7 @@ export class Room {
           ? member.name
           : seatDisplayName(this.seats[actor], actor, this.state),
       time: Date.now(),
+      source: "human",
     };
     this.messages.push(message);
     if (
@@ -690,6 +757,57 @@ export class Room {
     this.accepted.add(key);
     if (this.accepted.size > 2048)
       this.accepted.delete(this.accepted.values().next().value!);
+    return message;
+  }
+  addCompanionMessage(
+    triggerId: string,
+    text: string,
+  ): ChatMessage | undefined {
+    if (!this.config.companion.policy.enabled) return;
+    const profile = this.companionProfile();
+    if (!profile) return;
+    const id = `companion:${triggerId}`;
+    const key = `companion:${triggerId}`;
+    if (this.accepted.has(key)) return;
+    const message: ChatMessage = {
+      type: "text",
+      text,
+      id,
+      sequence: ++this.messageSequence,
+      sender: `companion:${profile.id}`,
+      name: profile.name,
+      time: Date.now(),
+      source: "ai",
+    };
+    this.messages.push(message);
+    if (this.messages.length > 200) this.messages.shift();
+    this.accepted.add(key);
+    if (this.accepted.size > 2048)
+      this.accepted.delete(this.accepted.values().next().value!);
+    return message;
+  }
+  publicContext(): PublicRoomContext {
+    const phase: PublicRoomContext["phase"] =
+      this.hasEnded || (this.state && this.engine.finished(this.state))
+        ? "finished"
+        : this.state
+          ? "playing"
+          : "lobby";
+    return {
+      game: gameCatalogue[this.config.kind].name,
+      phase,
+      players: this.seats.map((seat, index) =>
+        seatDisplayName(seat, index, this.state),
+      ),
+      recentChat: this.messages
+        .filter(
+          (message) =>
+            message.type === "text" ||
+            message.type === "system" ||
+            message.type === "achievement",
+        )
+        .slice(-20),
+    };
   }
   private partyContext(): PartyContext {
     return {
@@ -1036,6 +1154,7 @@ export class Room {
       };
       this.projection.set(actor, projected);
     }
+    const companionIdentity = this.companionProfile();
     return {
       partyQueue: structuredClone(this.partyQueue),
       resumeRoles:
@@ -1058,7 +1177,7 @@ export class Room {
       actor,
       canManage: this.canManage(token),
       playing: !!this.state && !finished,
-      playId: this.replay ? `${this.id}:${this.replay.startedAt}` : undefined,
+      playId: this.playId,
       host: this.host
         ? { id: this.host.id, name: this.host.name, online: this.host.online }
         : null,
@@ -1079,6 +1198,13 @@ export class Room {
       candidates: projected.candidates,
       computation: this.computation,
       aiPaused: this.aiPaused,
+      companion: {
+        enabled: this.config.companion.policy.enabled,
+        name: companionIdentity?.name ?? "",
+        avatar: companionIdentity?.avatar ?? "🤖",
+        configured: false,
+        available: !!companionIdentity,
+      },
       bannerPolicy: this.bannerPolicy,
       party: this.party.snapshot(this.partyContext()),
       partyActor: this.partyActor(token),

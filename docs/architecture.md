@@ -69,6 +69,12 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 公共消息、表情、互动与武将说明   | [社交入口](social-experience-plan.md)                                                                                                                                          |
 | 本地审核与作者提交               | [操作说明](review-and-submit.md)                                                                                                                                               |
 | 全 AI 观战与运行统计             | [房间](../src/domain/room.ts)、[并行搜索](../src/domain/compute.ts)、[计算栏](../src/client/ComputeStatus.tsx)                                                                 |
+| AI 聊天配置、公开上下文与聊天写入口 | [领域](../src/domain/companion.ts)、[房间](../src/domain/room.ts)、[协议](../src/domain/protocol.ts) |
+| AI 聊天服务端运行时与 Provider   | [运行时](../src/server/companion.ts)、[服务入口](../src/server/main.ts) |
+| AI 聊天设置与 AI 标记            | [设置组件](../src/client/AiSettings.tsx)、[设置入口](../src/client/Settings.tsx)、[消息组件](../src/client/social/ChatMessageView.tsx) |
+| AI 身份与 @/指令补全             | [AI 席位身份](../src/domain/room.ts)、[补全逻辑](../src/client/social/chat-suggestions.ts)、[聊天输入](../src/client/social/ChatComposer.tsx) |
+| AI Provider 多格式适配           | [适配器](../src/server/ai-providers.ts)、[配置界面](../src/client/AiSettings.tsx)、[本机配置](../src/client/ai-config.ts) |
+| AI 聊天共享内核与固定依赖        | [vendor 说明](../vendor/README.md)、[共享仓库](https://github.com/XYXBlAcG/companion-core) |
 | 面板尺寸与地图                   | [边缘分栏](../src/client/SidebarDivider.tsx)、[偏好](../src/client/preferences.ts)、[地图视口](../src/client/MapViewport.tsx)                                                  |
 | 桌面原生入口                     | [Tauri](../src-tauri/)                                                                                                                                                         |
 
@@ -77,6 +83,8 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 本项目的房间服务独立于原站，无法加入原站房间。前端提交语义动作，由房间唯一写入口调用原规则。离线与在线使用同一引擎和策略。
 
 AI 只接收对应席位可见信息。审核展示实际候选、特征贡献、抽样均值与标准误；局面分数不代表胜率。房主启用审核时生成完整记录，结束后公开；训练房间可即时审核。审核关闭时保留对局动作与回放，不生成完整解释或保存审核记录。搜索采用有限预算和候选剪枝，不能保证最优策略。
+
+AI 聊天只读取 [公开上下文](../src/domain/companion.ts) 的房间信息，不读取手牌、身份、候选、决策或回放内部状态；不参与动作校验，不写入回放。聊天 AI 的名称与头像来自准备页面的 AI 席位，不单独命名。Provider 的非密钥设置保存在房间配置；API Key 只在本机与房主服务内存，经 host-only 的 `ai-config` 命令传递，不进入快照或日志。共享内核 `companion-core` 不包含数据库、传输、UI 或游戏规则；游戏侧以固定 Release 产物安装，见 [vendor 说明](../vendor/README.md)。
 
 原站生成代码隔离在 upstream 层，通过固定资源和提取脚本重建。该层的大文件属于构建产物；自有逻辑保持按领域职责分离。
 

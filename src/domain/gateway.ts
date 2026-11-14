@@ -1,5 +1,5 @@
 import { v4 as randomId } from "uuid";
-import { commandSchema, type Command, type Response } from "./protocol";
+import { commandSchema, type ChatMessage, type Command, type Response } from "./protocol";
 import { Room, type RoomArchive } from "./room";
 
 export class Gateway {
@@ -33,7 +33,11 @@ export class Gateway {
   handle(
     input: unknown,
     session?: { room: string; token: string },
-  ): { session: { room: string; token: string }; response?: Response } {
+  ): {
+    session: { room: string; token: string };
+    response?: Response;
+    chatMessage?: ChatMessage;
+  } {
     const command = commandSchema.parse(input);
     if (command.type === "restore-run" || command.type === "abandon-run") {
       const save = this.runs.get(command.run);
@@ -141,7 +145,7 @@ export class Gateway {
         response: event ? { type: "interaction", event } : undefined,
       };
     }
-    this.execute(room, command);
+    const chatMessage = this.execute(room, command);
     this.rememberRun(room);
     if (command.type === "leave")
       return { session, response: { type: "left" } };
@@ -154,6 +158,7 @@ export class Gateway {
         command.type === "achievement-chat"
           ? { type: "ack", id: command.id }
           : undefined,
+      ...(chatMessage ? { chatMessage } : {}),
     };
   }
 
@@ -166,7 +171,9 @@ export class Gateway {
           "create" | "join" | "restore-local" | "restore-run" | "abandon-run";
       }
     >,
-  ): void {
+  ): ChatMessage | undefined {
+    if (command.type === "ai-config")
+      throw new Error("AI 配置只能由房主服务处理");
     if (command.type === "queue-set")
       room.setQueue(command.token, command.revision, command.entries);
     if (command.type === "queue-apply")
@@ -199,8 +206,10 @@ export class Gateway {
     if (command.type === "chat-image")
       room.chatImage(command.token, command.id, command.attachment);
     if (command.type === "chat")
-      room.chat(command.token, command.id, command.text);
+      return room.chat(command.token, command.id, command.text);
     if (command.type === "achievement-chat")
       room.achievementChat(command.token, command.id, command.achievementId);
+    if (command.type === "companion")
+      room.setCompanion(command.token, command.config);
   }
 }

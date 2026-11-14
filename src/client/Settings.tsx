@@ -20,6 +20,9 @@ import type { PerformanceSettings } from "../domain/performance";
 import { PhraseSettings } from "./PhraseSettings";
 import { CacheSettings } from "./CacheSettings";
 import { AchievementGallery } from "./Achievements";
+import { AiSettings } from "./AiSettings";
+import type { CompanionConfig } from "../domain/companion";
+import type { AiConfig } from "./ai-config";
 import { enableNotifications } from "./notifications";
 import { ThemeControl } from "./ThemeControl";
 import { Panel, SearchField, Select, Slider, Switch } from "./ui/Controls";
@@ -41,6 +44,9 @@ export function Settings({
   initialSection = "外观",
   sizing: suppliedSizing,
   onTestAchievement,
+  companion,
+  onCompanionChange,
+  onSaveAiConfig,
 }: {
   sizing?: GameSizing;
   initialSection?: string;
@@ -55,6 +61,18 @@ export function Settings({
   onError: (message: string) => void;
   onBind: (id: string, binding: string) => Promise<void>;
   onTestAchievement?: () => void;
+  companion?: {
+    config: CompanionConfig;
+    status: {
+      enabled: boolean;
+      name: string;
+      avatar: string;
+      configured: boolean;
+      available: boolean;
+    };
+  };
+  onCompanionChange?: (config: CompanionConfig) => void;
+  onSaveAiConfig?: (config: AiConfig) => void;
 }) {
   const localSizing = useGameSizing();
   const sizing = suppliedSizing ?? localSizing;
@@ -83,11 +101,14 @@ export function Settings({
       mediaSession,
       initialSection,
       sizing,
+      companion,
     },
     (intent) => {
       if (intent.type === "close") onOpenChange(false);
       if (intent.type === "preferences") onChange(intent.preferences);
       if (intent.type === "achievement-test") onTestAchievement?.();
+      if (intent.type === "companion") onCompanionChange?.(intent.config);
+      if (intent.type === "ai-provider") onSaveAiConfig?.(intent.config);
       if (intent.type === "binding")
         void onBind(intent.id, intent.binding)
           .then(() =>
@@ -470,6 +491,27 @@ export function Settings({
                 onChange({ ...preferences, auditVisible })
               }
             />
+          </section>
+          <section hidden={section !== "接入 AI"} className="settings-section">
+            <h3>接入 AI</h3>
+            {companion &&
+            onCompanionChange &&
+            onSaveAiConfig &&
+            canConfigureAI ? (
+              <AiSettings
+                config={companion.config}
+                status={companion.status}
+                onChange={onCompanionChange}
+                onSaveProvider={onSaveAiConfig}
+                onError={onError}
+              />
+            ) : (
+              <p className="muted">
+                {canConfigureAI
+                  ? "进入房间后由房主在主窗口接入 AI。"
+                  : "只有房主可以配置 AI。"}
+              </p>
+            )}
           </section>
           <div hidden={section !== "常用语"}>
             <PhraseSettings

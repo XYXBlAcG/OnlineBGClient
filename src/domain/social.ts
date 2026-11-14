@@ -199,4 +199,5 @@ export type ChatMessage = ChatContent & {
   sender: string;
   name: string;
   time: number;
+  source?: "human" | "ai" | "system";
 };
