@@ -1,8 +1,9 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { parse } from "postcss";
 
 const root = process.cwd();
+const portablePath = (value) => value.split(sep).join("/");
 const sourceRoot = join(root, "src");
 const outputRoot = join(root, "artifacts/style-audit");
 const tokenFile = "src/client/ui/design-tokens.css";
@@ -24,11 +25,11 @@ async function filesUnder(directory) {
 const allFiles = await filesUnder(sourceRoot);
 const cssFiles = allFiles
   .filter((file) => file.endsWith(".css"))
-  .map((file) => relative(root, file))
+  .map((file) => portablePath(relative(root, file)))
   .sort();
 const tsxFiles = allFiles
   .filter((file) => file.endsWith(".tsx"))
-  .map((file) => relative(root, file));
+  .map((file) => portablePath(relative(root, file)));
 
 const totals = {
   cssFiles: cssFiles.length,
@@ -201,4 +202,6 @@ await writeFile(join(outputRoot, "report.md"), lines.join("\n") + "\n");
 console.log(
   `样式审计：${totals.cssFiles} 个文件 / ${totals.cssLines} 行 / ${totals.rawColors} 个十六进制颜色 / ${totals.important} 个 !important / ${totals.mediaQueries} 个 @media`,
 );
-console.log(`报告：${relative(root, join(outputRoot, "report.md"))}`);
+console.log(
+  `报告：${portablePath(relative(root, join(outputRoot, "report.md")))}`,
+);

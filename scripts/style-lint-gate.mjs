@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import stylelint from "stylelint";
 
@@ -7,6 +7,7 @@ const root = process.cwd();
 const scriptRoot = dirname(fileURLToPath(import.meta.url));
 const baselinePath = join(scriptRoot, "style-lint.baseline.json");
 const update = process.argv.includes("--update-baseline");
+const portablePath = (value) => value.split(sep).join("/");
 
 const result = await stylelint.lint({
   files: "src/**/*.css",
@@ -22,7 +23,7 @@ if (!report.length) {
 const counts = {};
 let invalidOptions = 0;
 for (const file of report) {
-  const path = relative(root, file.source);
+  const path = portablePath(relative(root, file.source));
   invalidOptions += file.invalidOptionWarnings?.length ?? 0;
   for (const warning of file.warnings) {
     counts[path] ??= {};
@@ -37,7 +38,9 @@ if (invalidOptions) {
 
 if (update) {
   await writeFile(baselinePath, JSON.stringify(counts, null, 2) + "\n");
-  console.log(`样式检查基线已更新：${relative(root, baselinePath)}`);
+  console.log(
+    `样式检查基线已更新：${portablePath(relative(root, baselinePath))}`,
+  );
   process.exit(0);
 }
 
