@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DecisionCandidate } from "../src/domain/types";
-import type { CompanionRuntime } from "../src/server/companion";
+import type { CandidateRuntime } from "../src/server/llm-seat";
 import {
   candidatePrompt,
   chooseCandidateWithLlm,
@@ -41,7 +41,7 @@ describe("LLM candidate selection", () => {
   it("chooses a candidate through the runtime", async () => {
     const runtime = {
       complete: vi.fn(async () => "1"),
-    } as unknown as CompanionRuntime;
+    } as unknown as CandidateRuntime;
     const choice = await chooseCandidateWithLlm(runtime, "UNO", candidates);
     expect(choice?.index).toBe(1);
     expect(choice?.chosen).toEqual(candidates[1]!.action);
@@ -50,7 +50,7 @@ describe("LLM candidate selection", () => {
   it("returns null on invalid or empty choices", async () => {
     const runtime = {
       complete: vi.fn(async () => "invalid"),
-    } as unknown as CompanionRuntime;
+    } as unknown as CandidateRuntime;
     expect(await chooseCandidateWithLlm(runtime, "UNO", candidates)).toBeNull();
     expect(await chooseCandidateWithLlm(runtime, "UNO", [])).toBeNull();
     const single = await chooseCandidateWithLlm(runtime, "UNO", [

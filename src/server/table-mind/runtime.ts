@@ -1,29 +1,45 @@
-import type { LlmProvider } from "companion-core";
-import type { AiProviderSettings } from "../../domain/companion";
+import {
+  markSpoken,
+  sanitizeReply,
+  type CompanionProfile,
+  type LlmProvider,
+  type ParticipationState,
+} from "companion-core";
+import {
+  buildCompanionView,
+  type AiProviderSettings,
+  type CompanionConfig,
+  type PublicRoomContext,
+} from "../../domain/companion";
 import { gameCatalogue } from "../../domain/catalogue";
-import type { TableEvent } from "../../domain/table-mind/model";
-import { TableMemory } from "../../domain/table-mind/memory";
-import { buildDecisionPrompt } from "../../domain/table-mind/prompt";
-import { buildUnoSituation } from "../../domain/table-mind/perspectives/uno";
-import type { AiResult } from "../../domain/types";
 import type { ChatMessage } from "../../domain/protocol";
 import type { Room } from "../../domain/room";
-import {
-  createCompanionRuntime,
-  type CompanionRoomPort,
-} from "../companion";
+import type { TableEvent } from "../../domain/table-mind/model";
+import { TableMemory } from "../../domain/table-mind/memory";
+import { planSocialReaction } from "../../domain/table-mind/director";
+import { buildDecisionPrompt } from "../../domain/table-mind/prompt";
+import { buildSocialPrompt } from "../../domain/table-mind/social";
+import { buildUnoSituation } from "../../domain/table-mind/perspectives/uno";
+import type { AiResult } from "../../domain/types";
+import { createLlmRunner } from "../llm-runner";
 import { chooseCandidateWithLlm, parseCandidateChoice } from "../llm-seat";
 
 export type TableAiRequest = NonNullable<ReturnType<Room["aiRequest"]>>;
 
-export interface TableMindRoom extends CompanionRoomPort {
+export interface TableMindRoom {
+  readonly id: string;
+  readonly hasEnded: boolean;
+  readonly playId: string | undefined;
+  readonly config: { readonly companion: CompanionConfig };
+  companionProfile(): CompanionProfile | null;
+  publicContext(): PublicRoomContext;
+  addCompanionMessage(triggerId: string, text: string): ChatMessage | undefined;
   drainTableEvents(): TableEvent[];
 }
 
 export interface TableMindRunner {
   readonly configured: boolean;
   configure(provider: LlmProvider, settings: AiProviderSettings): void;
-  maybeReply(room: CompanionRoomPort, trigger: ChatMessage): Promise<void>;
   complete(
     system: string,
     user: string,
@@ -32,13 +48,32 @@ export interface TableMindRunner {
   ): Promise<string>;
 }
 
+export interface TableMindOptions {
+  log?: (message: string) => void;
+  publish?: (roomId: string) => void;
+  now?: () => number;
+}
+
 export class TableMind {
   readonly timeline: TableEvent[] = [];
   readonly memory = new TableMemory();
+  private readonly socialStates = new WeakMap<
+    TableMindRoom,
+    ParticipationState
+  >();
+  private readonly pendingSocial = new Set<string>();
+  private readonly log: (message: string) => void;
+  private readonly publish?: (roomId: string) => void;
+  private readonly now: () => number;
+
   constructor(
     private readonly runner: TableMindRunner,
-    private readonly log: (message: string) => void,
-  ) {}
+    options: TableMindOptions = {},
+  ) {
+    this.log = options.log ?? ((message) => console.error(message));
+    this.publish = options.publish;
+    this.now = options.now ?? Date.now;
+  }
 
   get configured(): boolean {
     return this.runner.configured;
@@ -48,19 +83,65 @@ export class TableMind {
     this.runner.configure(provider, settings);
   }
 
-  observe(room: TableMindRoom): void {
+  async tick(room: TableMindRoom): Promise<void> {
     const events = room.drainTableEvents();
     if (!events.length) return;
-    this.timeline.push(...events);
-    if (this.timeline.length > 500)
-      this.timeline.splice(0, this.timeline.length - 500);
-    this.memory.observe(events);
-  }
-
-  async onChat(room: TableMindRoom, trigger: ChatMessage): Promise<void> {
-    this.observe(room);
-    if (!this.runner.configured) return;
-    await this.runner.maybeReply(room, trigger);
+    this.remember(events);
+    if (
+      !this.runner.configured ||
+      this.pendingSocial.has(room.id) ||
+      room.hasEnded
+    )
+      return;
+    const profile = room.companionProfile();
+    const policy = room.config.companion.policy;
+    if (!profile || !policy.enabled) return;
+    const now = this.now();
+    const state = this.stateFor(room, now);
+    const event = planSocialReaction(
+      events,
+      profile,
+      policy,
+      state,
+      now,
+      room.id,
+    );
+    if (!event) return;
+    this.pendingSocial.add(room.id);
+    try {
+      const context = room.publicContext();
+      const view = buildCompanionView(
+        context,
+        profile,
+        this.triggerFor(context, event),
+      );
+      const prompt = buildSocialPrompt(
+        view,
+        profile,
+        this.timeline.slice(-8),
+        this.memory.recall(8),
+      );
+      const text = sanitizeReply(
+        await this.runner.complete(prompt.system, prompt.user, 120, 8000),
+        { maxChars: 160 },
+      );
+      if (!text || room.hasEnded || !room.config.companion.policy.enabled)
+        return;
+      const message = room.addCompanionMessage(event.id, text);
+      if (!message) return;
+      const spokenAt = this.now();
+      this.socialStates.set(
+        room,
+        markSpoken(this.stateFor(room, spokenAt), spokenAt),
+      );
+      this.publish?.(room.id);
+    } catch (error) {
+      this.log(
+        `AI 回复失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+    } finally {
+      this.pendingSocial.delete(room.id);
+    }
   }
 
   async onDecision(
@@ -68,7 +149,6 @@ export class TableMind {
     request: TableAiRequest,
     result: AiResult,
   ): Promise<AiResult> {
-    this.observe(room);
     if (
       !this.runner.configured ||
       request.driver !== "llm" ||
@@ -134,15 +214,46 @@ export class TableMind {
       return result;
     }
   }
+
+  private remember(events: TableEvent[]): void {
+    this.timeline.push(...events);
+    if (this.timeline.length > 500)
+      this.timeline.splice(0, this.timeline.length - 500);
+    this.memory.observe(events);
+  }
+
+  private stateFor(room: TableMindRoom, now: number): ParticipationState {
+    const playId = room.playId ?? "lobby";
+    const existing = this.socialStates.get(room);
+    if (existing?.playId === playId) return existing;
+    const next: ParticipationState = {
+      playId,
+      lastSpokenAt: 0,
+      minuteStartedAt: now,
+      spokenThisMinute: 0,
+      spokenThisPlay: 0,
+    };
+    this.socialStates.set(room, next);
+    return next;
+  }
+
+  private triggerFor(context: PublicRoomContext, event: TableEvent): ChatMessage {
+    const existing = context.recentChat.find(
+      (message) => message.id === event.id,
+    );
+    if (existing) return existing;
+    return {
+      type: "text",
+      id: event.id,
+      text: event.label,
+      sequence: 0,
+      sender: event.actor ?? "table",
+      name: event.actorName ?? "牌桌",
+      time: event.at,
+    };
+  }
 }
 
-export function createTableMind(options: {
-  publish?: (roomId: string) => void;
-  log?: (message: string) => void;
-} = {}): TableMind {
-  const log = options.log ?? ((message) => console.error(message));
-  return new TableMind(
-    createCompanionRuntime({ publish: options.publish, log }),
-    log,
-  );
+export function createTableMind(options: TableMindOptions = {}): TableMind {
+  return new TableMind(createLlmRunner(), options);
 }

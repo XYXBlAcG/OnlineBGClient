@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { GameState, DecisionCandidate, AiResult } from "../src/domain/types";
 import type { TableEvent } from "../src/domain/table-mind/model";
+import { defaultCompanionConfig } from "../src/domain/companion";
 import {
   TableMind,
   type TableAiRequest,
@@ -84,7 +85,13 @@ const result: AiResult = {
 };
 
 const room = {
+  id: "room-1",
+  hasEnded: false,
+  playId: "play-1",
+  config: { companion: defaultCompanionConfig },
+  companionProfile: () => null,
   drainTableEvents: () => [] as TableEvent[],
+  addCompanionMessage: () => undefined,
   publicContext: () => ({
     game: "UNO",
     phase: "playing",
@@ -96,12 +103,11 @@ const room = {
 const runner = (): TableMindRunner => ({
   configured: true,
   configure: vi.fn(),
-  maybeReply: vi.fn(async () => {}),
   complete: vi.fn(async () => "1"),
 });
 
 describe("TableMind", () => {
-  it("observes room events into its timeline", () => {
+  it("observes room events into its timeline", async () => {
     const events: TableEvent[] = [
       {
         id: "table:1",
@@ -113,18 +119,19 @@ describe("TableMind", () => {
         public: true,
       },
     ];
-    const mind = new TableMind(runner(), vi.fn());
-    mind.observe({
+    const mind = new TableMind(runner(), { log: vi.fn() });
+    await mind.tick({
+      ...room,
       drainTableEvents: () => events,
     } as unknown as TableMindRoom);
     expect(mind.timeline).toEqual(events);
-    mind.observe(room);
+    await mind.tick(room);
     expect(mind.timeline).toHaveLength(1);
   });
 
   it("lets the LLM choose a search candidate for LLM seats", async () => {
     const r = runner();
-    const mind = new TableMind(r, vi.fn());
+    const mind = new TableMind(r, { log: vi.fn() });
     const final = await mind.onDecision(room, request, result);
     expect(final.chosen).toEqual(candidates[1]!.action);
     expect(final.audit?.assumptions.at(-1)).toContain("UNO");
@@ -134,7 +141,7 @@ describe("TableMind", () => {
     const r = runner();
     r.complete = vi.fn(async () => "not a number");
     const log = vi.fn();
-    const mind = new TableMind(r, log);
+    const mind = new TableMind(r, { log });
     expect(await mind.onDecision(room, request, result)).toEqual(result);
     expect(log).not.toHaveBeenCalled();
   });
@@ -142,8 +149,9 @@ describe("TableMind", () => {
   it("includes UNO state, candidates and memory in the decision prompt", async () => {
     const r = runner();
     r.complete = vi.fn(async () => "0");
-    const mind = new TableMind(r, vi.fn());
-    mind.observe({
+    const mind = new TableMind(r, { log: vi.fn() });
+    await mind.tick({
+      ...room,
       drainTableEvents: () => [
         {
           id: "table:1",
@@ -172,31 +180,16 @@ describe("TableMind", () => {
 
   it("skips LLM calls for search seats or provider failure", async () => {
     const r = runner();
-    const mind = new TableMind(r, vi.fn());
+    const mind = new TableMind(r, { log: vi.fn() });
     const searchRequest = { ...request, driver: "search" as const };
     expect(await mind.onDecision(room, searchRequest, result)).toEqual(result);
     expect(r.complete).not.toHaveBeenCalled();
 
     const disabled = { ...runner(), configured: false };
-    const disabledMind = new TableMind(disabled, vi.fn());
+    const disabledMind = new TableMind(disabled, { log: vi.fn() });
     expect(await disabledMind.onDecision(room, request, result)).toEqual(
       result,
     );
   });
 
-  it("delegates chat to the runner", async () => {
-    const r = runner();
-    const mind = new TableMind(r, vi.fn());
-    const message = {
-      id: "m",
-      sequence: 1,
-      sender: "a",
-      name: "甲",
-      time: 1,
-      type: "text" as const,
-      text: "hi",
-    };
-    await mind.onChat(room, message);
-    expect(r.maybeReply).toHaveBeenCalledWith(room, message);
-  });
 });

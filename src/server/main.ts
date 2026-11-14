@@ -338,10 +338,6 @@ sockets.on("connection", (socket) => {
           return;
         }
         publish(result.session.room, socket, result.response);
-        if (result.chatMessage?.type === "text") {
-          const room = gateway.rooms.get(result.session.room);
-          if (room) void tableMind?.onChat(room, result.chatMessage);
-        }
         if (result.response?.type === "left") socket.close(4000, "Left room");
       } catch (error) {
         send(socket, {
@@ -416,7 +412,7 @@ setInterval(() => {
     }
   }
   for (const room of gateway.rooms.values()) {
-    tableMind?.observe(room);
+    void tableMind?.tick(room);
     const gameChanged = room.commitIfDue() || room.resolveIfDue();
     if (room.tickParty() || gameChanged) publish(room.id);
     if (pending.has(room.id)) continue;
