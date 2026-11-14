@@ -18,8 +18,7 @@ it("renders the pool prototype with both rule modes and table controls", () => {
   expect(html).toContain("拖动蓄力，松手击球");
   expect(html).toContain("松手击球");
   expect(html).toContain("pool-power-track");
-  expect(html).toContain("平杆");
-  expect(html).toContain("60°");
+  expect(html).toContain("杆身");
   expect(html).toContain('data-guide-target="pool.table"');
   expect(html).toContain("预计轨迹");
   expect(html).not.toContain('aria-label="击球力度"');

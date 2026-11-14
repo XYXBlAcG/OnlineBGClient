@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import type { PoolView } from "../../domain/pool/types";
-import { Button } from "../ui/Controls";
+import { Button, Slider } from "../ui/Controls";
 import { poolBallColors } from "./colors";
+import { elevationDegrees } from "./cue";
 
 const spinOptions: [string, number, number][] = [
   ["高杆", 0, 0.8],
@@ -9,11 +10,6 @@ const spinOptions: [string, number, number][] = [
   ["左塞", -0.8, 0],
   ["右塞", 0.8, 0],
   ["中杆", 0, 0],
-];
-const elevationOptions: [string, number][] = [
-  ["平杆", 0],
-  ["30°", 0.5],
-  ["60°", 0.9],
 ];
 
 export function PoolTableShell({
@@ -24,6 +20,7 @@ export function PoolTableShell({
   onSpin,
   elevation,
   onElevation,
+  requiredElevation = 0,
   predict,
   onPredict,
   renderer,
@@ -43,6 +40,7 @@ export function PoolTableShell({
   onSpin: (spin: { x: number; y: number }) => void;
   elevation: number;
   onElevation: (elevation: number) => void;
+  requiredElevation?: number;
   predict: boolean;
   onPredict: () => void;
   renderer: "2d" | "3d";
@@ -155,16 +153,19 @@ export function PoolTableShell({
               </Button>
             )}
             <div className="pool-elevation" data-guide-target="pool.elevation">
-              {elevationOptions.map(([label, value]) => (
-                <Button
-                  key={label}
-                  variant={elevation === value ? "primary" : "secondary"}
-                  onClick={() => onElevation(value)}
-                  disabled={disabled}
-                >
-                  {label}
-                </Button>
-              ))}
+              <Slider
+                aria-label="杆身角度"
+                min={0}
+                max={1}
+                step={0.02}
+                value={Math.max(elevation, requiredElevation)}
+                onValueChange={onElevation}
+                disabled={disabled}
+              />
+              <span className="pool-elevation-label">
+                杆身 {elevationDegrees(Math.max(elevation, requiredElevation))}°
+                {requiredElevation > elevation + 0.005 ? " · 已抬高避让" : ""}
+              </span>
             </div>
             <div className="pool-spin" data-guide-target="pool.spin">
               {spinOptions.map(([label, x, y]) => (

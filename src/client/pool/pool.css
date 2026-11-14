@@ -156,11 +156,23 @@
   flex-wrap: wrap;
   gap: 4px;
 }
-.pool-spin button,
-.pool-elevation button {
+.pool-spin button {
   min-height: 30px;
   padding: 4px 9px;
   font-size: 12px;
+}
+.pool-elevation {
+  align-items: center;
+  min-width: 150px;
+}
+.pool-elevation .ui-slider {
+  flex: 1;
+  min-width: 90px;
+}
+.pool-elevation-label {
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 11px;
 }
 @media (max-width: 640px) {
   .pool-controls {

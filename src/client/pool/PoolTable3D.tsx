@@ -19,6 +19,7 @@ import {
 } from "./render3d/PoolScene3D";
 import { PoolTableShell } from "./PoolTableShell";
 import { poolLayout } from "../../domain/pool/table";
+import { requiredCueElevation } from "./cue";
 import { predictShot } from "./prediction";
 import { usePoolAim } from "./use-pool-aim";
 import { usePoolClock } from "./use-pool-clock";
@@ -94,6 +95,16 @@ export function PoolTable3D({
     ballInHand: view.ballInHand,
     resetKey: `${view.shotNumber}:${view.turn}`,
   });
+  const requiredElevation =
+    interactive && aim.cue
+      ? requiredCueElevation(
+          poolLayout(view.mode),
+          view.balls,
+          aim.cue,
+          aim.aim,
+        )
+      : 0;
+  const effectiveElevation = Math.max(aim.elevation, requiredElevation);
   const remaining = usePoolClock(turnDeadline, serverTime, paused);
   useEffect(() => {
     poolAudio.configure(soundEnabled, soundVolume);
@@ -186,7 +197,7 @@ export function PoolTable3D({
       cue: aim.cue,
       aim: aim.aim,
       power: aim.power,
-      elevation: aim.elevation,
+      elevation: effectiveElevation,
       prediction,
       visible: aimVisible,
     });
@@ -194,7 +205,7 @@ export function PoolTable3D({
     aim.cue,
     aim.aim,
     aim.power,
-    aim.elevation,
+    effectiveElevation,
     prediction,
     aimVisible,
     attempt,
@@ -275,7 +286,7 @@ export function PoolTable3D({
     if (!input) return;
     scene.current?.strike(input.power);
     poolAudio.strike(input.power);
-    act({ type: "pool-shot", ...input });
+    act({ type: "pool-shot", ...input, elevation: effectiveElevation });
   };
   const cancel = () => {
     if (cameraMode !== "aim") return;
@@ -306,6 +317,7 @@ export function PoolTable3D({
       onSpin={aim.setSpin}
       elevation={aim.elevation}
       onElevation={aim.setElevation}
+      requiredElevation={requiredElevation}
       predict={predict}
       onPredict={() => setPredict((value) => !value)}
       renderer="3d"

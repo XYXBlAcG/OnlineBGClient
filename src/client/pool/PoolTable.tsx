@@ -15,6 +15,7 @@ import { poolBallColors } from "./colors";
 import { poolAudio } from "./audio";
 import { poolBallCursor, type PoolCursor } from "./aim";
 import { ballAtPoint } from "./hit-ball";
+import { CUE_BUTT_LENGTH, elevationAngle, requiredCueElevation } from "./cue";
 import { poolBallLabel } from "./labels";
 import { predictShot, type PoolPrediction } from "./prediction";
 import { usePoolAim } from "./use-pool-aim";
@@ -135,6 +136,7 @@ function drawTable(
   stick: { x: number; y: number } | null,
   aim: number,
   power: number,
+  elevation: number,
   prediction: PoolPrediction | null,
   strike: { progress: number; power: number } | null,
 ) {
@@ -247,13 +249,17 @@ function drawTable(
         height,
         scale,
       ),
-      [buttX, buttY] = tablePoint(
-        stick.x - direction.x * (reach + 0.78),
-        stick.y - direction.y * (reach + 0.78),
+      tilt = elevationAngle(elevation),
+      buttHorizontal = Math.cos(tilt),
+      buttLift = Math.sin(tilt),
+      [buttX, rawButtY] = tablePoint(
+        stick.x - direction.x * (reach + CUE_BUTT_LENGTH * buttHorizontal),
+        stick.y - direction.y * (reach + CUE_BUTT_LENGTH * buttHorizontal),
         width,
         height,
         scale,
-      );
+      ),
+      buttY = rawButtY - CUE_BUTT_LENGTH * buttLift * scale * 0.55;
     if (!prediction) {
       const [aimX, aimY] = tablePoint(
         stick.x + direction.x * (0.22 + power * 0.22),
@@ -411,6 +417,11 @@ export function PoolTable({
     ballInHand: view.ballInHand,
     resetKey: `${view.shotNumber}:${view.turn}`,
   });
+  const requiredElevation =
+    own && aim.cue
+      ? requiredCueElevation(layout, view.balls, aim.cue, aim.aim)
+      : 0;
+  const effectiveElevation = Math.max(aim.elevation, requiredElevation);
   const remaining = usePoolClock(turnDeadline, serverTime, paused);
   const prediction =
     predict && aim.cue && own
@@ -548,6 +559,7 @@ export function PoolTable({
       stick,
       cueAim,
       cuePower,
+      effectiveElevation,
       prediction,
       cueStrike,
     );
@@ -558,6 +570,7 @@ export function PoolTable({
     aim.aim,
     aim.cue,
     aim.power,
+    effectiveElevation,
     prediction,
     animating,
     resize,
@@ -627,7 +640,7 @@ export function PoolTable({
     if (!input) return;
     setStrike({ at: performance.now(), power: input.power });
     poolAudio.strike(input.power);
-    act({ type: "pool-shot", ...input });
+    act({ type: "pool-shot", ...input, elevation: effectiveElevation });
   };
   const cancel = () => {
     aim.cancel();
@@ -655,6 +668,7 @@ export function PoolTable({
       onSpin={aim.setSpin}
       elevation={aim.elevation}
       onElevation={aim.setElevation}
+      requiredElevation={requiredElevation}
       predict={predict}
       onPredict={() => setPredict((value) => !value)}
       renderer="2d"

@@ -12,11 +12,11 @@ import { POOL_PLAYBACK_RATE, interpolateBalls } from "../frames";
 import { poolBallColors } from "../colors";
 import type { PoolCursor } from "../aim";
 import type { PoolPrediction } from "../prediction";
+import { elevationAngle } from "../cue";
 
 const ballRadius = standardPoolLayout.table.ballRadius;
 const railHeight = 0.065;
 const cueLength = 0.82;
-const cueTilt = 0.14;
 
 interface BallDrop {
   started: number;
@@ -713,7 +713,7 @@ export class PoolScene3D {
     const pulled = ballRadius * 1.35 + power * 0.42;
     const tipDistance = pulled + (ballRadius * 1.01 - pulled) * progress;
     const direction = new THREE.Vector3(Math.cos(aim), 0, Math.sin(aim));
-    const tilt = cueTilt + elevation * 0.95;
+    const tilt = elevationAngle(elevation);
     const tipDirection = new THREE.Vector3(
       direction.x * Math.cos(tilt),
       -Math.sin(tilt),
