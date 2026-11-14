@@ -1,6 +1,7 @@
 import type { PracticeWorkerResponse } from "../src/client/practice-worker";
 import { build } from "esbuild";
 import { Worker } from "node:worker_threads";
+import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { GameEngine } from "../src/domain/engine";
 it("executes a legal teaching move in a real worker without strategy audit", async () => {
@@ -18,8 +19,9 @@ it("executes a legal teaching move in a real worker without strategy audit", asy
     `const {parentPort,workerData}=require('node:worker_threads');global.onmessage=null;global.postMessage=data=>parentPort.postMessage(data);require(workerData);parentPort.on('message',data=>global.onmessage({data}));`,
     {
       eval: true,
-      workerData: new URL("../.tmp/practice-worker-test.cjs", import.meta.url)
-        .pathname,
+      workerData: fileURLToPath(
+        new URL("../.tmp/practice-worker-test.cjs", import.meta.url),
+      ),
     },
   );
   try {
