@@ -44,3 +44,38 @@ it("places the cue ball and includes it in the shot action", () => {
   expect(action!.power).toBeGreaterThan(0.05);
   act(() => tree.unmount());
 });
+
+it("keeps the aimed direction when the player drags backward to charge", () => {
+  let aim!: ReturnType<typeof usePoolAim>;
+  let tree!: ReactTestRenderer;
+  function Harness() {
+    aim = usePoolAim({
+      balls,
+      cue: { x: -0.5, y: 0 },
+      own: true,
+      ballInHand: false,
+      resetKey: "0:0",
+    });
+    return null;
+  }
+  act(() => {
+    tree = create(<Harness />);
+  });
+  act(() => {
+    aim.hover({ x: -0.5, y: -0.3 });
+  });
+  act(() => {
+    expect(aim.begin({ x: -0.5, y: 0.2 })).toBe("aim");
+  });
+  expect(aim.aim).toBeCloseTo(-Math.PI / 2, 5);
+  act(() => {
+    aim.move({ x: -0.5, y: 0.5 });
+  });
+  let action: ReturnType<typeof aim.end> = null;
+  act(() => {
+    action = aim.end();
+  });
+  expect(action!.power).toBeGreaterThan(0.05);
+  expect(action!.aim).toBeCloseTo(-Math.PI / 2, 5);
+  act(() => tree.unmount());
+});

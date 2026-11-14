@@ -23,12 +23,12 @@ import type {
 const STEP = 1 / 240;
 const SAMPLE_EVERY = 4;
 const MAX_STEPS = 240 * 20;
-const STOP_SPEED = 0.002;
+const STOP_SPEED = 0.01;
 const STOP_SPIN = 0.08;
 const SLIDING_FRICTION = 1.8;
 const ROLLING_RESISTANCE = 0.6;
 const SPIN_DECAY = 1.1;
-const CLOTH_SPIN_DECEL = 9;
+const CLOTH_SPIN_DECEL = 20;
 const CONTACT_SLIP = 0.02;
 const BALL_BALL_FRICTION = 0.06;
 const RAIL_FRICTION = 0.18;
@@ -520,7 +520,7 @@ export function simulateShot(
         velocity.y = 0;
         spin.x = 0;
         spin.y = 0;
-        if (Math.abs(spin.z) <= STOP_SPIN) spin.z = 0;
+        spin.z = 0;
       }
       body.setLinearVelocity(velocity);
       body.setAngularVelocity(spin.z);

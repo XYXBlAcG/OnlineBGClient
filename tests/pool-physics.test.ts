@@ -316,3 +316,31 @@ it("settles cloth spin together with the ball instead of spinning in place", () 
   });
   expect(tailRotationChange(shot)).toBeLessThan(0.01);
 });
+
+it("never keeps rotating after a ball has stopped moving", () => {
+  const balls = rackBalls("eight-ball", "spin-stop");
+  const shot = simulateShot(balls, {
+    aim: 0,
+    power: 0.7,
+    spin: { x: 0.8, y: 0 },
+  });
+  const frames = shot.frames;
+  for (let index = 1; index < frames.length; index += 1) {
+    const before = new Map(
+      frames[index - 1].balls.map((ball) => [ball.id, ball]),
+    );
+    for (const ball of frames[index].balls) {
+      const previous = before.get(ball.id);
+      if (!previous || !ball.rotation || !previous.rotation) continue;
+      const moved =
+        Math.abs(ball.x - previous.x) + Math.abs(ball.y - previous.y) > 1e-4;
+      const dot = Math.abs(
+        previous.rotation.x * ball.rotation.x +
+          previous.rotation.y * ball.rotation.y +
+          previous.rotation.z * ball.rotation.z +
+          previous.rotation.w * ball.rotation.w,
+      );
+      if (!moved) expect(1 - Math.min(1, dot)).toBeLessThan(1e-3);
+    }
+  }
+});

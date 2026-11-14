@@ -38,6 +38,7 @@ export function usePoolAim({
   const placingRef = useRef(false);
   const placementRef = useRef<PoolPoint | null>(null);
   const startRef = useRef<PoolPoint | null>(null);
+  const hasAimRef = useRef(false);
   aimRef.current = aim;
   powerRef.current = power;
   const cuePoint = placement ?? cue;
@@ -52,6 +53,7 @@ export function usePoolAim({
     placementRef.current = null;
     powerRef.current = 0;
     startRef.current = null;
+    hasAimRef.current = false;
   }, [resetKey]);
 
   useEffect(() => {
@@ -71,6 +73,7 @@ export function usePoolAim({
     if (next !== null) {
       aimRef.current = next;
       setAim(next);
+      hasAimRef.current = true;
     }
   };
 
@@ -93,10 +96,13 @@ export function usePoolAim({
       }
     }
     if (!cuePoint) return null;
-    const next = aimFromPointer(cuePoint, point);
-    if (next !== null) {
-      aimRef.current = next;
-      setAim(next);
+    if (!hasAimRef.current) {
+      const next = aimFromPointer(cuePoint, point);
+      if (next !== null) {
+        aimRef.current = next;
+        setAim(next);
+        hasAimRef.current = true;
+      }
     }
     startRef.current = { ...point };
     setPulling(true);
