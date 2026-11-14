@@ -16,6 +16,7 @@ import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
 import { useState, useEffect } from "react";
 import { gameCatalogue, gameKinds, type GameKind } from "../domain/catalogue";
+import { automaticNames } from "../domain/names";
 import {
   configSchema,
   type RoomSetup as Setup,
@@ -236,16 +237,27 @@ export function RoomSetup({
                 <Select
                   aria-label="下一局AI席位"
                   value={config.ai.length}
-                  onValueChange={(value) =>
-                    setConfig({
-                      ...config,
-                      ai: Array.from({ length: Number(value) }, (_, i) =>
+                  onValueChange={(value) => {
+                    const ai: typeof config.ai = Array.from(
+                      { length: Number(value) },
+                      (_, i) =>
                         config.ai[i]
                           ? { ...config.ai[i], balance: undefined }
                           : { difficulty: "normal", name: "" },
-                      ),
-                    })
-                  }
+                    );
+                    setConfig({
+                      ...config,
+                      ai,
+                      companion: {
+                        ...config.companion,
+                        aiSeatIndex:
+                          config.companion.aiSeatIndex !== null &&
+                          config.companion.aiSeatIndex < ai.length
+                            ? config.companion.aiSeatIndex
+                            : null,
+                      },
+                    });
+                  }}
                 >
                   {Array.from(
                     {
@@ -354,8 +366,58 @@ export function RoomSetup({
                     </option>
                   ))}
                 </Select>
+                <Select
+                  aria-label={`AI ${i + 1} 驱动`}
+                  value={ai.driver ?? "search"}
+                  onValueChange={(driver) =>
+                    setConfig({
+                      ...config,
+                      ai: config.ai.map((entry, index) =>
+                        index === i
+                          ? {
+                              ...entry,
+                              driver: driver as "search" | "llm",
+                            }
+                          : entry,
+                      ),
+                    })
+                  }
+                >
+                  <option value="search">搜索策略</option>
+                  <option value="llm">LLM 决策</option>
+                </Select>
               </div>
             ))}
+            {config.ai.some((seat) => seat.driver === "llm") && (
+              <p className="muted">
+                LLM 席位需要先在设置 → 接入 AI 配置模型；失败时回退搜索。
+              </p>
+            )}
+            {game.ai && config.ai.length > 0 && (
+              <label className="setting-row">
+                聊天 AI
+                <Select
+                  aria-label="聊天 AI 席位"
+                  value={config.companion.aiSeatIndex ?? ""}
+                  onValueChange={(value) =>
+                    setConfig({
+                      ...config,
+                      companion: {
+                        ...config.companion,
+                        aiSeatIndex: value === "" ? null : Number(value),
+                      },
+                    })
+                  }
+                >
+                  <option value="">自动（第一个 AI）</option>
+                  {config.ai.map((ai, index) => (
+                    <option value={index} key={index}>
+                      {ai.name || automaticNames[index] || `AI ${index + 1}`}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            )}
             {game.team && (
               <label className="setting-row">
                 <span>组队模式</span>

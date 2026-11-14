@@ -215,6 +215,7 @@ export interface Seat {
   id?: string;
   name: string;
   difficulty: Difficulty | null;
+  driver?: "search" | "llm";
   token?: string;
   online: boolean;
   ready: boolean;

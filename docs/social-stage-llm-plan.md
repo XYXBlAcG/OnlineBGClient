@@ -25,6 +25,7 @@
 | AI 聊天设置与 AI 标记 | [设置组件](../src/client/AiSettings.tsx)、[设置入口](../src/client/Settings.tsx)、[消息组件](../src/client/social/ChatMessageView.tsx) |
 | AI 身份与聊天补全 | [AI 席位身份](../src/domain/room.ts)、[@/指令补全](../src/client/social/chat-suggestions.ts)、[聊天输入](../src/client/social/ChatComposer.tsx) |
 | AI 聊天验证         | [房间/协议测试](../tests/companion.test.ts)、[运行时测试](../tests/companion-runtime.test.ts)、[补全测试](../tests/chat-suggestions.test.ts)、[键盘填充](../tests/chat-composer.test.tsx)、[真实服务假模型烟测](../scripts/verify-companion.mjs) |
+| LLM 动作决策原型     | [候选选择](../src/server/llm-seat.ts)、[运行时决策入口](../src/server/main.ts)、[AI 席位驱动](../src/client/RoomSetup.tsx)、[候选选择测试](../tests/llm-seat.test.ts)、[LLM 席位真实服务烟测](../scripts/verify-llm-seat.mjs) |
 
 第一版已实现：成就系统消息升级为带稀有度、符号和标题的聊天卡片；普通和稀有只保留聊天卡片，史诗、传说、神话从最近的成就消息派生舞台事件，播放 3 套专属场景，并叠加 Bloom/Glow 滤镜。舞台事件不写入权威房间状态，不改变对局结果。开发态可用 `?dev=stage` 验收成就舞台和全部派对/游戏特效。
 
@@ -177,6 +178,7 @@ LLM 选择候选（可选） → 服务端校验候选合法 → 执行
 | Mock 与契约    | 已完成：`companion-core` v0.1.0           |
 | 聊天接入       | 已完成：房间配置、公开上下文、AI 消息、失败静默、@/指令补全 |
 | 真实 Provider  | 已实现设置内多格式配置与 `verify:companion:real`；真实模型手动验收 |
+| LLM 动作决策   | 已实现搜索候选 + LLM 选择 + 搜索回退的原型；按游戏优化待后续 |
 | 主动搭话       | 待审核                                    |
 | 舞台联动       | 待审核                                    |
 | 混合决策       | 待审核                                    |
@@ -189,11 +191,12 @@ v1 已覆盖：
 - 隐藏信息测试：以三国杀验证公开上下文不包含手牌、身份或完整 state。
 - 补全测试：@ 玩家列表、AI 标记、指令过滤、参数输入后关闭。
 - Provider 适配器测试：四种格式的请求地址、请求头、响应解析与错误路径。
+- LLM 席位：驱动透传、候选审计、候选编号解析、非法/失败回退。
 - 本机 AI 配置测试：provider 设置与 Key 的本地存取、损坏数据忽略。
 - Provider 超时/取消/429/非法输出/网络错误映射。
 - 房主可启用/关闭；默认关闭；`mention-only` 与 `chatty`。
 - AI 消息序号、幂等、200 条上限；不改变房间状态、动作合法性或回放。
-- `npm run verify:companion` 用真实房间服务 + WebSocket + fake provider 验证聊天链路；`npm run verify:companion:local` 用本机假 OpenAI 服务验证设置内 `ai-config` 与真实 OpenAI Provider 适配；`npm run verify:companion:real` 用真实模型验证同一链路。
+- `npm run verify:companion` 用真实房间服务 + WebSocket + fake provider 验证聊天链路；`npm run verify:llm-seat` 用真实房间服务与 fake provider 验证 LLM 席位从搜索候选选择并推进对局；`npm run verify:companion:local` 用本机假 OpenAI 服务验证设置内 `ai-config` 与真实 OpenAI Provider 适配；`npm run verify:companion:real` 用真实模型验证同一链路。
 
 M2 已提供设置内多格式 Provider 与 `verify:companion:real`；真实模型语气、频率和延迟由用户填写配置后手动验收。
 
@@ -206,6 +209,46 @@ npm run server:build
 npm run verify:companion:local
 COMPANION_LLM_BASE_URL=... COMPANION_LLM_API_KEY=... COMPANION_LLM_MODEL=... npm run verify:companion:real
 ```
+
+## 四、LLM 参与游戏（原型）
+
+### 结论
+
+第一版不让 LLM 直接生成动作。先由现有搜索 AI 生成合法候选、评分和审核数据，LLM 只从候选中选择编号；超时、非法输出、未配置或 Provider 失败时回退搜索最高分。这样不改变规则权威，也不需要为每个游戏手写完整状态序列化。
+
+### 已实现
+
+- AI 席位新增驱动：`搜索策略` / `LLM 决策`，在准备页面每个 AI 席位旁选择。
+- LLM 席位的决策请求强制携带搜索候选；服务端把候选标签和评分（Top 8）交给 LLM，只解析编号。
+- 选择后复用原 `Room.acceptDecision`，动作仍由规则引擎校验；审核开启时记录“LLM 从搜索候选中选择 #N”。
+- LLM 不可用/失败时静默回退搜索，不阻塞牌桌。
+- 聊天 AI 与 LLM 行动席位可以选同一个 AI 席位；聊天仍只读公开信息，行动使用该席位的搜索候选。
+
+### 边界
+
+- 候选标签和评分来自该席位可见的搜索决策；不把其他玩家的隐藏手牌、身份或恢复凭据放进 prompt。
+- LLM 不生成工具调用、不直接改房间状态、不介入回放和成就判定。
+- 当前是通用候选选择，不包含按游戏定制的状态摘要、谈判、发言或长期策略；这些留给后续按游戏试验。
+- 延迟增加一次 LLM 调用；默认只在房主显式选择 LLM 驱动时启用，失败回退。
+
+### 与 ChatBot 的协同
+
+ChatBot 已完成 M0+M1：登录、流式聊天/重生成/分支、Prompt 快照、属性工坊、角色卡/世界书、Web 端加密模型凭据；记忆、Telegram、群聊舞台和 Agent 尚未开始。可借用的主要是 `SecretCipher` + `LlmSettingsService`（服务端加密凭据、`hasApiKey`/hint/测试连接）、`ChatStreamEvent` + SSE parser，以及 `ChatPromptComposer` 的 section 编译思路。游戏侧当前仍使用 vendored `companion-core@0.1.0`；升级到 0.2.0、引入流式与加密凭据属于独立的平台改动，不在本轮混入。
+
+### 外部参考
+
+- Cicero 用规划/RL 产出可执行行动、语言负责谈判，行动受规则引擎约束：[Science 2023](https://doi.org/10.1126/science.ade9097)
+- 让 LLM 只对合法动作枚举选编号，比自由生成动作稳定得多：[arXiv:2510.04542](https://arxiv.org/abs/2510.04542)
+- 社交推理中把信念推断外置给结构化模型，LLM 只负责语言：[arXiv:2506.17788](https://arxiv.org/abs/2506.17788)
+- 逐回合把完整状态塞进 prompt 会拖垮一致性与上下文；可离线演化策略、线上只做选择/谈判：[arXiv:2506.04651](https://arxiv.org/abs/2506.04651)
+- 多角色等待与发言顺序可用竞价/异步/限时窗口，避免一个人拖慢整桌：[arXiv:2407.13943](https://arxiv.org/abs/2407.13943)
+- 约束解码（JSON Schema/CFG）可作为后续结构化输出的低开销方案：[arXiv:2411.15100](https://arxiv.org/abs/2411.15100)
+
+### 下一步
+
+- 本轮 v0 是通用“搜索候选 → LLM 选编号 → 失败回退搜索”，先证明链路和权限边界。
+- 调研结论更看好**卡坦岛交易/谈判**作为下一阶段：交易是纯语言协商，现有 ISMCTS 交易候选、审计和回放可直接复用；LLM 只负责报价/回应文本，参数由模板给全，服务端校验。
+- 社交推理（SGS/狼人杀类）端到端目前仍弱于规则 bot，放到 v2；先复用现有聊天桌搭子做语言层。
 
 ## 推荐顺序
 

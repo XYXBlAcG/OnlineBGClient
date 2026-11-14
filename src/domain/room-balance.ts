@@ -1,7 +1,10 @@
+export type AiSeatDriver = "search" | "llm";
+
 export interface AiSeatDefinition {
   difficulty: "easy" | "normal" | "hard";
   name: string;
   balance?: boolean;
+  driver?: AiSeatDriver;
 }
 export function balanceSeats<
   T extends { kind: string; humans: number; ai: AiSeatDefinition[] },

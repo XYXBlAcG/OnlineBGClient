@@ -233,6 +233,19 @@ describe("CompanionRuntime", () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining("provider down"));
   });
 
+  it("completes a short decision prompt with a lower token budget", async () => {
+    const { provider, calls } = createProvider("1");
+    const runtime = new CompanionRuntime({
+      provider,
+      model: "test",
+      now: () => now,
+    });
+    await expect(runtime.complete("system", "user", 8, 1000)).resolves.toBe(
+      "1",
+    );
+    expect(calls[0]?.maxOutputTokens).toBe(8);
+  });
+
   it("retries a network failure once", async () => {
     let calls = 0;
     const provider: LlmProvider = {

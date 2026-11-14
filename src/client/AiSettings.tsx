@@ -4,6 +4,7 @@ import {
   aiProviderFormatInfo,
   aiProviderNeedsKey,
   aiProviderSettingsSchema,
+  defaultAiProviderSettings,
   type AiProviderFormat,
   type AiProviderSettings,
   type CompanionConfig,
@@ -11,30 +12,25 @@ import {
 import type { Snapshot } from "../domain/protocol";
 import { loadAiConfig, type AiConfig } from "./ai-config";
 
-export function AiSettings({
-  config,
+export function AiProviderSettings({
+  fallbackProvider,
   status,
-  onChange,
   onSaveProvider,
   onError,
 }: {
-  config: CompanionConfig;
-  status: Snapshot["companion"];
-  onChange: (config: CompanionConfig) => void;
+  fallbackProvider?: AiProviderSettings;
+  status?: Snapshot["companion"];
   onSaveProvider: (config: AiConfig) => void;
   onError: (message: string) => void;
 }) {
   const [stored] = useState(() => loadAiConfig());
   const [provider, setProvider] = useState<AiProviderSettings>(
-    stored?.provider ?? config.provider,
+    stored?.provider ?? fallbackProvider ?? defaultAiProviderSettings,
   );
   const [apiKey, setApiKey] = useState(stored?.apiKey ?? "");
-  const [persona, setPersona] = useState(config.profile.persona);
+  const [saved, setSaved] = useState(!!stored?.provider.model);
   const formatInfo = aiProviderFormatInfo[provider.format];
-  const draftProfile = {
-    ...config.profile,
-    persona: persona.trim() || config.profile.persona,
-  };
+  const configured = status?.configured ?? false;
 
   const changeFormat = (format: AiProviderFormat): void => {
     setProvider((current) => {
@@ -66,16 +62,8 @@ export function AiSettings({
       baseUrl: provider.baseUrl.trim(),
     });
     setProvider(next);
+    setSaved(true);
     onSaveProvider({ provider: next, apiKey: apiKey.trim() });
-  };
-
-  const commitPersona = (): void => {
-    const value = persona.trim();
-    if (!value || value === config.profile.persona) {
-      setPersona(config.profile.persona);
-      return;
-    }
-    onChange({ ...config, profile: { ...config.profile, persona: value } });
   };
 
   return (
@@ -126,11 +114,11 @@ export function AiSettings({
           autoComplete="off"
           value={apiKey}
           placeholder={
-            formatInfo.needsKey
-              ? status.configured
-                ? "已保存，可重新填写"
-                : "填写 API Key"
-              : "本地模型可留空"
+            configured && apiKey
+              ? "已保存，可重新填写"
+              : formatInfo.needsKey
+                ? "填写 API Key"
+                : "本地模型可留空"
           }
           onChange={(event) => setApiKey(event.target.value)}
         />
@@ -139,16 +127,48 @@ export function AiSettings({
         保存 AI 配置
       </button>
       <p className="muted" role="status">
-        {status.configured
+        {configured
           ? `已接入 ${formatInfo.label} · ${provider.model || "未填写模型"}`
-          : "保存后即可启用 AI 聊天。"}
+          : status
+            ? "保存后即可启用 AI 聊天。"
+            : saved
+              ? "已保存在本机；作为房主开房时生效。"
+              : "保存后，在你作为房主开房时生效。"}
       </p>
+    </>
+  );
+}
+
+export function AiChatSettings({
+  config,
+  status,
+  onChange,
+}: {
+  config: CompanionConfig;
+  status: Snapshot["companion"];
+  onChange: (config: CompanionConfig) => void;
+}) {
+  const [persona, setPersona] = useState(config.profile.persona);
+  const draftProfile = {
+    ...config.profile,
+    persona: persona.trim() || config.profile.persona,
+  };
+
+  const commitPersona = (): void => {
+    const value = persona.trim();
+    if (!value || value === config.profile.persona) {
+      setPersona(config.profile.persona);
+      return;
+    }
+    onChange({ ...config, profile: { ...config.profile, persona: value } });
+  };
+
+  return (
+    <>
       <Switch
         label="启用 AI 聊天"
         checked={config.policy.enabled}
-        disabled={
-          !status.available || !status.configured
-        }
+        disabled={!status.available || !status.configured}
         onCheckedChange={(enabled) =>
           onChange({
             ...config,

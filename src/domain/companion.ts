@@ -77,6 +77,13 @@ export const companionConfigSchema = z
     profile: companionAiProfileSchema,
     policy: participationPolicySchema,
     provider: aiProviderSettingsSchema.default(defaultAiProviderSettings),
+    aiSeatIndex: z
+      .number()
+      .int()
+      .min(0)
+      .max(63)
+      .nullable()
+      .default(null),
   })
   .refine(
     (config) => config.profile.source.kind === "local",

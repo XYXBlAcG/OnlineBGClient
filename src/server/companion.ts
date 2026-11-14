@@ -234,25 +234,45 @@ export class CompanionRuntime {
     });
   }
 
-  private async generate(system: string, user: string): Promise<string> {
+  async complete(
+    system: string,
+    user: string,
+    maxOutputTokens = Math.min(32, this.maxOutputTokens),
+    timeoutMs = Math.min(8000, this.timeoutMs),
+  ): Promise<string> {
+    if (!this.provider) throw new Error("AI 未配置");
+    return this.generate(system, user, maxOutputTokens, timeoutMs);
+  }
+
+  private async generate(
+    system: string,
+    user: string,
+    maxOutputTokens = this.maxOutputTokens,
+    timeoutMs = this.timeoutMs,
+  ): Promise<string> {
     try {
-      return await this.attempt(system, user);
+      return await this.attempt(system, user, maxOutputTokens, timeoutMs);
     } catch (error) {
       if (!retryable(error)) throw error;
-      return this.attempt(system, user);
+      return this.attempt(system, user, maxOutputTokens, timeoutMs);
     }
   }
 
-  private async attempt(system: string, user: string): Promise<string> {
+  private async attempt(
+    system: string,
+    user: string,
+    maxOutputTokens: number,
+    timeoutMs: number,
+  ): Promise<string> {
     const provider = this.provider!;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const result = await provider.generateText({
         system,
         messages: [{ role: "user", content: user }],
         temperature: 0.8,
-        maxOutputTokens: this.maxOutputTokens,
+        maxOutputTokens,
         signal: controller.signal,
       });
       return result.text;
@@ -265,7 +285,9 @@ export class CompanionRuntime {
 class FakeCompanionProvider implements LlmProvider {
   async generateText(request: LlmRequest): Promise<LlmTextResult> {
     const last = request.messages.at(-1)?.content ?? "";
-    const text = last.includes("你好")
+    const text = request.system?.includes("只输出候选编号")
+      ? "0"
+      : last.includes("你好")
       ? "你好呀，我在桌边看着呢。"
       : /[？?]\s*$/.test(last)
         ? "我先看看牌桌，再告诉你。"

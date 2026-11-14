@@ -198,6 +198,7 @@ export class Room {
         name: entry.name || automaticNames[index],
         automaticName: !entry.name,
         difficulty: entry.difficulty,
+        driver: entry.driver ?? "search",
         online: true,
         ready: true,
       })),
@@ -429,10 +430,17 @@ export class Room {
       seats[index] = { ...seat, ready: index === 0 };
     });
     if (this.replay) this.records = [...this.records, this.replay].slice(-20);
+    const aiSeatIndex = next.companion.aiSeatIndex;
     Object.assign(this.config, next, {
       party: this.party.export().policy,
       plugins: this.party.export().plugins,
-      companion: this.config.companion,
+      companion: {
+        ...this.config.companion,
+        aiSeatIndex:
+          aiSeatIndex !== null && aiSeatIndex < next.ai.length
+            ? aiSeatIndex
+            : null,
+      },
     });
     for (const member of members.filter(
       (seat) => !setup.retain.includes(seat.id!),
@@ -594,6 +602,7 @@ export class Room {
     const next: CompanionConfig = {
       ...companionConfigSchema.parse(input),
       provider: this.config.companion.provider,
+      aiSeatIndex: this.config.companion.aiSeatIndex,
     };
     if (JSON.stringify(next) === JSON.stringify(this.config.companion)) return;
     const identity = this.companionProfile();
@@ -622,13 +631,17 @@ export class Room {
     this.version++;
   }
   companionProfile(): CompanionProfile | null {
-    const index = this.seats.findIndex((seat) => seat.difficulty !== null);
-    if (index < 0) return null;
-    const seat = this.seats[index]!;
+    const aiSeats = this.seats
+      .map((seat, index) => ({ seat, index }))
+      .filter(({ seat }) => seat.difficulty !== null);
+    if (!aiSeats.length) return null;
+    const selected = this.config.companion.aiSeatIndex;
+    const target =
+      (selected !== null ? aiSeats[selected] : undefined) ?? aiSeats[0]!;
     return {
       id: this.config.companion.profile.id,
-      name: seatDisplayName(seat, index, this.state),
-      avatar: seatAvatar(seat),
+      name: seatDisplayName(target.seat, target.index, this.state),
+      avatar: seatAvatar(target.seat),
       persona: this.config.companion.profile.persona,
       source: this.config.companion.profile.source,
     };
@@ -961,6 +974,7 @@ export class Room {
     observation: GameState;
     actor: number;
     difficulty: NonNullable<Seat["difficulty"]>;
+    driver: "search" | "llm";
     seed: string;
     version: number;
     audit: boolean;
@@ -983,12 +997,14 @@ export class Room {
             this.seats[actor].autoplay),
       );
     if (actor === undefined) return null;
+    const driver = this.seats[actor].driver ?? "search";
     return {
       tradeEnabled: this.config.catanTrades,
-      audit: this.config.auditEnabled,
+      audit: this.config.auditEnabled || driver === "llm",
       observation: this.engine.project(this.state, actor),
       actor,
       difficulty: this.seats[actor].difficulty || "normal",
+      driver,
       seed: `decision:${this.id}:${this.version}:${actor}`,
       version: this.version,
     };
@@ -1191,6 +1207,7 @@ export class Room {
             ? index % 2
             : undefined,
         autoplay: seat.autoplay,
+        driver: seat.driver,
         online: seat.online,
         ready: seat.ready,
       })),
@@ -1414,6 +1431,7 @@ export class Room {
             name: config.name || automaticNames[index - 1],
             automaticName: !config.name,
             difficulty: config.difficulty,
+            driver: config.driver ?? "search",
             online: true,
             ready: true,
           };
@@ -1425,6 +1443,7 @@ export class Room {
       .map((seat) => ({
         difficulty: seat.difficulty!,
         name: seat.automaticName ? "" : seat.name,
+        driver: seat.driver ?? "search",
         ...(balanceBySeat.get(seat) ? { balance: true } : {}),
       }));
   }

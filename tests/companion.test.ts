@@ -61,6 +61,72 @@ describe("room companion", () => {
     );
   });
 
+  it("uses the selected AI seat for chat identity", () => {
+    const room = new Room("selected-ai", {
+      kind: "uno",
+      humans: 1,
+      ai: [
+        { difficulty: "easy", name: "青竹" },
+        { difficulty: "easy", name: "松风" },
+      ],
+      team: false,
+      training: false,
+      companion: {
+        ...defaultCompanionConfig,
+        policy: { ...defaultCompanionConfig.policy, enabled: true },
+        aiSeatIndex: 1,
+      },
+    });
+    const host = room.claim("甲");
+    expect(room.snapshot(host).companion.name).toBe("松风");
+    expect(room.addCompanionMessage("m1", "你好")?.name).toBe("松风");
+
+    room.setCompanion(host, enabledCompanion());
+    expect(room.snapshot(host).companion.name).toBe("松风");
+
+    const id = room.seats[0].id!;
+    room.changeGame(host, {
+      config: {
+        ...room.config,
+        ai: [
+          { difficulty: "easy", name: "青竹" },
+          { difficulty: "easy", name: "松风" },
+        ],
+        companion: { ...room.config.companion, aiSeatIndex: 0 },
+      },
+      retain: [id],
+      members: [id],
+      endCurrent: false,
+    });
+    expect(room.snapshot(host).companion.name).toBe("青竹");
+  });
+
+  it("marks LLM-driven AI seats and requests candidate audit", () => {
+    const room = new Room("llm-seat", {
+      kind: "uno",
+      humans: 1,
+      ai: [{ difficulty: "normal", name: "青竹", driver: "llm" }],
+      team: false,
+      training: false,
+    });
+    const token = room.claim("我");
+    expect(room.snapshot(token).seats[1]?.driver).toBe("llm");
+    room.start(token);
+    for (let index = 0; index < 8; index++) {
+      const request = room.aiRequest();
+      if (request) {
+        expect(request.driver).toBe("llm");
+        expect(request.audit).toBe(true);
+        return;
+      }
+      const candidates = room.snapshot(token).candidates;
+      const action = candidates[0]?.action;
+      if (!action) break;
+      room.act(token, `move-${index}`, room.version, action);
+    }
+    throw new Error("未进入 LLM 席位决策");
+  });
+
   it("requires an AI seat before enabling", () => {
     const room = new Room("no-ai", {
       kind: "expedition",

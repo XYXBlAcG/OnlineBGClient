@@ -2,7 +2,10 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { ChatMessageView } from "../src/client/social/ChatMessageView";
-import { AiSettings } from "../src/client/AiSettings";
+import {
+  AiChatSettings,
+  AiProviderSettings,
+} from "../src/client/AiSettings";
 import { defaultCompanionConfig } from "../src/domain/companion";
 import type { ChatMessage } from "../src/domain/social";
 
@@ -25,21 +28,29 @@ it("marks companion chat messages as AI", () => {
 });
 
 it("renders the AI settings controls", () => {
+  const status = {
+    enabled: false,
+    name: "青竹",
+    avatar: "🤖",
+    configured: true,
+    available: true,
+  };
   const html = renderToStaticMarkup(
-    <AiSettings
-      config={defaultCompanionConfig}
-      status={{
-        enabled: false,
-        name: "青竹",
-        avatar: "🤖",
-        configured: true,
-        available: true,
-      }}
-      onChange={() => {}}
-      onSaveProvider={() => {}}
-      onError={() => {}}
-    />,
+    <>
+      <AiProviderSettings
+        status={status}
+        onSaveProvider={() => {}}
+        onError={() => {}}
+      />
+      <AiChatSettings
+        config={defaultCompanionConfig}
+        status={status}
+        onChange={() => {}}
+      />
+    </>,
   );
+  expect(html).toContain("接口格式");
+  expect(html).toContain("保存 AI 配置");
   expect(html).toContain("启用 AI 聊天");
   expect(html).toContain("青竹");
   expect(html).toContain("仅 @ 搭话");

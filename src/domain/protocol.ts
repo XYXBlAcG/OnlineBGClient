@@ -56,6 +56,7 @@ export const configSchema = z
           difficulty: z.enum(["easy", "normal", "hard"]),
           name: z.string().trim().max(24).default(""),
           balance: z.boolean().optional(),
+          driver: z.enum(["search", "llm"]).optional(),
         }),
       )
       .max(maxRoomSeats),
@@ -131,6 +132,7 @@ export const seatConfigSchema = z.discriminatedUnion("type", [
     type: z.literal("ai"),
     difficulty: z.enum(["easy", "normal", "hard"]),
     name: z.string().trim().max(24).default(""),
+    driver: z.enum(["search", "llm"]).optional(),
   }),
 ]);
 export type SeatConfig = z.infer<typeof seatConfigSchema>;
@@ -318,6 +320,7 @@ export interface Snapshot {
     avatar?: string;
     autoplay?: boolean;
     difficulty: Difficulty | null;
+    driver?: "search" | "llm";
     team?: number;
     online: boolean;
     ready: boolean;

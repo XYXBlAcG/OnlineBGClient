@@ -22,6 +22,8 @@ import { protocolVersion, type Response } from "../domain/protocol";
 import { createCompanionRuntime, type CompanionRuntime } from "./companion";
 import { aiConfigCommandSchema } from "../domain/companion";
 import { createAiProvider } from "./ai-providers";
+import { chooseCandidateWithLlm } from "./llm-seat";
+import { gameCatalogue } from "../domain/catalogue";
 
 const gateway = new Gateway();
 const voiceConfig =
@@ -439,9 +441,42 @@ setInterval(() => {
             publish(room.id, undefined, undefined, false);
         },
       )
-      .then((result) => {
+      .then(async (result) => {
+        let finalResult = result;
+        if (
+          request.driver === "llm" &&
+          companionRuntime?.configured &&
+          result.audit &&
+          result.audit.candidates.length > 1
+        ) {
+          try {
+            const choice = await chooseCandidateWithLlm(
+              companionRuntime,
+              gameCatalogue[request.observation.kind].name,
+              result.audit.candidates,
+            );
+            if (choice)
+              finalResult = {
+                ...result,
+                chosen: choice.chosen,
+                audit: {
+                  ...result.audit,
+                  chosen: choice.chosen,
+                  assumptions: [
+                    ...result.audit.assumptions,
+                    `LLM 从搜索候选中选择 #${choice.index}。`,
+                  ],
+                },
+              };
+          } catch (error) {
+            console.error(
+              "LLM 决策失败，回退搜索",
+              error instanceof Error ? error.message : error,
+            );
+          }
+        }
         if (gateway.rooms.get(room.id) === room)
-          room.queueDecision(result, request.version);
+          room.queueDecision(finalResult, request.version);
       })
       .catch((error) => {
         if (active.controller.signal.aborted) return;

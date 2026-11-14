@@ -20,7 +20,7 @@ import type { PerformanceSettings } from "../domain/performance";
 import { PhraseSettings } from "./PhraseSettings";
 import { CacheSettings } from "./CacheSettings";
 import { AchievementGallery } from "./Achievements";
-import { AiSettings } from "./AiSettings";
+import { AiChatSettings, AiProviderSettings } from "./AiSettings";
 import type { CompanionConfig } from "../domain/companion";
 import type { AiConfig } from "./ai-config";
 import { enableNotifications } from "./notifications";
@@ -494,22 +494,27 @@ export function Settings({
           </section>
           <section hidden={section !== "接入 AI"} className="settings-section">
             <h3>接入 AI</h3>
-            {companion &&
-            onCompanionChange &&
-            onSaveAiConfig &&
-            canConfigureAI ? (
-              <AiSettings
-                config={companion.config}
-                status={companion.status}
-                onChange={onCompanionChange}
+            {onSaveAiConfig ? (
+              <AiProviderSettings
+                fallbackProvider={companion?.config.provider}
+                status={companion?.status}
                 onSaveProvider={onSaveAiConfig}
                 onError={onError}
               />
             ) : (
+              <p className="muted">进入房间后配置 AI。</p>
+            )}
+            {companion && onCompanionChange && canConfigureAI ? (
+              <AiChatSettings
+                config={companion.config}
+                status={companion.status}
+                onChange={onCompanionChange}
+              />
+            ) : (
               <p className="muted">
                 {canConfigureAI
-                  ? "进入房间后由房主在主窗口接入 AI。"
-                  : "只有房主可以配置 AI。"}
+                  ? "进入房间后可启用 AI 聊天。"
+                  : "只有房主可以配置 AI 聊天。"}
               </p>
             )}
           </section>
