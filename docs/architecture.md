@@ -75,7 +75,7 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | AI 身份与 @/指令补全             | [AI 席位身份](../src/domain/room.ts)、[补全逻辑](../src/client/social/chat-suggestions.ts)、[聊天输入](../src/client/social/ChatComposer.tsx) |
 | AI Provider 多格式适配           | [适配器](../src/server/ai-providers.ts)、[配置界面](../src/client/AiSettings.tsx)、[本机配置](../src/client/ai-config.ts) |
 | LLM 参与动作决策                 | [候选选择](../src/server/llm-seat.ts)、[AI 循环](../src/server/main.ts)、[AI 席位驱动](../src/client/RoomSetup.tsx) |
-| 牌桌 LLM 编排（TableMind）      | [运行时](../src/server/table-mind/runtime.ts)、[事件模型](../src/domain/table-mind/model.ts)、[房间事件](../src/domain/room.ts) |
+| 牌桌 LLM 编排（TableMind）      | [运行时](../src/server/table-mind/runtime.ts)、[事件模型](../src/domain/table-mind/model.ts)、[UNO 局面](../src/domain/table-mind/perspectives/uno.ts)、[提示词](../src/domain/table-mind/prompt.ts)、[记忆](../src/domain/table-mind/memory.ts) |
 | AI 聊天共享内核与固定依赖        | [vendor 说明](../vendor/README.md)、[共享仓库](https://github.com/XYXBlAcG/companion-core) |
 | 面板尺寸与地图                   | [边缘分栏](../src/client/SidebarDivider.tsx)、[偏好](../src/client/preferences.ts)、[地图视口](../src/client/MapViewport.tsx)                                                  |
 | 桌面原生入口                     | [Tauri](../src-tauri/)                                                                                                                                                         |

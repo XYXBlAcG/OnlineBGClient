@@ -2,6 +2,9 @@ import type { LlmProvider } from "companion-core";
 import type { AiProviderSettings } from "../../domain/companion";
 import { gameCatalogue } from "../../domain/catalogue";
 import type { TableEvent } from "../../domain/table-mind/model";
+import { TableMemory } from "../../domain/table-mind/memory";
+import { buildDecisionPrompt } from "../../domain/table-mind/prompt";
+import { buildUnoSituation } from "../../domain/table-mind/perspectives/uno";
 import type { AiResult } from "../../domain/types";
 import type { ChatMessage } from "../../domain/protocol";
 import type { Room } from "../../domain/room";
@@ -9,7 +12,7 @@ import {
   createCompanionRuntime,
   type CompanionRoomPort,
 } from "../companion";
-import { chooseCandidateWithLlm } from "../llm-seat";
+import { chooseCandidateWithLlm, parseCandidateChoice } from "../llm-seat";
 
 export type TableAiRequest = NonNullable<ReturnType<Room["aiRequest"]>>;
 
@@ -31,6 +34,7 @@ export interface TableMindRunner {
 
 export class TableMind {
   readonly timeline: TableEvent[] = [];
+  readonly memory = new TableMemory();
   constructor(
     private readonly runner: TableMindRunner,
     private readonly log: (message: string) => void,
@@ -50,6 +54,7 @@ export class TableMind {
     this.timeline.push(...events);
     if (this.timeline.length > 500)
       this.timeline.splice(0, this.timeline.length - 500);
+    this.memory.observe(events);
   }
 
   async onChat(room: TableMindRoom, trigger: ChatMessage): Promise<void> {
@@ -72,6 +77,38 @@ export class TableMind {
     )
       return result;
     try {
+      if (request.observation.kind === "uno") {
+        const situation = buildUnoSituation({
+          observation: request.observation,
+          actor: request.actor,
+          candidates: result.audit.candidates,
+          players: room.publicContext().players,
+          events: this.timeline.slice(-12),
+          memory: this.memory.recall(8),
+        });
+        const prompt = buildDecisionPrompt(situation);
+        const text = await this.runner.complete(
+          prompt.system,
+          prompt.user,
+          24,
+          6000,
+        );
+        const index = parseCandidateChoice(text, prompt.candidates.length);
+        if (index === null) return result;
+        const action = result.audit.candidates[index]!.action;
+        return {
+          ...result,
+          chosen: action,
+          audit: {
+            ...result.audit,
+            chosen: action,
+            assumptions: [
+              ...result.audit.assumptions,
+              `TableMind 基于 UNO 局面选择候选 #${index}。`,
+            ],
+          },
+        };
+      }
       const choice = await chooseCandidateWithLlm(
         this.runner,
         gameCatalogue[request.observation.kind].name,

@@ -24,7 +24,38 @@ const candidates: DecisionCandidate[] = [
 ];
 
 const request = {
-  observation: { kind: "uno" } as GameState,
+  observation: {
+    kind: "uno",
+    view: {
+      isStart: true,
+      waitFor: 0,
+      currentColor: 0,
+      currentNumber: 0,
+      currentD: 1,
+      currentPlus: 0,
+      isLeadCard: 0,
+      isAllowJumpIn: 0,
+      isDrawThink: 0,
+      topCard: 0,
+      lastCard: [0],
+      cardList: [],
+      drawCards: [],
+      playedCards: [0],
+      playerCards: [[0], [1]],
+      playerTopCard: [],
+      playerFinish: [0, 0],
+      lastOpInfo: {
+        playerId: 0,
+        opType: 0,
+        isSaidUno: 0,
+        opCard: 0,
+        isShuffle: 0,
+      },
+      teamMode: false,
+      teams: [],
+      teamWinner: null,
+    },
+  } as unknown as GameState,
   actor: 0,
   difficulty: "normal",
   driver: "llm",
@@ -54,6 +85,12 @@ const result: AiResult = {
 
 const room = {
   drainTableEvents: () => [] as TableEvent[],
+  publicContext: () => ({
+    game: "UNO",
+    phase: "playing",
+    players: ["甲", "青竹"],
+    recentChat: [],
+  }),
 } as unknown as TableMindRoom;
 
 const runner = (): TableMindRunner => ({
@@ -90,7 +127,7 @@ describe("TableMind", () => {
     const mind = new TableMind(r, vi.fn());
     const final = await mind.onDecision(room, request, result);
     expect(final.chosen).toEqual(candidates[1]!.action);
-    expect(final.audit?.assumptions.at(-1)).toContain("LLM");
+    expect(final.audit?.assumptions.at(-1)).toContain("UNO");
   });
 
   it("falls back to the search result on bad LLM choices", async () => {
@@ -100,6 +137,37 @@ describe("TableMind", () => {
     const mind = new TableMind(r, log);
     expect(await mind.onDecision(room, request, result)).toEqual(result);
     expect(log).not.toHaveBeenCalled();
+  });
+
+  it("includes UNO state, candidates and memory in the decision prompt", async () => {
+    const r = runner();
+    r.complete = vi.fn(async () => "0");
+    const mind = new TableMind(r, vi.fn());
+    mind.observe({
+      drainTableEvents: () => [
+        {
+          id: "table:1",
+          seq: 1,
+          version: 1,
+          at: 1,
+          kind: "chat",
+          actor: "a",
+          actorName: "甲",
+          label: "先出红牌",
+          public: true,
+        },
+      ],
+    } as unknown as TableMindRoom);
+    await mind.onDecision(room, request, result);
+    expect(r.complete).toHaveBeenCalledWith(
+      expect.stringContaining("只输出候选编号"),
+      expect.stringContaining("我的手牌"),
+      24,
+      6000,
+    );
+    expect((r.complete as ReturnType<typeof vi.fn>).mock.calls[0]![1]).toContain(
+      "先出红牌",
+    );
   });
 
   it("skips LLM calls for search seats or provider failure", async () => {

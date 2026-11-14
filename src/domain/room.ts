@@ -524,7 +524,13 @@ export class Room {
     this.lastMoveAt = Date.now();
     this.actionReadyAt = this.lastMoveAt + this.engine.actionDelay(this.state);
     this.version++;
-    this.appendTableEvent("action", action.type, this.seatActorId(actor));
+    this.appendTableEvent(
+      "action",
+      action.type,
+      this.seatActorId(actor),
+      seatDisplayName(this.seats[actor], actor, this.state),
+      action,
+    );
     this.replay!.events.push({
       type: "action",
       actor,
@@ -710,6 +716,7 @@ export class Room {
       "achievement",
       `${name} 达成了「${definition.title}」成就`,
       sender,
+      name,
     );
     this.accepted.add(key);
     if (this.accepted.size > 2048)
@@ -757,7 +764,7 @@ export class Room {
       source: "human",
     };
     this.messages.push(message);
-    this.appendTableEvent("chat", message.text, sender);
+    this.appendTableEvent("chat", message.text, sender, message.name);
     if (
       (content.type === "banner" ||
         content.type === "roll" ||
@@ -805,7 +812,12 @@ export class Room {
       source: "ai",
     };
     this.messages.push(message);
-    this.appendTableEvent("chat", message.text, message.sender);
+    this.appendTableEvent(
+      "chat",
+      message.text,
+      message.sender,
+      message.name,
+    );
     if (this.messages.length > 200) this.messages.shift();
     this.accepted.add(key);
     if (this.accepted.size > 2048)
@@ -819,6 +831,8 @@ export class Room {
     kind: TableEventKind,
     label: string,
     actor?: string,
+    actorName?: string,
+    payload?: Action,
   ): void {
     const seq = ++this.tableEventSequence;
     this.tableEvents.push({
@@ -828,8 +842,10 @@ export class Room {
       at: Date.now(),
       kind,
       actor,
+      actorName,
       label: label.slice(0, 200),
       public: true,
+      payload,
     });
     if (this.tableEvents.length > 500) this.tableEvents.shift();
   }
@@ -1097,6 +1113,8 @@ export class Room {
           JSON.stringify(candidate.action) === JSON.stringify(decision.chosen),
       )?.label ?? decision.chosen.type,
       this.seatActorId(decision.actor),
+      seatDisplayName(this.seats[decision.actor], decision.actor, this.state),
+      decision.chosen,
     );
     this.replay!.events.push({
       type: "action",
