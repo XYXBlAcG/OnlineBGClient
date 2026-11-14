@@ -65,6 +65,7 @@ import {
   type PublicRoomContext,
 } from "./companion";
 import type { CompanionProfile } from "companion-core";
+import type { TableEvent, TableEventKind } from "./table-mind/model";
 
 export class Room {
   private partyQueue: PartyQueue = { revision: 0, entries: [] };
@@ -145,6 +146,8 @@ export class Room {
   private bannerTimes = new Map<string, number>();
   private chatEventTimes = new Map<string, number>();
   private messages: ChatMessage[] = [];
+  private tableEventSequence = 0;
+  private tableEvents: TableEvent[] = [];
   private party = new PartyLedger();
   series: Series | null = null;
   private decisions: Decision[] = [];
@@ -358,6 +361,7 @@ export class Room {
     if (this.replay && this.state?.kind === "expedition")
       this.replay.expeditionRunId = this.state.view.runId;
     this.version++;
+    this.appendTableEvent("game-start", this.config.kind);
     this.roundVersion = this.version;
     this.simultaneousSince = this.version;
     this.decisions = [];
@@ -397,6 +401,7 @@ export class Room {
     if (discardResume) this.pendingResume = null;
     this.queued = null;
     this.version++;
+    this.appendTableEvent("game-end", this.config.kind);
   }
 
   changeGame(token: string, setup: RoomSetup): void {
@@ -519,6 +524,7 @@ export class Room {
     this.lastMoveAt = Date.now();
     this.actionReadyAt = this.lastMoveAt + this.engine.actionDelay(this.state);
     this.version++;
+    this.appendTableEvent("action", action.type, this.seatActorId(actor));
     this.replay!.events.push({
       type: "action",
       actor,
@@ -700,6 +706,11 @@ export class Room {
       source: "system",
     });
     if (this.messages.length > 200) this.messages.shift();
+    this.appendTableEvent(
+      "achievement",
+      `${name} 达成了「${definition.title}」成就`,
+      sender,
+    );
     this.accepted.add(key);
     if (this.accepted.size > 2048)
       this.accepted.delete(this.accepted.values().next().value!);
@@ -746,6 +757,7 @@ export class Room {
       source: "human",
     };
     this.messages.push(message);
+    this.appendTableEvent("chat", message.text, sender);
     if (
       (content.type === "banner" ||
         content.type === "roll" ||
@@ -793,11 +805,38 @@ export class Room {
       source: "ai",
     };
     this.messages.push(message);
+    this.appendTableEvent("chat", message.text, message.sender);
     if (this.messages.length > 200) this.messages.shift();
     this.accepted.add(key);
     if (this.accepted.size > 2048)
       this.accepted.delete(this.accepted.values().next().value!);
     return message;
+  }
+  private seatActorId(index: number): string {
+    return this.seats[index]?.id ?? `ai:${index}`;
+  }
+  private appendTableEvent(
+    kind: TableEventKind,
+    label: string,
+    actor?: string,
+  ): void {
+    const seq = ++this.tableEventSequence;
+    this.tableEvents.push({
+      id: `table:${seq}`,
+      seq,
+      version: this.version,
+      at: Date.now(),
+      kind,
+      actor,
+      label: label.slice(0, 200),
+      public: true,
+    });
+    if (this.tableEvents.length > 500) this.tableEvents.shift();
+  }
+  drainTableEvents(): TableEvent[] {
+    const events = this.tableEvents;
+    this.tableEvents = [];
+    return events;
   }
   publicContext(): PublicRoomContext {
     const phase: PublicRoomContext["phase"] =
@@ -1050,6 +1089,15 @@ export class Room {
       this.simultaneousSince = this.version;
     this.lastMoveAt = Date.now();
     this.actionReadyAt = this.lastMoveAt + this.engine.actionDelay(this.state);
+    this.version++;
+    this.appendTableEvent(
+      "action",
+      decision.audit?.candidates.find(
+        (candidate) =>
+          JSON.stringify(candidate.action) === JSON.stringify(decision.chosen),
+      )?.label ?? decision.chosen.type,
+      this.seatActorId(decision.actor),
+    );
     this.replay!.events.push({
       type: "action",
       actor: decision.actor,

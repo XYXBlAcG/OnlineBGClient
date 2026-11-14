@@ -19,11 +19,9 @@ import { WebSocketServer, WebSocket } from "ws";
 import { Gateway } from "../domain/gateway";
 import type { Room } from "../domain/room";
 import { protocolVersion, type Response } from "../domain/protocol";
-import { createCompanionRuntime, type CompanionRuntime } from "./companion";
 import { aiConfigCommandSchema } from "../domain/companion";
 import { createAiProvider } from "./ai-providers";
-import { chooseCandidateWithLlm } from "./llm-seat";
-import { gameCatalogue } from "../domain/catalogue";
+import { createTableMind, type TableMind } from "./table-mind/runtime";
 
 const gateway = new Gateway();
 const voiceConfig =
@@ -181,10 +179,10 @@ const send = (socket: WebSocket, response: Response) => {
   if (socket.readyState === WebSocket.OPEN)
     socket.send(JSON.stringify(response));
 };
-let companionRuntime: CompanionRuntime | null = null;
+let tableMind: TableMind | null = null;
 const snapshotOf = (room: Room, token: string) => {
   const snapshot = room.snapshot(token);
-  snapshot.companion.configured = companionRuntime?.configured ?? false;
+  snapshot.companion.configured = tableMind?.configured ?? false;
   return snapshot;
 };
 const publish = (
@@ -228,7 +226,7 @@ const heartbeat = setInterval(() => {
   }
 }, 15000);
 heartbeat.unref();
-companionRuntime = createCompanionRuntime({
+tableMind = createTableMind({
   publish: (roomId) => publish(roomId),
 });
 sockets.on("connection", (socket) => {
@@ -249,20 +247,20 @@ sockets.on("connection", (socket) => {
           if (!room) throw new Error("房间不存在");
           if (!room.canManage(aiConfig.data.token))
             throw new Error("只有房主可以配置 AI");
-          if (!companionRuntime) throw new Error("AI 服务未就绪");
+          if (!tableMind) throw new Error("AI 服务未就绪");
           const provider = createAiProvider(
             aiConfig.data.provider,
             aiConfig.data.apiKey,
           );
           room.setAiProvider(aiConfig.data.token, aiConfig.data.provider);
-          companionRuntime.configure(provider, aiConfig.data.provider);
+          tableMind.configure(provider, aiConfig.data.provider);
           publish(session.room);
           return;
         }
         if (
           input?.type === "companion" &&
           input.config?.policy?.enabled === true &&
-          !companionRuntime?.configured
+          !tableMind?.configured
         )
           throw new Error("房主服务端未配置 AI 模型");
         if (input.type === "chat-image") {
@@ -342,7 +340,7 @@ sockets.on("connection", (socket) => {
         publish(result.session.room, socket, result.response);
         if (result.chatMessage?.type === "text") {
           const room = gateway.rooms.get(result.session.room);
-          if (room) void companionRuntime?.maybeReply(room, result.chatMessage);
+          if (room) void tableMind?.onChat(room, result.chatMessage);
         }
         if (result.response?.type === "left") socket.close(4000, "Left room");
       } catch (error) {
@@ -418,6 +416,7 @@ setInterval(() => {
     }
   }
   for (const room of gateway.rooms.values()) {
+    tableMind?.observe(room);
     const gameChanged = room.commitIfDue() || room.resolveIfDue();
     if (room.tickParty() || gameChanged) publish(room.id);
     if (pending.has(room.id)) continue;
@@ -442,39 +441,8 @@ setInterval(() => {
         },
       )
       .then(async (result) => {
-        let finalResult = result;
-        if (
-          request.driver === "llm" &&
-          companionRuntime?.configured &&
-          result.audit &&
-          result.audit.candidates.length > 1
-        ) {
-          try {
-            const choice = await chooseCandidateWithLlm(
-              companionRuntime,
-              gameCatalogue[request.observation.kind].name,
-              result.audit.candidates,
-            );
-            if (choice)
-              finalResult = {
-                ...result,
-                chosen: choice.chosen,
-                audit: {
-                  ...result.audit,
-                  chosen: choice.chosen,
-                  assumptions: [
-                    ...result.audit.assumptions,
-                    `LLM 从搜索候选中选择 #${choice.index}。`,
-                  ],
-                },
-              };
-          } catch (error) {
-            console.error(
-              "LLM 决策失败，回退搜索",
-              error instanceof Error ? error.message : error,
-            );
-          }
-        }
+        const finalResult =
+          (await tableMind?.onDecision(room, request, result)) ?? result;
         if (gateway.rooms.get(room.id) === room)
           room.queueDecision(finalResult, request.version);
       })

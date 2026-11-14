@@ -1,5 +1,13 @@
 import type { Action, DecisionCandidate } from "../domain/types";
-import type { CompanionRuntime } from "./companion";
+
+export interface CandidateRuntime {
+  complete(
+    system: string,
+    user: string,
+    maxOutputTokens?: number,
+    timeoutMs?: number,
+  ): Promise<string>;
+}
 
 export function parseCandidateChoice(
   text: string,
@@ -37,7 +45,7 @@ export function candidatePrompt(
 }
 
 export async function chooseCandidateWithLlm(
-  runtime: CompanionRuntime,
+  runtime: CandidateRuntime,
   game: string,
   candidates: DecisionCandidate[],
 ): Promise<{ chosen: Action; index: number } | null> {

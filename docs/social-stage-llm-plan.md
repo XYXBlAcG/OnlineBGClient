@@ -218,6 +218,7 @@ COMPANION_LLM_BASE_URL=... COMPANION_LLM_API_KEY=... COMPANION_LLM_MODEL=... npm
 
 ### 已实现
 
+- P0 牌桌编排层 `TableMind`：聊天和 LLM 席位都由每桌一个运行时统一调用；房间追加动作/聊天/成就事件供后续感知和导演层使用。
 - AI 席位新增驱动：`搜索策略` / `LLM 决策`，在准备页面每个 AI 席位旁选择。
 - LLM 席位的决策请求强制携带搜索候选；服务端把候选标签和评分（Top 8）交给 LLM，只解析编号。
 - 选择后复用原 `Room.acceptDecision`，动作仍由规则引擎校验；审核开启时记录“LLM 从搜索候选中选择 #N”。
