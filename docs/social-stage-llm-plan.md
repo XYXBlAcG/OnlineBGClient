@@ -29,7 +29,7 @@
 
 第一版已实现：成就系统消息升级为带稀有度、符号和标题的聊天卡片；普通和稀有只保留聊天卡片，史诗、传说、神话从最近的成就消息派生舞台事件，播放 3 套专属场景，并叠加 Bloom/Glow 滤镜。舞台事件不写入权威房间状态，不改变对局结果。开发态可用 `?dev=stage` 验收成就舞台和全部派对/游戏特效。
 
-AI 聊天第一版只做聊天：设置分区为「接入 AI」，房主启用后默认 `mention-only`；聊天 AI 直接使用准备页面里第一个 AI 席位的名称与头像，不单独命名。服务端只读取公开房间信息，回复经 `source: "ai"` 写入现有聊天链路；不参与舞台、动作校验、回放或 AI 决策。模型在设置 → 接入 AI 中填写，支持 OpenAI 兼容、Anthropic、Gemini、Ollama 四种接口格式；`COMPANION_LLM_FAKE=1` 可用于真实服务烟测，真实模型用 `npm run verify:companion:real` 验收。
+AI 聊天第一版只做聊天：设置分区为「接入 AI」，房主启用后默认 `mention-only`；聊天 AI 直接使用准备页面里第一个 AI 席位的名称与头像，不单独命名。服务端只读取公开房间信息，回复经 `source: "ai"` 写入现有聊天链路；不参与舞台、动作校验、回放或 AI 决策。模型在设置 → 接入 AI 中填写，支持 OpenAI 兼容、Anthropic、Gemini、OpenCode Go、Ollama 五种接口格式；`COMPANION_LLM_FAKE=1` 可用于真实服务烟测，真实模型用 `npm run verify:companion:real` 验收。
 
 ## 一、舞台动画
 
@@ -129,7 +129,7 @@ AI 聊天第一版只做聊天：设置分区为「接入 AI」，房主启用�
                                           ├─ TableDirector（@ / chatty / 冷却 / 上限）
                                           ├─ Room.publicContext() + buildCompanionView + TableMind 时间线/记忆
                                           ├─ buildSocialPrompt + compilePrompt
-                                          ├─ LlmRunner（OpenAI 兼容 / Anthropic / Gemini / Ollama）
+                                          ├─ LlmRunner（OpenAI 兼容 / Anthropic / Gemini / OpenCode Go / Ollama）
                                           ├─ sanitizeReply
                                           └─ Room.addCompanionMessage -> publish
 ```
@@ -139,7 +139,7 @@ AI 聊天第一版只做聊天：设置分区为「接入 AI」，房主启用�
 - 非密钥字段保存在本机设置；API Key 不再写 `localStorage`：桌面端保存到系统凭据存储（keyring），浏览器/iOS 仅保存在当前会话内存；旧版明文配置会在启动时迁移并删除。
 - 保存时通过 host-only 的 `ai-config` 命令发送；测试连接通过 host-only 的 `ai-test` 命令做一次最小生成，不修改房间配置、不持久化 Key。Key 不进入快照、聊天、日志或房间配置；输入框不回显已保存 Key。
 - 房主客户端重连时会自动重发本机 Provider 与安全存储中的 Key。准备页面可直接调整聊天 AI、每个 AI 席位的搜索/LLM 驱动、启用 AI 聊天，并打开「接入 / 测试 AI」。
-- 服务端按接口格式创建 Provider：OpenAI 兼容、Anthropic Messages、Gemini generateContent、Ollama 原生 chat。
+- 服务端按接口格式创建 Provider：OpenAI 兼容、Anthropic Messages、Gemini generateContent、OpenCode Go 的 OpenAI 兼容端点、Ollama 原生 chat。OpenCode Go 使用 Bearer Key，并带 `x-opencode-session` 与 OnlineBGClient UA。
 - 服务端有超时与失败静默；不重试风暴；同一房间同一时间最多一个社交生成请求。
 - v1 输出为纯文本，经 `sanitizeReply` 去 HTML/链接/@ 并限长；没有 `stageCue`、`tone`、`targetSeat` 等结构化字段。
 - 聊天消息标记 `source: "ai"`，客户端显示 AI 标记；房主可全局关闭。
@@ -194,7 +194,7 @@ v1 已覆盖：
 
 - 隐藏信息测试：以三国杀验证公开上下文不包含手牌、身份或完整 state。
 - 补全测试：@ 玩家列表、AI 标记、指令过滤、参数输入后关闭。
-- Provider 适配器测试：四种格式的请求地址、请求头、响应解析与错误路径。
+- Provider 适配器测试：五种格式的请求地址、请求头、响应解析与错误路径。
 - LLM 席位：驱动透传、候选审计、候选编号解析、非法/失败回退。
 - 本机 AI 配置测试：provider 设置与 Key 的本地存取、损坏数据忽略。
 - Provider 超时/取消/429/非法输出/网络错误映射。
@@ -268,7 +268,7 @@ ChatBot 已完成 M0+M1：登录、流式聊天/重生成/分支、Prompt 快照
 
 ## 待确认
 
-- Provider 默认模型：v1 支持 OpenAI 兼容、Anthropic、Gemini、Ollama；具体模型由房主在设置中填写。
+- Provider 默认模型：v1 支持 OpenAI 兼容、Anthropic、Gemini、OpenCode Go、Ollama；具体模型由房主在设置中填写。
 - AI 聊天默认关闭，房主在「接入 AI」中启用（已实现）。
 - 成就广播默认关闭还是按玩家偏好开启（未变）。
 - 舞台场景的付费边界：只复用现有派对物品，还是新增免费社交场景（未变）。

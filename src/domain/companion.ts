@@ -20,6 +20,7 @@ export const aiProviderFormatSchema = z.enum([
   "openai",
   "anthropic",
   "gemini",
+  "opencode",
   "ollama",
 ]);
 export type AiProviderFormat = z.infer<typeof aiProviderFormatSchema>;
@@ -51,6 +52,11 @@ export const aiProviderFormatInfo = {
   gemini: {
     label: "Gemini",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    needsKey: true,
+  },
+  opencode: {
+    label: "OpenCode Go",
+    baseUrl: "https://opencode.ai/inference/go/openai/v1",
     needsKey: true,
   },
   ollama: {

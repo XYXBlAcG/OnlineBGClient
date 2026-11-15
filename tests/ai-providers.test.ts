@@ -83,6 +83,31 @@ describe("createAiProvider", () => {
     );
   });
 
+  it("calls OpenCode Go's OpenAI-compatible endpoint", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        choices: [{ message: { content: "好" } }],
+        usage: { prompt_tokens: 2, completion_tokens: 1 },
+      }),
+    ) as unknown as typeof fetch;
+    vi.stubGlobal("fetch", fetchImpl);
+
+    const result = await createAiProvider(
+      settings({ format: "opencode", baseUrl: "", model: "kimi-k3" }),
+      "secret",
+    ).generateText({ messages: [{ role: "user", content: "hi" }] });
+
+    expect(result.text).toBe("好");
+    const [url, init] = callsOf(fetchImpl)[0]!;
+    expect(url).toBe(
+      "https://opencode.ai/inference/go/openai/v1/chat/completions",
+    );
+    const headers = new Headers(init.headers);
+    expect(headers.get("authorization")).toBe("Bearer secret");
+    expect(headers.get("user-agent")).toBe("OnlineBGClient");
+    expect(headers.get("x-opencode-session")).toBeTruthy();
+  });
+
   it("calls native Ollama chat without a key", async () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse({
