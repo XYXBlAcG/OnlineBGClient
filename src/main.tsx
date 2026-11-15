@@ -29,8 +29,18 @@ import { VoiceProvider, useVoiceActions } from "./client/voice/VoiceProvider";
 import { VoiceToolbar } from "./client/voice/VoiceControls";
 import { useMobileViewport } from "./client/use-mobile-viewport";
 import type { Attachment } from "./domain/attachments";
-import type { CompanionConfig } from "./domain/companion";
-import { loadAiConfig, saveAiConfig, type AiConfig } from "./client/ai-config";
+import {
+  aiProviderNeedsKey,
+  type CompanionConfig,
+} from "./domain/companion";
+import {
+  loadAiApiKey,
+  loadAiProvider,
+  migrateAiCredentials,
+  saveAiApiKey,
+  saveAiProvider as saveAiProviderSettings,
+  type AiConfig,
+} from "./client/ai-config";
 import { BannerLayer } from "./client/social/BannerLayer";
 import { useGameFeedback } from "./client/use-game-feedback";
 import { cuePlayer } from "./client/sound";
@@ -654,36 +664,99 @@ function App() {
         config,
       });
   }, []);
-  const saveAiProvider = useCallback((config: AiConfig) => {
-    saveAiConfig(config);
-    if (session.current)
+  const saveAiProvider = useCallback(async (config: AiConfig) => {
+    await migrateAiCredentials();
+    saveAiProviderSettings(config.provider);
+    const typedKey = config.apiKey.trim();
+    if (typedKey) await saveAiApiKey(typedKey);
+    const apiKey = typedKey || (await loadAiApiKey());
+    if (!session.current) return;
+    connection.current?.send({
+      type: "ai-config",
+      token: session.current.token,
+      provider: config.provider,
+      apiKey,
+    });
+  }, []);
+  const aiTestPending = useRef(
+    new Map<
+      string,
+      {
+        resolve: (message: string) => void;
+        reject: (error: Error) => void;
+        timer: ReturnType<typeof setTimeout>;
+      }
+    >(),
+  );
+  const testAiProvider = useCallback(async (config: AiConfig) => {
+    const current = session.current;
+    if (!current) throw new Error("进入房间后可以测试连接");
+    const typedKey = config.apiKey.trim();
+    const apiKey = typedKey || (await loadAiApiKey());
+    if (aiProviderNeedsKey(config.provider.format) && !apiKey)
+      throw new Error("请填写 API Key");
+    const requestId = randomId();
+    return new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        aiTestPending.current.delete(requestId);
+        reject(new Error("测试超时"));
+      }, 25000);
+      aiTestPending.current.set(requestId, { resolve, reject, timer });
       connection.current?.send({
-        type: "ai-config",
-        token: session.current.token,
+        type: "ai-test",
+        id: requestId,
+        token: current.token,
+        requestId,
         provider: config.provider,
-        apiKey: config.apiKey,
+        apiKey,
       });
+    });
   }, []);
   const aiConfigSynced = useRef("");
+  useEffect(() => {
+    void migrateAiCredentials().catch((error) =>
+      setNotice(error instanceof Error ? error.message : String(error)),
+    );
+  }, []);
   useEffect(() => {
     if (status !== "已连接") {
       aiConfigSynced.current = "";
       return;
     }
     if (!snapshot?.canManage || !session.current) return;
-    const local = loadAiConfig();
-    if (!local?.provider.model) return;
     const key = `${snapshot.room}:${session.current.token}`;
     if (aiConfigSynced.current === key) return;
     aiConfigSynced.current = key;
-    connection.current?.send({
-      type: "ai-config",
-      token: session.current.token,
-      provider: local.provider,
-      apiKey: local.apiKey,
-    });
+    void (async () => {
+      try {
+        await migrateAiCredentials();
+        const provider = loadAiProvider();
+        if (!provider?.model) return;
+        const apiKey = await loadAiApiKey();
+        if (aiProviderNeedsKey(provider.format) && !apiKey) return;
+        if (!session.current) return;
+        connection.current?.send({
+          type: "ai-config",
+          token: session.current.token,
+          provider,
+          apiKey,
+        });
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : String(error));
+      }
+    })();
   }, [status, snapshot?.room, snapshot?.canManage]);
   const receive = async (response: Response) => {
+    if (response.type === "ai-test") {
+      const pending = aiTestPending.current.get(response.requestId);
+      if (pending) {
+        clearTimeout(pending.timer);
+        aiTestPending.current.delete(response.requestId);
+        if (response.ok) pending.resolve(response.message);
+        else pending.reject(new Error(response.message));
+      }
+      return;
+    }
     if (nativeShell && (response.type === "closed" || response.type === "left"))
       postNativeShell({ type: "closed" });
     if (
@@ -729,6 +802,14 @@ function App() {
     if (response.type === "interaction" && preferencesRef.current.interactions)
       setInteractions((events) => [...events, response.event].slice(-8));
     if (response.type === "error") {
+      const failedTest = response.id
+        ? aiTestPending.current.get(response.id)
+        : undefined;
+      if (failedTest && response.id) {
+        clearTimeout(failedTest.timer);
+        aiTestPending.current.delete(response.id);
+        failedTest.reject(new Error(response.message));
+      }
       setNotice(response.message);
       if (preferencesRef.current.turnSound) cuePlayer.play("reject");
       if (response.diagnostic) setComputeFailure(response.diagnostic);
@@ -1758,6 +1839,7 @@ function App() {
             }
             onCompanionChange={sendCompanion}
             onSaveAiConfig={saveAiProvider}
+            onTestAiConfig={testAiProvider}
             onError={setNotice}
             open={settingsOpen}
             onOpenChange={setSettingsOpen}
@@ -2141,6 +2223,25 @@ function App() {
                                 config,
                               })
                             }
+                            onChatAiSeatChange={(aiSeatIndex) =>
+                              sendCompanion({
+                                ...snapshot.config.companion,
+                                aiSeatIndex,
+                              })
+                            }
+                            onChatEnabledChange={(enabled) =>
+                              sendCompanion({
+                                ...snapshot.config.companion,
+                                policy: {
+                                  ...snapshot.config.companion.policy,
+                                  enabled,
+                                },
+                              })
+                            }
+                            onOpenAiSettings={() => {
+                              setSettingsSection("接入 AI");
+                              setSettingsOpen(true);
+                            }}
                           />
                         </div>
                       ) : (

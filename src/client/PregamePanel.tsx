@@ -3,7 +3,7 @@ import type { SeatConfig, Snapshot } from "../domain/protocol";
 import { expeditionAiDifficultyNames } from "./expedition/ExpeditionOptionsControl";
 import { difficultyNames } from "./game-difficulty";
 import { roomReadiness } from "./room-readiness";
-import { Select } from "./ui/Controls";
+import { Select, Switch } from "./ui/Controls";
 
 export function PregamePanel({
   snapshot,
@@ -11,12 +11,18 @@ export function PregamePanel({
   onReady,
   onStart,
   onSeatChange,
+  onChatAiSeatChange,
+  onChatEnabledChange,
+  onOpenAiSettings,
 }: {
   snapshot: Snapshot;
   starting: boolean;
   onReady: () => void;
   onStart: () => void;
   onSeatChange: (index: number, config: SeatConfig) => void;
+  onChatAiSeatChange?: (index: number | null) => void;
+  onChatEnabledChange?: (enabled: boolean) => void;
+  onOpenAiSettings?: () => void;
 }) {
   const game = gameCatalogue[snapshot.kind],
     readiness = roomReadiness(snapshot.seats),
@@ -88,6 +94,50 @@ export function PregamePanel({
             : "纯真人"}
         </span>
       </div>
+      {snapshot.canManage && (
+        <div className="pregame-ai-controls">
+          <span>
+            {snapshot.companion.configured ? "AI 模型已接入" : "AI 模型未接入"}
+          </span>
+          {snapshot.seats.some((seat) => seat.difficulty) &&
+            onChatAiSeatChange && (
+              <label>
+                聊天 AI
+                <Select
+                  aria-label="聊天 AI 席位"
+                  value={snapshot.config.companion.aiSeatIndex ?? ""}
+                  onValueChange={(value) =>
+                    onChatAiSeatChange(
+                      value === "" ? null : Number(value),
+                    )
+                  }
+                >
+                  <option value="">自动（第一个 AI）</option>
+                  {snapshot.seats
+                    .filter((seat) => seat.difficulty)
+                    .map((seat, index) => (
+                      <option value={index} key={seat.id}>
+                        {seat.name}
+                      </option>
+                    ))}
+                </Select>
+              </label>
+            )}
+          {onChatEnabledChange && (
+            <Switch
+              label="启用 AI 聊天"
+              checked={snapshot.companion.enabled}
+              disabled={!snapshot.companion.available}
+              onCheckedChange={onChatEnabledChange}
+            />
+          )}
+          {onOpenAiSettings && (
+            <button type="button" onClick={onOpenAiSettings}>
+              接入 / 测试 AI
+            </button>
+          )}
+        </div>
+      )}
       {snapshot.actor < 0 && (
         <p className="muted">
           {snapshot.config.humans === 0
@@ -115,30 +165,49 @@ export function PregamePanel({
               </small>
             </div>
             {snapshot.canManage && index > 0 && (
-              <Select
-                aria-label={`席位 ${index + 1} 类型`}
-                value={seat.difficulty || "human"}
-                onValueChange={(value) =>
-                  onSeatChange(
-                    index,
-                    value === "human"
-                      ? { type: "human" }
-                      : {
-                          type: "ai",
-                          difficulty: value as keyof typeof aiNames,
-                          name: "",
-                        },
-                  )
-                }
-              >
-                <option value="human">真人</option>
-                {game.ai &&
-                  Object.entries(aiNames).map(([value, label]) => (
-                    <option value={value} key={value}>
-                      {label} AI
-                    </option>
-                  ))}
-              </Select>
+              <div className="pregame-seat-controls">
+                <Select
+                  aria-label={`席位 ${index + 1} 类型`}
+                  value={seat.difficulty || "human"}
+                  onValueChange={(value) =>
+                    onSeatChange(
+                      index,
+                      value === "human"
+                        ? { type: "human" }
+                        : {
+                            type: "ai",
+                            difficulty: value as keyof typeof aiNames,
+                            name: "",
+                          },
+                    )
+                  }
+                >
+                  <option value="human">真人</option>
+                  {game.ai &&
+                    Object.entries(aiNames).map(([value, label]) => (
+                      <option value={value} key={value}>
+                        {label} AI
+                      </option>
+                    ))}
+                </Select>
+                {seat.difficulty && (
+                  <Select
+                    aria-label={`席位 ${index + 1} AI 驱动`}
+                    value={seat.driver ?? "search"}
+                    onValueChange={(driver) =>
+                      onSeatChange(index, {
+                        type: "ai",
+                        difficulty: seat.difficulty as keyof typeof aiNames,
+                        name: seat.name,
+                        driver: driver as "search" | "llm",
+                      })
+                    }
+                  >
+                    <option value="search">搜索</option>
+                    <option value="llm">LLM</option>
+                  </Select>
+                )}
+              </div>
             )}
           </article>
         ))}

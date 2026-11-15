@@ -81,8 +81,17 @@ describe("room companion", () => {
     expect(room.snapshot(host).companion.name).toBe("松风");
     expect(room.addCompanionMessage("m1", "你好")?.name).toBe("松风");
 
-    room.setCompanion(host, enabledCompanion());
+    room.setCompanion(host, {
+      ...enabledCompanion(),
+      aiSeatIndex: 1,
+    });
     expect(room.snapshot(host).companion.name).toBe("松风");
+
+    room.setCompanion(host, {
+      ...enabledCompanion(),
+      aiSeatIndex: 0,
+    });
+    expect(room.snapshot(host).companion.name).toBe("青竹");
 
     const id = room.seats[0].id!;
     room.changeGame(host, {
@@ -125,6 +134,29 @@ describe("room companion", () => {
       room.act(token, `move-${index}`, room.version, action);
     }
     throw new Error("未进入 LLM 席位决策");
+  });
+
+  it("configures an AI seat driver from the preparation panel", () => {
+    const room = new Room("prep-driver", {
+      kind: "uno",
+      humans: 1,
+      ai: [{ difficulty: "normal", name: "青竹" }],
+      team: false,
+      training: false,
+    });
+    const host = room.claim("甲");
+    room.configureSeat(host, 1, {
+      type: "ai",
+      difficulty: "hard",
+      name: "青竹",
+      driver: "llm",
+    });
+    expect(room.snapshot(host).seats[1]).toMatchObject({
+      name: "青竹",
+      difficulty: "hard",
+      driver: "llm",
+    });
+    expect(room.config.ai[0]?.driver).toBe("llm");
   });
 
   it("requires an AI seat before enabling", () => {

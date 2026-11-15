@@ -88,6 +88,17 @@ const ready = await new Promise((resolve, reject) => {
 const ws = new WebSocket(`ws://127.0.0.1:${ready.port}/connect`);
 let session;
 let companionStatus;
+let resolveAiTest;
+let rejectAiTest;
+const aiTest = new Promise((resolve, reject) => {
+  resolveAiTest = resolve;
+  rejectAiTest = reject;
+});
+const aiTestTimer = setTimeout(
+  () => rejectAiTest(new Error("AI 连接测试超时")),
+  60000,
+);
+aiTestTimer.unref?.();
 const chatMessages = [];
 
 const verdict = new Promise((resolve, reject) => {
@@ -104,6 +115,11 @@ const verdict = new Promise((resolve, reject) => {
   );
   ws.on("message", (raw) => {
     const response = JSON.parse(raw.toString());
+    if (response.type === "ai-test") {
+      clearTimeout(aiTestTimer);
+      resolveAiTest(response);
+      return;
+    }
     if (response.type === "error") {
       reject(new Error(response.message));
       return;
@@ -180,14 +196,28 @@ try {
           maxOutputTokens: numberEnv("COMPANION_LLM_MAX_OUTPUT_TOKENS", 160),
           timeoutMs: numberEnv("COMPANION_LLM_TIMEOUT_MS", 20000),
         };
+    const apiKey = local
+      ? "local-key"
+      : (process.env.COMPANION_LLM_API_KEY ?? "");
     ws.send(
       JSON.stringify({
         type: "ai-config",
         token: session.token,
         provider,
-        apiKey: local ? "local-key" : (process.env.COMPANION_LLM_API_KEY ?? ""),
+        apiKey,
       }),
     );
+    ws.send(
+      JSON.stringify({
+        type: "ai-test",
+        token: session.token,
+        requestId: "smoke-test",
+        provider,
+        apiKey,
+      }),
+    );
+    const tested = await aiTest;
+    if (!tested.ok) throw new Error(tested.message);
   }
   ws.send(
     JSON.stringify({
@@ -234,6 +264,7 @@ try {
       mode: real ? "real" : local ? "local" : "fake",
       configured: companionStatus.configured,
       name: companionStatus.name,
+      connectionTest: local || real ? "ok" : undefined,
     }),
   );
 } catch (error) {

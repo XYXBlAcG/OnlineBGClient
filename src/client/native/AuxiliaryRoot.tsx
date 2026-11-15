@@ -9,6 +9,7 @@ import { ChatPanel } from "../ChatPanel";
 import { BeginnerGuide } from "../BeginnerGuide";
 import { RoomSetup } from "../RoomSetup";
 import { Settings } from "../Settings";
+import type { AiConfig } from "../ai-config";
 import { About } from "../About";
 import { Invite } from "../Invite";
 import { Records } from "../Records";
@@ -70,6 +71,36 @@ export function AuxiliaryRoot() {
     void sendAuxiliary(intent).catch((error) => setError(String(error)));
   };
   const close = () => send({ view: auxiliaryView!, type: "close" });
+  const testAiConfig = (config: AiConfig): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const request =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`;
+      let dispose: (() => void) | undefined;
+      const timer = setTimeout(() => {
+        dispose?.();
+        reject(new Error("测试超时"));
+      }, 30000);
+      void listen<{ request: string; ok: boolean; message: string }>(
+        "ai-test-result",
+        (event) => {
+          if (event.payload.request !== request) return;
+          clearTimeout(timer);
+          dispose?.();
+          if (event.payload.ok) resolve(event.payload.message);
+          else reject(new Error(event.payload.message));
+        },
+      )
+        .then((stop) => {
+          dispose = stop;
+          send({ view: "settings", type: "ai-test", request, config });
+        })
+        .catch((error) => {
+          clearTimeout(timer);
+          reject(error);
+        });
+    });
   const onError = (message: string) => {
     setError(message);
     send({ view: auxiliaryView!, type: "error", message });
@@ -184,6 +215,7 @@ export function AuxiliaryRoot() {
               onSaveAiConfig={(config) =>
                 send({ view: "settings", type: "ai-provider", config })
               }
+              onTestAiConfig={testAiConfig}
               onBind={bindAuxiliary}
               onError={onError}
               onTestAchievement={() =>

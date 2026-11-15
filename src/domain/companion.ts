@@ -72,6 +72,16 @@ export const aiConfigCommandSchema = z.object({
 });
 export type AiConfigCommand = z.infer<typeof aiConfigCommandSchema>;
 
+export const aiTestCommandSchema = z.object({
+  type: z.literal("ai-test"),
+  id: z.string().max(80).optional(),
+  token: z.string(),
+  requestId: z.string().min(1).max(80),
+  provider: aiProviderSettingsSchema,
+  apiKey: z.string().max(500).default(""),
+});
+export type AiTestCommand = z.infer<typeof aiTestCommandSchema>;
+
 export const companionConfigSchema = z
   .object({
     profile: companionAiProfileSchema,

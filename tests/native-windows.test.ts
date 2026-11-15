@@ -3,6 +3,7 @@ import {
   auxiliaryIntentSchema,
   auxiliaryViews,
 } from "../src/client/native/contract";
+import { defaultAiProviderSettings } from "../src/domain/companion";
 it("validates auxiliary intents before the main window changes game or settings state", () => {
   expect(auxiliaryViews).toContain("settings");
   expect(
@@ -45,4 +46,20 @@ it("validates auxiliary intents before the main window changes game or settings 
       type: "achievement-test",
     }).success,
   ).toBe(true);
+  expect(
+    auxiliaryIntentSchema.safeParse({
+      view: "settings",
+      type: "ai-test",
+      request: "r1",
+      config: { provider: defaultAiProviderSettings, apiKey: "secret" },
+    }).success,
+  ).toBe(true);
+  expect(
+    auxiliaryIntentSchema.safeParse({
+      view: "settings",
+      type: "ai-test",
+      request: "",
+      config: { provider: defaultAiProviderSettings, apiKey: "secret" },
+    }).success,
+  ).toBe(false);
 });

@@ -50,8 +50,27 @@ it("renders the AI settings controls", () => {
     </>,
   );
   expect(html).toContain("接口格式");
+  expect(html).toContain("测试连接");
   expect(html).toContain("保存 AI 配置");
   expect(html).toContain("启用 AI 聊天");
   expect(html).toContain("青竹");
   expect(html).toContain("仅 @ 搭话");
+});
+
+it("allows enabling AI chat after saving a provider even if the snapshot has not caught up", () => {
+  const html = renderToStaticMarkup(
+    <AiChatSettings
+      config={defaultCompanionConfig}
+      status={{
+        enabled: false,
+        name: "青竹",
+        avatar: "🤖",
+        configured: false,
+        available: true,
+      }}
+      onChange={() => {}}
+    />,
+  );
+  expect(html).toContain("启用 AI 聊天");
+  expect(html).not.toContain('disabled=""');
 });

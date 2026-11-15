@@ -20,11 +20,17 @@ it("所有游戏共用带房间摘要、席位卡和准备操作的准备界面"
         onReady={() => {}}
         onStart={() => {}}
         onSeatChange={() => {}}
+        onChatAiSeatChange={() => {}}
+        onChatEnabledChange={() => {}}
+        onOpenAiSettings={() => {}}
       />,
     );
   expect(html).toContain("pregame-panel");
   expect(html).toContain("pregame-seat-card");
   expect(html).toContain("开始对局");
+  expect(html).toContain("聊天 AI");
+  expect(html).toContain("AI 驱动");
+  expect(html).toContain("启用 AI 聊天");
   expect(html).toContain("准备");
   expect(html).not.toContain("pregame-emblem");
   expect(html).not.toContain("dialog");

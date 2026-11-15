@@ -172,7 +172,7 @@ export class Gateway {
       }
     >,
   ): ChatMessage | undefined {
-    if (command.type === "ai-config")
+    if (command.type === "ai-config" || command.type === "ai-test")
       throw new Error("AI 配置只能由房主服务处理");
     if (command.type === "queue-set")
       room.setQueue(command.token, command.revision, command.entries);

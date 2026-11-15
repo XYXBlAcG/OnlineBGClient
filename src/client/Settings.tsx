@@ -47,6 +47,7 @@ export function Settings({
   companion,
   onCompanionChange,
   onSaveAiConfig,
+  onTestAiConfig,
 }: {
   sizing?: GameSizing;
   initialSection?: string;
@@ -72,7 +73,8 @@ export function Settings({
     };
   };
   onCompanionChange?: (config: CompanionConfig) => void;
-  onSaveAiConfig?: (config: AiConfig) => void;
+  onSaveAiConfig?: (config: AiConfig) => void | Promise<void>;
+  onTestAiConfig?: (config: AiConfig) => Promise<string>;
 }) {
   const localSizing = useGameSizing();
   const sizing = suppliedSizing ?? localSizing;
@@ -109,6 +111,30 @@ export function Settings({
       if (intent.type === "achievement-test") onTestAchievement?.();
       if (intent.type === "companion") onCompanionChange?.(intent.config);
       if (intent.type === "ai-provider") onSaveAiConfig?.(intent.config);
+      if (intent.type === "ai-test") {
+        if (!onTestAiConfig)
+          void emitTo("aux-settings", "ai-test-result", {
+            request: intent.request,
+            ok: false,
+            message: "主窗口当前不可测试",
+          });
+        else
+          void onTestAiConfig(intent.config)
+            .then((message) =>
+              emitTo("aux-settings", "ai-test-result", {
+                request: intent.request,
+                ok: true,
+                message,
+              }),
+            )
+            .catch((error) =>
+              emitTo("aux-settings", "ai-test-result", {
+                request: intent.request,
+                ok: false,
+                message: error instanceof Error ? error.message : String(error),
+              }),
+            );
+      }
       if (intent.type === "binding")
         void onBind(intent.id, intent.binding)
           .then(() =>
@@ -499,6 +525,7 @@ export function Settings({
                 fallbackProvider={companion?.config.provider}
                 status={companion?.status}
                 onSaveProvider={onSaveAiConfig}
+                onTestProvider={onTestAiConfig}
                 onError={onError}
               />
             ) : (

@@ -90,6 +90,12 @@ export const auxiliaryIntentSchema = z.discriminatedUnion("type", [
     config: aiConfigSchema,
   }),
   z.object({
+    type: z.literal("ai-test"),
+    request: z.string().min(1),
+    view: z.literal("settings"),
+    config: aiConfigSchema,
+  }),
+  z.object({
     type: z.literal("setup"),
     view: z.literal("roomsetup"),
     setup: roomSetupSchema,

@@ -24,7 +24,7 @@
 | AI 聊天服务端运行时 | [TableMind 运行时](../src/server/table-mind/runtime.ts)、[服务入口](../src/server/main.ts)                           |
 | AI 聊天设置与 AI 标记 | [设置组件](../src/client/AiSettings.tsx)、[设置入口](../src/client/Settings.tsx)、[消息组件](../src/client/social/ChatMessageView.tsx) |
 | AI 身份与聊天补全 | [AI 席位身份](../src/domain/room.ts)、[@/指令补全](../src/client/social/chat-suggestions.ts)、[聊天输入](../src/client/social/ChatComposer.tsx) |
-| AI 聊天验证         | [房间/协议测试](../tests/companion.test.ts)、[LLM Runner 测试](../tests/llm-runner.test.ts)、[社交反应测试](../tests/table-mind-social.test.ts)、[补全测试](../tests/chat-suggestions.test.ts)、[键盘填充](../tests/chat-composer.test.tsx)、[真实服务假模型烟测](../scripts/verify-companion.mjs)、[事件反应烟测](../scripts/verify-table-reactions.mjs) |
+| AI 聊天验证         | [房间/协议测试](../tests/companion.test.ts)、[LLM Runner 测试](../tests/llm-runner.test.ts)、[社交反应测试](../tests/table-mind-social.test.ts)、[补全测试](../tests/chat-suggestions.test.ts)、[键盘填充](../tests/chat-composer.test.tsx)、[真实服务假模型烟测](../scripts/verify-companion.mjs)、[事件反应烟测](../scripts/verify-table-reactions.mjs)、[准备页 AI 控制测试](../tests/pregame-panel.test.tsx)、[本机配置测试](../tests/ai-config.test.ts) |
 | LLM 动作决策原型     | [候选选择](../src/server/llm-seat.ts)、[运行时决策入口](../src/server/main.ts)、[AI 席位驱动](../src/client/RoomSetup.tsx)、[候选选择测试](../tests/llm-seat.test.ts)、[LLM 席位真实服务烟测](../scripts/verify-llm-seat.mjs) |
 
 第一版已实现：成就系统消息升级为带稀有度、符号和标题的聊天卡片；普通和稀有只保留聊天卡片，史诗、传说、神话从最近的成就消息派生舞台事件，播放 3 套专属场景，并叠加 Bloom/Glow 滤镜。舞台事件不写入权威房间状态，不改变对局结果。开发态可用 `?dev=stage` 验收成就舞台和全部派对/游戏特效。
@@ -135,8 +135,10 @@ AI 聊天第一版只做聊天：设置分区为「接入 AI」，房主启用�
 ```
 
 - 共享内核 `companion-core` 固定契约、Prompt 预算、参与策略、清洗与 Provider；游戏侧只做房间适配与服务端运行时。
-- AI 配置在设置 → 接入 AI 中填写：接口格式、接口地址、模型、API Key；非密钥字段保存在房间配置，Key 保存在本机 `localStorage` 与房主服务内存。
-- 保存时通过 host-only 的 `ai-config` 命令发送；Key 不进入快照、聊天、日志或房间配置。房主客户端重连时会自动重发本机配置。
+- AI 配置在设置 → 接入 AI 中填写：接口格式、接口地址、模型、API Key；支持输入框加宽与「测试连接」。
+- 非密钥字段保存在本机设置；API Key 不再写 `localStorage`：桌面端保存到系统凭据存储（keyring），浏览器/iOS 仅保存在当前会话内存；旧版明文配置会在启动时迁移并删除。
+- 保存时通过 host-only 的 `ai-config` 命令发送；测试连接通过 host-only 的 `ai-test` 命令做一次最小生成，不修改房间配置、不持久化 Key。Key 不进入快照、聊天、日志或房间配置；输入框不回显已保存 Key。
+- 房主客户端重连时会自动重发本机 Provider 与安全存储中的 Key。准备页面可直接调整聊天 AI、每个 AI 席位的搜索/LLM 驱动、启用 AI 聊天，并打开「接入 / 测试 AI」。
 - 服务端按接口格式创建 Provider：OpenAI 兼容、Anthropic Messages、Gemini generateContent、Ollama 原生 chat。
 - 服务端有超时与失败静默；不重试风暴；同一房间同一时间最多一个社交生成请求。
 - v1 输出为纯文本，经 `sanitizeReply` 去 HTML/链接/@ 并限长；没有 `stageCue`、`tone`、`targetSeat` 等结构化字段。
@@ -198,7 +200,7 @@ v1 已覆盖：
 - Provider 超时/取消/429/非法输出/网络错误映射。
 - 房主可启用/关闭；默认关闭；`mention-only` 与 `chatty`。
 - AI 消息序号、幂等、200 条上限；不改变房间状态、动作合法性或回放。
-- `npm run verify:companion` 用真实房间服务 + WebSocket + fake provider 验证聊天链路；`npm run verify:table-reactions` 用真实房间服务验证动作事件触发桌搭子反应；`npm run verify:llm-seat` 用真实房间服务与 fake provider 验证 LLM 席位从搜索候选选择并推进对局；`npm run verify:companion:local` 用本机假 OpenAI 服务验证设置内 `ai-config` 与真实 OpenAI Provider 适配；`npm run verify:companion:real` 用真实模型验证同一链路。
+- `npm run verify:companion` 用真实房间服务 + WebSocket + fake provider 验证聊天链路；`npm run verify:table-reactions` 用真实房间服务验证动作事件触发桌搭子反应；`npm run verify:llm-seat` 用真实房间服务与 fake provider 验证 LLM 席位从搜索候选选择并推进对局；`npm run verify:companion:local` 用本机假 OpenAI 服务验证设置内 `ai-config`、`ai-test` 连接测试与真实 OpenAI Provider 适配；`npm run verify:companion:real` 用真实模型验证同一链路。
 
 M2 已提供设置内多格式 Provider 与 `verify:companion:real`；真实模型语气、频率和延迟由用户填写配置后手动验收。
 

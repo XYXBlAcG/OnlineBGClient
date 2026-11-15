@@ -1,4 +1,6 @@
 #[cfg(not(mobile))]
+mod ai_credentials;
+#[cfg(not(mobile))]
 pub mod cache;
 #[cfg(not(mobile))]
 #[cfg(not(mobile))]
@@ -79,6 +81,10 @@ pub fn run() {
             emoji::emoji_enabled,
             emoji::emoji_remove,
             emoji::emoji_cancel,
+            ai_credentials::ai_key_status,
+            ai_credentials::ai_key_save,
+            ai_credentials::ai_key_clear,
+            ai_credentials::ai_key_get,
             voice::voice_config,
             voice::voice_save_config,
             voice::voice_request,

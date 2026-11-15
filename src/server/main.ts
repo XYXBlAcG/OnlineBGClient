@@ -19,7 +19,10 @@ import { WebSocketServer, WebSocket } from "ws";
 import { Gateway } from "../domain/gateway";
 import type { Room } from "../domain/room";
 import { protocolVersion, type Response } from "../domain/protocol";
-import { aiConfigCommandSchema } from "../domain/companion";
+import {
+  aiConfigCommandSchema,
+  aiTestCommandSchema,
+} from "../domain/companion";
 import { createAiProvider } from "./ai-providers";
 import { createTableMind, type TableMind } from "./table-mind/runtime";
 
@@ -238,6 +241,51 @@ sockets.on("connection", (socket) => {
       try {
         const input = JSON.parse(data.toString());
         requestId = typeof input?.id === "string" ? input.id : undefined;
+        const aiTest = aiTestCommandSchema.safeParse(input);
+        if (aiTest.success) {
+          const session = sessions.get(socket);
+          if (!session || aiTest.data.token !== session.token)
+            throw new Error("连接身份不匹配");
+          const room = gateway.rooms.get(session.room);
+          if (!room) throw new Error("房间不存在");
+          if (!room.canManage(aiTest.data.token))
+            throw new Error("只有房主可以测试 AI");
+          const requestId = aiTest.data.requestId;
+          const key = aiTest.data.apiKey.trim();
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 15000);
+          const started = Date.now();
+          try {
+            const provider = createAiProvider(aiTest.data.provider, key);
+            await provider.generateText({
+              system: "你是连接测试助手。",
+              messages: [{ role: "user", content: "请只回复 OK。" }],
+              temperature: 0,
+              maxOutputTokens: 8,
+              signal: controller.signal,
+            });
+            send(socket, {
+              type: "ai-test",
+              requestId,
+              ok: true,
+              message: `连接成功（${Date.now() - started}ms）`,
+            });
+          } catch (error) {
+            const message = (error instanceof Error ? error.message : "未知错误")
+              .split(key || "\u0000")
+              .join("***")
+              .slice(0, 200);
+            send(socket, {
+              type: "ai-test",
+              requestId,
+              ok: false,
+              message: `连接失败：${message}`,
+            });
+          } finally {
+            clearTimeout(timer);
+          }
+          return;
+        }
         const aiConfig = aiConfigCommandSchema.safeParse(input);
         if (aiConfig.success) {
           const session = sessions.get(socket);

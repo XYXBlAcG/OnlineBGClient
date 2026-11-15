@@ -614,8 +614,10 @@ export class Room {
     const next: CompanionConfig = {
       ...companionConfigSchema.parse(input),
       provider: this.config.companion.provider,
-      aiSeatIndex: this.config.companion.aiSeatIndex,
     };
+    const aiSeats = this.seats.filter((seat) => seat.difficulty !== null);
+    if (next.aiSeatIndex !== null && next.aiSeatIndex >= aiSeats.length)
+      throw new Error("聊天 AI 席位无效");
     if (JSON.stringify(next) === JSON.stringify(this.config.companion)) return;
     const identity = this.companionProfile();
     if (next.policy.enabled && !identity)

@@ -9,6 +9,7 @@ export interface RuntimeCapabilities {
   localPlay: boolean;
   voice: boolean;
   voiceHostConfig: boolean;
+  secureAiKey: boolean;
   hosting: boolean;
   auxiliaryWindows: boolean;
   updater: boolean;
@@ -26,6 +27,7 @@ const capabilitiesByRuntime: Record<RuntimePlatform, RuntimeCapabilities> = {
     localPlay: false,
     voice: false,
     voiceHostConfig: false,
+    secureAiKey: false,
     hosting: false,
     auxiliaryWindows: false,
     updater: false,
@@ -41,6 +43,7 @@ const capabilitiesByRuntime: Record<RuntimePlatform, RuntimeCapabilities> = {
     localPlay: true,
     voice: true,
     voiceHostConfig: true,
+    secureAiKey: true,
     hosting: true,
     auxiliaryWindows: true,
     updater: true,
@@ -56,6 +59,7 @@ const capabilitiesByRuntime: Record<RuntimePlatform, RuntimeCapabilities> = {
     localPlay: true,
     voice: true,
     voiceHostConfig: false,
+    secureAiKey: false,
     hosting: false,
     auxiliaryWindows: false,
     updater: false,
@@ -71,6 +75,7 @@ const capabilitiesByRuntime: Record<RuntimePlatform, RuntimeCapabilities> = {
     localPlay: true,
     voice: false,
     voiceHostConfig: false,
+    secureAiKey: false,
     hosting: false,
     auxiliaryWindows: false,
     updater: false,

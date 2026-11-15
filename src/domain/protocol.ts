@@ -26,6 +26,7 @@ import {
 import type { ChallengeBoard } from "./challenges";
 import {
   aiConfigCommandSchema,
+  aiTestCommandSchema,
   companionConfigSchema,
   defaultCompanionConfig,
 } from "./companion";
@@ -259,6 +260,7 @@ export const commandSchema = z.discriminatedUnion("type", [
     config: companionConfigSchema,
   }),
   aiConfigCommandSchema,
+  aiTestCommandSchema,
   z.object({
     type: z.literal("achievement-chat"),
     token: z.string(),
@@ -373,6 +375,7 @@ export type Response =
       diagnostic?: ComputeDiagnostic;
     }
   | { type: "interaction"; event: InteractionEvent }
+  | { type: "ai-test"; requestId: string; ok: boolean; message: string }
   | { type: "ack"; id: string }
   | { type: "left" }
   | { type: "closed"; replay?: ReplayRecord | null };

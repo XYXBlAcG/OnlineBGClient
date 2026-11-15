@@ -256,6 +256,21 @@ small,
   gap: 12px;
   margin: 12px 0;
 }
+.ai-provider-row {
+  align-items: flex-start;
+}
+.ai-provider-row .ai-provider-input {
+  flex: 1 1 340px;
+  width: min(100%, 560px);
+  max-width: 100%;
+  min-width: 220px;
+}
+.ai-provider-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
 .checkbox {
   display: flex;
   align-items: center;
@@ -590,6 +605,52 @@ small,
 }
 .pregame-seat-card .ui-select {
   max-width: 120px;
+}
+.pregame-seat-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pregame-seat-controls .ui-select {
+  max-width: 112px;
+}
+.pregame-ai-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--canvas) 84%, transparent);
+}
+.pregame-ai-controls > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.pregame-ai-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.pregame-ai-controls .ui-select {
+  max-width: 160px;
+}
+@media (max-width: 760px) {
+  .ai-provider-row {
+    display: block;
+  }
+  .ai-provider-row .ai-provider-input {
+    width: 100%;
+    margin-top: 8px;
+  }
+  .pregame-seat-controls {
+    justify-content: flex-start;
+  }
 }
 .pregame-actions {
   display: flex;
@@ -2814,8 +2875,12 @@ kbd {
 }
 .ui-search-field {
   position: relative;
-  display: block;
+  display: grid;
+  align-items: center;
   min-width: 0;
+}
+.ui-search-field > input {
+  grid-area: 1 / 1;
 }
 .ui-search-field::before {
   content: "";

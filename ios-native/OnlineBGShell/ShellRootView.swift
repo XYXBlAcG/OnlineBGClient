@@ -282,6 +282,35 @@ struct LobbyView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(ShellTheme.muted)
+                        TextField("搜索游戏", text: $search)
+                            .textFieldStyle(.plain)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .submitLabel(.search)
+                        if !search.isEmpty {
+                            Button {
+                                search = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(ShellTheme.muted)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("清除搜索")
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(height: 44)
+                    .background(
+                        ShellTheme.field,
+                        in: RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    )
+                    .padding(.horizontal, 18)
+                    .padding(.top, 4)
+
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(categories, id: \.self) { item in
@@ -314,7 +343,6 @@ struct LobbyView: View {
             .background(ShellTheme.canvas)
             .navigationTitle("本地大厅")
             .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $search, prompt: "搜索游戏")
             .sheet(
                 item: $sheetGame,
                 onDismiss: {
