@@ -49,10 +49,12 @@
 .miner-players {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: start;
   gap: 10px;
 }
 .miner-player {
   display: grid;
+  align-content: start;
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--line);
@@ -298,4 +300,101 @@
   .miner-deposits {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+.miner-player-bag {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-height: 20px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.miner-player-bag span {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--canvas));
+}
+.miner-contract-board {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+}
+.miner-contract-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.miner-contract-option {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--canvas);
+  cursor: pointer;
+}
+.miner-contract-option.curse {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+}
+.miner-contract-option small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.miner-contract-option:disabled {
+  opacity: 0.55;
+}
+.miner-contract-chip {
+  margin-right: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--canvas));
+  color: var(--accent);
+}
+.miner-node-heading {
+  gap: 8px;
+}
+.miner-deposit.is-last {
+  animation: miner-deposit-pulse 420ms ease-out;
+}
+@keyframes miner-deposit-pulse {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+.miner-table[data-last="extract"] .miner-log p:last-child,
+.miner-table[data-last="steal"] .miner-log p:last-child {
+  color: var(--accent);
+}
+.miner-map-node:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  transform: translateY(-1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .miner-deposit.is-last {
+    animation: none;
+  }
+}
+.miner-player-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-height: 18px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.miner-player-tags span {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--canvas);
+}
+.miner-player-tags span[data-count="active"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--canvas));
 }

@@ -2,6 +2,8 @@ import type { GameOptions } from "../game-options";
 import type { Rules } from "../plugin";
 import type { Action, Candidate } from "../types";
 import {
+  minerContractPool,
+  minerContracts,
   minerGemFamilies,
   minerGems,
   minerItems,
@@ -9,8 +11,14 @@ import {
   minerRelics,
   minerDynamics,
 } from "./content";
-import { createMinerNode, generateMinerMap, minerNodeChoices } from "./map";
+import {
+  createMinerNode,
+  generateMinerMap,
+  minerNodeChoices,
+  shuffled,
+} from "./map";
 import type {
+  MinerContractId,
   MinerDeposit,
   MinerDynamicId,
   MinerGameState,
@@ -76,6 +84,25 @@ function itemEffects(player: MinerPlayerView) {
     .filter((id) => !minerItems[id].effects.consumable)
     .map((id) => minerItems[id].effects);
   const relics = player.relics.map((id) => minerRelics[id].effects);
+  const tags = [
+    ...player.items.flatMap((id) => {
+      const category = minerItems[id].category;
+      return category === "tool" || category === "bag"
+        ? (["engineer"] as const)
+        : category === "steal"
+          ? (["thief"] as const)
+          : category === "team"
+            ? (["leader"] as const)
+            : [];
+    }),
+    ...player.relics.map((id) => minerRelics[id].tag),
+  ];
+  const tagCount = (tag: (typeof tags)[number]) =>
+    tags.filter((item) => item === tag).length;
+  const engineer = tagCount("engineer") >= 4 ? 2 : tagCount("engineer") >= 2 ? 1 : 0;
+  const thief = tagCount("thief") >= 4 ? 0.2 : tagCount("thief") >= 2 ? 0.1 : 0;
+  const leader = tagCount("leader") >= 4 ? 0.1 : tagCount("leader") >= 2 ? 0.05 : 0;
+  const gambler = tagCount("gambler") >= 4 ? 0.1 : tagCount("gambler") >= 2 ? 0.05 : 0;
   const all = [...effects, ...relics] as Array<{
     pickBonus?: number;
     capacityBonus?: number;
@@ -86,29 +113,42 @@ function itemEffects(player: MinerPlayerView) {
     teamQuotaBonus?: number;
     dividend?: number;
     pairProgress?: number;
+    valueBonus?: number;
   }>;
   return {
-    pickBonus: sumBy(all, (effect) => effect.pickBonus ?? 0),
+    pickBonus: sumBy(all, (effect) => effect.pickBonus ?? 0) + engineer,
     capacityBonus: sumBy(all, (effect) => effect.capacityBonus ?? 0),
-    stealBonus: sumBy(all, (effect) => effect.stealBonus ?? 0),
+    stealBonus: sumBy(all, (effect) => effect.stealBonus ?? 0) + thief,
     defenseBonus: sumBy(all, (effect) => effect.defenseBonus ?? 0),
     hazardReduction: sumBy(all, (effect) => effect.hazardReduction ?? 0),
     autoProgress: sumBy(all, (effect) => effect.autoProgress ?? 0),
-    teamQuotaBonus: sumBy(all, (effect) => effect.teamQuotaBonus ?? 0),
+    teamQuotaBonus:
+      sumBy(all, (effect) => effect.teamQuotaBonus ?? 0) + leader,
     dividend: sumBy(all, (effect) => effect.dividend ?? 0),
     pairProgress: sumBy(all, (effect) => effect.pairProgress ?? 0),
+    valueBonus: sumBy(all, (effect) => effect.valueBonus ?? 0) + gambler,
     hasFreeze: player.relics.includes("frostHeart"),
-    failNoExpose: player.relics.includes("nightCloak"),
-    icePick: player.relics.includes("icePick"),
+    failNoExpose:
+      player.relics.includes("nightCloak") ||
+      player.relics.includes("shadowGlove"),
+    icePick:
+      player.relics.includes("icePick") ||
+      player.relics.includes("echoPick"),
     luckyDice: player.relics.includes("luckyDice"),
     springBoots: player.relics.includes("springBoots"),
   };
 }
 
-function refreshPlayer(player: MinerPlayerView): void {
+function refreshPlayer(
+  player: MinerPlayerView,
+  contract?: MinerContractId | null,
+): void {
   const effects = itemEffects(player);
   player.pickPower = 1 + effects.pickBonus;
-  player.capacity = BASE_CAPACITY + effects.capacityBonus;
+  player.capacity =
+    BASE_CAPACITY +
+    effects.capacityBonus -
+    (contract === "heavyPack" ? 1 : 0);
   player.bagCount = player.bag.length;
 }
 
@@ -185,12 +225,15 @@ export class MinerRules implements Rules<"miner"> {
     const quota = options?.miner?.quota ?? 400 + players * 200;
     const map = generateMinerMap(players, floors, this.random);
     const view: MinerView = {
-      phase: "map",
+      phase: "contract",
       floor: 0,
       round: 0,
       map,
       node: null,
       votes: {},
+      contract: null,
+      contractOffers: this.contractOffers(),
+      contractVotes: {},
       players: Array.from({ length: players }, (_, seat) => makePlayer(seat)),
       teamQuota: quota,
       teamDelivered: 0,
@@ -200,7 +243,7 @@ export class MinerRules implements Rules<"miner"> {
       log: [],
       sequence: 0,
     };
-    log(view, `矿灯亮起，${players} 名矿工下井。团队指标：${quota}。`);
+    log(view, `矿灯亮起，${players} 名矿工下井。先选择本层矿脉契约。`);
     return { kind: "miner", view };
   }
 
@@ -215,6 +258,10 @@ export class MinerRules implements Rules<"miner"> {
       return view.players
         .map((player) => player.seat)
         .filter((seat) => !(seat in view.votes));
+    if (view.phase === "contract")
+      return view.players
+        .map((player) => player.seat)
+        .filter((seat) => !(seat in view.contractVotes));
     return view.activeActor >= 0 ? [view.activeActor] : [];
   }
 
@@ -230,6 +277,10 @@ export class MinerRules implements Rules<"miner"> {
     if (view.phase === "bank") return true;
     if (view.phase === "map")
       return view.players.every((player) => player.seat in view.votes);
+    if (view.phase === "contract")
+      return view.players.every(
+        (player) => player.seat in view.contractVotes,
+      );
     if (
       view.phase === "mine" ||
       view.phase === "shop" ||
@@ -249,8 +300,15 @@ export class MinerRules implements Rules<"miner"> {
   }
 
   actionWindow(state: MinerGameState, action: Action): string | undefined {
-    if (state.view.phase !== "map" || action.type !== "miner-action") return;
-    return action.move.type === "vote" ? `miner-vote-${state.view.floor}` : undefined;
+    if (action.type !== "miner-action") return;
+    if (state.view.phase === "contract")
+      return action.move.type === "contract"
+        ? `miner-contract-${state.view.floor}`
+        : undefined;
+    if (state.view.phase !== "map") return;
+    return action.move.type === "vote"
+      ? `miner-vote-${state.view.floor}`
+      : undefined;
   }
 
   apply(state: MinerGameState, actor: number, action: Action): MinerGameState {
@@ -263,6 +321,17 @@ export class MinerRules implements Rules<"miner"> {
     const view = structuredClone(state.view);
     const player = view.players[actor]!;
     const move = action.move;
+    if (view.phase === "contract") {
+      if (move.type !== "contract") throw new Error("请选择矿脉契约");
+      view.contractVotes[actor] = move.contractId;
+      setLastAction(
+        view,
+        actor,
+        "contract",
+        `${playerName(actor)} 选择了 ${minerContracts[move.contractId].name}。`,
+      );
+      return { kind: "miner", view };
+    }
     if (view.phase === "map") {
       if (move.type !== "vote") throw new Error("请选择矿图路线");
       view.votes[actor] = move.nodeId;
@@ -296,6 +365,8 @@ export class MinerRules implements Rules<"miner"> {
 
   resolve(state: MinerGameState): MinerGameState {
     const view = structuredClone(state.view);
+    if (view.phase === "contract")
+      return { kind: "miner", view: this.resolveContract(view) };
     if (view.phase === "map") return { kind: "miner", view: this.resolveVote(view) };
     if (view.phase === "bank") return { kind: "miner", view: this.resolveBank(view) };
     if (view.phase === "rest" || view.phase === "event") {
@@ -318,6 +389,13 @@ export class MinerRules implements Rules<"miner"> {
   private legalMoves(state: MinerGameState, actor: number): MinerMove[] {
     const view = state.view;
     if (this.finished(state)) return [];
+    if (view.phase === "contract") {
+      if (actor in view.contractVotes) return [];
+      return view.contractOffers.map((contractId) => ({
+        type: "contract" as const,
+        contractId,
+      }));
+    }
     if (view.phase === "map") {
       if (actor in view.votes) return [];
       return minerNodeChoices(view.map, view.floor).map((node) => ({
@@ -379,6 +457,8 @@ export class MinerRules implements Rules<"miner"> {
 
   private moveLabel(state: MinerGameState, move: MinerMove): string {
     const view = state.view;
+    if (move.type === "contract")
+      return `选择：${minerContracts[move.contractId].name}`;
     if (move.type === "vote") return `投票：${this.floorNodeName(view, move.nodeId)}`;
     if (move.type === "mine") {
       const deposit = view.node?.deposits.find((item) => item.id === move.depositId);
@@ -436,6 +516,58 @@ export class MinerRules implements Rules<"miner"> {
     view.activeActor = view.order[view.orderIndex]!;
   }
 
+  private contractOffers(): MinerContractId[] {
+    return shuffled(minerContractPool, this.random).slice(0, 2);
+  }
+
+  private resolveContract(view: MinerView): MinerView {
+    const counts = new Map<MinerContractId, number>();
+    for (const contractId of Object.values(view.contractVotes))
+      counts.set(contractId, (counts.get(contractId) ?? 0) + 1);
+    const contract = [...counts.entries()].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+    )[0]?.[0];
+    if (!contract) throw new Error("矿脉契约投票无效");
+    view.contract = contract;
+    if (contract === "thief") view.teamQuota = Math.floor(view.teamQuota * 1.1);
+    for (const player of view.players) refreshPlayer(player, contract);
+    view.contractVotes = {};
+    view.phase = "map";
+    view.votes = {};
+    view.activeActor = -1;
+    view.order = [];
+    view.orderIndex = 0;
+    setLastAction(
+      view,
+      -1,
+      "contract",
+      `本层契约：${minerContracts[contract].name}。${minerContracts[contract].description}`,
+    );
+    return view;
+  }
+
+  private applyContractToNode(node: NonNullable<MinerView["node"]>, view: MinerView): void {
+    const contract = view.contract;
+    if (!contract) return;
+    if (view.players.some((player) => player.relics.includes("hourglass")))
+      node.maxRounds += 1;
+    if (contract === "speed") node.maxRounds = Math.max(2, node.maxRounds - 1);
+    if (contract === "minecart" || contract === "iceRush") {
+      const dynamic: MinerDynamicId = contract === "minecart" ? "minecart" : "ice";
+      if (!node.dynamic.includes(dynamic)) node.dynamic.push(dynamic);
+    }
+    if (contract === "iceRush")
+      for (const deposit of node.deposits) deposit.frozen = true;
+    if (contract === "collapseEcho")
+      for (const deposit of node.deposits) deposit.hazard += 0.1;
+    if (contract === "richVein")
+      for (const deposit of node.deposits) deposit.hazard += 0.2;
+    if (contract === "minecart")
+      for (const deposit of node.deposits)
+        if (deposit.kind === "item")
+          deposit.required = Math.floor(deposit.required * 1.15);
+  }
+
   private resolveVote(view: MinerView): MinerView {
     const votes = Object.entries(view.votes);
     const counts = new Map<string, number>();
@@ -450,6 +582,7 @@ export class MinerRules implements Rules<"miner"> {
     if (!mapNode) throw new Error("路线投票无效");
     mapNode.visited = true;
     const node = createMinerNode(mapNode, view.players.length, this.random);
+    this.applyContractToNode(node, view);
     setNodePhase(view, node);
     view.votes = {};
     view.order = rotateOrder(view.players.length, view.floor);
@@ -524,14 +657,23 @@ export class MinerRules implements Rules<"miner"> {
         step = Math.floor(step * 1.5);
       if (effects.pairProgress > 0 && view.players.length > 1)
         step = Math.floor(step * (1 + effects.pairProgress));
+      if (view.contract === "speed") step = Math.floor(step * 1.2);
       deposit.owner = actor;
       deposit.progress = Math.min(deposit.required, deposit.progress + step);
       deposit.frozen = false;
       player.status.nextProgress = 0;
       player.stamina--;
-      if (this.random() < deposit.hazard) {
+      const hazardChance =
+        deposit.hazard +
+        (view.contract === "collapseEcho" ? 0.1 : 0) +
+        (node.dynamic.includes("collapse") ? 0.1 : 0);
+      if (this.random() < hazardChance) {
         const reduction = Math.min(0.8, effects.hazardReduction);
-        if (this.random() >= reduction) {
+        const lucky =
+          effects.luckyDice &&
+          (player.relicUses.luckyDice ?? -1) !== currentLayer(view.floor);
+        if (lucky) player.relicUses.luckyDice = currentLayer(view.floor);
+        if (!lucky || this.random() >= reduction) {
           player.stamina = Math.max(0, player.stamina - 1);
           player.worn = true;
           deposit.progress = Math.max(0, deposit.progress - 10);
@@ -568,7 +710,10 @@ export class MinerRules implements Rules<"miner"> {
         target.status.nodeGuard -
         target.status.alert * 0.15 +
         (target.status.wanted > 0 ? 0.15 : 0) +
-        (node.kind === "contested" ? 0.1 : 0);
+        (node.kind === "contested" ? 0.1 : 0) +
+        (view.contract === "thief" ? 0.1 : 0) +
+        (view.contract === "collapseEcho" ? 0.1 : 0) +
+        (view.contract === "greedMark" ? 0.15 : 0);
       chance = Math.max(0.1, Math.min(0.95, chance));
       player.stamina--;
       player.stolen++;
@@ -635,6 +780,21 @@ export class MinerRules implements Rules<"miner"> {
       setLastAction(view, actor, "item", `${playerName(actor)} 修好了工具。`);
       return;
     }
+    if (item.effects.consumable === "luck") {
+      player.status.luck = 1;
+      setLastAction(view, actor, "item", `${playerName(actor)} 的下一块宝石品级提升。`);
+      return;
+    }
+    if (item.effects.consumable === "map") {
+      const node = view.node;
+      setLastAction(
+        view,
+        actor,
+        "item",
+        `${playerName(actor)} 展开矿图：${node?.dynamic.map((id) => minerDynamics[id].name).join("、") || "本层暂时安全"}。`,
+      );
+      return;
+    }
     if (item.effects.consumable === "dynamite") {
       const deposit = availableDeposits(view).find(
         (item) => item.owner === actor || item.owner === null,
@@ -668,7 +828,23 @@ export class MinerRules implements Rules<"miner"> {
     const player = view.players[actor]!;
     deposit.completed = true;
     if (deposit.kind === "gem" && deposit.gem) {
-      const gem = { ...deposit.gem, value: depositScoreValue(deposit) };
+      const effects = itemEffects(player);
+      const contractBonus =
+        (view.contract === "richVein" &&
+        view.node &&
+        ["rich", "crystal", "vault"].includes(view.node.kind)
+          ? 0.25
+          : 0) +
+        (view.contract === "heavyPack" ? 0.15 : 0) -
+        (view.contract === "greedMark" ? 0.1 : 0);
+      let value = Math.floor(
+        depositScoreValue(deposit) * (1 + effects.valueBonus + contractBonus),
+      );
+      if (player.status.luck > 0) {
+        value = Math.floor(value * 1.5);
+        player.status.luck--;
+      }
+      const gem = { ...deposit.gem, value };
       if (player.bag.length < player.capacity) player.bag.push(gem);
       else player.score += gem.value;
       player.bagCount = player.bag.length;
@@ -688,7 +864,7 @@ export class MinerRules implements Rules<"miner"> {
       );
     } else if (deposit.kind === "item" && deposit.item) {
       player.items.push(deposit.item);
-      refreshPlayer(player);
+      refreshPlayer(player, view.contract);
       setLastAction(
         view,
         actor,
@@ -700,7 +876,7 @@ export class MinerRules implements Rules<"miner"> {
       if (player.relics.length < 4 && !player.relics.includes(deposit.relic))
         player.relics.push(deposit.relic);
       else player.score += 30;
-      refreshPlayer(player);
+      refreshPlayer(player, view.contract);
       setLastAction(
         view,
         actor,
@@ -725,8 +901,13 @@ export class MinerRules implements Rules<"miner"> {
     if (this.random() < 0.6) {
       if (choice === "gamble") {
         const gem = minerGems[Math.floor(this.random() * minerGems.length)]!;
-        if (player.bag.length < player.capacity) player.bag.push({ ...gem });
-        else player.score += gem.value;
+        const value =
+          view.contract === "gambler"
+            ? Math.floor(gem.value * 1.25)
+            : gem.value;
+        if (player.bag.length < player.capacity)
+          player.bag.push({ ...gem, value });
+        else player.score += value;
         setLastAction(
           view,
           actor,
@@ -740,7 +921,7 @@ export class MinerRules implements Rules<"miner"> {
         if (player.relics.length < 4 && !player.relics.includes(relic))
           player.relics.push(relic);
         else player.score += 30;
-        refreshPlayer(player);
+        refreshPlayer(player, view.contract);
         setLastAction(
           view,
           actor,
@@ -817,6 +998,27 @@ export class MinerRules implements Rules<"miner"> {
       [first.owner, second.owner] = [second.owner, first.owner];
       [first.progress, second.progress] = [second.progress, first.progress];
       log(view, "磁力场交换了两个矿位的进度与主人。");
+      return;
+    }
+    if (id === "gas") {
+      const seat = Math.floor(this.random() * view.players.length);
+      const player = view.players[seat]!;
+      player.stamina = Math.max(0, player.stamina - 1);
+      log(view, `毒气扩散，${playerName(seat)} 失去 1 体力。`);
+      return;
+    }
+    if (id === "flood" || id === "earthquake") {
+      const amount = id === "flood" ? 10 : 15;
+      for (const deposit of availableDeposits(view)) {
+        if (id === "flood" && deposit.owner === null) continue;
+        deposit.progress = Math.max(0, deposit.progress - amount);
+      }
+      log(view, id === "flood" ? "积水侵蚀矿位进度。" : "地震让所有矿位进度倒退。");
+      return;
+    }
+    if (id === "rotatingHook") {
+      view.order = shuffled(view.order, this.random);
+      log(view, "旋转钩爪打乱了行动顺序。");
     }
   }
 
@@ -862,7 +1064,7 @@ export class MinerRules implements Rules<"miner"> {
       player.score += value;
       player.bag = [];
       player.bagCount = 0;
-      refreshPlayer(player);
+      refreshPlayer(player, view.contract);
       if (effects.springBoots)
         player.stamina = Math.min(player.maxStamina, player.stamina + 1);
     }
@@ -902,10 +1104,16 @@ export class MinerRules implements Rules<"miner"> {
       return view;
     }
     view.floor++;
-    view.phase = "map";
+    view.phase = "contract";
+    view.contract = null;
     view.votes = {};
+    view.contractVotes = {};
+    view.contractOffers = this.contractOffers();
     view.node = null;
     view.round = 0;
+    view.activeActor = -1;
+    view.order = [];
+    view.orderIndex = 0;
     return view;
   }
 

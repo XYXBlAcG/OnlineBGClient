@@ -8,6 +8,7 @@ import type {
   MinerView,
 } from "../../domain/miner/types";
 import {
+  minerContracts,
   minerDynamics,
   minerGemFamilies,
   minerItems,
@@ -45,6 +46,33 @@ function PlayerCard({
 }) {
   const own = player.seat === actor;
   const value = player.bag.reduce((sum, gem) => sum + gem.value, 0);
+  const tags = [
+    ...player.items.flatMap((id) => {
+      const category = minerItems[id].category;
+      return category === "tool" || category === "bag"
+        ? ["工程"]
+        : category === "steal"
+          ? ["盗贼"]
+          : category === "team"
+            ? ["队长"]
+            : [];
+    }),
+    ...player.relics.map((id) => {
+      const tag = minerRelics[id].tag;
+      return tag === "engineer"
+        ? "工程"
+        : tag === "thief"
+          ? "盗贼"
+          : tag === "leader"
+            ? "队长"
+            : tag === "gambler"
+              ? "赌徒"
+              : "冰霜";
+    }),
+  ].reduce<Record<string, number>>((counts, tag) => {
+    counts[tag] = (counts[tag] ?? 0) + 1;
+    return counts;
+  }, {});
   return (
     <article className={`miner-player ${active ? "is-active" : ""}`}>
       <header>
@@ -67,6 +95,28 @@ function PlayerCard({
             {minerRelics[relic].name}
           </span>
         ))}
+      </div>
+      <div className="miner-player-tags">
+        {Object.entries(tags).map(([tag, count]) => (
+          <span key={tag} data-count={count >= 2 ? "active" : undefined}>
+            {tag} {count}
+          </span>
+        ))}
+      </div>
+      <div className="miner-player-bag">
+        {own ? (
+          player.bag.length ? (
+            player.bag.map((gem, index) => (
+              <span key={`${gem.id}-${index}`} title={gem.id}>
+                {minerGemFamilies[gem.family].name} {gem.value}
+              </span>
+            ))
+          ) : (
+            <span className="muted">背包空</span>
+          )
+        ) : (
+          <span className="muted">{player.bagCount} 块宝石</span>
+        )}
       </div>
       <div className="miner-player-status">
         {player.status.frozen > 0 && <em>冰冻</em>}
@@ -99,9 +149,11 @@ function DepositCard({
     (move) => move.type === "steal" && move.depositId === deposit.id,
   );
   const percent = Math.min(100, Math.round((deposit.progress / deposit.required) * 100));
+  const last = view.lastAction?.depositId === deposit.id;
   return (
     <article
-      className={`miner-deposit ${deposit.completed ? "is-complete" : ""} ${deposit.frozen ? "is-frozen" : ""}`}
+      className={`miner-deposit ${deposit.completed ? "is-complete" : ""} ${deposit.frozen ? "is-frozen" : ""} ${last ? "is-last" : ""}`}
+      data-deposit-kind={deposit.kind}
     >
       <div className="miner-deposit-title">
         <strong>{depositLabel(deposit)}</strong>
@@ -142,6 +194,54 @@ function DepositCard({
   );
 }
 
+function ContractBoard({
+  view,
+  moves,
+  send,
+  pending,
+}: {
+  view: MinerView;
+  moves: MinerMove[];
+  send: (move: MinerMove) => void;
+  pending: boolean;
+}) {
+  return (
+    <section className="miner-contract-board">
+      <div className="miner-map-heading">
+        <h3>第 {view.floor + 1} 层 · 矿脉契约</h3>
+        <span>
+          {Object.keys(view.contractVotes).length}/{view.players.length} 已选择
+        </span>
+      </div>
+      {view.contract && (
+        <p className="muted">
+          本层契约：{minerContracts[view.contract].name} ·{" "}
+          {minerContracts[view.contract].description}
+        </p>
+      )}
+      <div className="miner-contract-options">
+        {view.contractOffers.map((id) => {
+          const move = moves.find(
+            (item) => item.type === "contract" && item.contractId === id,
+          );
+          return (
+            <button
+              type="button"
+              key={id}
+              className={`miner-contract-option ${minerContracts[id].kind}`}
+              disabled={pending || !move}
+              onClick={() => move && send(move)}
+            >
+              <strong>{minerContracts[id].name}</strong>
+              <small>{minerContracts[id].description}</small>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function MapBoard({
   view,
   moves,
@@ -175,7 +275,19 @@ function MapBoard({
               disabled={pending || !move}
               onClick={() => move && send(move)}
             >
-              <span className="miner-node-symbol">⛏</span>
+              <span className="miner-node-symbol">
+                {node.kind === "shop"
+                  ? "▣"
+                  : node.kind === "rest"
+                    ? "☕"
+                    : node.kind === "event"
+                      ? "?"
+                      : node.kind === "guardian"
+                        ? "♜"
+                        : node.kind === "vault"
+                          ? "★"
+                          : "⛏"}
+              </span>
               <strong>{minerNodeDefinitions[node.kind].name}</strong>
               <small>{minerNodeDefinitions[node.kind].description}</small>
             </button>
@@ -343,7 +455,11 @@ export function MinerTable({
     if (candidate) act(candidate.action);
   };
   return (
-    <div className="miner-table" data-phase={view.phase}>
+    <div
+      className="miner-table"
+      data-phase={view.phase}
+      data-last={view.lastAction?.kind}
+    >
       <header className="miner-hud">
         <div>
           <strong>黄金矿脉</strong>
@@ -358,6 +474,11 @@ export function MinerTable({
           </strong>
         </div>
         <div className="miner-active-seat">
+          {view.contract && (
+            <span className="miner-contract-chip">
+              {minerContracts[view.contract].name}
+            </span>
+          )}
           {view.activeActor >= 0 ? `轮到 ${playerName(view, view.activeActor)}` : "等待结算"}
         </div>
       </header>
@@ -372,7 +493,14 @@ export function MinerTable({
           />
         ))}
       </div>
-      {view.phase === "map" ? (
+      {view.phase === "contract" ? (
+        <ContractBoard
+          view={view}
+          moves={moves}
+          send={send}
+          pending={pending || replay}
+        />
+      ) : view.phase === "map" ? (
         <MapBoard view={view} moves={moves} send={send} pending={pending || replay} />
       ) : view.phase === "bank" ? (
         <section className="miner-bank">

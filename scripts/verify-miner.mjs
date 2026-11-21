@@ -109,17 +109,19 @@ class Client {
   }
 }
 
+const withAi = process.env.MINER_AI === "1";
 const host = new Client("host");
-const guest = new Client("guest");
+const guest = withAi ? null : new Client("guest");
 try {
-  await Promise.all([host.ready, guest.ready]);
+  await Promise.all([host.ready, ...(guest ? [guest.ready] : [])]);
   host.send({
     type: "create",
     name: "甲",
     config: {
       kind: "miner",
-      humans: 2,
-      ai: [],
+      humans: withAi ? 1 : 2,
+      ai: withAi ? [{ difficulty: "normal", name: "" }] : [],
+      aiDelayMs: withAi ? 100 : 1500,
       team: false,
       training: false,
     },
@@ -133,28 +135,30 @@ try {
       resolve();
     }, 10);
   });
-  guest.send({ type: "join", room: host.session.room, name: "乙" });
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("no guest session")), 3000);
-    const poll = setInterval(() => {
-      if (!guest.session) return;
-      clearTimeout(timer);
-      clearInterval(poll);
-      resolve();
-    }, 10);
-  });
-  guest.send({ type: "ready", token: guest.session.token, ready: true });
+  if (guest) {
+    guest.send({ type: "join", room: host.session.room, name: "乙" });
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("no guest session")), 3000);
+      const poll = setInterval(() => {
+        if (!guest.session) return;
+        clearTimeout(timer);
+        clearInterval(poll);
+        resolve();
+      }, 10);
+    });
+    guest.send({ type: "ready", token: guest.session.token, ready: true });
+  }
   host.send({ type: "start", token: host.session.token });
 
-  const deadline = Date.now() + 30000;
+  const deadline = Date.now() + 60000;
   let actions = 0;
   while (Date.now() < deadline) {
     host.maybeAct();
-    guest.maybeAct();
+    guest?.maybeAct();
     const state = host.snapshot?.state;
     if (host.snapshot?.finished) {
-      if (host.errors.length || guest.errors.length)
-        throw new Error([...host.errors, ...guest.errors].join("; "));
+      if (host.errors.length || guest?.errors.length)
+        throw new Error([...host.errors, ...(guest?.errors ?? [])].join("; "));
       console.log(
         JSON.stringify({
           ok: true,
@@ -167,7 +171,7 @@ try {
       process.exitCode = 0;
       break;
     }
-    if (host.snapshot && guest.snapshot) actions = Math.max(actions, host.sent.size + guest.sent.size);
+    actions = Math.max(actions, host.sent.size + (guest?.sent.size ?? 0));
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   if (!host.snapshot?.finished) throw new Error("miner game did not finish");
@@ -177,13 +181,13 @@ try {
       ok: false,
       error: error instanceof Error ? error.message : String(error),
       host: host.errors,
-      guest: guest.errors,
+      guest: guest?.errors ?? [],
       snapshot: host.snapshot,
     }),
   );
   process.exitCode = 1;
 } finally {
   host.socket.close();
-  guest.socket.close();
+  guest?.socket.close();
   child.kill();
 }

@@ -12,6 +12,7 @@ it("每个游戏显式声明手机可用性", () => {
 
 it("手机大厅包含秘塔远征并排除 Graphwar", () => {
   expect(mobileGameKinds).toContain("expedition");
+  expect(mobileGameKinds).toContain("miner");
   expect(mobileGameKinds).not.toContain("graphwar");
   expect(gameCatalogue.graphwar.mobile).toBe(false);
 });

@@ -17,6 +17,15 @@ export function quickCandidate(
   return matches.length === 1 ? matches[0] : undefined;
 }
 export const gameQuickActions: Partial<Record<GameKind, QuickAction[]>> = {
+  miner: [
+    {
+      id: "miner-pass",
+      title: "跳过",
+      binding: " ",
+      matches: (action) =>
+        action.type === "miner-action" && action.move.type === "pass",
+    },
+  ],
   expedition: [
     {
       id: "expedition-ready",

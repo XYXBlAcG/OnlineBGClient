@@ -76,6 +76,14 @@ export function generateMinerMap(
     const restNode = serviceNodes.find((node) => node.kind !== "shop");
     if (restNode) restNode.kind = "rest";
   }
+  if (floors >= 6) {
+    const last = floors - 1;
+    for (const node of map[last]!) node.kind = "vault";
+    map[last - 1]![0]!.kind = "guardian";
+    const service = map[last - 2]!;
+    service[0]!.kind = "shop";
+    if (service[1]) service[1]!.kind = "rest";
+  }
   for (let floor = 0; floor < floors - 1; floor++) {
     const row = map[floor]!;
     const next = map[floor + 1]!;
@@ -200,7 +208,23 @@ export function createMinerNode(
   let maxRounds = definition.maxRounds;
   if (dynamic.includes("collapse")) maxRounds = Math.max(2, maxRounds - 1);
   const deposits: MinerDeposit[] = [];
-  if (mapNode.kind === "common") {
+  if (mapNode.kind === "guardian") {
+    for (let index = 0; index < players + 1; index++) {
+      const deposit = createGemDeposit(index, "rich", random);
+      deposit.required = 120;
+      deposit.hardness = 2;
+      deposit.hazard = 0.32;
+      deposits.push(deposit);
+    }
+  } else if (mapNode.kind === "vault") {
+    for (let index = 0; index < players + 1; index++) {
+      const deposit = createGemDeposit(index, "crystal", random);
+      deposit.required = 120;
+      deposit.hazard = 0.08;
+      deposits.push(deposit);
+    }
+    deposits.push(createRelicDeposit(players + 1, random));
+  } else if (mapNode.kind === "common") {
     for (let index = 0; index < players + 2; index++)
       deposits.push(createGemDeposit(index, mapNode.kind, random));
   } else if (mapNode.kind === "rich" || mapNode.kind === "crystal") {

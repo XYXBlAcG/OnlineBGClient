@@ -28,7 +28,7 @@ it("renders the miner map and player HUD", () => {
   );
   expect(html).toContain("黄金矿脉");
   expect(html).toContain("团队交矿");
-  expect(html).toContain("选择矿点");
+  expect(html).toContain("矿脉契约");
   expect(html).toContain("玩家 1");
   expect(html).toContain("玩家 2");
 });

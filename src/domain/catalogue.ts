@@ -25,8 +25,8 @@ export const gameCatalogue = {
     presentation: { kind: "miner" },
     team: false,
     symbol: "⛏",
-    ai: false,
-    mobile: false,
+    ai: true,
+    mobile: true,
     version: "1",
   },
   dominion: {

@@ -30,6 +30,14 @@ export const minerItemIdSchema = z.enum([
   "staminaPotion",
   "dividend",
   "rescueRope",
+  "teamCart",
+  "decoy",
+  "smoke",
+  "repairKit",
+  "luckyCharm",
+  "minerMap",
+  "teamInsurance",
+  "detector",
 ]);
 export type MinerItemId = z.infer<typeof minerItemIdSchema>;
 
@@ -46,6 +54,18 @@ export const minerRelicIdSchema = z.enum([
   "icePick",
   "luckyDice",
   "pairRope",
+  "furnaceHeart",
+  "magnetCoil",
+  "veinMap",
+  "hourglass",
+  "cursedCrown",
+  "echoPick",
+  "canary",
+  "minerHelmet",
+  "shadowGlove",
+  "dividendLedger",
+  "safeBox",
+  "resonance",
 ]);
 export type MinerRelicId = z.infer<typeof minerRelicIdSchema>;
 
@@ -56,6 +76,10 @@ export const minerDynamicIdSchema = z.enum([
   "lava",
   "magnetic",
   "collapse",
+  "gas",
+  "flood",
+  "rotatingHook",
+  "earthquake",
 ]);
 export type MinerDynamicId = z.infer<typeof minerDynamicIdSchema>;
 
@@ -69,11 +93,30 @@ export const minerNodeKindSchema = z.enum([
   "shop",
   "rest",
   "event",
+  "guardian",
+  "vault",
   "exit",
 ]);
 export type MinerNodeKind = z.infer<typeof minerNodeKindSchema>;
 
+export const minerContractIdSchema = z.enum([
+  "richVein",
+  "iceRush",
+  "thief",
+  "gambler",
+  "speed",
+  "minecart",
+  "heavyPack",
+  "collapseEcho",
+  "greedMark",
+]);
+export type MinerContractId = z.infer<typeof minerContractIdSchema>;
+
 export const minerMoveSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("contract"),
+    contractId: minerContractIdSchema,
+  }),
   z.object({ type: z.literal("vote"), nodeId: z.string().min(1).max(40) }),
   z.object({
     type: z.literal("mine"),
@@ -198,6 +241,7 @@ export interface MinerResult {
 }
 
 export type MinerPhase =
+  | "contract"
   | "map"
   | "mine"
   | "shop"
@@ -214,6 +258,9 @@ export interface MinerView {
   map: MinerMapNodeView[][];
   node: MinerNodeView | null;
   votes: Record<number, string>;
+  contract: MinerContractId | null;
+  contractOffers: MinerContractId[];
+  contractVotes: Record<number, MinerContractId>;
   players: MinerPlayerView[];
   teamQuota: number;
   teamDelivered: number;
