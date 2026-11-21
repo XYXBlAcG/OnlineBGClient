@@ -1,12 +1,15 @@
 import type { MapNode, NodeKind } from "../expedition/adventure-types";
 import { generateMap } from "../expedition/map";
 import {
+  minerMechanics,
+  minerMechanicsPool,
   minerObjectPool,
   minerObjects,
   minerSceneFor,
   minerSceneLabels,
 } from "./content";
 import type {
+  MinerMechanicId,
   MinerMineNode,
   MinerObject,
   MinerObjectKind,
@@ -71,6 +74,7 @@ function createObject(
     weight: definition.weight,
     hookedBy: null,
     removed: false,
+    frozen: false,
   };
 }
 
@@ -111,13 +115,42 @@ export function createNode(
     node.kind === "boss" || node.kind === "elite" || node.kind === "rift"
       ? 50_000
       : 60_000;
+  const objects = scene === "mine" ? placeObjects(node.kind, players, random) : [];
+  const mechanics =
+    scene === "mine"
+      ? (() => {
+          const count = node.kind === "battle" ? 1 : random() < 0.5 ? 2 : 1;
+          const pool = [...minerMechanicsPool];
+          return Array.from({ length: count }, () => {
+            const index = Math.floor(random() * pool.length);
+            return pool.splice(index, 1)[0]!;
+          });
+        })()
+      : [];
+  if (mechanics.includes("frozenThaw"))
+    for (const object of objects)
+      if (random() < 0.35) object.frozen = true;
+  if (mechanics.includes("critters")) {
+    for (let index = 0; index < 2 + players; index++) {
+      const object = createObject(`critter${index}`, "critter", random);
+      object.y = 0.2 + random() * 0.45;
+      objects.push(object);
+    }
+  }
   return {
     id: node.id,
     sourceKind: node.kind,
     scene,
     name: nodeLabel(node.kind),
-    objects: scene === "mine" ? placeObjects(node.kind, players, random) : [],
+    objects,
+    mechanics,
     durationMs: scene === "mine" ? durationMs : 0,
     timeLeftMs: scene === "mine" ? durationMs : 0,
+    waterLevel: mechanics.includes("flood") ? 0.55 : mechanics.includes("tide") ? 0.5 : 0,
+    crittersStoppedTicks: 0,
   };
+}
+
+export function mechanicLabel(id: MinerMechanicId): string {
+  return minerMechanics[id].name;
 }

@@ -1,6 +1,8 @@
 import type { NodeKind } from "../expedition/adventure-types";
 import type {
+  MinerCharacterId,
   MinerItemId,
+  MinerMechanicId,
   MinerObjectKind,
 } from "./types";
 
@@ -86,6 +88,14 @@ export const minerObjects: Record<MinerObjectKind, MinerObjectDefinition> = {
     weight: 1,
     radius: 0.04,
   },
+  critter: {
+    kind: "critter",
+    name: "矿洞动物",
+    emoji: "🦇",
+    value: 90,
+    weight: 1,
+    radius: 0.04,
+  },
 };
 
 export const minerObjectPool = Object.keys(
@@ -146,6 +156,119 @@ export const minerItems: Record<MinerItemId, MinerItemDefinition> = {
 };
 
 export const minerItemPool = Object.keys(minerItems) as MinerItemId[];
+
+export interface MinerCharacterDefinition {
+  id: MinerCharacterId;
+  name: string;
+  emoji: string;
+  special: string;
+  description: string;
+  charge: number;
+}
+
+export const minerCharacters: Record<
+  MinerCharacterId,
+  MinerCharacterDefinition
+> = {
+  miner: {
+    id: "miner",
+    name: "矿工",
+    emoji: "⛏️",
+    special: "疾速下钩",
+    description: "8 秒内摆钩与回收速度提升；抓 6 块金充能。",
+    charge: 6,
+  },
+  merchant: {
+    id: "merchant",
+    name: "商人",
+    emoji: "💼",
+    special: "即时到账",
+    description: "立刻收回钩上的物体；抓 4 块金充能。",
+    charge: 4,
+  },
+  strongman: {
+    id: "strongman",
+    name: "大力士",
+    emoji: "💪",
+    special: "力拔千斤",
+    description: "10 秒内重物也快速回收；抓 4 块金充能。",
+    charge: 4,
+  },
+  beastTamer: {
+    id: "beastTamer",
+    name: "驯兽师",
+    emoji: "🦇",
+    special: "口哨",
+    description: "矿洞动物停止 6 秒；抓 6 块金充能。",
+    charge: 6,
+  },
+};
+
+export interface MinerMechanicDefinition {
+  id: MinerMechanicId;
+  name: string;
+  description: string;
+}
+
+export const minerMechanics: Record<
+  MinerMechanicId,
+  MinerMechanicDefinition
+> = {
+  blackout: {
+    id: "blackout",
+    name: "黑屏",
+    description: "矿灯熄灭，只能看清钩子附近。",
+  },
+  fog: {
+    id: "fog",
+    name: "迷雾",
+    description: "雾从矿洞深处涌来，远处物体看不清。",
+  },
+  sonar: {
+    id: "sonar",
+    name: "声呐",
+    description: "物体在钩子靠近时才显形。",
+  },
+  flood: {
+    id: "flood",
+    name: "洪水",
+    description: "水位上涨，水面下的物体无法下钩。",
+  },
+  tide: {
+    id: "tide",
+    name: "潮汐",
+    description: "水位来回涨落，时机决定能抓什么。",
+  },
+  conveyor: {
+    id: "conveyor",
+    name: "传送带",
+    description: "物体随传送带左右移动。",
+  },
+  minecart: {
+    id: "minecart",
+    name: "矿车",
+    description: "矿车把物体沿轨道推来推去。",
+  },
+  zeroGravity: {
+    id: "zeroGravity",
+    name: "零重力",
+    description: "物体缓慢漂浮，位置不断变化。",
+  },
+  frozenThaw: {
+    id: "frozenThaw",
+    name: "冰冻解冻",
+    description: "部分物体被冻住，第一钩只能破冰。",
+  },
+  critters: {
+    id: "critters",
+    name: "矿洞动物",
+    description: "蝙蝠和地鼠在矿洞里乱窜。",
+  },
+};
+
+export const minerMechanicsPool = Object.keys(
+  minerMechanics,
+) as MinerMechanicId[];
 
 export const minerSceneLabels: Record<NodeKind, string> = {
   battle: "矿洞",

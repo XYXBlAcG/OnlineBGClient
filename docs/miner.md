@@ -2,6 +2,8 @@
 
 2–4 人共享矿图的**实时黄金矿工**。每名玩家有独立摆动的钩子，随时可以下钩；钩子沿路径抓到金块、石头、钻石、袋子、骷髅或 TNT，按重量回收。路线图直接复用秘塔远征的地图拓扑、路线布局和地图视口。
 
+玩法参照公开的《Gold Miner: Party Rush》与经典 Gold Miner 资料细化：四角色 Special、金块充能、重物节拍环、关卡机制、商店老虎机和 Team Gamble。项目保留 2–4 人，不扩展到原作的 2–6 人。
+
 ## 当前实现
 
 - 游戏 kind：`miner`
@@ -11,6 +13,17 @@
 - 限时：普通矿洞 60 秒，精英/首领 50 秒
 - 目标：团队累计金额达到团队目标；个人金额独立排名
 - 移动端：`mobile: true`，牌桌为同一套实时规则
+
+## 角色与 Special
+
+| 角色 | Special | 充能 | 效果 |
+| --- | --- | --- | --- |
+| 矿工 | 疾速下钩 | 6 块金 | 8 秒内摆钩/回收加速 |
+| 商人 | 即时到账 | 4 块金 | 立即收回钩上的物体 |
+| 大力士 | 力拔千斤 | 4 块金 | 10 秒内重物不减速 |
+| 驯兽师 | 口哨 | 6 块金 | 矿洞动物停止 6 秒 |
+
+开局先选角色；抓取金块为 Special 充能；按 Special 按钮释放。
 
 ## 路线地图
 
@@ -35,11 +48,29 @@
 
 核心规则：[rules.ts](../src/domain/miner/rules.ts)
 
-## 物体
+## 物体与关卡机制
 
-9 种：[content.ts](../src/domain/miner/content.ts)
+10 种物体：[content.ts](../src/domain/miner/content.ts)
 
-小金块、金块、大金块、小石头、大石头、钻石、神秘袋、骷髅、TNT。
+小金块、金块、大金块、小石头、大石头、钻石、神秘袋、骷髅、TNT、矿洞动物。
+
+首批 10 种关卡机制：
+
+- 黑屏、迷雾、声呐：限制视野
+- 洪水、潮汐：水位线以下无法下钩
+- 传送带、矿车、零重力：物体持续移动
+- 冰冻解冻：第一钩只能破冰
+- 矿洞动物：蝙蝠/地鼠移动，驯兽师可停止
+
+每个矿洞随机 1–2 个机制。
+
+## 重物节拍
+
+重量 ≥ 4 的重物（大金块、大石头）被钩住后出现节拍环：
+
+- 在节拍窗口按下「节拍拉钩」会额外加速回收
+- 踩空只算失误，不会丢失物体
+- AI 也会在节拍窗口尝试拉钩
 
 ## 商店与道具
 
@@ -54,18 +85,30 @@
 
 商店节点用金币购买；金币来自本局抓取金额，团队目标只统计抓取金额，不因消费减少。
 
+商店内还有：
+
+- 老虎机：每人一次，50 金币，随机返还金币或道具
+- Team Gamble：每店一次，用团队分数的 15% 赌 50/50 翻倍或扣除
+
 ## AI 与实时循环
 
 - AI 策略：[strategy.ts](../src/domain/miner/strategy.ts)
 - AI 在实时矿洞中选择角度下钩、使用道具、路线投票和商店购买
-- 服务端权威 tick：`MinerRules.needsResolution` 在实时矿洞持续为真，`resolve` 每 120ms 推进钩子、物体和倒计时
+- 服务端权威 tick：`MinerRules.needsResolution` 在实时矿洞持续为真，`resolve` 每 120ms 推进钩子、物体、机制和倒计时
 - 人类随时下钩；房间通过行动窗口接受实时输入
 - 动作类型：[miner/types.ts](../src/domain/miner/types.ts)
 
+## 参考
+
+- [Gold Miner: Party Rush Steam](https://store.steampowered.com/app/4815320/Gold_Miner_Party_Rush/)
+- [Gold Miner: Party Rush 公布稿](https://www.gamespress.com/Margarite-Entertainment-Announces-Gold-Miner-Party-Rush)
+- [Gold Miner: Party Rush 更新日志（Special、机制、节拍环）](https://store.steampowered.com/news/app/4815320)
+- [Gold Miner: Classic Edition Steam](https://store.steampowered.com/app/3777060/Gold_MinerClassic_Edition/)
+
 ## 验证
 
-- [规则测试](../tests/miner.test.ts)：复用路线拓扑、实时下钩/抓取/计分、房间 tick、AI
-- [UI 测试](../tests/miner-ui.test.tsx)：共享路线图、HUD
+- [规则测试](../tests/miner.test.ts)：复用路线拓扑、角色选择、Special、机制、实时下钩/抓取/计分、房间 tick、AI
+- [UI 测试](../tests/miner-ui.test.tsx)：角色选择、共享路线图、HUD
 - [双人烟测](../scripts/verify-miner.mjs)：两台 WebSocket 客户端进入实时矿洞并下钩得分
 - [AI 烟测](../scripts/verify-miner.mjs)：`MINER_AI=1 npm run verify:miner`，真人 + AI 完成实时下钩
 - 两个烟测都需先 `npm run server:build`

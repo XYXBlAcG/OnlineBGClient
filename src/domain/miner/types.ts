@@ -11,6 +11,7 @@ export const minerObjectKindSchema = z.enum([
   "bag",
   "skull",
   "tnt",
+  "critter",
 ]);
 export type MinerObjectKind = z.infer<typeof minerObjectKindSchema>;
 
@@ -24,7 +25,33 @@ export const minerItemIdSchema = z.enum([
 ]);
 export type MinerItemId = z.infer<typeof minerItemIdSchema>;
 
+export const minerCharacterIdSchema = z.enum([
+  "miner",
+  "merchant",
+  "strongman",
+  "beastTamer",
+]);
+export type MinerCharacterId = z.infer<typeof minerCharacterIdSchema>;
+
+export const minerMechanicIdSchema = z.enum([
+  "blackout",
+  "fog",
+  "sonar",
+  "flood",
+  "tide",
+  "conveyor",
+  "minecart",
+  "zeroGravity",
+  "frozenThaw",
+  "critters",
+]);
+export type MinerMechanicId = z.infer<typeof minerMechanicIdSchema>;
+
 export const minerMoveSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("character"),
+    character: minerCharacterIdSchema,
+  }),
   z.object({ type: z.literal("vote"), nodeId: z.string().min(1).max(40) }),
   z.object({
     type: z.literal("drop"),
@@ -34,7 +61,11 @@ export const minerMoveSchema = z.discriminatedUnion("type", [
     type: z.literal("use-item"),
     itemId: minerItemIdSchema,
   }),
+  z.object({ type: z.literal("special") }),
+  z.object({ type: z.literal("haul") }),
   z.object({ type: z.literal("buy"), itemId: minerItemIdSchema }),
+  z.object({ type: z.literal("spin") }),
+  z.object({ type: z.literal("team-gamble") }),
   z.object({ type: z.literal("ready") }),
   z.object({
     type: z.literal("event"),
@@ -58,6 +89,7 @@ export interface MinerObject {
   weight: number;
   hookedBy: number | null;
   removed: boolean;
+  frozen: boolean;
 }
 
 export interface MinerHook {
@@ -66,12 +98,16 @@ export interface MinerHook {
   direction: 1 | -1;
   length: number;
   targetId: string | null;
+  nextBeatTick: number;
 }
 
 export interface MinerPlayerView {
   seat: number;
+  character: MinerCharacterId;
   score: number;
   coins: number;
+  specialCharge: number;
+  specialTicks: number;
   items: Partial<Record<MinerItemId, number>>;
   hook: MinerHook;
   strengthTicks: number;
@@ -87,8 +123,11 @@ export interface MinerMineNode {
   scene: "mine" | "shop" | "camp" | "event";
   name: string;
   objects: MinerObject[];
+  mechanics: MinerMechanicId[];
   durationMs: number;
   timeLeftMs: number;
+  waterLevel: number;
+  crittersStoppedTicks: number;
 }
 
 export interface MinerResult {
@@ -99,6 +138,7 @@ export interface MinerResult {
 }
 
 export type MinerPhase =
+  | "character"
   | "map"
   | "live"
   | "shop"
@@ -115,7 +155,10 @@ export interface MinerView {
   path: string[];
   node: MinerMineNode | null;
   votes: Partial<Record<number, string>>;
+  characterChoices: Partial<Record<number, MinerCharacterId>>;
   ready: number[];
+  shopSpinsUsed: number[];
+  teamGambleUsed: boolean;
   players: MinerPlayerView[];
   teamQuota: number;
   teamScore: number;

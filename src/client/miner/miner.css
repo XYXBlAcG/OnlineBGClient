@@ -314,3 +314,81 @@
   width: 100%;
   height: 100%;
 }
+.miner-character-board {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+}
+.miner-character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.miner-character-card {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--canvas);
+  cursor: pointer;
+}
+.miner-character-card > span {
+  font-size: 28px;
+}
+.miner-character-card em {
+  color: var(--accent);
+  font-style: normal;
+  font-size: 12px;
+}
+.miner-character-card small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.miner-character-card:disabled {
+  opacity: 0.5;
+}
+.miner-mechanics {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.miner-mechanics span {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--canvas));
+  color: var(--accent);
+  font-size: 11px;
+}
+.miner-special {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  color: var(--accent);
+}
+.miner-haul {
+  animation: miner-beat 720ms ease-in-out infinite;
+}
+@keyframes miner-beat {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 38%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+@media (max-width: 760px) {
+  .miner-character-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .miner-character-card {
+    padding: 10px;
+  }
+  .miner-character-card small {
+    display: none;
+  }
+}

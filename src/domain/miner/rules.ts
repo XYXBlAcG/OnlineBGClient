@@ -2,7 +2,12 @@ import type { GameOptions } from "../game-options";
 import type { Rules } from "../plugin";
 import type { Action, Candidate } from "../types";
 import type { MapNode } from "../expedition/adventure-types";
-import { minerItems, minerObjectPool, minerObjects } from "./content";
+import {
+  minerCharacters,
+  minerItemPool,
+  minerItems,
+  minerObjects,
+} from "./content";
 import {
   createNode,
   generateMinerMap,
@@ -38,7 +43,11 @@ function makePlayer(seat: number): MinerPlayerView {
       direction: seat % 2 ? -1 : 1,
       length: 0,
       targetId: null,
+      nextBeatTick: 0,
     },
+    character: "miner",
+    specialCharge: 0,
+    specialTicks: 0,
     strengthTicks: 0,
     ropeNext: false,
     lucky: false,
@@ -67,15 +76,16 @@ function rayHit(
   hook: MinerPlayerView["hook"],
   previous: number,
   next: number,
-  objects: MinerObject[],
+  node: MinerMineNode,
 ): MinerObject | undefined {
   const radians = (hook.angle * Math.PI) / 180;
   const dx = Math.sin(radians);
   const dy = Math.cos(radians);
   let nearest: MinerObject | undefined;
   let nearestT = Infinity;
-  for (const object of objects) {
+  for (const object of node.objects) {
     if (object.removed || object.hookedBy !== null) continue;
+    if (node.waterLevel > 0 && object.y > node.waterLevel) continue;
     const ox = object.x - PIVOT_X;
     const oy = object.y - PIVOT_Y;
     const t = ox * dx + oy * dy;
@@ -111,6 +121,13 @@ function collect(
   player.score += value;
   player.coins += value;
   view.teamScore += value;
+  if (
+    (object.kind === "goldSmall" ||
+      object.kind === "goldMedium" ||
+      object.kind === "goldLarge") &&
+    value > 0
+  )
+    player.specialCharge++;
   player.lastCatch = definition.name;
   setLastAction(
     view,
@@ -140,8 +157,10 @@ function updateHook(
 ): void {
   const hook = player.hook;
   const dt = TICK_MS / 1000;
+  const quick =
+    player.character === "miner" && player.specialTicks > 0;
   if (hook.phase === "swing") {
-    hook.angle += hook.direction * SWING_SPEED * dt;
+    hook.angle += hook.direction * SWING_SPEED * (quick ? 1.8 : 1) * dt;
     if (hook.angle > 80) {
       hook.angle = 80;
       hook.direction = -1;
@@ -153,12 +172,27 @@ function updateHook(
   }
   if (hook.phase === "shoot") {
     const previous = hook.length;
-    hook.length = Math.min(MAX_LENGTH, hook.length + SHOOT_SPEED * dt);
-    const hit = rayHit(hook, previous, hook.length, node.objects);
-    if (hit) {
+    hook.length = Math.min(
+      MAX_LENGTH,
+      hook.length + SHOOT_SPEED * (quick ? 1.5 : 1) * dt,
+    );
+    const hit = rayHit(hook, previous, hook.length, node);
+    if (hit?.frozen) {
+      hit.frozen = false;
+      hook.phase = "reel";
+      hook.targetId = null;
+      setLastAction(
+        view,
+        player.seat,
+        "thaw",
+        `玩家 ${player.seat + 1} 的钩子敲碎了冰层。`,
+      );
+    } else if (hit) {
       hit.hookedBy = player.seat;
       hook.targetId = hit.id;
       hook.phase = "reel";
+      hook.nextBeatTick =
+        minerObjects[hit.kind].weight >= 4 ? view.tick + 5 : 0;
       hook.length = Math.max(
         0.08,
         Math.min(
@@ -175,11 +209,17 @@ function updateHook(
   const target = hook.targetId
     ? node.objects.find((object) => object.id === hook.targetId)
     : undefined;
-  const weight = target ? minerObjects[target.kind].weight : 0;
+  const rawWeight = target ? minerObjects[target.kind].weight : 0;
+  const weight =
+    player.character === "strongman" && player.specialTicks > 0
+      ? 0
+      : rawWeight;
   const strength = player.strengthTicks > 0 ? 1.9 : 1;
   const rope = player.ropeNext ? 4 : 1;
   player.ropeNext = false;
-  const speed = (BASE_REEL * strength * rope) / (1 + weight * 0.45);
+  const speed =
+    (BASE_REEL * strength * rope * (quick ? 1.25 : 1)) /
+    (1 + weight * 0.45);
   hook.length = Math.max(0, hook.length - speed * dt);
   if (hook.length <= 0.001) {
     if (target) collect(view, player, target);
@@ -187,7 +227,36 @@ function updateHook(
       hook.phase = "swing";
       hook.length = 0;
       hook.targetId = null;
+      hook.nextBeatTick = 0;
     }
+  }
+}
+
+function advanceMechanics(view: MinerView, node: MinerMineNode): void {
+  const dt = TICK_MS / 1000;
+  if (node.crittersStoppedTicks > 0) node.crittersStoppedTicks--;
+  if (node.mechanics.includes("flood"))
+    node.waterLevel = Math.min(0.82, node.waterLevel + 0.0015);
+  if (node.mechanics.includes("tide"))
+    node.waterLevel = 0.42 + Math.sin(view.tick / 18) * 0.26;
+  for (const [index, object] of node.objects.entries()) {
+    if (object.removed) continue;
+    if (object.kind === "critter") {
+      if (node.crittersStoppedTicks > 0) continue;
+      object.x += (index % 2 ? 1 : -1) * 0.05 * dt;
+      object.y += Math.sin((view.tick + index) / 5) * 0.002;
+    } else if (node.mechanics.includes("minecart")) {
+      object.x += 0.075 * dt;
+    } else if (node.mechanics.includes("conveyor")) {
+      object.x += (index % 2 ? 1 : -1) * 0.035 * dt;
+    } else if (node.mechanics.includes("zeroGravity")) {
+      object.y += Math.sin((view.tick + index) / 6) * 0.0025;
+      object.x += Math.cos((view.tick + index) / 9) * 0.0015;
+    }
+    if (object.x < 0.07) object.x = 0.07;
+    if (object.x > 0.93) object.x = 0.93;
+    if (object.y < 0.16) object.y = 0.16;
+    if (object.y > 0.92) object.y = 0.92;
   }
 }
 
@@ -202,14 +271,17 @@ export class MinerRules implements Rules<"miner"> {
     const seed = `${this.random()}:${this.random()}`;
     const map = generateMinerMap(seed);
     const view: MinerView = {
-      phase: "map",
+      phase: "character",
       map,
       floor: 0,
       current: null,
       path: [],
       node: null,
       votes: {},
+      characterChoices: {},
       ready: [],
+      shopSpinsUsed: [],
+      teamGambleUsed: false,
       players: Array.from({ length: players }, (_, seat) => makePlayer(seat)),
       teamQuota: options?.miner?.quota ?? 8000 + players * 3000,
       teamScore: 0,
@@ -217,7 +289,7 @@ export class MinerRules implements Rules<"miner"> {
       log: [],
       sequence: 0,
     };
-    log(view, `矿灯亮起，${players} 名矿工进入矿脉。目标：${view.teamQuota}。`);
+    log(view, `矿灯亮起，${players} 名矿工选择角色。目标：${view.teamQuota}。`);
     return { kind: "miner", view };
   }
 
@@ -228,6 +300,10 @@ export class MinerRules implements Rules<"miner"> {
   actors(state: MinerGameState): number[] {
     const view = state.view;
     if (this.finished(state)) return [];
+    if (view.phase === "character")
+      return view.players
+        .map((player) => player.seat)
+        .filter((seat) => !(seat in view.characterChoices));
     if (view.phase === "map")
       return view.players
         .map((player) => player.seat)
@@ -243,6 +319,16 @@ export class MinerRules implements Rules<"miner"> {
   candidates(state: MinerGameState, actor: number): Candidate[] {
     const view = state.view;
     if (this.finished(state)) return [];
+    if (view.phase === "character") {
+      if (actor in view.characterChoices) return [];
+      return Object.values(minerCharacters).map((character) => ({
+        action: {
+          type: "miner-action" as const,
+          move: { type: "character" as const, character: character.id },
+        },
+        label: `${character.name} · ${character.special}`,
+      }));
+    }
     if (view.phase === "map") {
       if (actor in view.votes) return [];
       return mapChoices(view).map((node) => ({
@@ -264,6 +350,25 @@ export class MinerRules implements Rules<"miner"> {
           },
           label: "下钩",
         });
+      if (
+        player.specialCharge >= minerCharacters[player.character].charge &&
+        (player.character !== "merchant" || player.hook.targetId !== null)
+      )
+        result.push({
+          action: { type: "miner-action", move: { type: "special" } },
+          label: minerCharacters[player.character].special,
+        });
+      if (
+        player.hook.phase === "reel" &&
+        player.hook.targetId &&
+        (view.node?.objects.find(
+          (object) => object.id === player.hook.targetId,
+        )?.weight ?? 0) >= 4
+      )
+        result.push({
+          action: { type: "miner-action", move: { type: "haul" } },
+          label: "节拍拉钩",
+        });
       for (const [itemId, count] of Object.entries(player.items)) {
         if (!count) continue;
         result.push({
@@ -278,10 +383,6 @@ export class MinerRules implements Rules<"miner"> {
     }
     if (view.phase === "shop") {
       return [
-        ...minerObjectPool
-          .filter(() => false)
-          .map(() => null as never)
-          .filter(Boolean),
         ...Object.values(minerItems)
           .filter((item) => player.coins >= item.cost)
           .map((item) => ({
@@ -291,6 +392,28 @@ export class MinerRules implements Rules<"miner"> {
             },
             label: `购买${item.name}（${item.cost}）`,
           })),
+        ...(view.shopSpinsUsed.includes(actor)
+          ? []
+          : [
+              {
+                action: {
+                  type: "miner-action" as const,
+                  move: { type: "spin" as const },
+                },
+                label: "老虎机（50 金币）",
+              },
+            ]),
+        ...(view.teamGambleUsed
+          ? []
+          : [
+              {
+                action: {
+                  type: "miner-action" as const,
+                  move: { type: "team-gamble" as const },
+                },
+                label: "Team Gamble",
+              },
+            ]),
         {
           action: {
             type: "miner-action" as const,
@@ -333,6 +456,8 @@ export class MinerRules implements Rules<"miner"> {
   needsResolution(state: MinerGameState): boolean {
     const view = state.view;
     if (view.phase === "live") return true;
+    if (view.phase === "character")
+      return view.players.every((player) => player.seat in view.characterChoices);
     if (view.phase === "map")
       return view.players.every((player) => player.seat in view.votes);
     if (view.phase === "shop" || view.phase === "camp" || view.phase === "event")
@@ -354,6 +479,8 @@ export class MinerRules implements Rules<"miner"> {
 
   actionWindow(state: MinerGameState, action: Action): string | undefined {
     if (action.type !== "miner-action") return;
+    if (state.view.phase === "character" && action.move.type === "character")
+      return `miner-character-${state.view.tick}`;
     if (state.view.phase === "live") return "miner-live";
     if (state.view.phase === "map" && action.move.type === "vote")
       return `miner-vote-${state.view.floor}`;
@@ -377,6 +504,18 @@ export class MinerRules implements Rules<"miner"> {
     const player = view.players[actor];
     if (!player) throw new Error("玩家不存在");
     const move = action.move;
+    if (view.phase === "character") {
+      if (move.type !== "character") throw new Error("请选择角色");
+      if (actor in view.characterChoices) throw new Error("已经选过角色");
+      view.characterChoices[actor] = move.character;
+      setLastAction(
+        view,
+        actor,
+        "character",
+        `玩家 ${actor + 1} 选择了${minerCharacters[move.character].name}。`,
+      );
+      return { kind: "miner", view };
+    }
     if (view.phase === "map") {
       if (move.type !== "vote") throw new Error("请选择路线");
       if (actor in view.votes) throw new Error("已经投过票");
@@ -411,7 +550,15 @@ export class MinerRules implements Rules<"miner"> {
         this.useItem(view, actor, move.itemId);
         return { kind: "miner", view };
       }
-      throw new Error("实时矿洞只能下钩或使用道具");
+      if (move.type === "special") {
+        this.useSpecial(view, actor);
+        return { kind: "miner", view };
+      }
+      if (move.type === "haul") {
+        this.haul(view, actor);
+        return { kind: "miner", view };
+      }
+      throw new Error("实时矿洞只能下钩、使用道具或释放 Special");
     }
     if (view.phase === "shop") {
       if (move.type === "buy") {
@@ -425,6 +572,14 @@ export class MinerRules implements Rules<"miner"> {
           "buy",
           `玩家 ${actor + 1} 购买了${item.name}。`,
         );
+        return { kind: "miner", view };
+      }
+      if (move.type === "spin") {
+        this.spin(view, actor);
+        return { kind: "miner", view };
+      }
+      if (move.type === "team-gamble") {
+        this.teamGamble(view, actor);
         return { kind: "miner", view };
       }
       if (move.type !== "ready") throw new Error("请购买或离开商店");
@@ -468,6 +623,8 @@ export class MinerRules implements Rules<"miner"> {
 
   resolve(state: MinerGameState): MinerGameState {
     const view = structuredClone(state.view);
+    if (view.phase === "character")
+      return { kind: "miner", view: this.resolveCharacter(view) };
     if (view.phase === "map") return { kind: "miner", view: this.resolveVote(view) };
     if (view.phase === "live") return { kind: "miner", view: this.tick(view) };
     if (view.phase === "shop" || view.phase === "camp" || view.phase === "event")
@@ -514,6 +671,95 @@ export class MinerRules implements Rules<"miner"> {
     );
   }
 
+  private resolveCharacter(view: MinerView): MinerView {
+    for (const player of view.players) {
+      const character = view.characterChoices[player.seat];
+      if (!character) throw new Error("角色选择无效");
+      player.character = character;
+    }
+    view.phase = "map";
+    view.characterChoices = {};
+    view.votes = {};
+    log(view, "矿工们带着各自的特长下井。");
+    return view;
+  }
+
+  private useSpecial(view: MinerView, actor: number): void {
+    const player = view.players[actor]!;
+    const character = minerCharacters[player.character];
+    if (player.specialCharge < character.charge) throw new Error("Special 尚未充能");
+    if (player.character === "merchant") {
+      const target = view.node?.objects.find(
+        (object) => object.id === player.hook.targetId,
+      );
+      if (!target) throw new Error("钩子上没有物体");
+      collect(view, player, target);
+    } else {
+      player.specialTicks = Math.ceil(
+        (player.character === "strongman" ? 10_000 : 8_000) / TICK_MS,
+      );
+      if (player.character === "beastTamer" && view.node)
+        view.node.crittersStoppedTicks = Math.ceil(6_000 / TICK_MS);
+      setLastAction(
+        view,
+        actor,
+        "special",
+        `玩家 ${actor + 1} 释放${character.special}。`,
+      );
+    }
+    player.specialCharge = 0;
+  }
+
+  private haul(view: MinerView, actor: number): void {
+    const player = view.players[actor]!;
+    const target = view.node?.objects.find(
+      (object) => object.id === player.hook.targetId,
+    );
+    if (!target || target.weight < 4) throw new Error("没有需要节拍的重物");
+    if (Math.abs(view.tick - player.hook.nextBeatTick) <= 1) {
+      player.hook.length = Math.max(0, player.hook.length - 0.18);
+      player.hook.nextBeatTick = view.tick + 6;
+      setLastAction(view, actor, "haul", `玩家 ${actor + 1} 踩准节拍，重物加速。`);
+    } else {
+      setLastAction(view, actor, "haul", `玩家 ${actor + 1} 节拍失误。`);
+    }
+  }
+
+  private spin(view: MinerView, actor: number): void {
+    if (view.shopSpinsUsed.includes(actor)) throw new Error("已经转过老虎机");
+    const player = view.players[actor]!;
+    if (player.coins < 50) throw new Error("金币不足");
+    player.coins -= 50;
+    view.shopSpinsUsed.push(actor);
+    const roll = this.random();
+    if (roll < 0.12) {
+      const item = minerItemPool[Math.floor(this.random() * minerItemPool.length)]!;
+      player.items[item] = (player.items[item] ?? 0) + 1;
+      setLastAction(view, actor, "spin", `老虎机中奖：${minerItems[item].name}。`);
+    } else if (roll < 0.55) {
+      player.coins += 80;
+      setLastAction(view, actor, "spin", "老虎机：回收 80 金币。");
+    } else if (roll < 0.85) {
+      player.coins += 150;
+      setLastAction(view, actor, "spin", "老虎机：+150 金币。");
+    } else {
+      setLastAction(view, actor, "spin", "老虎机：什么都没中。");
+    }
+  }
+
+  private teamGamble(view: MinerView, _actor: number): void {
+    if (view.teamGambleUsed) throw new Error("本商店已经赌过");
+    view.teamGambleUsed = true;
+    const wager = Math.max(100, Math.floor(view.teamScore * 0.15));
+    if (this.random() < 0.5) {
+      view.teamScore += wager;
+      setLastAction(view, -1, "gamble", `Team Gamble 成功，团队 +${wager}。`);
+    } else {
+      view.teamScore = Math.max(0, view.teamScore - wager);
+      setLastAction(view, -1, "gamble", `Team Gamble 失败，团队 -${wager}。`);
+    }
+  }
+
   private resolveVote(view: MinerView): MinerView {
     const counts = new Map<string, number>();
     for (const nodeId of Object.values(view.votes))
@@ -533,6 +779,8 @@ export class MinerRules implements Rules<"miner"> {
     view.path.push(node.id);
     view.votes = {};
     view.ready = [];
+    view.shopSpinsUsed = [];
+    view.teamGambleUsed = false;
     view.node = createNode(node, view.players.length, this.random);
     view.phase =
       view.node.scene === "mine"
@@ -543,12 +791,14 @@ export class MinerRules implements Rules<"miner"> {
             ? "camp"
             : "event";
     for (const player of view.players) {
+      player.specialTicks = 0;
       player.hook = {
         phase: "swing",
         angle: (player.seat % 2 ? 1 : -1) * 32,
         direction: player.seat % 2 ? -1 : 1,
         length: 0,
         targetId: null,
+        nextBeatTick: 0,
       };
     }
     setLastAction(
@@ -564,8 +814,10 @@ export class MinerRules implements Rules<"miner"> {
     if (!node) return view;
     view.tick++;
     node.timeLeftMs -= TICK_MS;
+    advanceMechanics(view, node);
     for (const player of view.players) {
       if (player.strengthTicks > 0) player.strengthTicks--;
+      if (player.specialTicks > 0) player.specialTicks--;
       updateHook(view, player, node);
     }
     if (

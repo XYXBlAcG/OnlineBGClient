@@ -4,7 +4,9 @@ import { Room } from "../src/domain/room";
 import { gameCatalogue } from "../src/domain/catalogue";
 import { generateMap } from "../src/domain/expedition/map";
 import {
+  minerCharacters,
   minerItems,
+  minerMechanics,
   minerObjects,
   minerSceneFor,
 } from "../src/domain/miner/content";
@@ -12,8 +14,28 @@ import { generateMinerMap, mapChoices } from "../src/domain/miner/map";
 import type { GameState } from "../src/domain/types";
 import type { MinerGameState } from "../src/domain/miner/types";
 
-function enterMine(engine: GameEngine, players = 2, seed = "miner:test") {
+function enterMine(
+  engine: GameEngine,
+  players = 2,
+  seed = "miner:test",
+  characterId = "miner",
+) {
   let state = engine.create("miner", players, seed, false);
+  for (const actor of Array.from({ length: players }, (_, i) => i)) {
+    const character = engine
+      .candidates(engine.project(state, actor), actor)
+      .find((item) => {
+        const action = item.action;
+        return (
+          action.type === "miner-action" &&
+          action.move.type === "character" &&
+          action.move.character === characterId
+        );
+      });
+    if (!character) throw new Error("没有角色选择");
+    state = engine.apply(state, actor, character.action, `character:${actor}`);
+  }
+  state = engine.resolve(state, "characters");
   const view0 = engine.project(state, 0);
   if (view0.kind !== "miner") throw new Error("wrong game");
   const mineChoice = mapChoices(view0.view).find(
@@ -54,8 +76,10 @@ describe("miner capabilities", () => {
 
 describe("miner content", () => {
   it("ships the Gold Miner object and item set", () => {
-    expect(Object.keys(minerObjects)).toHaveLength(9);
+    expect(Object.keys(minerObjects)).toHaveLength(10);
     expect(Object.keys(minerItems)).toHaveLength(6);
+    expect(Object.keys(minerCharacters)).toHaveLength(4);
+    expect(Object.keys(minerMechanics)).toHaveLength(10);
     expect(minerSceneFor("battle")).toBe("mine");
     expect(minerSceneFor("shop")).toBe("shop");
     expect(minerSceneFor("camp")).toBe("camp");
@@ -125,6 +149,21 @@ describe("real-time mining", () => {
     const guest = room.claim("乙");
     room.setReady(guest, true);
     room.start(host);
+    const characterRound = room.snapshot(host);
+    room.act(
+      host,
+      "host-character",
+      characterRound.version,
+      characterRound.candidates[0]!.action,
+    );
+    const characterSecond = room.snapshot(guest);
+    room.act(
+      guest,
+      "guest-character",
+      characterSecond.version,
+      characterSecond.candidates[0]!.action,
+    );
+    expect(room.resolveIfDue(Date.now() + 10_000)).toBe(true);
     const first = room.snapshot(host);
     if (first.state?.kind !== "miner") throw new Error("wrong game");
     const mineNode = mapChoices(first.state.view).find(
@@ -167,6 +206,37 @@ describe("real-time mining", () => {
     if (ticked?.kind !== "miner") throw new Error("wrong game");
     expect(ticked.view.phase).toBe("live");
     expect(ticked.view.node!.timeLeftMs).toBeLessThan(60_000);
+  });
+
+  it("charges and activates character Specials", () => {
+    const engine = new GameEngine();
+    let state: GameState = enterMine(
+      engine,
+      2,
+      "miner:special",
+      "strongman",
+    );
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(state.view.players[0]!.character).toBe("strongman");
+    state.view.players[0]!.specialCharge = 4;
+    state = engine.apply(
+      state,
+      0,
+      { type: "miner-action", move: { type: "special" } },
+      "special",
+    );
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(state.view.players[0]!.specialTicks).toBeGreaterThan(0);
+  });
+
+  it("creates level mechanics and keeps ticking", () => {
+    const engine = new GameEngine();
+    let state: GameState = enterMine(engine, 2, "miner:mechanics");
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(Array.isArray(state.view.node!.mechanics)).toBe(true);
+    for (let tick = 0; tick < 10; tick++)
+      state = engine.resolve(state, `tick:${tick}`);
+    expect(state.kind).toBe("miner");
   });
 
   it("votes and can enter a shop or camp node", () => {

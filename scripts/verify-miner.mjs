@@ -64,7 +64,13 @@ class Client {
     const view = state.view;
     const actor = snapshot.actor;
     let move = null;
-    if (view.phase === "map") {
+    if (view.phase === "character") {
+      const candidate = snapshot.candidates?.find((item) => {
+        const action = item.action;
+        return action.type === "miner-action" && action.move.type === "character";
+      });
+      move = candidate?.action.move ?? null;
+    } else if (view.phase === "map") {
       const candidate = snapshot.candidates?.find((item) => {
         const action = item.action;
         if (action.type !== "miner-action" || action.move.type !== "vote")

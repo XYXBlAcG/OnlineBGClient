@@ -2,7 +2,7 @@ import type { NodeKind } from "../expedition/adventure-types";
 import { Strategy } from "../strategy";
 import type { SearchRequest } from "../strategy";
 import type { Candidate, DecisionCandidate } from "../types";
-import { minerItems } from "./content";
+import { minerCharacters, minerItems } from "./content";
 import { mapChoices } from "./map";
 import type { MinerGameState, MinerMove } from "./types";
 
@@ -39,6 +39,14 @@ function angleFor(x: number, y: number): number {
 
 function moveScore(observation: MinerGameState, actor: number, move: MinerMove): number {
   const view = observation.view;
+  if (move.type === "character")
+    return move.character === "strongman"
+      ? 55
+      : move.character === "merchant"
+        ? 50
+        : move.character === "beastTamer"
+          ? 45
+          : 40;
   if (move.type === "vote") {
     const node = mapChoices(view).find((item) => item.id === move.nodeId);
     return node ? kindValue[node.kind] : 0;
@@ -63,6 +71,10 @@ function moveScore(observation: MinerGameState, actor: number, move: MinerMove):
       (player.hook.phase === "swing" ? 0 : 200)
     );
   }
+  if (move.type === "special") return 70;
+  if (move.type === "haul") return 45;
+  if (move.type === "spin") return 35;
+  if (move.type === "team-gamble") return 25;
   if (move.type === "use-item") {
     if (move.itemId === "dynamite") return 20;
     if (move.itemId === "time") return 40;
@@ -88,6 +100,14 @@ export class MinerStrategy extends Strategy {
       return super.candidates(request);
     const view = request.observation.view;
     const actor = request.actor;
+    if (view.phase === "character")
+      return Object.values(minerCharacters).map((character) => ({
+        action: {
+          type: "miner-action",
+          move: { type: "character", character: character.id },
+        },
+        label: character.name,
+      }));
     if (view.phase === "map")
       return mapChoices(view).map((node) => ({
         action: { type: "miner-action", move: { type: "vote", nodeId: node.id } },
@@ -108,6 +128,25 @@ export class MinerStrategy extends Strategy {
             label: `${angle}°`,
           });
       }
+      if (
+        player.specialCharge >= minerCharacters[player.character].charge &&
+        (player.character !== "merchant" || player.hook.targetId !== null)
+      )
+        candidates.push({
+          action: { type: "miner-action", move: { type: "special" } },
+          label: minerCharacters[player.character].special,
+        });
+      if (
+        player.hook.phase === "reel" &&
+        player.hook.targetId &&
+        (view.node?.objects.find(
+          (object) => object.id === player.hook.targetId,
+        )?.weight ?? 0) >= 4
+      )
+        candidates.push({
+          action: { type: "miner-action", move: { type: "haul" } },
+          label: "haul",
+        });
       for (const [itemId, count] of Object.entries(player.items)) {
         if (!count) continue;
         candidates.push({
@@ -132,6 +171,28 @@ export class MinerStrategy extends Strategy {
             },
             label: item.name,
           })),
+        ...(!view.shopSpinsUsed.includes(actor) && player.coins >= 50
+          ? [
+              {
+                action: {
+                  type: "miner-action" as const,
+                  move: { type: "spin" as const },
+                },
+                label: "spin",
+              },
+            ]
+          : []),
+        ...(!view.teamGambleUsed
+          ? [
+              {
+                action: {
+                  type: "miner-action" as const,
+                  move: { type: "team-gamble" as const },
+                },
+                label: "gamble",
+              },
+            ]
+          : []),
         {
           action: { type: "miner-action", move: { type: "ready" } },
           label: "离开",

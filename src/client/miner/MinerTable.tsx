@@ -7,7 +7,9 @@ import type {
   MinerView,
 } from "../../domain/miner/types";
 import {
+  minerCharacters,
   minerItems,
+  minerMechanics,
   minerObjects,
   minerSceneLabels,
 } from "../../domain/miner/content";
@@ -21,6 +23,54 @@ const playerColor = ["#d7a63a", "#5d9bd4", "#8e7bd0", "#c76d68"];
 
 function playerName(seat: number) {
   return `玩家 ${seat + 1}`;
+}
+
+function CharacterBoard({
+  view,
+  actor,
+  send,
+  pending,
+}: {
+  view: MinerView;
+  actor: number;
+  send: (move: MinerMove) => void;
+  pending: boolean;
+}) {
+  return (
+    <section className="miner-character-board">
+      <div className="miner-map-title">
+        <h3>选择角色</h3>
+        <span>
+          {Object.keys(view.characterChoices).length}/{view.players.length} 已选择
+        </span>
+      </div>
+      <div className="miner-character-grid">
+        {Object.values(minerCharacters).map((character) => (
+          <button
+            type="button"
+            key={character.id}
+            className="miner-character-card"
+            disabled={pending || view.characterChoices[actor] !== undefined}
+            onClick={() => send({ type: "character", character: character.id })}
+          >
+            <span>{character.emoji}</span>
+            <strong>{character.name}</strong>
+            <em>{character.special}</em>
+            <small>{character.description}</small>
+          </button>
+        ))}
+      </div>
+      <div className="miner-log">
+        {view.log.slice(-5).map((entry) => (
+          <p key={entry.id}>{entry.text}</p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function playerCharacter(player: MinerView["players"][number]) {
+  return minerCharacters[player.character];
 }
 
 function MapBoard({
@@ -173,6 +223,13 @@ function LiveBoard({
         <span className="miner-team-progress">
           团队 {view.teamScore}/{view.teamQuota}
         </span>
+        <div className="miner-mechanics">
+          {node.mechanics.map((id) => (
+            <span key={id} title={minerMechanics[id].description}>
+              {minerMechanics[id].name}
+            </span>
+          ))}
+        </div>
       </div>
       <svg
         viewBox="0 0 100 100"
@@ -199,15 +256,48 @@ function LiveBoard({
           stroke="var(--line)"
           strokeWidth="1.2"
         />
+        {node.waterLevel > 0 && (
+          <g>
+            <rect
+              x="0"
+              y={node.waterLevel * 100}
+              width="100"
+              height={100 - node.waterLevel * 100}
+              fill="color-mix(in srgb, var(--accent) 14%, transparent)"
+            />
+            <line
+              x1="0"
+              x2="100"
+              y1={node.waterLevel * 100}
+              y2={node.waterLevel * 100}
+              stroke="var(--accent)"
+              strokeWidth="0.6"
+              opacity="0.55"
+            />
+          </g>
+        )}
         {node.objects
           .filter((object) => !object.removed)
           .map((object) => {
             const definition = minerObjects[object.kind];
             const hooked = object.hookedBy !== null;
+            const endPoint = hookEnd(hook?.angle ?? 0, hook?.length ?? 0);
+            const distance = Math.hypot(
+              object.x * 100 - endPoint.x,
+              object.y * 100 - endPoint.y,
+            );
+            const hidden = node.mechanics.some((id) => id === "blackout")
+              ? distance > 34
+              : node.mechanics.some((id) => id === "sonar")
+                ? distance > 24
+                : node.mechanics.some((id) => id === "fog")
+                  ? distance > 48
+                  : false;
+            const underwater = node.waterLevel > 0 && object.y > node.waterLevel;
             return (
               <g
                 key={object.id}
-                opacity={hooked ? 0.95 : 1}
+                opacity={hidden ? 0.05 : underwater ? 0.3 : hooked ? 0.95 : 1}
                 transform={`translate(${object.x * 100} ${object.y * 100})`}
               >
                 <circle
@@ -284,9 +374,15 @@ function LiveBoard({
       <div className="miner-live-stats">
         {view.players.map((item) => (
           <div key={item.seat} data-seat={item.seat}>
-            <strong>{playerName(item.seat)}</strong>
+            <strong>
+              {playerCharacter(item).emoji} {playerName(item.seat)}
+            </strong>
             <span>{item.score} 分</span>
             <span>{item.coins} 金币</span>
+            <small>
+              {playerCharacter(item).special} ·{" "}
+              {item.specialCharge}/{playerCharacter(item).charge}
+            </small>
             <small>{item.lastCatch || "等待下钩"}</small>
           </div>
         ))}
@@ -302,6 +398,30 @@ function LiveBoard({
         >
           {hook?.phase === "swing" ? "下钩" : "回收中"}
         </button>
+        {player &&
+          player.specialCharge >= playerCharacter(player).charge && (
+            <button
+              type="button"
+              className="miner-special"
+              disabled={pending}
+              onClick={() => send({ type: "special" })}
+            >
+              {playerCharacter(player).emoji} {playerCharacter(player).special}
+            </button>
+          )}
+        {hook?.phase === "reel" &&
+          player?.hook.targetId &&
+          (node.objects.find((object) => object.id === player.hook.targetId)
+            ?.weight ?? 0) >= 4 && (
+            <button
+              type="button"
+              className="miner-haul"
+              disabled={pending}
+              onClick={() => send({ type: "haul" })}
+            >
+              节拍拉钩
+            </button>
+          )}
         {Object.entries(player?.items ?? {}).map(([id, count]) =>
           count ? (
             <button
@@ -359,6 +479,22 @@ function ShopBoard({
             <em>{item.cost} 金币</em>
           </button>
         ))}
+      </div>
+      <div className="miner-live-actions">
+        <button
+          type="button"
+          disabled={pending || view.shopSpinsUsed.includes(actor)}
+          onClick={() => send({ type: "spin" })}
+        >
+          🎰 老虎机 · 50 金币
+        </button>
+        <button
+          type="button"
+          disabled={pending || view.teamGambleUsed}
+          onClick={() => send({ type: "team-gamble" })}
+        >
+          🎲 Team Gamble · 团队 15%
+        </button>
       </div>
       <button
         type="button"
@@ -464,6 +600,15 @@ export function MinerTable({
   const send = (move: MinerMove) =>
     act({ type: "miner-action", move });
   const content = (() => {
+    if (view.phase === "character")
+      return (
+        <CharacterBoard
+          view={view}
+          actor={actor}
+          send={send}
+          pending={pending || replay}
+        />
+      );
     if (view.phase === "map")
       return (
         <MapBoard
@@ -521,7 +666,9 @@ export function MinerTable({
         <div>
           <strong>黄金矿脉</strong>
           <span>
-            第 {view.floor + 1} 层 · {view.current ? "矿道" : "选路"}
+            {view.phase === "character"
+              ? "选角色"
+              : `第 {view.floor + 1} 层 · ${view.current ? "矿道" : "选路"}`}
           </span>
         </div>
         <div className="miner-quota">
@@ -533,7 +680,8 @@ export function MinerTable({
         <div className="miner-active-seat">
           {view.players.map((player) => (
             <span key={player.seat} data-seat={player.seat}>
-              {playerName(player.seat)} · {player.score}
+              {playerCharacter(player).emoji} {playerName(player.seat)} ·{" "}
+              {player.score}
             </span>
           ))}
         </div>
