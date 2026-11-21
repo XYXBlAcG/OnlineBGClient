@@ -2,6 +2,7 @@ import type { MahjongOptions } from "./mahjong/types";
 import type { GraphwarOptions, GraphwarInitial } from "./graphwar/types";
 import type { FlightOptions } from "./flight";
 import type { CheckersOptions } from "./checkers";
+import type { MinerOptions } from "./miner/types";
 export interface GameOptions {
   expeditionMap?: import("./expedition/adventure-types").MapNode[][];
   expeditionCampaign?: 1 | 2;
@@ -14,5 +15,6 @@ export interface GameOptions {
   graphwarInitial?: GraphwarInitial;
   flight?: FlightOptions;
   checkers?: CheckersOptions;
+  miner?: MinerOptions;
   pool?: import("./pool/types").PoolOptions;
 }

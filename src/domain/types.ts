@@ -204,7 +204,8 @@ export type GameState =
   | { kind: "fxq"; view: FlightView }
   | { kind: "uno"; view: UnoView }
   | { kind: "sgs"; view: SgsView }
-  | import("./pool/types").PoolState;
+  | import("./pool/types").PoolState
+  | import("./miner/types").MinerGameState;
 export interface Candidate {
   action: Action;
   label: string;

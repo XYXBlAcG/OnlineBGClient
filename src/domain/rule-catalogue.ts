@@ -15,12 +15,14 @@ import {
   sichuanPlugin,
   splendorPlugin,
   unoPlugin,
+  minerPlugin,
 } from "./builtin-rules";
 
 export const gameRules: Record<
   GameKind,
   (runtime: UpstreamRuntime) => GameRules
 > = {
+  miner: minerPlugin,
   expedition: expeditionPlugin,
   dominion: dominionPlugin,
   graphwar: graphwarPlugin,

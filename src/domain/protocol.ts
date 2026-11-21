@@ -38,6 +38,7 @@ import type { ReplayRecord } from "./replay";
 import { z } from "zod";
 import { gameCatalogue, gameKinds } from "./catalogue";
 import { poolOptionsSchema } from "./pool/types";
+import { minerOptionsSchema } from "./miner/types";
 import type {
   Candidate,
   Decision,
@@ -73,6 +74,7 @@ export const configSchema = z
     graphwar: graphwarOptionsSchema.default(graphwarOptionsSchema.parse({})),
     flight: flightOptionsSchema.default(flightOptionsSchema.parse({})),
     checkers: checkersOptionsSchema.default(checkersOptionsSchema.parse({})),
+    miner: minerOptionsSchema.default(minerOptionsSchema.parse({})),
     pool: poolOptionsSchema.default(poolOptionsSchema.parse({})),
     dominion: dominionOptionsSchema.default(dominionOptionsSchema.parse({})),
     mahjong: mahjongOptionsSchema.default({ cap: 3, selfDraw: "base" }),

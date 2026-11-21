@@ -13,6 +13,7 @@ import { DdzRules } from "./ddz";
 import { CheckersRules } from "./checkers";
 import { FlightRules } from "./flight";
 import { PoolRules } from "./pool/rules";
+import { MinerRules } from "./miner/rules";
 
 export function unoPlugin(runtime: UpstreamRuntime) {
   return new GameAdapter("uno", new UnoRules(runtime));
@@ -95,6 +96,10 @@ export function graphwarPlugin(runtime: UpstreamRuntime) {
 
 export function dominionPlugin(runtime: UpstreamRuntime) {
   return new GameAdapter("dominion", new DominionRules(() => runtime.random()));
+}
+
+export function minerPlugin(runtime: UpstreamRuntime) {
+  return new GameAdapter("miner", new MinerRules(() => runtime.random()));
 }
 
 export function expeditionPlugin(runtime: UpstreamRuntime) {

@@ -286,7 +286,8 @@ export class Strategy {
       observation.kind === "scmj" ||
       observation.kind === "ccbs" ||
       observation.kind === "graphwar" ||
-      observation.kind === "pool"
+      observation.kind === "pool" ||
+      observation.kind === "miner"
     )
       throw new Error("该游戏 AI 尚未接入");
     const state = structuredClone(observation);
@@ -419,7 +420,8 @@ export class Strategy {
       observation.kind === "scmj" ||
       observation.kind === "ccbs" ||
       observation.kind === "graphwar" ||
-      observation.kind === "pool"
+      observation.kind === "pool" ||
+      observation.kind === "miner"
     )
       throw new Error("该游戏 AI 尚未接入");
     if (actor === target) return -1;
@@ -455,7 +457,8 @@ export class Strategy {
       observation.kind === "scmj" ||
       observation.kind === "ccbs" ||
       observation.kind === "graphwar" ||
-      observation.kind === "pool"
+      observation.kind === "pool" ||
+      observation.kind === "miner"
     )
       throw new Error("该游戏 AI 尚未接入");
     const features: Feature[] = [];
@@ -785,7 +788,7 @@ export class Strategy {
         ? 100
         : this.engine.flight.progress(state.view, actor) -
             this.engine.flight.risk(state.view, actor);
-    if (state.kind === "pool") return 0;
+    if (state.kind === "pool" || state.kind === "miner") return 0;
     const view = state.view;
     if (this.engine.finished(state))
       return view.winners.includes(actor) ? 100 : -100;

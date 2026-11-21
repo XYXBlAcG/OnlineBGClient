@@ -31,6 +31,14 @@
 .game-symbol[data-game-icon="uno"] {
   background: transparent;
 }
+.game-symbol[data-game-icon="miner"] {
+  background: linear-gradient(
+    140deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 28%, var(--canvas))
+  );
+  color: var(--accent-text);
+}
 .game-symbol[data-game-icon="expedition"] {
   background: linear-gradient(140deg, #7251be, #353e88);
   color: #fff;

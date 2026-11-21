@@ -47,6 +47,7 @@
     "verify:companion:real": "node scripts/verify-companion.mjs --real",
     "verify:llm-seat": "node scripts/verify-llm-seat.mjs",
     "verify:table-reactions": "node scripts/verify-table-reactions.mjs",
+    "verify:miner": "node scripts/verify-miner.mjs",
     "benchmark:expedition-chapter": "node scripts/benchmark-expedition-chapter.mjs",
     "verify:expedition-difficulty": "node scripts/verify-expedition-difficulty.mjs",
     "analyze:expedition-experience": "node scripts/analyze-expedition-experience.mjs",

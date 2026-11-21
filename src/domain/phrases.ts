@@ -12,6 +12,12 @@ export const phraseGroupsSchema = z
 export type PhraseGroup = z.infer<typeof phraseGroupsSchema>[number];
 export const defaultPhraseGroups = phraseGroupsSchema.parse(presets);
 const gamePhrases: Record<GameKind, string[]> = {
+  miner: [
+    "这块矿我先看上了。",
+    "别偷，别偷，快挖完了！",
+    "商店那件我预定了。",
+    "团队指标还差多少？",
+  ],
   expedition: [
     "这轮先保住队友。",
     "我来破甲，你来收尾。",

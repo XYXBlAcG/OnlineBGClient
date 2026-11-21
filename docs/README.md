@@ -21,6 +21,7 @@
 - [手机版与电脑版能力对照](mobile-desktop-differences.md)
 - [桌面牌桌与原生窗口](workspace-and-windows-ai-plan.md)
 - [牌桌布局审核入口](table-layout-review-plan.md)
+- [黄金矿脉：共享矿图、偷矿与商店](miner.md)
 
 - [界面、游戏动效与自选头像](ui-motion-plan.md)
 - [样式系统标准化计划](style-system-plan.md)

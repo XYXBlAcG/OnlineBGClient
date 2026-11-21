@@ -1,0 +1,301 @@
+.miner-table {
+  display: grid;
+  gap: 14px;
+  min-height: 100%;
+  padding: 18px;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%),
+    var(--canvas);
+}
+.miner-hud,
+.miner-node-heading,
+.miner-map-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.miner-hud > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+.miner-hud > div:first-child strong {
+  font-size: 22px;
+  letter-spacing: 0.04em;
+}
+.miner-hud span,
+.miner-hud small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.miner-quota {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+}
+.miner-quota strong {
+  color: var(--accent);
+  font-size: 20px;
+}
+.miner-active-seat {
+  color: var(--muted);
+  font-size: 12px;
+}
+.miner-players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.miner-player {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  transition: border-color var(--motion-control), transform var(--motion-control);
+}
+.miner-player.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
+}
+.miner-player header,
+.miner-player-stats,
+.miner-player-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.miner-player header span,
+.miner-player-stats,
+.miner-player-status {
+  color: var(--muted);
+  font-size: 12px;
+}
+.miner-player-inventory {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-height: 22px;
+}
+.miner-player-inventory span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--canvas);
+  font-size: 11px;
+}
+.miner-player-inventory .miner-relic {
+  color: var(--accent);
+}
+.miner-player-status em {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+  font-style: normal;
+}
+.miner-map-board,
+.miner-node-board,
+.miner-bank,
+.miner-result {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+}
+.miner-map-nodes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.miner-map-node {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--canvas);
+  cursor: pointer;
+}
+.miner-map-node:disabled {
+  opacity: 0.5;
+}
+.miner-node-symbol {
+  font-size: 26px;
+}
+.miner-map-node small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.miner-floor-strip {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.miner-floor-strip span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: 11px;
+}
+.miner-floor-strip span.past {
+  background: color-mix(in srgb, var(--accent) 12%, var(--canvas));
+}
+.miner-floor-strip span.active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.miner-node-heading {
+  margin-bottom: 10px;
+}
+.miner-node-heading small,
+.miner-map-heading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.miner-dynamics {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.miner-dynamics span,
+.miner-tag {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--canvas));
+  color: var(--accent);
+  font-size: 11px;
+}
+.miner-tag.frozen {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, var(--canvas));
+}
+.miner-tag.danger {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 13%, var(--canvas));
+}
+.miner-deposits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.miner-deposit {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--canvas);
+}
+.miner-deposit.is-frozen {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.miner-deposit.is-complete {
+  opacity: 0.5;
+}
+.miner-deposit-title {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: 26px;
+}
+.miner-progress {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface);
+}
+.miner-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--surface)));
+  transition: width var(--motion-control);
+}
+.miner-deposit small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.miner-deposit-actions,
+.miner-action-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.miner-deposit-actions button,
+.miner-action-grid button {
+  padding: 6px 10px;
+  border-radius: 9px;
+}
+.miner-deposit-actions .danger {
+  color: var(--danger);
+}
+.miner-bank-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 16px 0;
+}
+.miner-bank-total strong {
+  color: var(--accent);
+  font-size: 36px;
+}
+.miner-result h3 {
+  margin-bottom: 8px;
+}
+.miner-result.won h3 {
+  color: var(--accent);
+}
+.miner-result.lost h3 {
+  color: var(--danger);
+}
+.miner-result ol {
+  display: grid;
+  gap: 6px;
+  padding-left: 20px;
+}
+.miner-log {
+  display: grid;
+  gap: 3px;
+  max-height: 150px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--canvas) 65%, transparent);
+  color: var(--muted);
+  font-size: 12px;
+}
+.miner-log p {
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .miner-table {
+    padding: 10px;
+  }
+  .miner-hud > div:first-child strong {
+    font-size: 18px;
+  }
+  .miner-quota strong {
+    font-size: 16px;
+  }
+  .miner-players {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .miner-deposits {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

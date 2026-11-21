@@ -1,6 +1,7 @@
 import { useGameScale } from "./game-sizing/GameSizing";
 import { tableInteractive } from "./game-sizing/table-state";
 import { ExpeditionTable } from "./expedition/ExpeditionTable";
+import { MinerTable } from "./miner/MinerTable";
 import { DominionTable } from "./dominion/DominionTable";
 import { GraphwarTable } from "./graphwar/GraphwarTable";
 import { SichuanTable } from "./mahjong/SichuanTable";
@@ -287,6 +288,14 @@ export const OriginalGame = memo(function OriginalGame({
             act={dispatch}
             replay={replay}
             avatar={avatarContext}
+            pending={pending}
+          />
+        ) : presentation.kind === "miner" &&
+          snapshot.state?.kind === "miner" ? (
+          <MinerTable
+            snapshot={snapshot}
+            act={dispatch}
+            replay={replay}
             pending={pending}
           />
         ) : presentation.kind === "dominion" &&

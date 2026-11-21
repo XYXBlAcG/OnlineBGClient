@@ -70,6 +70,32 @@ export function GameIcon({ kind }: { kind: GameKind }) {
             strokeWidth="2"
           />
         </svg>
+      ) : kind === "miner" ? (
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path
+            d="m12 38 20-20"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          <path
+            d="M24 10c5-4 12-4 17 1l-4 4c-3-3-7-3-10-1Z"
+            fill="currentColor"
+          />
+          <path
+            d="m8 42 5-5"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          <path
+            d="m29 12 5 5"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <path d="m9 30 3 3-7 7-3-3Z" fill="currentColor" opacity=".55" />
+        </svg>
       ) : kind === "expedition" ? (
         <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
           <path

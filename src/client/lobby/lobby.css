@@ -198,6 +198,14 @@
   --cover-bg: #e9d8cc;
   --cover-ink: #864431;
 }
+.club-cover[data-cover="miner"] {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) 70%, var(--surface)),
+    color-mix(in srgb, var(--accent) 30%, var(--canvas))
+  );
+  color: var(--accent-text);
+}
 .club-cover[data-cover="expedition"] {
   --cover-bg: #dcd8ec;
   --cover-ink: #594878;
