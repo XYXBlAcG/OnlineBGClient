@@ -14,6 +14,7 @@ export interface GameRules {
   resolutionDelay(state: GameState): number | undefined;
   actionDelay(state: GameState): number;
   actionWindow(state: GameState, action: Action): string | undefined;
+  acceptsLateActions?(state: GameState): boolean;
 }
 export interface Rules<K extends GameState["kind"]> {
   create(players: number, team: boolean, options?: GameOptions): State<K>;
@@ -27,6 +28,7 @@ export interface Rules<K extends GameState["kind"]> {
   resolutionDelay?: (state: State<K>) => number;
   actionDelay?: (state: State<K>) => number;
   actionWindow?: (state: State<K>, action: Action) => string | undefined;
+  acceptsLateActions?: (state: State<K>) => boolean;
 }
 export class GameAdapter<K extends GameState["kind"]> implements GameRules {
   constructor(
@@ -66,6 +68,9 @@ export class GameAdapter<K extends GameState["kind"]> implements GameRules {
   }
   actionDelay(state: GameState): number {
     return this.rules.actionDelay?.(this.state(state)) ?? 0;
+  }
+  acceptsLateActions(state: GameState): boolean {
+    return this.rules.acceptsLateActions?.(this.state(state)) ?? false;
   }
   private state(state: GameState): State<K> {
     if (state.kind !== this.kind) throw new Error("游戏类型不匹配");

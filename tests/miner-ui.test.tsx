@@ -5,7 +5,7 @@ import { Room } from "../src/domain/room";
 import { MinerTable } from "../src/client/miner/MinerTable";
 import { toGameSnapshot } from "../src/client/game-snapshot";
 
-it("renders the miner map and player HUD", () => {
+it("renders the shared route map and HUD", () => {
   const room = new Room("miner-ui", {
     kind: "miner",
     humans: 2,
@@ -27,8 +27,8 @@ it("renders the miner map and player HUD", () => {
     />,
   );
   expect(html).toContain("黄金矿脉");
-  expect(html).toContain("团队交矿");
-  expect(html).toContain("矿脉契约");
+  expect(html).toContain("团队目标");
+  expect(html).toContain("秘塔矿脉");
   expect(html).toContain("玩家 1");
   expect(html).toContain("玩家 2");
 });

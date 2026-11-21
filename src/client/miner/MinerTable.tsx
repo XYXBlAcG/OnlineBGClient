@@ -1,421 +1,446 @@
 import type { GameSnapshot } from "../OriginalGame";
 import type { Action } from "../../domain/types";
 import type {
-  MinerDeposit,
   MinerGameState,
+  MinerItemId,
   MinerMove,
-  MinerPlayerView,
   MinerView,
 } from "../../domain/miner/types";
 import {
-  minerContracts,
-  minerDynamics,
-  minerGemFamilies,
   minerItems,
-  minerNodeDefinitions,
-  minerRelics,
+  minerObjects,
+  minerSceneLabels,
 } from "../../domain/miner/content";
+import { mapChoices, nodeLabel } from "../../domain/miner/map";
+import { MapViewport } from "../MapViewport";
+import { NodeSymbol } from "../expedition/NodeSymbol";
+import { routeLayout } from "../expedition/map-layout";
 import "./miner.css";
 
-function depositLabel(deposit: MinerDeposit): string {
-  if (deposit.kind === "gem" && deposit.gem) {
-    const family = minerGemFamilies[deposit.gem.family];
-    return `${family.name} · ${deposit.gem.grade === "chipped" ? "碎" : deposit.gem.grade === "whole" ? "整" : "净"}`;
-  }
-  if (deposit.kind === "item" && deposit.item)
-    return minerItems[deposit.item].name;
-  if (deposit.kind === "relic" && deposit.relic)
-    return minerRelics[deposit.relic].name;
-  return "矿位";
-}
+const playerColor = ["#d7a63a", "#5d9bd4", "#8e7bd0", "#c76d68"];
 
-function playerName(view: MinerView, seat: number): string {
+function playerName(seat: number) {
   return `玩家 ${seat + 1}`;
-}
-
-function PlayerCard({
-  player,
-  view,
-  active,
-  actor,
-}: {
-  player: MinerPlayerView;
-  view: MinerView;
-  active: boolean;
-  actor: number;
-}) {
-  const own = player.seat === actor;
-  const value = player.bag.reduce((sum, gem) => sum + gem.value, 0);
-  const tags = [
-    ...player.items.flatMap((id) => {
-      const category = minerItems[id].category;
-      return category === "tool" || category === "bag"
-        ? ["工程"]
-        : category === "steal"
-          ? ["盗贼"]
-          : category === "team"
-            ? ["队长"]
-            : [];
-    }),
-    ...player.relics.map((id) => {
-      const tag = minerRelics[id].tag;
-      return tag === "engineer"
-        ? "工程"
-        : tag === "thief"
-          ? "盗贼"
-          : tag === "leader"
-            ? "队长"
-            : tag === "gambler"
-              ? "赌徒"
-              : "冰霜";
-    }),
-  ].reduce<Record<string, number>>((counts, tag) => {
-    counts[tag] = (counts[tag] ?? 0) + 1;
-    return counts;
-  }, {});
-  return (
-    <article className={`miner-player ${active ? "is-active" : ""}`}>
-      <header>
-        <strong>{playerName(view, player.seat)}</strong>
-        <span>{player.stamina}/{player.maxStamina} 体力</span>
-      </header>
-      <div className="miner-player-stats">
-        <span>镐力 {player.pickPower}</span>
-        <span>背包 {player.bag.length}/{player.capacity}</span>
-        <span>{own ? `${value} 分` : `${player.bagCount} 块`}</span>
-      </div>
-      <div className="miner-player-inventory">
-        {player.items.map((item) => (
-          <span key={item} title={minerItems[item].description}>
-            {minerItems[item].name}
-          </span>
-        ))}
-        {player.relics.map((relic) => (
-          <span className="miner-relic" key={relic} title={minerRelics[relic].description}>
-            {minerRelics[relic].name}
-          </span>
-        ))}
-      </div>
-      <div className="miner-player-tags">
-        {Object.entries(tags).map(([tag, count]) => (
-          <span key={tag} data-count={count >= 2 ? "active" : undefined}>
-            {tag} {count}
-          </span>
-        ))}
-      </div>
-      <div className="miner-player-bag">
-        {own ? (
-          player.bag.length ? (
-            player.bag.map((gem, index) => (
-              <span key={`${gem.id}-${index}`} title={gem.id}>
-                {minerGemFamilies[gem.family].name} {gem.value}
-              </span>
-            ))
-          ) : (
-            <span className="muted">背包空</span>
-          )
-        ) : (
-          <span className="muted">{player.bagCount} 块宝石</span>
-        )}
-      </div>
-      <div className="miner-player-status">
-        {player.status.frozen > 0 && <em>冰冻</em>}
-        {player.status.wanted > 0 && <em>通缉</em>}
-        {player.status.alert > 0 && <em>警觉</em>}
-        {player.status.exposed > 0 && <em>暴露</em>}
-        {player.worn && <em>工具磨损</em>}
-      </div>
-    </article>
-  );
-}
-
-function DepositCard({
-  deposit,
-  view,
-  moves,
-  send,
-  pending,
-}: {
-  deposit: MinerDeposit;
-  view: MinerView;
-  moves: MinerMove[];
-  send: (move: MinerMove) => void;
-  pending: boolean;
-}) {
-  const mine = moves.find(
-    (move) => move.type === "mine" && move.depositId === deposit.id,
-  );
-  const steal = moves.find(
-    (move) => move.type === "steal" && move.depositId === deposit.id,
-  );
-  const percent = Math.min(100, Math.round((deposit.progress / deposit.required) * 100));
-  const last = view.lastAction?.depositId === deposit.id;
-  return (
-    <article
-      className={`miner-deposit ${deposit.completed ? "is-complete" : ""} ${deposit.frozen ? "is-frozen" : ""} ${last ? "is-last" : ""}`}
-      data-deposit-kind={deposit.kind}
-    >
-      <div className="miner-deposit-title">
-        <strong>{depositLabel(deposit)}</strong>
-        {deposit.kind === "relic" && <span className="miner-tag">藏品</span>}
-        {deposit.frozen && <span className="miner-tag frozen">冰冻</span>}
-        {deposit.hazard > 0.15 && <span className="miner-tag danger">危险</span>}
-      </div>
-      <div className="miner-progress" aria-label={`进度 ${percent}%`}>
-        <span style={{ width: `${percent}%` }} />
-      </div>
-      <small>
-        {deposit.completed
-          ? "已挖出"
-          : deposit.owner === null
-            ? "无人认领"
-            : `主人：${playerName(view, deposit.owner)}`}
-        {" · "}
-        {deposit.progress}/{deposit.required}
-      </small>
-      <div className="miner-deposit-actions">
-        {mine && (
-          <button type="button" disabled={pending} onClick={() => send(mine)}>
-            挖矿
-          </button>
-        )}
-        {steal && (
-          <button
-            type="button"
-            className="danger"
-            disabled={pending}
-            onClick={() => send(steal)}
-          >
-            偷进度
-          </button>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function ContractBoard({
-  view,
-  moves,
-  send,
-  pending,
-}: {
-  view: MinerView;
-  moves: MinerMove[];
-  send: (move: MinerMove) => void;
-  pending: boolean;
-}) {
-  return (
-    <section className="miner-contract-board">
-      <div className="miner-map-heading">
-        <h3>第 {view.floor + 1} 层 · 矿脉契约</h3>
-        <span>
-          {Object.keys(view.contractVotes).length}/{view.players.length} 已选择
-        </span>
-      </div>
-      {view.contract && (
-        <p className="muted">
-          本层契约：{minerContracts[view.contract].name} ·{" "}
-          {minerContracts[view.contract].description}
-        </p>
-      )}
-      <div className="miner-contract-options">
-        {view.contractOffers.map((id) => {
-          const move = moves.find(
-            (item) => item.type === "contract" && item.contractId === id,
-          );
-          return (
-            <button
-              type="button"
-              key={id}
-              className={`miner-contract-option ${minerContracts[id].kind}`}
-              disabled={pending || !move}
-              onClick={() => move && send(move)}
-            >
-              <strong>{minerContracts[id].name}</strong>
-              <small>{minerContracts[id].description}</small>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
 }
 
 function MapBoard({
   view,
-  moves,
+  actor,
   send,
   pending,
 }: {
   view: MinerView;
-  moves: MinerMove[];
+  actor: number;
   send: (move: MinerMove) => void;
   pending: boolean;
 }) {
-  const nodes = view.map[view.floor] ?? [];
+  const layout = routeLayout(view.map, "portrait");
+  const options = mapChoices(view);
   return (
-    <section className="miner-map-board">
-      <div className="miner-map-heading">
-        <h3>第 {view.floor + 1} 层 · 选择矿点</h3>
-        <span>
-          {view.votes && Object.keys(view.votes).length}/{view.players.length} 已投票
-        </span>
+    <section className="miner-map-panel">
+      <div className="miner-map-title">
+        <h3>秘塔矿脉 · 第 {view.floor + 1} 层</h3>
+        <span>{Object.keys(view.votes).length}/{view.players.length} 已投票</span>
       </div>
-      <div className="miner-map-nodes">
-        {nodes.map((node) => {
-          const move = moves.find(
-            (item) => item.type === "vote" && item.nodeId === node.id,
-          );
-          return (
-            <button
-              type="button"
-              key={node.id}
-              className="miner-map-node"
-              disabled={pending || !move}
-              onClick={() => move && send(move)}
-            >
-              <span className="miner-node-symbol">
-                {node.kind === "shop"
-                  ? "▣"
-                  : node.kind === "rest"
-                    ? "☕"
-                    : node.kind === "event"
-                      ? "?"
-                      : node.kind === "guardian"
-                        ? "♜"
-                        : node.kind === "vault"
-                          ? "★"
-                          : "⛏"}
-              </span>
-              <strong>{minerNodeDefinitions[node.kind].name}</strong>
-              <small>{minerNodeDefinitions[node.kind].description}</small>
-            </button>
-          );
-        })}
-      </div>
-      <div className="miner-floor-strip">
-        {view.map.map((floor, index) => (
-          <span
-            key={index}
-            className={index === view.floor ? "active" : index < view.floor ? "past" : ""}
-            title={`第 ${index + 1} 层`}
+      <div className="miner-map-viewport">
+        <MapViewport
+          naturalSize={layout}
+          fitWidthOnMount
+          initialZoom={0.8}
+          focusTarget={
+            view.current ? `[data-route-node="${view.current}"]` : undefined
+          }
+          focusLabel="当前矿点"
+          compact
+        >
+          <div
+            className="miner-route-canvas"
+            style={{ width: layout.width, height: layout.height }}
           >
-            {index + 1}
-          </span>
+            <svg
+              viewBox={`0 0 ${layout.width} ${layout.height}`}
+              className="miner-route-edges"
+              aria-hidden="true"
+            >
+              {layout.links.map((link, index) => (
+                <path
+                  key={`${link.from}-${link.to}-${index}`}
+                  d={link.path}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={link.shortcut || link.backward ? 1.2 : 2}
+                  strokeDasharray={link.shortcut || link.backward ? "4 5" : undefined}
+                  opacity={0.24}
+                />
+              ))}
+            </svg>
+            {view.map.flat().map((node) => {
+              const point = layout.points.get(node.id);
+              if (!point) return null;
+              const elected = Object.entries(view.votes)
+                .filter(([, id]) => id === node.id)
+                .map(([seat]) => Number(seat));
+              return (
+                <button
+                  type="button"
+                  key={node.id}
+                  data-route-node={node.id}
+                  className="miner-route-node"
+                  data-available={options.some((item) => item.id === node.id)}
+                  data-current={node.id === view.current}
+                  data-mine-scene={node.kind}
+                  style={{
+                    left: point.x - layout.nodeWidth / 2,
+                    top: point.y - layout.nodeHeight / 2,
+                    width: layout.nodeWidth,
+                    height: layout.nodeHeight,
+                  }}
+                  disabled={pending}
+                  onClick={() => {
+                    if (options.some((item) => item.id === node.id))
+                      send({ type: "vote", nodeId: node.id });
+                  }}
+                >
+                  <NodeSymbol kind={node.kind} />
+                  <span>{nodeLabel(node.kind)}</span>
+                  {elected.length > 0 && (
+                    <em>{elected.map((seat) => seat + 1).join("·")}</em>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </MapViewport>
+      </div>
+      <div className="miner-map-options">
+        {options.map((node) => (
+          <button
+            type="button"
+            key={node.id}
+            disabled={pending || view.votes[actor] === node.id}
+            className="miner-map-option"
+            onClick={() => send({ type: "vote", nodeId: node.id })}
+          >
+            <NodeSymbol kind={node.kind} />
+            <span>{nodeLabel(node.kind)}</span>
+            <small>{node.kind}</small>
+          </button>
+        ))}
+      </div>
+      <div className="miner-log">
+        {view.log.slice(-6).map((entry) => (
+          <p key={entry.id}>{entry.text}</p>
         ))}
       </div>
     </section>
   );
 }
 
-function NodeBoard({
+function hookEnd(angle: number, length: number) {
+  const radians = (angle * Math.PI) / 180;
+  return {
+    x: 50 + Math.sin(radians) * length * 100,
+    y: 3 + Math.cos(radians) * length * 100,
+  };
+}
+
+function LiveBoard({
   view,
-  moves,
+  actor,
   send,
   pending,
 }: {
   view: MinerView;
-  moves: MinerMove[];
+  actor: number;
   send: (move: MinerMove) => void;
   pending: boolean;
 }) {
   const node = view.node;
   if (!node) return null;
-  const actionMoves = moves.filter(
-    (move) =>
-      move.type === "pass" ||
-      move.type === "use-item" ||
-      move.type === "use-relic" ||
-      move.type === "rest" ||
-      move.type === "event",
-  );
-  if (view.phase === "rest" || view.phase === "event") {
-    return (
-      <section className="miner-node-board">
-        <div className="miner-node-heading">
-          <h3>{node.name}</h3>
-          <span>第 {node.round + 1} 回合</span>
-        </div>
-        <p className="muted">{minerNodeDefinitions[node.kind].description}</p>
-        <div className="miner-action-grid">
-          {actionMoves.map((move, index) => (
-            <button
-              type="button"
-              key={index}
-              disabled={pending}
-              onClick={() => send(move)}
-            >
-              {move.type === "rest"
-                ? move.choice === "stamina"
-                  ? "恢复 4 体力"
-                  : "修理工具"
-                : move.type === "event"
-                  ? move.choice === "gamble"
-                    ? "赌一把"
-                    : move.choice === "rest"
-                      ? "稳妥恢复"
-                      : "寻找藏品"
-                  : "跳过"}
-            </button>
-          ))}
-        </div>
-      </section>
-    );
-  }
+  const player = view.players[actor];
+  const hook = player?.hook;
+  const end = hook ? hookEnd(hook.angle, hook.length) : { x: 50, y: 3 };
   return (
-    <section className="miner-node-board">
-      <div className="miner-node-heading">
+    <section className="miner-live">
+      <div className="miner-live-head">
         <div>
           <h3>{node.name}</h3>
-          <small>
-            第 {node.round + 1}/{node.maxRounds} 回合 · 当前：
-            {view.activeActor >= 0 ? playerName(view, view.activeActor) : "结算中"}
-          </small>
+          <small>{minerSceneLabels[node.sourceKind]} · 倒计时</small>
         </div>
-        <div className="miner-dynamics">
-          {node.dynamic.map((id) => (
-            <span key={id} title={minerDynamics[id].description}>
-              {minerDynamics[id].name}
-            </span>
-          ))}
-        </div>
+        <strong className={node.timeLeftMs < 10_000 ? "is-low" : ""}>
+          {Math.ceil(node.timeLeftMs / 1000)}s
+        </strong>
+        <span className="miner-team-progress">
+          团队 {view.teamScore}/{view.teamQuota}
+        </span>
       </div>
-      <div className="miner-deposits">
-        {node.deposits.map((deposit) => (
-          <DepositCard
-            key={deposit.id}
-            deposit={deposit}
-            view={view}
-            moves={moves}
-            send={send}
-            pending={pending}
+      <svg
+        viewBox="0 0 100 100"
+        className="miner-mine"
+        role="img"
+        aria-label="黄金矿工矿洞"
+      >
+        <defs>
+          <linearGradient id="miner-soil" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="var(--surface)" />
+            <stop offset="1" stopColor="var(--canvas)" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="100" height="100" fill="url(#miner-soil)" />
+        <path
+          d="M0 8 Q 50 42 100 8"
+          fill="none"
+          stroke="var(--line)"
+          strokeWidth="1"
+        />
+        <path
+          d="M0 93 Q 30 82 50 90 T 100 94"
+          fill="none"
+          stroke="var(--line)"
+          strokeWidth="1.2"
+        />
+        {node.objects
+          .filter((object) => !object.removed)
+          .map((object) => {
+            const definition = minerObjects[object.kind];
+            const hooked = object.hookedBy !== null;
+            return (
+              <g
+                key={object.id}
+                opacity={hooked ? 0.95 : 1}
+                transform={`translate(${object.x * 100} ${object.y * 100})`}
+              >
+                <circle
+                  r={object.radius * 100}
+                  fill={
+                    hooked
+                      ? "color-mix(in srgb, var(--accent) 34%, transparent)"
+                      : "color-mix(in srgb, var(--surface) 70%, transparent)"
+                  }
+                  stroke="var(--line)"
+                  strokeWidth="0.5"
+                />
+                <text
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={object.radius * 80}
+                  style={{ userSelect: "none" }}
+                >
+                  {definition.emoji}
+                </text>
+              </g>
+            );
+          })}
+        {view.players.map((item) => {
+          const itemEnd = hookEnd(item.hook.angle, item.hook.length);
+          return (
+            <g key={item.seat} opacity={item.seat === actor ? 1 : 0.6}>
+              <line
+                x1={50}
+                y1={3}
+                x2={itemEnd.x}
+                y2={itemEnd.y}
+                stroke={playerColor[item.seat % playerColor.length]}
+                strokeWidth={item.seat === actor ? 1 : 0.7}
+              />
+              <circle
+                cx={itemEnd.x}
+                cy={itemEnd.y}
+                r={1.1}
+                fill={playerColor[item.seat % playerColor.length]}
+              />
+              {item.hook.targetId && (
+                <circle
+                  cx={itemEnd.x}
+                  cy={itemEnd.y}
+                  r={2.4}
+                  fill="none"
+                  stroke={playerColor[item.seat % playerColor.length]}
+                  strokeWidth="0.5"
+                />
+              )}
+            </g>
+          );
+        })}
+        <g transform="translate(50 3)">
+          <circle r="2.2" fill="var(--accent)" />
+          <path
+            d="M-5 -2 L0 -5 L5 -2"
+            fill="none"
+            stroke="var(--accent)"
+            strokeWidth="1"
           />
+        </g>
+        <line
+          x1={50}
+          y1={3}
+          x2={end.x}
+          y2={end.y}
+          stroke={playerColor[actor % playerColor.length]}
+          strokeWidth="1.2"
+          opacity="0.8"
+        />
+      </svg>
+      <div className="miner-live-stats">
+        {view.players.map((item) => (
+          <div key={item.seat} data-seat={item.seat}>
+            <strong>{playerName(item.seat)}</strong>
+            <span>{item.score} 分</span>
+            <span>{item.coins} 金币</span>
+            <small>{item.lastCatch || "等待下钩"}</small>
+          </div>
         ))}
       </div>
-      <div className="miner-action-grid">
-        {actionMoves.map((move, index) => {
-          if (move.type === "pass")
-            return (
-              <button type="button" key={index} disabled={pending} onClick={() => send(move)}>
-                跳过
-              </button>
-            );
-          if (move.type === "use-item")
-            return (
-              <button type="button" key={index} disabled={pending} onClick={() => send(move)}>
-                {minerItems[move.itemId].name}
-                {move.target !== undefined ? ` → ${playerName(view, move.target)}` : ""}
-              </button>
-            );
-          if (move.type === "use-relic")
-            return (
-              <button type="button" key={index} disabled={pending} onClick={() => send(move)}>
-                冰冻 {move.target !== undefined ? playerName(view, move.target) : ""}
-              </button>
-            );
-          return null;
-        })}
+      <div className="miner-live-actions">
+        <button
+          type="button"
+          className="primary"
+          disabled={pending || !hook || hook.phase !== "swing"}
+          onClick={() =>
+            hook && send({ type: "drop", angle: hook.angle })
+          }
+        >
+          {hook?.phase === "swing" ? "下钩" : "回收中"}
+        </button>
+        {Object.entries(player?.items ?? {}).map(([id, count]) =>
+          count ? (
+            <button
+              type="button"
+              key={id}
+              disabled={pending}
+              onClick={() =>
+                send({ type: "use-item", itemId: id as MinerItemId })
+              }
+            >
+              {minerItems[id as MinerItemId].emoji}{" "}
+              {minerItems[id as MinerItemId].name} ×{count}
+            </button>
+          ) : null,
+        )}
+      </div>
+      <div className="miner-log">
+        {view.log.slice(-5).map((entry) => (
+          <p key={entry.id}>{entry.text}</p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ShopBoard({
+  view,
+  actor,
+  send,
+  pending,
+}: {
+  view: MinerView;
+  actor: number;
+  send: (move: MinerMove) => void;
+  pending: boolean;
+}) {
+  const player = view.players[actor];
+  return (
+    <section className="miner-shop">
+      <div className="miner-map-title">
+        <h3>{view.node?.name ?? "矿工商店"}</h3>
+        <span>{player?.coins ?? 0} 金币</span>
+      </div>
+      <div className="miner-shop-grid">
+        {Object.values(minerItems).map((item) => (
+          <button
+            type="button"
+            key={item.id}
+            disabled={pending || (player?.coins ?? 0) < item.cost}
+            onClick={() => send({ type: "buy", itemId: item.id })}
+          >
+            <span>{item.emoji}</span>
+            <strong>{item.name}</strong>
+            <small>{item.description}</small>
+            <em>{item.cost} 金币</em>
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="primary"
+        disabled={pending}
+        onClick={() => send({ type: "ready" })}
+      >
+        离开商店
+      </button>
+      <div className="miner-log">
+        {view.log.slice(-5).map((entry) => (
+          <p key={entry.id}>{entry.text}</p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CampBoard({
+  view,
+  send,
+  pending,
+}: {
+  view: MinerView;
+  send: (move: MinerMove) => void;
+  pending: boolean;
+}) {
+  return (
+    <section className="miner-interlude">
+      <h3>{view.node?.name ?? "矿工营地"}</h3>
+      <p>矿工们围坐休息，准备下一段矿道。</p>
+      <button
+        type="button"
+        className="primary"
+        disabled={pending}
+        onClick={() => send({ type: "ready" })}
+      >
+        休整完毕
+      </button>
+      <div className="miner-log">
+        {view.log.slice(-5).map((entry) => (
+          <p key={entry.id}>{entry.text}</p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function EventBoard({
+  view,
+  send,
+  pending,
+}: {
+  view: MinerView;
+  send: (move: MinerMove) => void;
+  pending: boolean;
+}) {
+  return (
+    <section className="miner-interlude">
+      <h3>{view.node?.name ?? "矿工奇遇"}</h3>
+      <p>矿脉深处传来一阵回声。要赌一把，还是稳妥拿钱？</p>
+      <div className="miner-event-actions">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => send({ type: "event", choice: "risk" })}
+        >
+          赌一把 · 60% 得 300，否则 -100
+        </button>
+        <button
+          type="button"
+          className="primary"
+          disabled={pending}
+          onClick={() => send({ type: "event", choice: "safe" })}
+        >
+          稳妥拿 100
+        </button>
+      </div>
+      <div className="miner-log">
+        {view.log.slice(-5).map((entry) => (
+          <p key={entry.id}>{entry.text}</p>
+        ))}
       </div>
     </section>
   );
@@ -434,110 +459,86 @@ export function MinerTable({
 }) {
   const state = snapshot.state;
   if (!state || state.kind !== "miner") return null;
-  const game = state as MinerGameState;
-  const view = game.view;
+  const view = (state as MinerGameState).view;
   const actor = snapshot.actor;
-  const candidates = snapshot.candidates ?? [];
-  const moves =
-    !pending && !replay && actor >= 0
-      ? candidates.flatMap((candidate) =>
-          candidate.action.type === "miner-action"
-            ? [candidate.action.move]
-            : [],
-        )
-      : [];
-  const send = (move: MinerMove) => {
-    const candidate = candidates.find(
-      (item) =>
-        item.action.type === "miner-action" &&
-        JSON.stringify(item.action.move) === JSON.stringify(move),
+  const send = (move: MinerMove) =>
+    act({ type: "miner-action", move });
+  const content = (() => {
+    if (view.phase === "map")
+      return (
+        <MapBoard
+          view={view}
+          actor={actor}
+          send={send}
+          pending={pending || replay}
+        />
+      );
+    if (view.phase === "live")
+      return (
+        <LiveBoard
+          view={view}
+          actor={actor}
+          send={send}
+          pending={pending || replay}
+        />
+      );
+    if (view.phase === "shop")
+      return (
+        <ShopBoard
+          view={view}
+          actor={actor}
+          send={send}
+          pending={pending || replay}
+        />
+      );
+    if (view.phase === "camp")
+      return (
+        <CampBoard view={view} send={send} pending={pending || replay} />
+      );
+    if (view.phase === "event")
+      return (
+        <EventBoard view={view} send={send} pending={pending || replay} />
+      );
+    return (
+      <section className={`miner-result ${view.phase}`}>
+        <h3>{view.phase === "won" ? "全队升井成功！" : "矿灯熄灭"}</h3>
+        <p>
+          团队 {view.result?.score ?? view.teamScore} / {view.teamQuota}
+        </p>
+        <ol>
+          {view.result?.ranking.map((entry) => (
+            <li key={entry.seat}>
+              {playerName(entry.seat)} · {entry.score} 分
+            </li>
+          ))}
+        </ol>
+      </section>
     );
-    if (candidate) act(candidate.action);
-  };
+  })();
   return (
-    <div
-      className="miner-table"
-      data-phase={view.phase}
-      data-last={view.lastAction?.kind}
-    >
+    <div className="miner-table" data-phase={view.phase}>
       <header className="miner-hud">
         <div>
           <strong>黄金矿脉</strong>
           <span>
-            第 {Math.floor(view.floor / 3) + 1} 层 · 第 {view.floor + 1} 个矿点
+            第 {view.floor + 1} 层 · {view.current ? "矿道" : "选路"}
           </span>
         </div>
         <div className="miner-quota">
-          <span>团队交矿</span>
+          <span>团队目标</span>
           <strong>
-            {view.teamDelivered}/{view.teamQuota}
+            {view.teamScore}/{view.teamQuota}
           </strong>
         </div>
         <div className="miner-active-seat">
-          {view.contract && (
-            <span className="miner-contract-chip">
-              {minerContracts[view.contract].name}
+          {view.players.map((player) => (
+            <span key={player.seat} data-seat={player.seat}>
+              {playerName(player.seat)} · {player.score}
             </span>
-          )}
-          {view.activeActor >= 0 ? `轮到 ${playerName(view, view.activeActor)}` : "等待结算"}
+          ))}
         </div>
       </header>
-      <div className="miner-players">
-        {view.players.map((player) => (
-          <PlayerCard
-            key={player.seat}
-            player={player}
-            view={view}
-            active={player.seat === view.activeActor}
-            actor={actor}
-          />
-        ))}
-      </div>
-      {view.phase === "contract" ? (
-        <ContractBoard
-          view={view}
-          moves={moves}
-          send={send}
-          pending={pending || replay}
-        />
-      ) : view.phase === "map" ? (
-        <MapBoard view={view} moves={moves} send={send} pending={pending || replay} />
-      ) : view.phase === "bank" ? (
-        <section className="miner-bank">
-          <h3>升降机 · 交矿</h3>
-          <p>队友们正在把背包里的宝石倒进矿车。</p>
-          <div className="miner-bank-total">
-            <strong>{view.teamDelivered}</strong>
-            <span>/ {view.teamQuota}</span>
-          </div>
-        </section>
-      ) : view.phase === "won" || view.phase === "lost" ? (
-        <section className={`miner-result ${view.phase}`}>
-          <h3>{view.phase === "won" ? "全队升井成功！" : "矿灯熄灭"}</h3>
-          <p>
-            团队交矿 {view.teamDelivered} / {view.teamQuota}
-          </p>
-          <ol>
-            {view.result?.ranking.map((entry) => (
-              <li key={entry.seat}>
-                {playerName(view, entry.seat)} · {entry.delivered} 分
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : (
-        <NodeBoard
-          view={view}
-          moves={moves}
-          send={send}
-          pending={pending || replay}
-        />
-      )}
-      <div className="miner-log" aria-label="矿工日志">
-        {view.log.slice(-8).map((entry) => (
-          <p key={entry.id}>{entry.text}</p>
-        ))}
-      </div>
+      {content}
     </div>
   );
 }

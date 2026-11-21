@@ -1,719 +1,186 @@
+import type { NodeKind } from "../expedition/adventure-types";
 import type {
-  MinerDynamicId,
-  MinerGemFamily,
-  MinerContractId,
-  MinerGemGrade,
   MinerItemId,
-  MinerNodeKind,
-  MinerRelicId,
+  MinerObjectKind,
 } from "./types";
 
-export const minerGemFamilies: Record<
-  MinerGemFamily,
-  { name: string; color: string; base: number; effect: string }
-> = {
-  amber: { name: "琥珀", color: "#e9a52b", base: 30, effect: "纯价值" },
-  topaz: { name: "黄玉", color: "#e1c341", base: 40, effect: "下一段挖掘进度 +15" },
-  amethyst: { name: "紫晶", color: "#9b72e6", base: 50, effect: "本节点镐力 +1" },
-  emerald: { name: "翡翠", color: "#4fbf87", base: 55, effect: "挖出时恢复 1 体力" },
-  ruby: { name: "红宝石", color: "#d95164", base: 60, effect: "本节点偷矿成功率 +10%" },
-  sapphire: { name: "蓝宝石", color: "#4a82d8", base: 65, effect: "本节点防偷 +10%" },
-};
-
-export const minerGemGrades: Record<
-  MinerGemGrade,
-  { name: string; multiplier: number }
-> = {
-  chipped: { name: "碎", multiplier: 1 },
-  whole: { name: "整", multiplier: 2 },
-  pure: { name: "净", multiplier: 3.5 },
-};
-
-export interface MinerGemDefinition {
-  id: string;
-  family: MinerGemFamily;
-  grade: MinerGemGrade;
+export interface MinerObjectDefinition {
+  kind: MinerObjectKind;
   name: string;
+  emoji: string;
   value: number;
-  color: string;
+  weight: number;
+  radius: number;
 }
 
-export const minerGems: MinerGemDefinition[] = (
-  Object.keys(minerGemFamilies) as MinerGemFamily[]
-).flatMap((family) =>
-  (Object.keys(minerGemGrades) as MinerGemGrade[]).map((grade) => {
-    const info = minerGemFamilies[family];
-    const gradeInfo = minerGemGrades[grade];
-    return {
-      id: `${family}-${grade}`,
-      family,
-      grade,
-      name: `${gradeInfo.name}${info.name}`,
-      value: Math.round(info.base * gradeInfo.multiplier),
-      color: info.color,
-    };
-  }),
-);
+export const minerObjects: Record<MinerObjectKind, MinerObjectDefinition> = {
+  goldSmall: {
+    kind: "goldSmall",
+    name: "小金块",
+    emoji: "🟡",
+    value: 60,
+    weight: 1,
+    radius: 0.035,
+  },
+  goldMedium: {
+    kind: "goldMedium",
+    name: "金块",
+    emoji: "🟨",
+    value: 140,
+    weight: 2,
+    radius: 0.045,
+  },
+  goldLarge: {
+    kind: "goldLarge",
+    name: "大金块",
+    emoji: "🟧",
+    value: 320,
+    weight: 4,
+    radius: 0.06,
+  },
+  rockSmall: {
+    kind: "rockSmall",
+    name: "小石头",
+    emoji: "🪨",
+    value: 25,
+    weight: 3,
+    radius: 0.04,
+  },
+  rockLarge: {
+    kind: "rockLarge",
+    name: "大石头",
+    emoji: "🪨",
+    value: 50,
+    weight: 6,
+    radius: 0.065,
+  },
+  diamond: {
+    kind: "diamond",
+    name: "钻石",
+    emoji: "💎",
+    value: 700,
+    weight: 1,
+    radius: 0.035,
+  },
+  bag: {
+    kind: "bag",
+    name: "神秘袋",
+    emoji: "🎁",
+    value: 180,
+    weight: 2,
+    radius: 0.045,
+  },
+  skull: {
+    kind: "skull",
+    name: "骷髅",
+    emoji: "💀",
+    value: 15,
+    weight: 1,
+    radius: 0.035,
+  },
+  tnt: {
+    kind: "tnt",
+    name: "TNT",
+    emoji: "🧨",
+    value: 0,
+    weight: 1,
+    radius: 0.04,
+  },
+};
 
-export const minerGemById = new Map(minerGems.map((gem) => [gem.id, gem]));
-export const minerGemFamiliesOrder = Object.keys(
-  minerGemFamilies,
-) as MinerGemFamily[];
-
-export interface MinerItemEffect {
-  pickBonus?: number;
-  capacityBonus?: number;
-  stealBonus?: number;
-  defenseBonus?: number;
-  hazardReduction?: number;
-  autoProgress?: number;
-  teamQuotaBonus?: number;
-  dividend?: number;
-  insurance?: boolean;
-  rescue?: boolean;
-  consumable?: "stamina" | "repair" | "dynamite" | "luck" | "map";
-  reveal?: boolean;
-}
+export const minerObjectPool = Object.keys(
+  minerObjects,
+) as MinerObjectKind[];
 
 export interface MinerItemDefinition {
   id: MinerItemId;
   name: string;
-  category: "tool" | "bag" | "steal" | "consumable" | "team";
-  mineCost: number;
+  emoji: string;
+  cost: number;
   description: string;
-  effects: MinerItemEffect;
 }
 
 export const minerItems: Record<MinerItemId, MinerItemDefinition> = {
-  ironPick: {
-    id: "ironPick",
-    name: "铁镐",
-    category: "tool",
-    mineCost: 40,
-    description: "镐力 +1",
-    effects: { pickBonus: 1 },
+  dynamite: {
+    id: "dynamite",
+    name: "炸药",
+    emoji: "🧨",
+    cost: 120,
+    description: "炸掉当前钩住的物体并快速收钩",
   },
-  steelPick: {
-    id: "steelPick",
-    name: "精钢镐",
-    category: "tool",
-    mineCost: 70,
-    description: "镐力 +2",
-    effects: { pickBonus: 2 },
+  strength: {
+    id: "strength",
+    name: "力量药水",
+    emoji: "💪",
+    cost: 180,
+    description: "20 秒内回收速度大幅提升",
   },
-  diamondPick: {
-    id: "diamondPick",
-    name: "钻石镐",
-    category: "tool",
-    mineCost: 100,
-    description: "镐力 +3，无视部分硬度",
-    effects: { pickBonus: 3, hazardReduction: 0.1 },
+  lucky: {
+    id: "lucky",
+    name: "幸运草",
+    emoji: "🍀",
+    cost: 200,
+    description: "下一次抓取价值 ×1.5",
   },
-  lamp: {
-    id: "lamp",
-    name: "探矿灯",
-    category: "tool",
-    mineCost: 50,
-    description: "揭示晶洞品级与风险",
-    effects: {},
+  rockBook: {
+    id: "rockBook",
+    name: "岩石收藏书",
+    emoji: "📘",
+    cost: 280,
+    description: "本局石头价值 ×2，可重复购买叠加",
   },
-  autoHook: {
-    id: "autoHook",
-    name: "自动钩爪",
-    category: "tool",
-    mineCost: 80,
-    description: "进入节点时首个矿位 +15 进度",
-    effects: { autoProgress: 15 },
-  },
-  support: {
-    id: "support",
-    name: "稳固支架",
-    category: "tool",
-    mineCost: 60,
-    description: "落石伤害 -50%",
-    effects: { hazardReduction: 0.5 },
-  },
-  largeBag: {
-    id: "largeBag",
-    name: "大背包",
-    category: "bag",
-    mineCost: 40,
-    description: "背包容量 +2",
-    effects: { capacityBonus: 2 },
-  },
-  lockbox: {
-    id: "lockbox",
-    name: "锁箱",
-    category: "bag",
-    mineCost: 70,
-    description: "每节点保护 1 个矿位进度不被偷",
-    effects: { defenseBonus: 0.2, insurance: true },
-  },
-  insurance: {
-    id: "insurance",
-    name: "保险单",
-    category: "bag",
-    mineCost: 70,
-    description: "第一次被偷时返还 50% 进度",
-    effects: { insurance: true },
+  time: {
+    id: "time",
+    name: "时间沙漏",
+    emoji: "⏳",
+    cost: 160,
+    description: "当前矿洞时间 +10 秒",
   },
   rope: {
     id: "rope",
-    name: "攀爬绳",
-    category: "steal",
-    mineCost: 50,
-    description: "偷矿成功率 +15%",
-    effects: { stealBonus: 0.15 },
-  },
-  alarm: {
-    id: "alarm",
-    name: "警铃",
-    category: "steal",
-    mineCost: 50,
-    description: "每节点第一次被偷必定失败",
-    effects: { defenseBonus: 0.3, insurance: true },
-  },
-  guardDog: {
-    id: "guardDog",
-    name: "护矿犬",
-    category: "steal",
-    mineCost: 80,
-    description: "被偷成功率 -20%",
-    effects: { defenseBonus: 0.2 },
-  },
-  dynamite: {
-    id: "dynamite",
-    name: "雷管",
-    category: "consumable",
-    mineCost: 40,
-    description: "当前矿位 +50 进度，价值 -20%",
-    effects: { consumable: "dynamite" },
-  },
-  staminaPotion: {
-    id: "staminaPotion",
-    name: "体力药剂",
-    category: "consumable",
-    mineCost: 30,
-    description: "体力 +2",
-    effects: { consumable: "stamina" },
-  },
-  dividend: {
-    id: "dividend",
-    name: "分红契约",
-    category: "team",
-    mineCost: 90,
-    description: "队友交矿时你获得 5% 分数",
-    effects: { dividend: 0.05 },
-  },
-  rescueRope: {
-    id: "rescueRope",
-    name: "救援绳",
-    category: "team",
-    mineCost: 60,
-    description: "给一名队友恢复 2 体力",
-    effects: { rescue: true, consumable: "stamina" },
-  },
-  teamCart: {
-    id: "teamCart",
-    name: "团队矿车",
-    category: "team",
-    mineCost: 90,
-    description: "交矿时团队指标 +5%",
-    effects: { teamQuotaBonus: 0.05 },
-  },
-  decoy: {
-    id: "decoy",
-    name: "假矿标",
-    category: "steal",
-    mineCost: 50,
-    description: "被偷成功率 -15%",
-    effects: { defenseBonus: 0.15 },
-  },
-  smoke: {
-    id: "smoke",
-    name: "烟幕弹",
-    category: "steal",
-    mineCost: 50,
-    description: "被偷成功率 -10%",
-    effects: { defenseBonus: 0.1 },
-  },
-  repairKit: {
-    id: "repairKit",
-    name: "修理箱",
-    category: "consumable",
-    mineCost: 40,
-    description: "修好磨损的镐",
-    effects: { consumable: "repair" },
-  },
-  luckyCharm: {
-    id: "luckyCharm",
-    name: "幸运符",
-    category: "consumable",
-    mineCost: 50,
-    description: "下一次宝石品级提升",
-    effects: { consumable: "luck" },
-  },
-  minerMap: {
-    id: "minerMap",
-    name: "矿脉地图",
-    category: "consumable",
-    mineCost: 40,
-    description: "探明本层矿位风险",
-    effects: { consumable: "map" },
-  },
-  teamInsurance: {
-    id: "teamInsurance",
-    name: "团队保险",
-    category: "team",
-    mineCost: 80,
-    description: "交矿时团队指标 +5%",
-    effects: { teamQuotaBonus: 0.05 },
-  },
-  detector: {
-    id: "detector",
-    name: "矿脉探测仪",
-    category: "tool",
-    mineCost: 70,
-    description: "进入节点时首个矿位 +10 进度",
-    effects: { autoProgress: 10, reveal: true },
+    name: "加固绳索",
+    emoji: "🪢",
+    cost: 220,
+    description: "下一次回收不因重量减速",
   },
 };
 
-export interface MinerRelicEffect {
-  pickBonus?: number;
-  capacityBonus?: number;
-  dividend?: number;
-  valueBonus?: number;
-  extraRound?: boolean;
-  stealBonus?: number;
-  defenseBonus?: number;
-  autoProgress?: number;
-  teamQuotaBonus?: number;
-  hazardReduction?: number;
-  icePick?: boolean;
-  failNoExpose?: boolean;
-  pairProgress?: number;
-  luckyDice?: boolean;
-  springBoots?: boolean;
-  freeze?: boolean;
-  duplicateValue?: number;
-}
-
-export interface MinerRelicDefinition {
-  id: MinerRelicId;
-  name: string;
-  tag: "engineer" | "thief" | "leader" | "gambler" | "frost";
-  mineCost: number;
-  description: string;
-  effects: MinerRelicEffect;
-}
-
-export const minerRelics: Record<MinerRelicId, MinerRelicDefinition> = {
-  frostHeart: {
-    id: "frostHeart",
-    name: "冰霜之心",
-    tag: "frost",
-    mineCost: 100,
-    description: "每层一次，冻结一名其他玩家 1 个行动",
-    effects: { freeze: true },
-  },
-  magneticHook: {
-    id: "magneticHook",
-    name: "磁力钩",
-    tag: "thief",
-    mineCost: 90,
-    description: "偷矿成功率 +15%",
-    effects: { stealBonus: 0.15 },
-  },
-  cartRemote: {
-    id: "cartRemote",
-    name: "矿车遥控器",
-    tag: "engineer",
-    mineCost: 80,
-    description: "每个节点开始自动获得 15 进度",
-    effects: { autoProgress: 15 },
-  },
-  nightCloak: {
-    id: "nightCloak",
-    name: "夜行斗篷",
-    tag: "thief",
-    mineCost: 90,
-    description: "偷矿失败不会暴露",
-    effects: { failNoExpose: true },
-  },
-  greedyEye: {
-    id: "greedyEye",
-    name: "贪婪之眼",
-    tag: "gambler",
-    mineCost: 90,
-    description: "高价值矿更多，但自己被偷成功率 +10%",
-    effects: { stealBonus: 0.1, defenseBonus: -0.1 },
-  },
-  teamBadge: {
-    id: "teamBadge",
-    name: "团队徽章",
-    tag: "leader",
-    mineCost: 100,
-    description: "交矿时团队指标 +5%",
-    effects: { teamQuotaBonus: 0.05 },
-  },
-  medkit: {
-    id: "medkit",
-    name: "急救箱",
-    tag: "leader",
-    mineCost: 80,
-    description: "每层第一次被偷时返还 50% 进度",
-    effects: { defenseBonus: 0.1 },
-  },
-  springBoots: {
-    id: "springBoots",
-    name: "弹簧靴",
-    tag: "engineer",
-    mineCost: 70,
-    description: "每层结束时恢复 1 体力",
-    effects: { springBoots: true },
-  },
-  fakeMarker: {
-    id: "fakeMarker",
-    name: "假矿标",
-    tag: "thief",
-    mineCost: 70,
-    description: "被偷成功率 -15%",
-    effects: { defenseBonus: 0.15 },
-  },
-  icePick: {
-    id: "icePick",
-    name: "冰镐",
-    tag: "frost",
-    mineCost: 80,
-    description: "对冰冻/高硬度矿位进度 +50%",
-    effects: { icePick: true },
-  },
-  luckyDice: {
-    id: "luckyDice",
-    name: "幸运骰",
-    tag: "gambler",
-    mineCost: 70,
-    description: "每层一次，重掷一次落石结果",
-    effects: { luckyDice: true },
-  },
-  pairRope: {
-    id: "pairRope",
-    name: "双人绳索",
-    tag: "leader",
-    mineCost: 80,
-    description: "与队友同节点时，双方挖掘进度 +10%",
-    effects: { pairProgress: 0.1 },
-  },
-  furnaceHeart: {
-    id: "furnaceHeart",
-    name: "熔炉之心",
-    tag: "engineer",
-    mineCost: 110,
-    description: "镐力 +1",
-    effects: { pickBonus: 1 },
-  },
-  magnetCoil: {
-    id: "magnetCoil",
-    name: "磁暴线圈",
-    tag: "engineer",
-    mineCost: 100,
-    description: "进入节点时首个矿位 +20 进度",
-    effects: { autoProgress: 20 },
-  },
-  veinMap: {
-    id: "veinMap",
-    name: "矿脉地图",
-    tag: "leader",
-    mineCost: 100,
-    description: "交矿时团队指标 +5%",
-    effects: { teamQuotaBonus: 0.05 },
-  },
-  hourglass: {
-    id: "hourglass",
-    name: "时间沙漏",
-    tag: "gambler",
-    mineCost: 110,
-    description: "每个节点多 1 回合",
-    effects: { extraRound: true },
-  },
-  cursedCrown: {
-    id: "cursedCrown",
-    name: "诅咒王冠",
-    tag: "gambler",
-    mineCost: 90,
-    description: "偷矿成功率 +20%，被偷成功率 +10%",
-    effects: { stealBonus: 0.2, defenseBonus: -0.1 },
-  },
-  echoPick: {
-    id: "echoPick",
-    name: "回声镐",
-    tag: "frost",
-    mineCost: 100,
-    description: "镐力 +1，冰镐效果",
-    effects: { pickBonus: 1, icePick: true },
-  },
-  canary: {
-    id: "canary",
-    name: "金丝雀",
-    tag: "leader",
-    mineCost: 80,
-    description: "落石伤害 -30%",
-    effects: { hazardReduction: 0.3 },
-  },
-  minerHelmet: {
-    id: "minerHelmet",
-    name: "矿工帽",
-    tag: "engineer",
-    mineCost: 70,
-    description: "落石伤害 -20%",
-    effects: { hazardReduction: 0.2 },
-  },
-  shadowGlove: {
-    id: "shadowGlove",
-    name: "影子手套",
-    tag: "thief",
-    mineCost: 80,
-    description: "偷矿失败不会暴露",
-    effects: { failNoExpose: true },
-  },
-  dividendLedger: {
-    id: "dividendLedger",
-    name: "分红账本",
-    tag: "leader",
-    mineCost: 90,
-    description: "队友交矿时获得 3% 分数",
-    effects: { dividend: 0.03 },
-  },
-  safeBox: {
-    id: "safeBox",
-    name: "保险箱",
-    tag: "leader",
-    mineCost: 90,
-    description: "被偷成功率 -20%",
-    effects: { defenseBonus: 0.2 },
-  },
-  resonance: {
-    id: "resonance",
-    name: "矿脉共鸣",
-    tag: "engineer",
-    mineCost: 90,
-    description: "与队友同节点时挖掘进度 +15%",
-    effects: { pairProgress: 0.15 },
-  },
-};
-
-export interface MinerDynamicDefinition {
-  id: MinerDynamicId;
-  name: string;
-  description: string;
-}
-
-export const minerDynamics: Record<MinerDynamicId, MinerDynamicDefinition> = {
-  ice: {
-    id: "ice",
-    name: "冰冻矿层",
-    description: "矿位结冰，挖掘进度减半；每回合结束冻结解除",
-  },
-  minecart: {
-    id: "minecart",
-    name: "矿车轨道",
-    description: "每回合矿车会推进一个随机矿位 15 进度",
-  },
-  conveyor: {
-    id: "conveyor",
-    name: "传送带",
-    description: "每回合移动矿位，可能把进度带给别人",
-  },
-  lava: {
-    id: "lava",
-    name: "岩浆喷口",
-    description: "每回合指定座位被岩浆灼伤，损失 1 体力",
-  },
-  magnetic: {
-    id: "magnetic",
-    name: "磁力场",
-    description: "每两回合交换两个矿位的进度和主人",
-  },
-  collapse: {
-    id: "collapse",
-    name: "塌方回响",
-    description: "节点回合上限 -1，落石伤害提高",
-  },
-  gas: {
-    id: "gas",
-    name: "毒气",
-    description: "每回合随机一名玩家损失 1 体力",
-  },
-  flood: {
-    id: "flood",
-    name: "积水",
-    description: "每回合所有已认领矿位损失 10 进度",
-  },
-  rotatingHook: {
-    id: "rotatingHook",
-    name: "旋转钩爪",
-    description: "每回合轮换行动顺序",
-  },
-  earthquake: {
-    id: "earthquake",
-    name: "地震",
-    description: "每回合所有矿位损失 15 进度",
-  },
-};
-
-export interface MinerNodeDefinition {
-  kind: MinerNodeKind;
-  name: string;
-  description: string;
-  maxRounds: number;
-}
-
-export const minerNodeDefinitions: Record<
-  MinerNodeKind,
-  MinerNodeDefinition
-> = {
-  entrance: {
-    kind: "entrance",
-    name: "升降机入口",
-    description: "矿工集合，准备下井。",
-    maxRounds: 1,
-  },
-  common: {
-    kind: "common",
-    name: "普通矿脉",
-    description: "稳定的普通矿层。",
-    maxRounds: 3,
-  },
-  rich: {
-    kind: "rich",
-    name: "富矿脉",
-    description: "高价值矿层，落石风险更高。",
-    maxRounds: 4,
-  },
-  crystal: {
-    kind: "crystal",
-    name: "晶洞",
-    description: "稀有宝石与隐藏品级。",
-    maxRounds: 3,
-  },
-  contested: {
-    kind: "contested",
-    name: "争夺矿点",
-    description: "矿位刚好等于人数，偷矿成功率提高。",
-    maxRounds: 3,
-  },
-  hazard: {
-    kind: "hazard",
-    name: "断层/塌方区",
-    description: "每回合落石，收益与风险并存。",
-    maxRounds: 3,
-  },
-  shop: {
-    kind: "shop",
-    name: "矿脉商店",
-    description: "挖开商品箱购买工具与藏品。",
-    maxRounds: 3,
-  },
-  rest: {
-    kind: "rest",
-    name: "休息站",
-    description: "恢复体力或修理工具。",
-    maxRounds: 1,
-  },
-  event: {
-    kind: "event",
-    name: "赌石事件",
-    description: "风险选择，可能获得稀有资源。",
-    maxRounds: 1,
-  },
-  guardian: {
-    kind: "guardian",
-    name: "矿脉守卫",
-    description: "高风险守卫矿层，硬矿与落石。",
-    maxRounds: 4,
-  },
-  vault: {
-    kind: "vault",
-    name: "秘藏宝库",
-    description: "最终矿层，高品级宝石与藏品。",
-    maxRounds: 4,
-  },
-  exit: {
-    kind: "exit",
-    name: "收矿站",
-    description: "交矿、结算并升井。",
-    maxRounds: 1,
-  },
-};
-
-export interface MinerContractDefinition {
-  id: MinerContractId;
-  name: string;
-  kind: "contract" | "curse";
-  description: string;
-}
-
-export const minerContracts: Record<MinerContractId, MinerContractDefinition> = {
-  richVein: {
-    id: "richVein",
-    name: "富矿契约",
-    kind: "contract",
-    description: "富矿/晶洞宝石价值 +25%，落石伤害 +20%",
-  },
-  iceRush: {
-    id: "iceRush",
-    name: "冰封契约",
-    kind: "contract",
-    description: "冰霜藏品出现率提高，矿位可能结冰",
-  },
-  thief: {
-    id: "thief",
-    name: "盗贼契约",
-    kind: "contract",
-    description: "偷矿成功率 +10%，团队指标 +10%",
-  },
-  gambler: {
-    id: "gambler",
-    name: "赌徒契约",
-    kind: "contract",
-    description: "宝石价值波动更大，事件收益 +25%",
-  },
-  speed: {
-    id: "speed",
-    name: "速挖契约",
-    kind: "contract",
-    description: "挖掘进度 +20%，节点回合 -1",
-  },
-  minecart: {
-    id: "minecart",
-    name: "矿车契约",
-    kind: "contract",
-    description: "每个矿点附带矿车轨道，商品箱成本 +15%",
-  },
-  heavyPack: {
-    id: "heavyPack",
-    name: "沉重背包",
-    kind: "curse",
-    description: "背包容量 -1，但宝石价值 +15%",
-  },
-  collapseEcho: {
-    id: "collapseEcho",
-    name: "矿难回声",
-    kind: "curse",
-    description: "落石概率 +10%，但偷矿成功率 +10%",
-  },
-  greedMark: {
-    id: "greedMark",
-    name: "贪婪印记",
-    kind: "curse",
-    description: "交矿价值 -10%，但偷矿成功率 +15%",
-  },
-};
-
-export const minerContractPool = Object.keys(minerContracts) as MinerContractId[];
 export const minerItemPool = Object.keys(minerItems) as MinerItemId[];
-export const minerRelicPool = Object.keys(minerRelics) as MinerRelicId[];
-export const minerDynamicPool = Object.keys(minerDynamics) as MinerDynamicId[];
-export const minerGemPool = minerGems.map((gem) => gem.id);
-export const minerGemPoolById = minerGemById;
+
+export const minerSceneLabels: Record<NodeKind, string> = {
+  battle: "矿洞",
+  elite: "富矿洞",
+  boss: "秘藏矿洞",
+  event: "矿工奇遇",
+  shop: "矿工商店",
+  camp: "矿工营地",
+  treasure: "晶洞",
+  oracle: "占卜矿工",
+  contract: "矿脉契约",
+  forge: "铁匠铺",
+  secret: "隐秘矿道",
+  pawnshop: "旧货摊",
+  gamble: "赌石摊",
+  library: "矿工书库",
+  hunt: "猎矿场",
+  rift: "深渊矿脉",
+  recruit: "矿工招募",
+  empty: "空矿洞",
+};
+
+export function minerSceneFor(kind: NodeKind) {
+  if (kind === "shop" || kind === "pawnshop" || kind === "forge")
+    return "shop" as const;
+  if (kind === "camp") return "camp" as const;
+  if (
+    kind === "event" ||
+    kind === "oracle" ||
+    kind === "contract" ||
+    kind === "gamble" ||
+    kind === "library" ||
+    kind === "recruit" ||
+    kind === "empty"
+  )
+    return "event" as const;
+  return "mine" as const;
+}

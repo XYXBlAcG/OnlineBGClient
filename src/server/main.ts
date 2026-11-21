@@ -451,7 +451,7 @@ setInterval(() => {
     const room = gateway.rooms.get(id);
     if (
       !room ||
-      room.version !== active.version ||
+      (room.version !== active.version && !room.acceptsLateActions()) ||
       room.paused ||
       !room.aiRequest()
     ) {

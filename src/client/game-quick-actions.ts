@@ -19,11 +19,11 @@ export function quickCandidate(
 export const gameQuickActions: Partial<Record<GameKind, QuickAction[]>> = {
   miner: [
     {
-      id: "miner-pass",
-      title: "跳过",
+      id: "miner-ready",
+      title: "离开 / 休整",
       binding: " ",
       matches: (action) =>
-        action.type === "miner-action" && action.move.type === "pass",
+        action.type === "miner-action" && action.move.type === "ready",
     },
   ],
   expedition: [

@@ -67,6 +67,9 @@ export class GameEngine {
   resolutionDelay(state: GameState): number | undefined {
     return this.plugins.get(state.kind)!.resolutionDelay(state);
   }
+  acceptsLateActions(state: GameState): boolean {
+    return this.plugins.get(state.kind)!.acceptsLateActions?.(state) ?? false;
+  }
   resolve(state: GameState, seed: string): GameState {
     this.seed(seed);
     return this.plugins.get(state.kind)!.resolve(state, seed);

@@ -1055,10 +1055,12 @@ export class Room {
       );
     if (actor === undefined) return null;
     const driver = this.seats[actor].driver ?? "search";
+    const observation = this.engine.project(this.state, actor);
+    if (!this.engine.candidates(observation, actor).length) return null;
     return {
       tradeEnabled: this.config.catanTrades,
       audit: this.config.auditEnabled || driver === "llm",
-      observation: this.engine.project(this.state, actor),
+      observation,
       actor,
       difficulty: this.seats[actor].difficulty || "normal",
       driver,
@@ -1068,7 +1070,17 @@ export class Room {
   }
 
   acceptDecision(decision: AiResult, version: number): boolean {
-    if (Date.now() < this.actionReadyAt || !this.state || this.ended || this.paused || version !== this.version)
+    if (
+      Date.now() < this.actionReadyAt ||
+      !this.state ||
+      this.ended ||
+      this.paused ||
+      (version !== this.version &&
+        !(
+          version < this.version &&
+          this.engine.acceptsLateActions(this.state)
+        ))
+    )
       return false;
     const previous = this.state;
     const oldWindow = this.engine.actionWindow(this.state, decision.chosen);
@@ -1404,12 +1416,17 @@ export class Room {
     if (
       this.paused ||
       !this.queued ||
-      now < this.lastMoveAt + this.config.aiDelayMs
+      ((!this.state || !this.engine.acceptsLateActions(this.state)) &&
+        now < this.lastMoveAt + this.config.aiDelayMs)
     )
       return false;
     const queued = this.queued;
     this.queued = null;
     return this.acceptDecision(queued.decision, queued.version);
+  }
+
+  acceptsLateActions(): boolean {
+    return !!this.state && this.engine.acceptsLateActions(this.state);
   }
 
   identity(token: string): number {

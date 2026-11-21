@@ -69,7 +69,7 @@ Tauri 2 提供原生窗口与系统 WebView；游戏区域保留 Hullqin 的 Rea
 | 公共消息、表情、互动与武将说明   | [社交入口](social-experience-plan.md)                                                                                                                                          |
 | 本地审核与作者提交               | [操作说明](review-and-submit.md)                                                                                                                                               |
 | 全 AI 观战与运行统计             | [房间](../src/domain/room.ts)、[并行搜索](../src/domain/compute.ts)、[计算栏](../src/client/ComputeStatus.tsx)                                                                 |
-| 黄金矿脉（P0–P4）             | [规则](../src/domain/miner/rules.ts)、[内容](../src/domain/miner/content.ts)、[牌桌](../src/client/miner/MinerTable.tsx)、[设计说明](miner.md) |
+| 黄金矿脉（实时多人黄金矿工）             | [规则](../src/domain/miner/rules.ts)、[内容](../src/domain/miner/content.ts)、[牌桌](../src/client/miner/MinerTable.tsx)、[设计说明](miner.md) |
 | AI 聊天配置、公开上下文与聊天写入口 | [领域](../src/domain/companion.ts)、[房间](../src/domain/room.ts)、[协议](../src/domain/protocol.ts) |
 | AI 聊天服务端运行时与 Provider   | [TableMind 运行时](../src/server/table-mind/runtime.ts)、[服务入口](../src/server/main.ts) |
 | AI 聊天设置与 AI 标记            | [设置组件](../src/client/AiSettings.tsx)、[设置入口](../src/client/Settings.tsx)、[消息组件](../src/client/social/ChatMessageView.tsx) |

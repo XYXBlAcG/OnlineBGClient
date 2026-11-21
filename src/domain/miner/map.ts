@@ -1,271 +1,123 @@
+import type { MapNode, NodeKind } from "../expedition/adventure-types";
+import { generateMap } from "../expedition/map";
 import {
-  minerDynamicPool,
-  minerDynamics,
-  minerGemFamilies,
-  minerGemFamiliesOrder,
-  minerGemGrades,
-  minerGemPoolById,
-  minerItems,
-  minerItemPool,
-  minerNodeDefinitions,
-  minerRelics,
-  minerRelicPool,
+  minerObjectPool,
+  minerObjects,
+  minerSceneFor,
+  minerSceneLabels,
 } from "./content";
 import type {
-  MinerDeposit,
-  MinerDynamicId,
-  MinerGem,
-  MinerGemFamily,
-  MinerGemGrade,
-  MinerMapNodeView,
-  MinerNodeKind,
-  MinerNodeView,
+  MinerMineNode,
+  MinerObject,
+  MinerObjectKind,
+  MinerView,
 } from "./types";
 
-function shuffled<T>(values: readonly T[], random: () => number): T[] {
-  const result = [...values];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
+const pools: Partial<Record<NodeKind, MinerObjectKind[]>> = {
+  battle: ["goldSmall", "goldSmall", "goldMedium", "rockSmall", "rockSmall", "bag"],
+  elite: ["goldMedium", "goldLarge", "rockLarge", "rockSmall", "diamond", "bag"],
+  boss: ["goldLarge", "diamond", "diamond", "bag", "rockLarge", "skull"],
+  treasure: ["goldMedium", "goldLarge", "diamond", "bag", "bag"],
+  secret: ["diamond", "goldLarge", "bag", "tnt"],
+  hunt: ["goldSmall", "goldMedium", "rockSmall", "bag"],
+  rift: ["goldLarge", "diamond", "tnt", "skull"],
+  event: ["goldSmall", "bag", "skull"],
+  gamble: ["goldMedium", "bag", "tnt"],
+  library: ["goldSmall", "goldMedium", "rockSmall"],
+  recruit: ["goldSmall", "bag"],
+  forge: ["goldMedium", "rockLarge", "tnt"],
+  contract: ["goldSmall", "rockSmall", "tnt"],
+  oracle: ["goldMedium", "diamond"],
+  empty: ["goldSmall", "rockSmall"],
+};
+
+export function generateMinerMap(seed: string): MapNode[][] {
+  return generateMap(seed, 2, 0);
 }
 
-function pick<T>(values: readonly T[], random: () => number): T {
-  return values[Math.floor(random() * values.length)]!;
+export function mapChoices(view: MinerView): MapNode[] {
+  if (!view.current) return view.map[0] ?? [];
+  const current = view.map.flat().find((node) => node.id === view.current);
+  return view.map.flat().filter((node) => current?.next.includes(node.id));
 }
 
-export function generateMinerMap(
-  players: number,
-  floors: number,
+export function nodeLabel(kind: NodeKind): string {
+  return minerSceneLabels[kind];
+}
+
+function objectCount(kind: NodeKind, players: number): number {
+  if (kind === "boss") return 12 + players * 2;
+  if (kind === "elite" || kind === "rift") return 10 + players * 3;
+  return 8 + players * 3;
+}
+
+function objectPool(kind: NodeKind): MinerObjectKind[] {
+  return pools[kind] ?? minerObjectPool;
+}
+
+function createObject(
+  id: string,
+  kind: MinerObjectKind,
   random: () => number,
-): MinerMapNodeView[][] {
-  const kinds: MinerNodeKind[] = [
-    "common",
-    "common",
-    "common",
-    "rich",
-    "crystal",
-    "contested",
-    "hazard",
-    "event",
-  ];
-  const map: MinerMapNodeView[][] = Array.from(
-    { length: floors },
-    (_, floor) => {
-      const width = floor === 0 || floor === floors - 1 ? 2 : 2 + (random() < 0.35 ? 1 : 0);
-      return Array.from({ length: width }, (_, lane) => ({
-        id: `f${floor}-${lane}`,
-        floor,
-        lane,
-        kind: pick(kinds, random),
-        next: [],
-        visited: false,
-      }));
-    },
-  );
-  for (let floor = 0; floor < floors; floor += 3) {
-    const end = Math.min(floors, floor + 3);
-    const serviceFloor = Math.min(
-      end - 1,
-      floor + 1 + Math.floor(random() * Math.max(1, end - floor - 1)),
-    );
-    const serviceNodes = map[serviceFloor]!;
-    const shopNode = serviceNodes[Math.floor(random() * serviceNodes.length)]!;
-    shopNode.kind = "shop";
-    const restNode = serviceNodes.find((node) => node.kind !== "shop");
-    if (restNode) restNode.kind = "rest";
-  }
-  if (floors >= 6) {
-    const last = floors - 1;
-    for (const node of map[last]!) node.kind = "vault";
-    map[last - 1]![0]!.kind = "guardian";
-    const service = map[last - 2]!;
-    service[0]!.kind = "shop";
-    if (service[1]) service[1]!.kind = "rest";
-  }
-  for (let floor = 0; floor < floors - 1; floor++) {
-    const row = map[floor]!;
-    const next = map[floor + 1]!;
-    for (const node of row) {
-      const position = (node.lane + 0.5) / row.length;
-      node.next = [...next]
-        .sort(
-          (a, b) =>
-            Math.abs((a.lane + 0.5) / next.length - position) -
-            Math.abs((b.lane + 0.5) / next.length - position),
-        )
-        .slice(0, 2)
-        .map((target) => target.id);
-    }
-  }
-  return map;
-}
-
-function gradeFor(kind: MinerNodeKind, random: () => number): MinerGemGrade {
-  const roll = random();
-  if (kind === "rich")
-    return roll < 0.32 ? "pure" : roll < 0.78 ? "whole" : "chipped";
-  if (kind === "crystal")
-    return roll < 0.25 ? "pure" : roll < 0.7 ? "whole" : "chipped";
-  return roll < 0.08 ? "pure" : roll < 0.42 ? "whole" : "chipped";
-}
-
-function familyFor(kind: MinerNodeKind, random: () => number): MinerGemFamily {
-  if (kind === "crystal") {
-    const rare: MinerGemFamily[] = ["amethyst", "ruby", "sapphire", "emerald"];
-    return pick(rare, random);
-  }
-  if (kind === "rich") {
-    const rich: MinerGemFamily[] = ["emerald", "ruby", "sapphire", "topaz"];
-    return pick(rich, random);
-  }
-  return pick(minerGemFamiliesOrder, random);
-}
-
-function createGem(kind: MinerNodeKind, random: () => number): MinerGem {
-  const family = familyFor(kind, random);
-  const grade = gradeFor(kind, random);
-  const definition = minerGemPoolById.get(`${family}-${grade}`)!;
+): MinerObject {
+  const definition = minerObjects[kind];
   return {
-    id: definition.id,
-    family,
-    grade,
+    id,
+    kind,
+    x: 0.08 + random() * 0.84,
+    y: 0.18 + random() * 0.72,
+    radius: definition.radius,
     value: definition.value,
+    weight: definition.weight,
+    hookedBy: null,
+    removed: false,
   };
 }
 
-function createGemDeposit(
-  index: number,
-  kind: MinerNodeKind,
-  random: () => number,
-): MinerDeposit {
-  return {
-    id: `d${index}`,
-    kind: "gem",
-    gem: createGem(kind, random),
-    required: 100,
-    progress: 0,
-    owner: null,
-    hardness: kind === "rich" ? 2 : kind === "hazard" ? 2 : random() < 0.25 ? 1 : 0,
-    hazard: kind === "hazard" ? 0.28 : kind === "rich" ? 0.12 : 0.04,
-    frozen: false,
-    spoiled: false,
-    completed: false,
-  };
-}
-
-function createItemDeposit(
-  index: number,
-  random: () => number,
-): MinerDeposit {
-  const itemId = pick(minerItemPool, random);
-  return {
-    id: `d${index}`,
-    kind: "item",
-    item: itemId,
-    required: minerItems[itemId].mineCost,
-    progress: 0,
-    owner: null,
-    hardness: 0,
-    hazard: 0.02,
-    frozen: false,
-    spoiled: false,
-    completed: false,
-  };
-}
-
-function createRelicDeposit(
-  index: number,
-  random: () => number,
-): MinerDeposit {
-  const relicId = pick(minerRelicPool, random);
-  return {
-    id: `d${index}`,
-    kind: "relic",
-    relic: relicId,
-    required: minerRelics[relicId].mineCost,
-    progress: 0,
-    owner: null,
-    hardness: 1,
-    hazard: 0.05,
-    frozen: false,
-    spoiled: false,
-    completed: false,
-  };
-}
-
-export function createMinerNode(
-  mapNode: MinerMapNodeView,
+function placeObjects(
+  nodeKind: NodeKind,
   players: number,
   random: () => number,
-): MinerNodeView {
-  const definition = minerNodeDefinitions[mapNode.kind];
-  const dynamic: MinerDynamicId[] =
-    mapNode.kind === "rest" || mapNode.kind === "event" || random() > 0.38
-      ? []
-      : [pick(minerDynamicPool, random)];
-  let maxRounds = definition.maxRounds;
-  if (dynamic.includes("collapse")) maxRounds = Math.max(2, maxRounds - 1);
-  const deposits: MinerDeposit[] = [];
-  if (mapNode.kind === "guardian") {
-    for (let index = 0; index < players + 1; index++) {
-      const deposit = createGemDeposit(index, "rich", random);
-      deposit.required = 120;
-      deposit.hardness = 2;
-      deposit.hazard = 0.32;
-      deposits.push(deposit);
+): MinerObject[] {
+  const pool = objectPool(nodeKind);
+  const objects: MinerObject[] = [];
+  for (let index = 0; index < objectCount(nodeKind, players); index++) {
+    const kind = pool[Math.floor(random() * pool.length)]!;
+    let candidate = createObject(`o${index}`, kind, random);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const next = createObject(`o${index}`, kind, random);
+      const overlaps = objects.some((object) => {
+        const dx = object.x - next.x;
+        const dy = object.y - next.y;
+        return Math.hypot(dx, dy) < object.radius + next.radius + 0.018;
+      });
+      if (!overlaps) {
+        candidate = next;
+        break;
+      }
     }
-  } else if (mapNode.kind === "vault") {
-    for (let index = 0; index < players + 1; index++) {
-      const deposit = createGemDeposit(index, "crystal", random);
-      deposit.required = 120;
-      deposit.hazard = 0.08;
-      deposits.push(deposit);
-    }
-    deposits.push(createRelicDeposit(players + 1, random));
-  } else if (mapNode.kind === "common") {
-    for (let index = 0; index < players + 2; index++)
-      deposits.push(createGemDeposit(index, mapNode.kind, random));
-  } else if (mapNode.kind === "rich" || mapNode.kind === "crystal") {
-    const count = 2 + (players > 2 ? 1 : 0) + (random() < 0.4 ? 1 : 0);
-    for (let index = 0; index < count; index++)
-      deposits.push(createGemDeposit(index, mapNode.kind, random));
-  } else if (mapNode.kind === "hazard" || mapNode.kind === "contested") {
-    for (let index = 0; index < players; index++)
-      deposits.push(createGemDeposit(index, mapNode.kind, random));
-  } else if (mapNode.kind === "shop") {
-    for (let index = 0; index < 4; index++)
-      deposits.push(createItemDeposit(index, random));
-    deposits.push(createRelicDeposit(4, random));
-    for (let index = 5; index < 7; index++)
-      deposits.push(createGemDeposit(index, "common", random));
+    objects.push(candidate);
   }
-  if (dynamic.includes("ice")) for (const deposit of deposits) deposit.frozen = true;
+  return objects;
+}
+
+export function createNode(
+  node: MapNode,
+  players: number,
+  random: () => number,
+): MinerMineNode {
+  const scene = minerSceneFor(node.kind);
+  const durationMs =
+    node.kind === "boss" || node.kind === "elite" || node.kind === "rift"
+      ? 50_000
+      : 60_000;
   return {
-    ...mapNode,
-    name: definition.name,
-    deposits,
-    maxRounds,
-    round: 0,
-    dynamic,
-    hazardColumn: Math.floor(random() * players),
+    id: node.id,
+    sourceKind: node.kind,
+    scene,
+    name: nodeLabel(node.kind),
+    objects: scene === "mine" ? placeObjects(node.kind, players, random) : [],
+    durationMs: scene === "mine" ? durationMs : 0,
+    timeLeftMs: scene === "mine" ? durationMs : 0,
   };
 }
-
-export function minerDynamicLabel(id: MinerDynamicId): string {
-  return minerDynamics[id].name;
-}
-
-export function minerGemLabel(family: MinerGemFamily, grade: MinerGemGrade): string {
-  return `${minerGemGrades[grade].name}${minerGemFamilies[family].name}`;
-}
-
-export function minerNodeChoices(
-  map: MinerMapNodeView[][],
-  floor: number,
-): MinerMapNodeView[] {
-  return map[floor] ?? [];
-}
-
-export { shuffled };

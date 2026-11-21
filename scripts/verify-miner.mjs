@@ -6,6 +6,7 @@ await access("dist-server/main.mjs").catch(() => {
   throw new Error("请先运行 npm run server:build");
 });
 
+const withAi = process.env.MINER_AI === "1";
 const child = spawn(process.execPath, ["dist-server/main.mjs"], {
   env: {
     ...process.env,
@@ -45,25 +46,12 @@ class Client {
     });
     this.socket.on("message", (raw) => this.receive(JSON.parse(raw.toString())));
   }
-  apply(update) {
-    if (update.type === "snapshot") {
-      this.snapshot = update.snapshot;
-      return;
-    }
-    if (update.type !== "patch" || !this.snapshot) return;
-    this.snapshot = { ...this.snapshot, ...update.changes };
-    for (const key of update.removed ?? []) delete this.snapshot[key];
-  }
   receive(response) {
-    if (response.type === "session") {
-      this.session = response;
-      return;
-    }
-    if (response.type === "error") {
-      this.errors.push(response.message);
-      return;
-    }
-    if (response.type === "snapshot" || response.type === "patch") this.apply(response);
+    if (response.type === "session") this.session = response;
+    else if (response.type === "error") this.errors.push(response.message);
+    else if (response.type === "snapshot") this.snapshot = response.snapshot;
+    else if (response.type === "patch" && this.snapshot)
+      this.snapshot = { ...this.snapshot, ...response.changes };
   }
   send(command) {
     this.socket.send(JSON.stringify(command));
@@ -71,57 +59,69 @@ class Client {
   maybeAct() {
     const snapshot = this.snapshot;
     if (!snapshot || snapshot.actor < 0 || snapshot.finished) return;
-    if (!snapshot.candidates?.length) return;
-    const candidates = snapshot.candidates;
     const state = snapshot.state;
-    const score = (candidate) => {
-      const action = candidate.action;
-      if (action.type !== "miner-action") return -1;
-      const move = action.move;
-      if (move.type === "vote") return 10;
-      if (move.type === "rest") return 60;
-      if (move.type === "event") return 50;
-      if (move.type === "use-item") return 40;
-      if (move.type === "mine" && state?.kind === "miner") {
-        const deposit = state.view.node?.deposits.find(
-          (item) => item.id === move.depositId,
-        );
-        return (
-          100 +
-          (deposit?.owner === snapshot.actor ? 80 : 0) +
-          (deposit?.progress ?? 0) +
-          (deposit?.gem?.value ?? 0)
-        );
+    if (state?.kind !== "miner") return;
+    const view = state.view;
+    const actor = snapshot.actor;
+    let move = null;
+    if (view.phase === "map") {
+      const candidate = snapshot.candidates?.find((item) => {
+        const action = item.action;
+        if (action.type !== "miner-action" || action.move.type !== "vote")
+          return false;
+        const node = view.map
+          .flat()
+          .find((item) => item.id === action.move.nodeId);
+        return node && ["battle", "elite", "boss", "treasure", "hunt", "rift", "secret"].includes(node.kind);
+      });
+      move = candidate?.action.move ?? null;
+    } else if (view.phase === "live") {
+      const player = view.players[actor];
+      if (player.hook.phase === "swing") {
+        const object = [...view.node.objects]
+          .filter((item) => !item.removed && item.hookedBy === null)
+          .sort((a, b) => b.value - a.value)[0];
+        if (object) {
+          const radians = Math.atan2(object.x - 0.5, object.y - 0.03);
+          const angle = Math.max(-84, Math.min(84, (radians * 180) / Math.PI));
+          move = { type: "drop", angle };
+        }
       }
-      return 0;
-    };
-    const action = [...candidates].sort((a, b) => score(b) - score(a))[0];
-    const key = `${snapshot.version}:${snapshot.actor}:${JSON.stringify(action.action)}`;
+    } else if (["shop", "camp", "event"].includes(view.phase)) {
+      const candidate = snapshot.candidates?.find((item) => {
+        const action = item.action;
+        return (
+          action.type === "miner-action" &&
+          (action.move.type === "ready" || action.move.type === "event")
+        );
+      });
+      move = candidate?.action.move ?? null;
+    }
+    if (!move) return;
+    const key = `${snapshot.version}:${actor}:${JSON.stringify(move)}`;
     if (this.sent.has(key)) return;
     this.sent.add(key);
     this.send({
       type: "action",
       token: this.session.token,
-      id: `${this.name}-${snapshot.version}`,
+      id: `${this.name}-${snapshot.version}-${this.sent.size}`,
       version: snapshot.version,
-      action: action.action,
+      action: { type: "miner-action", move },
     });
   }
 }
 
-const withAi = process.env.MINER_AI === "1";
 const host = new Client("host");
-const guest = withAi ? null : new Client("guest");
+const guest = new Client("guest");
 try {
-  await Promise.all([host.ready, ...(guest ? [guest.ready] : [])]);
+  await Promise.all([host.ready, guest.ready]);
   host.send({
     type: "create",
     name: "甲",
     config: {
       kind: "miner",
-      humans: withAi ? 1 : 2,
+      humans: 2,
       ai: withAi ? [{ difficulty: "normal", name: "" }] : [],
-      aiDelayMs: withAi ? 100 : 1500,
       team: false,
       training: false,
     },
@@ -135,59 +135,71 @@ try {
       resolve();
     }, 10);
   });
-  if (guest) {
-    guest.send({ type: "join", room: host.session.room, name: "乙" });
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("no guest session")), 3000);
-      const poll = setInterval(() => {
-        if (!guest.session) return;
-        clearTimeout(timer);
-        clearInterval(poll);
-        resolve();
-      }, 10);
-    });
-    guest.send({ type: "ready", token: guest.session.token, ready: true });
-  }
+  guest.send({ type: "join", room: host.session.room, name: "乙" });
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("no guest session")), 3000);
+    const poll = setInterval(() => {
+      if (!guest.session) return;
+      clearTimeout(timer);
+      clearInterval(poll);
+      resolve();
+    }, 10);
+  });
+  guest.send({ type: "ready", token: guest.session.token, ready: true });
   host.send({ type: "start", token: host.session.token });
 
-  const deadline = Date.now() + 60000;
-  let actions = 0;
+  const deadline = Date.now() + 40_000;
+  let causedTicks = 0,
+    succeeded = false;
   while (Date.now() < deadline) {
     host.maybeAct();
-    guest?.maybeAct();
-    const state = host.snapshot?.state;
-    if (host.snapshot?.finished) {
-      if (host.errors.length || guest?.errors.length)
-        throw new Error([...host.errors, ...(guest?.errors ?? [])].join("; "));
+    guest.maybeAct();
+    const view = host.snapshot?.state?.kind === "miner"
+      ? host.snapshot.state.view
+      : null;
+    if (view && view.phase === "live" && view.tick > 0) causedTicks = view.tick;
+    if (
+      view &&
+      view.teamScore > 0 &&
+      causedTicks > 10 &&
+      (withAi ? view.players.some((player) => player.score > 0) : true)
+    ) {
+      const errors = [...host.errors, ...guest.errors].filter(
+        (error) => !error.includes("对局已更新"),
+      );
+      if (errors.length) throw new Error(errors.join("; "));
       console.log(
         JSON.stringify({
           ok: true,
-          actions,
-          phase: state?.kind === "miner" ? state.view.phase : "finished",
-          delivered: state?.kind === "miner" ? state.view.teamDelivered : null,
-          quota: state?.kind === "miner" ? state.view.teamQuota : null,
+          mode: withAi ? "ai" : "two-human",
+          phase: view.phase,
+          score: view.teamScore,
+          tick: view.tick,
+          causedTicks,
+          objectsLeft: view.node?.objects.filter((item) => !item.removed).length,
         }),
       );
+      succeeded = true;
       process.exitCode = 0;
       break;
     }
-    actions = Math.max(actions, host.sent.size + (guest?.sent.size ?? 0));
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
-  if (!host.snapshot?.finished) throw new Error("miner game did not finish");
+  if (!succeeded) throw new Error("miner live loop did not score");
 } catch (error) {
   console.error(
     JSON.stringify({
       ok: false,
       error: error instanceof Error ? error.message : String(error),
-      host: host.errors,
-      guest: guest?.errors ?? [],
-      snapshot: host.snapshot,
+      errors: [...host.errors, ...guest.errors].filter(
+        (error) => !error.includes("对局已更新"),
+      ),
+      state: host.snapshot?.state,
     }),
   );
   process.exitCode = 1;
 } finally {
   host.socket.close();
-  guest?.socket.close();
+  guest.socket.close();
   child.kill();
 }
