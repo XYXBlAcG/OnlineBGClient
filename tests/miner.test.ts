@@ -8,6 +8,7 @@ import {
   minerItems,
   minerMechanics,
   minerObjects,
+  minerPerks,
   minerSceneFor,
 } from "../src/domain/miner/content";
 import { generateMinerMap, mapChoices } from "../src/domain/miner/map";
@@ -80,6 +81,7 @@ describe("miner content", () => {
     expect(Object.keys(minerItems)).toHaveLength(7);
     expect(Object.keys(minerCharacters)).toHaveLength(4);
     expect(Object.keys(minerMechanics)).toHaveLength(20);
+    expect(Object.keys(minerPerks)).toHaveLength(10);
     expect(minerSceneFor("battle")).toBe("mine");
     expect(minerSceneFor("shop")).toBe("shop");
     expect(minerSceneFor("camp")).toBe("camp");
@@ -258,6 +260,18 @@ describe("real-time mining", () => {
     expect(state.view.phase).toBe("intermission");
     expect(state.view.levelsPlayed).toBe(1);
     expect(state.view.matchLevels).toBe(6);
+    expect(state.view.perkOffers).toHaveLength(3);
+    state.view.players[0]!.coins = 1000;
+    const perk = engine
+      .candidates(engine.project(state, 0), 0)
+      .find((item) => {
+        const action = item.action;
+        return action.type === "miner-action" && action.move.type === "buy-perk";
+      });
+    state = engine.apply(state, 0, perk!.action, "buy-perk");
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(state.view.perks).toHaveLength(1);
+    expect(state.view.perkBought).toBe(true);
     for (const actor of [0, 1]) {
       const ready = engine
         .candidates(engine.project(state, actor), actor)

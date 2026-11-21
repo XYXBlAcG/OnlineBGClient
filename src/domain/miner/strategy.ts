@@ -2,7 +2,7 @@ import type { NodeKind } from "../expedition/adventure-types";
 import { Strategy } from "../strategy";
 import type { SearchRequest } from "../strategy";
 import type { Candidate, DecisionCandidate } from "../types";
-import { minerCharacters, minerItems } from "./content";
+import { minerCharacters, minerItems, minerPerks } from "./content";
 import { mapChoices } from "./map";
 import type { MinerGameState, MinerMove } from "./types";
 
@@ -73,6 +73,10 @@ function moveScore(observation: MinerGameState, actor: number, move: MinerMove):
   }
   if (move.type === "special") return 70;
   if (move.type === "haul") return 45;
+  if (move.type === "buy-perk") {
+    const cost = minerPerks[move.perkId].cost;
+    return cost <= (view.players[actor]?.coins ?? 0) ? 55 : -20;
+  }
   if (move.type === "spin") return 35;
   if (move.type === "team-gamble") return 25;
   if (move.type === "use-item") {
@@ -171,6 +175,15 @@ export class MinerStrategy extends Strategy {
             },
             label: item.name,
           })),
+        ...(!view.perkBought
+          ? view.perkOffers.map((perkId) => ({
+              action: {
+                type: "miner-action" as const,
+                move: { type: "buy-perk" as const, perkId },
+              },
+              label: perkId,
+            }))
+          : []),
         ...(!view.shopSpinsUsed.includes(actor) && player.coins >= 50
           ? [
               {

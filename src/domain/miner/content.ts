@@ -4,6 +4,7 @@ import type {
   MinerItemId,
   MinerMechanicId,
   MinerObjectKind,
+  MinerPerkId,
 } from "./types";
 
 export interface MinerObjectDefinition {
@@ -210,6 +211,89 @@ export const minerCharacters: Record<
     charge: 6,
   },
 };
+
+export interface MinerPerkDefinition {
+  id: MinerPerkId;
+  name: string;
+  emoji: string;
+  cost: number;
+  description: string;
+}
+
+export const minerPerks: Record<MinerPerkId, MinerPerkDefinition> = {
+  quickHook: {
+    id: "quickHook",
+    name: "疾速钩",
+    emoji: "⚡",
+    cost: 260,
+    description: "摆钩与射钩速度 +15%",
+  },
+  strongRope: {
+    id: "strongRope",
+    name: "强韧绳索",
+    emoji: "🪢",
+    cost: 260,
+    description: "回收速度 +20%",
+  },
+  goldTouch: {
+    id: "goldTouch",
+    name: "点金手",
+    emoji: "✨",
+    cost: 300,
+    description: "所有物体价值 +10%",
+  },
+  deepPockets: {
+    id: "deepPockets",
+    name: "深口袋",
+    emoji: "💰",
+    cost: 280,
+    description: "商店道具价格 -15%",
+  },
+  timeWarp: {
+    id: "timeWarp",
+    name: "时间沙漏",
+    emoji: "⏳",
+    cost: 280,
+    description: "每关限时 +8 秒",
+  },
+  blastStart: {
+    id: "blastStart",
+    name: "爆破开局",
+    emoji: "🧨",
+    cost: 260,
+    description: "每关开始获得 1 个炸药",
+  },
+  luckyStart: {
+    id: "luckyStart",
+    name: "开局好运",
+    emoji: "🍀",
+    cost: 260,
+    description: "每关第一次抓取价值 ×2",
+  },
+  rockSong: {
+    id: "rockSong",
+    name: "岩石之歌",
+    emoji: "🎵",
+    cost: 240,
+    description: "石头价值 ×2",
+  },
+  specialist: {
+    id: "specialist",
+    name: "专精",
+    emoji: "⭐",
+    cost: 320,
+    description: "Special 充能需求 -1",
+  },
+  thickRope: {
+    id: "thickRope",
+    name: "粗绳",
+    emoji: "🪜",
+    cost: 280,
+    description: "重物回收速度 +25%",
+  },
+};
+
+export const minerPerkPool = Object.keys(minerPerks) as MinerPerkId[];
 
 export interface MinerMechanicDefinition {
   id: MinerMechanicId;

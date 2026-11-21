@@ -11,6 +11,7 @@ import {
   minerItems,
   minerMechanics,
   minerObjects,
+  minerPerks,
   minerSceneLabels,
 } from "../../domain/miner/content";
 import { mapChoices, nodeLabel } from "../../domain/miner/map";
@@ -316,6 +317,7 @@ function LiveBoard({
   if (!node) return null;
   const player = view.players[actor];
   const hook = player?.hook;
+  const specialist = view.perks.filter((perk) => perk === "specialist").length;
   const end = hook ? hookEnd(hook.angle, hook.length) : { x: 50, y: 3 };
   return (
     <section className="miner-live" data-cave={node.sourceKind}>
@@ -558,7 +560,8 @@ function LiveBoard({
             <span>{item.coins} 金币</span>
             <small>
               {playerCharacter(item).special} ·{" "}
-              {item.specialCharge}/{playerCharacter(item).charge}
+              {item.specialCharge}/
+              {Math.max(1, playerCharacter(item).charge - specialist)}
             </small>
             <small>{item.lastCatch || "等待下钩"}</small>
           </div>
@@ -576,7 +579,7 @@ function LiveBoard({
           {hook?.phase === "swing" ? "下钩" : "回收中"}
         </button>
         {player &&
-          player.specialCharge >= playerCharacter(player).charge && (
+          player.specialCharge >= Math.max(1, playerCharacter(player).charge - specialist) && (
             <button
               type="button"
               className="miner-special"
@@ -654,6 +657,25 @@ function ShopBoard({
             <strong>{item.name}</strong>
             <small>{item.description}</small>
             <em>{item.cost} 金币</em>
+          </button>
+        ))}
+      </div>
+      <div className="miner-perk-grid">
+        {view.perkOffers.map((perkId) => (
+          <button
+            type="button"
+            key={perkId}
+            disabled={
+              pending ||
+              view.perkBought ||
+              (player?.coins ?? 0) < minerPerks[perkId].cost
+            }
+            onClick={() => send({ type: "buy-perk", perkId })}
+          >
+            <span>{minerPerks[perkId].emoji}</span>
+            <strong>{minerPerks[perkId].name}</strong>
+            <small>{minerPerks[perkId].description}</small>
+            <em>{minerPerks[perkId].cost} 金币</em>
           </button>
         ))}
       </div>
@@ -914,6 +936,13 @@ export function MinerTable({
               }}
             />
           </div>
+        </div>
+        <div className="miner-team-perks">
+          {view.perks.map((id) => (
+            <span key={id} title={minerPerks[id].description}>
+              {minerPerks[id].emoji} {minerPerks[id].name}
+            </span>
+          ))}
         </div>
         <div className="miner-active-seat">
           {view.players.map((player) => (

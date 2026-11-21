@@ -88,8 +88,11 @@
 
 商店内还有：
 
+- 关间天赋：每店随机 3 张，团队可购买 1 张
 - 老虎机：每人一次，50 金币，随机返还金币或道具
 - Team Gamble：每店一次，用团队分数的 15% 赌 50/50 翻倍或扣除
+
+天赋共 10 张：疾速钩、强韧绳索、点金手、深口袋、时间沙漏、爆破开局、开局好运、岩石之歌、专精、粗绳。天赋全局生效，可叠加。
 
 ## AI 与实时循环
 
@@ -108,7 +111,7 @@
 
 ## 验证
 
-- [规则测试](../tests/miner.test.ts)：复用路线拓扑、角色选择、Special、机制、实时下钩/抓取/计分、房间 tick、AI
+- [规则测试](../tests/miner.test.ts)：复用路线拓扑、角色选择、Special、20 机制、六关/关间商店、天赋、实时下钩/抓取/计分、房间 tick、AI
 - [UI 测试](../tests/miner-ui.test.tsx)：角色选择、共享路线图、HUD
 - [双人烟测](../scripts/verify-miner.mjs)：两台 WebSocket 客户端进入实时矿洞并下钩得分
 - [AI 烟测](../scripts/verify-miner.mjs)：`MINER_AI=1 npm run verify:miner`，真人 + AI 完成实时下钩

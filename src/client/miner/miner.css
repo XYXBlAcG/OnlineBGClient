@@ -623,3 +623,43 @@
     radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--danger) 12%, transparent), transparent 55%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, transparent), var(--canvas));
 }
+.miner-team-perks {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.miner-team-perks span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--canvas));
+  color: var(--muted);
+  font-size: 10px;
+}
+.miner-perk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.miner-perk-grid button {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  text-align: left;
+  border: 1px dashed color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--canvas));
+  cursor: pointer;
+}
+.miner-perk-grid button:disabled {
+  opacity: 0.45;
+}
+.miner-perk-grid small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.miner-perk-grid em {
+  color: var(--accent);
+  font-style: normal;
+  font-size: 11px;
+}

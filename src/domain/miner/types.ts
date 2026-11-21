@@ -34,6 +34,20 @@ export const minerCharacterIdSchema = z.enum([
 ]);
 export type MinerCharacterId = z.infer<typeof minerCharacterIdSchema>;
 
+export const minerPerkIdSchema = z.enum([
+  "quickHook",
+  "strongRope",
+  "goldTouch",
+  "deepPockets",
+  "timeWarp",
+  "blastStart",
+  "luckyStart",
+  "rockSong",
+  "specialist",
+  "thickRope",
+]);
+export type MinerPerkId = z.infer<typeof minerPerkIdSchema>;
+
 export const minerMechanicIdSchema = z.enum([
   "blackout",
   "fog",
@@ -76,6 +90,10 @@ export const minerMoveSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("haul") }),
   z.object({ type: z.literal("buy"), itemId: minerItemIdSchema }),
   z.object({ type: z.literal("spin") }),
+  z.object({
+    type: z.literal("buy-perk"),
+    perkId: minerPerkIdSchema,
+  }),
   z.object({ type: z.literal("team-gamble") }),
   z.object({ type: z.literal("ready") }),
   z.object({
@@ -127,6 +145,7 @@ export interface MinerPlayerView {
   ropeNext: boolean;
   lucky: boolean;
   rockBook: boolean;
+  luckyStartUsed: boolean;
   lastCatch: string;
 }
 
@@ -174,6 +193,9 @@ export interface MinerView {
   ready: number[];
   shopSpinsUsed: number[];
   teamGambleUsed: boolean;
+  perkOffers: MinerPerkId[];
+  perkBought: boolean;
+  perks: MinerPerkId[];
   players: MinerPlayerView[];
   teamQuota: number;
   teamScore: number;
