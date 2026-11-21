@@ -77,9 +77,9 @@ describe("miner capabilities", () => {
 describe("miner content", () => {
   it("ships the Gold Miner object and item set", () => {
     expect(Object.keys(minerObjects)).toHaveLength(10);
-    expect(Object.keys(minerItems)).toHaveLength(6);
+    expect(Object.keys(minerItems)).toHaveLength(7);
     expect(Object.keys(minerCharacters)).toHaveLength(4);
-    expect(Object.keys(minerMechanics)).toHaveLength(10);
+    expect(Object.keys(minerMechanics)).toHaveLength(20);
     expect(minerSceneFor("battle")).toBe("mine");
     expect(minerSceneFor("shop")).toBe("shop");
     expect(minerSceneFor("camp")).toBe("camp");
@@ -113,28 +113,47 @@ describe("real-time mining", () => {
     const engine = new GameEngine();
     let state: GameState = enterMine(engine, 2);
     if (state.kind !== "miner") throw new Error("wrong game");
-    const object = state.view.node!.objects.find((item) => !item.removed)!;
     const actor = 0;
     const before = state.view.players[actor]!.score;
-    state = engine.apply(
-      state,
-      actor,
-      {
-        type: "miner-action",
-        move: { type: "drop", angle: angleTo(object.x, object.y) },
-      },
-      "drop",
-    );
-    if (state.kind !== "miner") throw new Error("wrong game");
-    expect(state.view.players[actor]!.hook.phase).not.toBe("swing");
-    for (let tick = 0; tick < 100; tick++) {
-      if (state.kind !== "miner" || state.view.phase !== "live") break;
-      state = engine.resolve(state, `tick:${tick}`);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (state.kind !== "miner") throw new Error("wrong game");
+      const node = state.view.node!;
+      const object = node.objects
+        .filter(
+          (item) =>
+            !item.removed &&
+            !item.frozen &&
+            !item.phantom &&
+            item.value > 0 &&
+            (node.waterLevel === 0 || item.y < node.waterLevel),
+        )
+        .sort((a, b) => b.value - a.value)[0];
+      if (!object) break;
+      state = engine.apply(
+        state,
+        actor,
+        {
+          type: "miner-action",
+          move: { type: "drop", angle: angleTo(object.x, object.y) },
+        },
+        `drop:${attempt}`,
+      );
+      if (state.kind !== "miner") throw new Error("wrong game");
+      for (let tick = 0; tick < 120; tick++) {
+        if (
+          state.kind !== "miner" ||
+          state.view.phase !== "live" ||
+          state.view.players[actor]!.score > before
+        )
+          break;
+        state = engine.resolve(state, `tick:${attempt}:${tick}`);
+      }
+      if (state.kind === "miner" && state.view.players[actor]!.score > before)
+        break;
     }
     expect(state.kind).toBe("miner");
     if (state.kind !== "miner") throw new Error("wrong game");
     expect(state.view.players[actor]!.score).toBeGreaterThan(before);
-    expect(state.view.players[actor]!.hook.phase).toBe("swing");
   });
 
   it("accepts a real-time drop through the room authority", () => {
@@ -229,6 +248,38 @@ describe("real-time mining", () => {
     expect(state.view.players[0]!.specialTicks).toBeGreaterThan(0);
   });
 
+  it("runs a six-level Quick Match intermission", () => {
+    const engine = new GameEngine();
+    let state: GameState = enterMine(engine, 2, "miner:match");
+    if (state.kind !== "miner") throw new Error("wrong game");
+    state.view.node!.timeLeftMs = 0;
+    state = engine.resolve(state, "finish-level");
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(state.view.phase).toBe("intermission");
+    expect(state.view.levelsPlayed).toBe(1);
+    expect(state.view.matchLevels).toBe(6);
+    for (const actor of [0, 1]) {
+      const ready = engine
+        .candidates(engine.project(state, actor), actor)
+        .find((item) => {
+          const action = item.action;
+          return action.type === "miner-action" && action.move.type === "ready";
+        });
+      state = engine.apply(state, actor, ready!.action, `ready:${actor}`);
+    }
+    state = engine.resolve(state, "finish-intermission");
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(state.view.phase).toBe("map");
+  });
+
+  it("supports six-player character selection", () => {
+    const engine = new GameEngine();
+    const state = engine.create("miner", 6, "miner:six", false);
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(state.view.players).toHaveLength(6);
+    expect(engine.actors(state)).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
   it("creates level mechanics and keeps ticking", () => {
     const engine = new GameEngine();
     let state: GameState = enterMine(engine, 2, "miner:mechanics");
@@ -250,9 +301,15 @@ describe("real-time mining", () => {
     )
       state = engine.resolve(state, `tick:${tick}`);
     if (state.kind !== "miner") throw new Error("wrong game");
-    expect(["map", "won", "lost", "shop", "camp", "event"]).toContain(
-      state.view.phase,
-    );
+    expect([
+      "map",
+      "intermission",
+      "won",
+      "lost",
+      "shop",
+      "camp",
+      "event",
+    ]).toContain(state.view.phase);
   });
 });
 

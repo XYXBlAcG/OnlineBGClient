@@ -111,7 +111,9 @@ function collect(
   player.hook.length = 0;
   player.hook.phase = "swing";
   const definition = minerObjects[object.kind];
-  let value = object.value;
+  let value = object.phantom ? 0 : object.value;
+  if (view.node?.mechanics.includes("goldFever") && view.tick % 150 < 40)
+    value *= 2;
   if (object.kind === "rockSmall" || object.kind === "rockLarge")
     value *= player.rockBook ? 2 : 1;
   if (player.lucky) {
@@ -235,6 +237,10 @@ function updateHook(
 function advanceMechanics(view: MinerView, node: MinerMineNode): void {
   const dt = TICK_MS / 1000;
   if (node.crittersStoppedTicks > 0) node.crittersStoppedTicks--;
+  if (node.freezeTicks > 0) {
+    node.freezeTicks--;
+    return;
+  }
   if (node.mechanics.includes("flood"))
     node.waterLevel = Math.min(0.82, node.waterLevel + 0.0015);
   if (node.mechanics.includes("tide"))
@@ -253,6 +259,14 @@ function advanceMechanics(view: MinerView, node: MinerMineNode): void {
       object.y += Math.sin((view.tick + index) / 6) * 0.0025;
       object.x += Math.cos((view.tick + index) / 9) * 0.0015;
     }
+    if (node.mechanics.includes("fallingRocks"))
+      object.y += 0.006 * dt;
+    if (node.mechanics.includes("magnet")) {
+      object.x += (0.5 - object.x) * 0.012 * dt;
+      object.y += (0.45 - object.y) * 0.008 * dt;
+    }
+    if (node.mechanics.includes("geyser") && view.tick % 55 < 8)
+      object.y -= 0.016 * dt;
     if (object.x < 0.07) object.x = 0.07;
     if (object.x > 0.93) object.x = 0.93;
     if (object.y < 0.16) object.y = 0.16;
@@ -283,8 +297,10 @@ export class MinerRules implements Rules<"miner"> {
       shopSpinsUsed: [],
       teamGambleUsed: false,
       players: Array.from({ length: players }, (_, seat) => makePlayer(seat)),
-      teamQuota: options?.miner?.quota ?? 8000 + players * 3000,
+      teamQuota: options?.miner?.quota ?? 2500 + players * 2200,
       teamScore: 0,
+      matchLevels: options?.miner?.levels ?? 6,
+      levelsPlayed: 0,
       tick: 0,
       log: [],
       sequence: 0,
@@ -309,7 +325,12 @@ export class MinerRules implements Rules<"miner"> {
         .map((player) => player.seat)
         .filter((seat) => !(seat in view.votes));
     if (view.phase === "live") return view.players.map((player) => player.seat);
-    if (view.phase === "shop" || view.phase === "camp" || view.phase === "event")
+    if (
+      view.phase === "intermission" ||
+      view.phase === "shop" ||
+      view.phase === "camp" ||
+      view.phase === "event"
+    )
       return view.players
         .map((player) => player.seat)
         .filter((seat) => !view.ready.includes(seat));
@@ -381,7 +402,7 @@ export class MinerRules implements Rules<"miner"> {
       }
       return result;
     }
-    if (view.phase === "shop") {
+    if (view.phase === "shop" || view.phase === "intermission") {
       return [
         ...Object.values(minerItems)
           .filter((item) => player.coins >= item.cost)
@@ -460,7 +481,12 @@ export class MinerRules implements Rules<"miner"> {
       return view.players.every((player) => player.seat in view.characterChoices);
     if (view.phase === "map")
       return view.players.every((player) => player.seat in view.votes);
-    if (view.phase === "shop" || view.phase === "camp" || view.phase === "event")
+    if (
+      view.phase === "intermission" ||
+      view.phase === "shop" ||
+      view.phase === "camp" ||
+      view.phase === "event"
+    )
       return view.players.every((player) => view.ready.includes(player.seat));
     return false;
   }
@@ -485,7 +511,8 @@ export class MinerRules implements Rules<"miner"> {
     if (state.view.phase === "map" && action.move.type === "vote")
       return `miner-vote-${state.view.floor}`;
     if (
-      (state.view.phase === "shop" ||
+      (state.view.phase === "intermission" ||
+        state.view.phase === "shop" ||
         state.view.phase === "camp" ||
         state.view.phase === "event") &&
       action.move.type !== "vote"
@@ -560,7 +587,7 @@ export class MinerRules implements Rules<"miner"> {
       }
       throw new Error("实时矿洞只能下钩、使用道具或释放 Special");
     }
-    if (view.phase === "shop") {
+    if (view.phase === "shop" || view.phase === "intermission") {
       if (move.type === "buy") {
         const item = minerItems[move.itemId];
         if (player.coins < item.cost) throw new Error("金币不足");
@@ -627,6 +654,8 @@ export class MinerRules implements Rules<"miner"> {
       return { kind: "miner", view: this.resolveCharacter(view) };
     if (view.phase === "map") return { kind: "miner", view: this.resolveVote(view) };
     if (view.phase === "live") return { kind: "miner", view: this.tick(view) };
+    if (view.phase === "intermission")
+      return { kind: "miner", view: this.finishIntermission(view) };
     if (view.phase === "shop" || view.phase === "camp" || view.phase === "event")
       return { kind: "miner", view: this.finishNode(view) };
     return { kind: "miner", view };
@@ -663,6 +692,8 @@ export class MinerRules implements Rules<"miner"> {
     if (itemId === "rockBook") player.rockBook = true;
     if (itemId === "time" && view.node) view.node.timeLeftMs += 10_000;
     if (itemId === "rope") player.ropeNext = true;
+    if (itemId === "freeze" && view.node)
+      view.node.freezeTicks = Math.ceil(6_000 / TICK_MS);
     setLastAction(
       view,
       actor,
@@ -831,36 +862,71 @@ export class MinerRules implements Rules<"miner"> {
   }
 
   private finishNode(view: MinerView): MinerView {
+    const node = view.node;
     view.node = null;
     view.ready = [];
-    const current = view.map.flat().find((node) => node.id === view.current);
-    const choices = current ? mapChoices(view) : [];
-    const final = !current || choices.length === 0 || current.floor >= view.map.length - 1;
-    if (final) {
-      const won = view.teamScore >= view.teamQuota;
-      view.phase = won ? "won" : "lost";
-      view.result = {
-        won,
-        quota: view.teamQuota,
-        score: view.teamScore,
-        ranking: [...view.players]
-          .sort((a, b) => b.score - a.score)
-          .map((player) => ({
-            seat: player.seat,
-            score: player.score,
-            caught: 0,
-          })),
+    if (node?.scene === "mine") {
+      view.levelsPlayed++;
+      if (view.levelsPlayed >= view.matchLevels) return this.finalResult(view);
+      view.phase = "intermission";
+      view.node = {
+        id: `intermission-${view.levelsPlayed}`,
+        sourceKind: "shop",
+        scene: "shop",
+        name: "关间商店",
+        objects: [],
+        mechanics: [],
+        durationMs: 0,
+        timeLeftMs: 0,
+        waterLevel: 0,
+        crittersStoppedTicks: 0,
+        freezeTicks: 0,
       };
-      log(
-        view,
-        won ? "全队完成矿脉目标，升井！" : "团队没有完成矿脉目标。",
-      );
+      view.shopSpinsUsed = [];
+      view.teamGambleUsed = false;
+      log(view, `第 ${view.levelsPlayed} 关结束，进入关间商店。`);
       return view;
     }
+    return this.continueMap(view);
+  }
+
+  private finishIntermission(view: MinerView): MinerView {
+    view.node = null;
+    view.ready = [];
+    view.phase = "map";
+    view.votes = {};
+    log(view, "补给完成，选择下一处矿点。");
+    return view;
+  }
+
+  private continueMap(view: MinerView): MinerView {
+    const current = view.map.flat().find((node) => node.id === view.current);
+    const choices = current ? mapChoices(view) : [];
+    if (!current || choices.length === 0 || current.floor >= view.map.length - 1)
+      return this.finalResult(view);
     view.phase = "map";
     view.votes = {};
     view.ready = [];
     log(view, "回到矿道，选择下一处矿点。");
+    return view;
+  }
+
+  private finalResult(view: MinerView): MinerView {
+    const won = view.teamScore >= view.teamQuota;
+    view.phase = won ? "won" : "lost";
+    view.result = {
+      won,
+      quota: view.teamQuota,
+      score: view.teamScore,
+      ranking: [...view.players]
+        .sort((a, b) => b.score - a.score)
+        .map((player) => ({
+          seat: player.seat,
+          score: player.score,
+          caught: 0,
+        })),
+    };
+    log(view, won ? "全队完成矿脉目标，升井！" : "团队没有完成矿脉目标。");
     return view;
   }
 }

@@ -21,7 +21,7 @@ export const gameCatalogue = {
     category: "合作",
     description: "共享矿脉 · 边挖边抢的派对挖矿",
     minPlayers: 2,
-    maxPlayers: 4,
+    maxPlayers: 6,
     presentation: { kind: "miner" },
     team: false,
     symbol: "⛏",

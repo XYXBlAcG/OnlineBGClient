@@ -75,6 +75,7 @@ function createObject(
     hookedBy: null,
     removed: false,
     frozen: false,
+    phantom: false,
   };
 }
 
@@ -130,7 +131,12 @@ export function createNode(
   if (mechanics.includes("frozenThaw"))
     for (const object of objects)
       if (random() < 0.35) object.frozen = true;
-  if (mechanics.includes("critters")) {
+  if (mechanics.includes("phantom"))
+    for (const object of objects)
+      if (random() < 0.18) object.phantom = true;
+  if (mechanics.includes("hotspot") && objects.length)
+    objects[Math.floor(random() * objects.length)]!.value *= 2;
+  if (mechanics.includes("critters") || mechanics.includes("batSwarm")) {
     for (let index = 0; index < 2 + players; index++) {
       const object = createObject(`critter${index}`, "critter", random);
       object.y = 0.2 + random() * 0.45;
@@ -148,6 +154,7 @@ export function createNode(
     timeLeftMs: scene === "mine" ? durationMs : 0,
     waterLevel: mechanics.includes("flood") ? 0.55 : mechanics.includes("tide") ? 0.5 : 0,
     crittersStoppedTicks: 0,
+    freezeTicks: 0,
   };
 }
 

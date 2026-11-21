@@ -153,6 +153,13 @@ export const minerItems: Record<MinerItemId, MinerItemDefinition> = {
     cost: 220,
     description: "下一次回收不因重量减速",
   },
+  freeze: {
+    id: "freeze",
+    name: "冰冻箱",
+    emoji: "🧊",
+    cost: 200,
+    description: "6 秒内冻结所有移动物体和动物",
+  },
 };
 
 export const minerItemPool = Object.keys(minerItems) as MinerItemId[];
@@ -263,6 +270,56 @@ export const minerMechanics: Record<
     id: "critters",
     name: "矿洞动物",
     description: "蝙蝠和地鼠在矿洞里乱窜。",
+  },
+  fallingRocks: {
+    id: "fallingRocks",
+    name: "落石",
+    description: "碎石不断落下，物体位置缓慢下沉。",
+  },
+  fogRollsIn: {
+    id: "fogRollsIn",
+    name: "迷雾涌入",
+    description: "雾团周期性地吞没矿洞。",
+  },
+  risingFog: {
+    id: "risingFog",
+    name: "升雾",
+    description: "雾越升越高，可见范围越来越小。",
+  },
+  hotspot: {
+    id: "hotspot",
+    name: "热点",
+    description: "随机一个物体被矿灯照亮，价值更高。",
+  },
+  phantom: {
+    id: "phantom",
+    name: "幻影",
+    description: "矿洞里混入了没有价值的水晶幻影。",
+  },
+  centerWall: {
+    id: "centerWall",
+    name: "中央矿柱",
+    description: "矿洞中央立起一根石柱，挡住部分视线。",
+  },
+  magnet: {
+    id: "magnet",
+    name: "磁场",
+    description: "物体被慢慢吸向矿洞中央。",
+  },
+  geyser: {
+    id: "geyser",
+    name: "间歇泉",
+    description: "泉水周期性地把物体向上推。",
+  },
+  batSwarm: {
+    id: "batSwarm",
+    name: "蝙蝠群",
+    description: "一大群蝙蝠在矿洞里盘旋。",
+  },
+  goldFever: {
+    id: "goldFever",
+    name: "黄金热",
+    description: "周期性进入黄金热，所有价值翻倍。",
   },
 };
 

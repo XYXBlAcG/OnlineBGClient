@@ -14,12 +14,21 @@ import {
   minerSceneLabels,
 } from "../../domain/miner/content";
 import { mapChoices, nodeLabel } from "../../domain/miner/map";
+import { useEffect } from "react";
 import { MapViewport } from "../MapViewport";
 import { NodeSymbol } from "../expedition/NodeSymbol";
 import { routeLayout } from "../expedition/map-layout";
+import { playMinerSound } from "./sound";
 import "./miner.css";
 
-const playerColor = ["#d7a63a", "#5d9bd4", "#8e7bd0", "#c76d68"];
+const playerColor = [
+  "#d7a63a",
+  "#5d9bd4",
+  "#8e7bd0",
+  "#c76d68",
+  "#5aa878",
+  "#b26fa8",
+];
 
 function playerName(seat: number) {
   return `玩家 ${seat + 1}`;
@@ -211,7 +220,7 @@ function LiveBoard({
   const hook = player?.hook;
   const end = hook ? hookEnd(hook.angle, hook.length) : { x: 50, y: 3 };
   return (
-    <section className="miner-live">
+    <section className="miner-live" data-cave={node.sourceKind}>
       <div className="miner-live-head">
         <div>
           <h3>{node.name}</h3>
@@ -224,6 +233,8 @@ function LiveBoard({
           团队 {view.teamScore}/{view.teamQuota}
         </span>
         <div className="miner-mechanics">
+          {node.mechanics.includes("goldFever") &&
+            view.tick % 150 < 40 && <span className="fever">黄金热 ×2</span>}
           {node.mechanics.map((id) => (
             <span key={id} title={minerMechanics[id].description}>
               {minerMechanics[id].name}
@@ -245,6 +256,17 @@ function LiveBoard({
         </defs>
         <rect x="0" y="0" width="100" height="100" fill="url(#miner-soil)" />
         <path
+          d="M0 5 H100 M6 0 V13 M94 0 V13 M0 9 H8 M92 9 H100"
+          stroke="var(--muted)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          opacity="0.55"
+        />
+        <circle cx="50" cy="3" r="3.6" fill="none" stroke="var(--muted)" strokeWidth="0.9" />
+        <text x="50" y="-2.5" textAnchor="middle" fontSize="4.5">
+          👷
+        </text>
+        <path
           d="M0 8 Q 50 42 100 8"
           fill="none"
           stroke="var(--line)"
@@ -256,6 +278,26 @@ function LiveBoard({
           stroke="var(--line)"
           strokeWidth="1.2"
         />
+        {node.mechanics.includes("goldFever") && view.tick % 150 < 40 && (
+          <rect
+            x="0"
+            y="0"
+            width="100"
+            height="100"
+            fill="color-mix(in srgb, var(--accent) 8%, transparent)"
+          />
+        )}
+        {node.mechanics.includes("centerWall") && (
+          <rect
+            x="48.5"
+            y="0"
+            width="3"
+            height="78"
+            rx="1"
+            fill="var(--line)"
+            opacity="0.75"
+          />
+        )}
         {node.waterLevel > 0 && (
           <g>
             <rect
@@ -292,14 +334,39 @@ function LiveBoard({
                 ? distance > 24
                 : node.mechanics.some((id) => id === "fog")
                   ? distance > 48
-                  : false;
+                  : node.mechanics.some((id) => id === "fogRollsIn")
+                    ? distance > 38 + Math.sin(view.tick / 10) * 16
+                    : node.mechanics.some((id) => id === "risingFog")
+                      ? distance > Math.max(16, 50 - view.tick / 28)
+                      : false;
             const underwater = node.waterLevel > 0 && object.y > node.waterLevel;
             return (
               <g
                 key={object.id}
-                opacity={hidden ? 0.05 : underwater ? 0.3 : hooked ? 0.95 : 1}
+                opacity={
+                  hidden
+                    ? 0.05
+                    : object.phantom
+                      ? 0.55
+                      : underwater
+                        ? 0.3
+                        : hooked
+                          ? 0.95
+                          : 1
+                }
                 transform={`translate(${object.x * 100} ${object.y * 100})`}
               >
+                {(object.phantom ||
+                  (object.value > definition.value * 1.2 &&
+                    node.mechanics.includes("hotspot"))) && (
+                  <circle
+                    r={object.radius * 100 + 2}
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth="0.7"
+                    strokeDasharray="2 2"
+                  />
+                )}
                 <circle
                   r={object.radius * 100}
                   fill={
@@ -582,6 +649,25 @@ function EventBoard({
   );
 }
 
+function MinerSounds({ view }: { view: MinerView }) {
+  const lastKind = view.lastAction?.kind;
+  const lastText = view.lastAction?.text;
+  useEffect(() => {
+    if (!lastKind) return;
+    if (lastKind === "catch") playMinerSound("catch");
+    else if (lastKind === "drop") playMinerSound("drop");
+    else if (lastKind === "special") playMinerSound("special");
+    else if (lastKind === "tnt") playMinerSound("tnt");
+    else if (lastKind === "spin") playMinerSound("spin");
+    else if (lastKind === "gamble") playMinerSound("gamble");
+  }, [lastKind, lastText]);
+  useEffect(() => {
+    if (view.phase === "won") playMinerSound("win");
+    if (view.phase === "lost") playMinerSound("lose");
+  }, [view.phase]);
+  return null;
+}
+
 export function MinerTable({
   snapshot,
   act,
@@ -627,7 +713,7 @@ export function MinerTable({
           pending={pending || replay}
         />
       );
-    if (view.phase === "shop")
+    if (view.phase === "shop" || view.phase === "intermission")
       return (
         <ShopBoard
           view={view}
@@ -646,36 +732,78 @@ export function MinerTable({
       );
     return (
       <section className={`miner-result ${view.phase}`}>
-        <h3>{view.phase === "won" ? "全队升井成功！" : "矿灯熄灭"}</h3>
-        <p>
-          团队 {view.result?.score ?? view.teamScore} / {view.teamQuota}
-        </p>
-        <ol>
-          {view.result?.ranking.map((entry) => (
-            <li key={entry.seat}>
-              {playerName(entry.seat)} · {entry.score} 分
-            </li>
+        <header>
+          <h3>{view.phase === "won" ? "全队升井成功！" : "矿灯熄灭"}</h3>
+          <p>
+            团队 {view.result?.score ?? view.teamScore} / {view.teamQuota}
+          </p>
+        </header>
+        <div className="miner-podium">
+          {(view.result?.ranking ?? []).map((entry, index) => (
+            <div
+              key={entry.seat}
+              className="miner-podium-item"
+              data-place={index + 1}
+            >
+              <span>{playerCharacter(view.players[entry.seat]!).emoji}</span>
+              <strong>{playerName(entry.seat)}</strong>
+              <em>{entry.score} 分</em>
+              <small>#{index + 1}</small>
+            </div>
           ))}
-        </ol>
+        </div>
+        <div className="miner-result-lines">
+          {view.players.map((player) => (
+            <span key={player.seat}>
+              {playerCharacter(player).emoji} {playerName(player.seat)}
+              <em>{player.score}</em>
+            </span>
+          ))}
+        </div>
       </section>
     );
   })();
   return (
     <div className="miner-table" data-phase={view.phase}>
+      <MinerSounds view={view} />
       <header className="miner-hud">
-        <div>
+        <div className="miner-hud-title">
           <strong>黄金矿脉</strong>
           <span>
             {view.phase === "character"
-              ? "选角色"
-              : `第 {view.floor + 1} 层 · ${view.current ? "矿道" : "选路"}`}
+              ? "选择角色"
+              : view.phase === "won" || view.phase === "lost"
+                ? "本局结束"
+                : `第 ${Math.min(view.levelsPlayed + 1, view.matchLevels)} / ${view.matchLevels} 关 · ${
+                    view.phase === "live"
+                      ? "矿洞"
+                      : view.phase === "map"
+                        ? "选路"
+                        : "关间补给"
+                  }`}
           </span>
+          <div className="miner-levels" aria-label="关卡进度">
+            {Array.from({ length: view.matchLevels }, (_, index) => (
+              <span
+                key={index}
+                data-done={index < view.levelsPlayed}
+                data-current={index === view.levelsPlayed}
+              />
+            ))}
+          </div>
         </div>
         <div className="miner-quota">
           <span>团队目标</span>
           <strong>
             {view.teamScore}/{view.teamQuota}
           </strong>
+          <div className="miner-team-bar">
+            <span
+              style={{
+                width: `${Math.min(100, (view.teamScore / view.teamQuota) * 100)}%`,
+              }}
+            />
+          </div>
         </div>
         <div className="miner-active-seat">
           {view.players.map((player) => (

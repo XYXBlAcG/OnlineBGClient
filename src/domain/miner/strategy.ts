@@ -159,7 +159,7 @@ export class MinerStrategy extends Strategy {
       }
       return candidates;
     }
-    if (view.phase === "shop") {
+    if (view.phase === "shop" || view.phase === "intermission") {
       const player = view.players[actor]!;
       return [
         ...Object.values(minerItems)

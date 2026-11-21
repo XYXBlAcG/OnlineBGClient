@@ -22,6 +22,7 @@ export const minerItemIdSchema = z.enum([
   "rockBook",
   "time",
   "rope",
+  "freeze",
 ]);
 export type MinerItemId = z.infer<typeof minerItemIdSchema>;
 
@@ -44,6 +45,16 @@ export const minerMechanicIdSchema = z.enum([
   "zeroGravity",
   "frozenThaw",
   "critters",
+  "fallingRocks",
+  "fogRollsIn",
+  "risingFog",
+  "hotspot",
+  "phantom",
+  "centerWall",
+  "magnet",
+  "geyser",
+  "batSwarm",
+  "goldFever",
 ]);
 export type MinerMechanicId = z.infer<typeof minerMechanicIdSchema>;
 
@@ -76,6 +87,7 @@ export type MinerMove = z.infer<typeof minerMoveSchema>;
 
 export const minerOptionsSchema = z.object({
   quota: z.number().int().min(100).max(50000).optional(),
+  levels: z.number().int().min(3).max(12).default(6),
 });
 export type MinerOptions = z.infer<typeof minerOptionsSchema>;
 
@@ -90,6 +102,7 @@ export interface MinerObject {
   hookedBy: number | null;
   removed: boolean;
   frozen: boolean;
+  phantom: boolean;
 }
 
 export interface MinerHook {
@@ -128,6 +141,7 @@ export interface MinerMineNode {
   timeLeftMs: number;
   waterLevel: number;
   crittersStoppedTicks: number;
+  freezeTicks: number;
 }
 
 export interface MinerResult {
@@ -141,6 +155,7 @@ export type MinerPhase =
   | "character"
   | "map"
   | "live"
+  | "intermission"
   | "shop"
   | "camp"
   | "event"
@@ -162,6 +177,8 @@ export interface MinerView {
   players: MinerPlayerView[];
   teamQuota: number;
   teamScore: number;
+  matchLevels: number;
+  levelsPlayed: number;
   tick: number;
   log: { id: number; text: string }[];
   sequence: number;

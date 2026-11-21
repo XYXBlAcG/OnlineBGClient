@@ -392,3 +392,234 @@
     display: none;
   }
 }
+.miner-mechanics .fever {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.miner-hud {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  padding: 8px 0;
+  background: color-mix(in srgb, var(--canvas) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.miner-hud-title {
+  min-width: 190px;
+}
+.miner-levels {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+.miner-levels span {
+  width: 18px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+}
+.miner-levels span[data-done="true"] {
+  background: var(--accent);
+}
+.miner-levels span[data-current="true"] {
+  background: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.miner-quota {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 180px;
+}
+.miner-quota > span {
+  text-align: center;
+}
+.miner-team-bar {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--canvas);
+}
+.miner-team-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 50%, var(--surface)));
+  transition: width var(--motion-control);
+}
+.miner-result {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 45%),
+    var(--surface);
+}
+.miner-result header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.miner-result header p {
+  margin: 0;
+  color: var(--muted);
+}
+.miner-podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  min-height: 180px;
+  padding: 16px 0;
+}
+.miner-podium-item {
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  width: min(24%, 150px);
+  padding: 12px 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px 14px 6px 6px;
+  background: var(--canvas);
+}
+.miner-podium-item[data-place="1"] {
+  order: 2;
+  min-height: 150px;
+  border-color: var(--accent);
+}
+.miner-podium-item[data-place="2"] {
+  order: 1;
+  min-height: 110px;
+}
+.miner-podium-item[data-place="3"] {
+  order: 3;
+  min-height: 90px;
+}
+.miner-podium-item > span {
+  font-size: 30px;
+}
+.miner-podium-item em {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 700;
+}
+.miner-podium-item small {
+  color: var(--muted);
+}
+.miner-result-lines {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.miner-result-lines span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.miner-result-lines em {
+  color: var(--text);
+  font-style: normal;
+}
+@media (max-width: 760px) {
+  .miner-hud {
+    gap: 8px;
+  }
+  .miner-hud-title {
+    min-width: 0;
+  }
+  .miner-hud-title strong {
+    font-size: 16px;
+  }
+  .miner-levels span {
+    width: 12px;
+  }
+  .miner-quota {
+    min-width: 130px;
+    padding: 6px 10px;
+  }
+  .miner-quota strong {
+    font-size: 15px;
+  }
+  .miner-active-seat {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .miner-active-seat span {
+    flex: 0 0 auto;
+    font-size: 10px;
+  }
+  .miner-live-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .miner-podium {
+    flex-wrap: wrap;
+  }
+  .miner-podium-item {
+    width: 42%;
+  }
+}
+.miner-mine {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, transparent), var(--canvas));
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.miner-table[data-last="catch"] .miner-mine {
+  animation: miner-catch-flash 320ms ease-out;
+}
+.miner-table[data-last="tnt"] .miner-mine {
+  animation: miner-shake 260ms linear;
+}
+.miner-table[data-last="special"] .miner-live-head strong {
+  animation: miner-glow 500ms ease-out;
+}
+@keyframes miner-catch-flash {
+  from {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+  to {
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+}
+@keyframes miner-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+@keyframes miner-glow {
+  from {
+    text-shadow: 0 0 12px var(--accent);
+  }
+  to {
+    text-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .miner-table[data-last="catch"] .miner-mine,
+  .miner-table[data-last="tnt"] .miner-mine,
+  .miner-table[data-last="special"] .miner-live-head strong {
+    animation: none;
+  }
+}
+.miner-live[data-cave="treasure"] .miner-mine,
+.miner-live[data-cave="secret"] .miner-mine,
+.miner-live[data-cave="rift"] .miner-mine,
+.miner-live[data-cave="boss"] .miner-mine {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 52%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, transparent), var(--canvas));
+}
+.miner-live[data-cave="boss"] .miner-mine {
+  background:
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--danger) 12%, transparent), transparent 55%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, transparent), var(--canvas));
+}
