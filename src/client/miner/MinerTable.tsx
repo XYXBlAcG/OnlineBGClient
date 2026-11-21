@@ -195,6 +195,104 @@ function MapBoard({
   );
 }
 
+function ObjectSprite({
+  kind,
+  radius,
+}: {
+  kind: keyof typeof minerObjects;
+  radius: number;
+}) {
+  const size = radius * 100;
+  if (kind === "goldSmall" || kind === "goldMedium" || kind === "goldLarge")
+    return (
+      <g>
+        <path
+          d={`M${-size} 0 L${-size * 0.55} ${-size * 0.8} L${size * 0.35} ${-size * 0.9} L${size} ${-size * 0.15} L${size * 0.7} ${size * 0.75} L${-size * 0.25} ${size * 0.85} Z`}
+          fill="url(#miner-gold)"
+          stroke="#a46b1c"
+          strokeWidth="0.35"
+        />
+        <path
+          d={`M${-size * 0.5} ${-size * 0.2} L${-size * 0.1} ${-size * 0.5} L${size * 0.45} ${-size * 0.2}`}
+          fill="none"
+          stroke="var(--surface)"
+          strokeWidth="0.45"
+          opacity="0.55"
+        />
+      </g>
+    );
+  if (kind === "rockSmall" || kind === "rockLarge")
+    return (
+      <g>
+        <path
+          d={`M${-size} ${size * 0.2} L${-size * 0.65} ${-size * 0.7} L${size * 0.15} ${-size * 0.95} L${size * 0.9} ${-size * 0.25} L${size * 0.7} ${size * 0.75} L${-size * 0.25} ${size * 0.9} Z`}
+          fill="url(#miner-rock)"
+          stroke="var(--line)"
+          strokeWidth="0.3"
+        />
+        <path
+          d={`M${-size * 0.45} ${size * 0.05} L${size * 0.1} ${-size * 0.3} L${size * 0.5} ${size * 0.25}`}
+          fill="none"
+          stroke="var(--muted)"
+          strokeWidth="0.3"
+          opacity="0.5"
+        />
+      </g>
+    );
+  if (kind === "diamond")
+    return (
+      <path
+        d={`M0 ${-size} L${size} ${-size * 0.15} L0 ${size} L${-size} ${-size * 0.15} Z M${-size} ${-size * 0.15} H${size} M0 ${-size} V${size}`}
+        fill="url(#miner-diamond)"
+        stroke="var(--accent)"
+        strokeWidth="0.35"
+      />
+    );
+  if (kind === "bag")
+    return (
+      <g>
+        <path
+          d={`M${-size * 0.75} ${-size * 0.2} Q${-size * 0.9} ${size} 0 ${size} Q${size * 0.9} ${size} ${size * 0.75} ${-size * 0.2} Z`}
+          fill="url(#miner-bag)"
+          stroke="var(--line)"
+          strokeWidth="0.35"
+        />
+        <path
+          d={`M${-size * 0.35} ${-size * 0.25} L${-size * 0.25} ${-size * 0.75} H${size * 0.25} L${size * 0.35} ${-size * 0.25}`}
+          fill="none"
+          stroke="#7a4f24"
+          strokeWidth="0.5"
+        />
+      </g>
+    );
+  if (kind === "skull")
+    return (
+      <g>
+        <circle r={size * 0.8} fill="var(--surface)" stroke="var(--muted)" strokeWidth="0.35" />
+        <circle cx={-size * 0.3} cy={-size * 0.1} r={size * 0.18} fill="var(--muted)" />
+        <circle cx={size * 0.3} cy={-size * 0.1} r={size * 0.18} fill="var(--muted)" />
+        <path d={`M${-size * 0.2} ${size * 0.35} Q0 ${size * 0.55} ${size * 0.2} ${size * 0.35}`} stroke="var(--muted)" strokeWidth="0.3" fill="none" />
+      </g>
+    );
+  if (kind === "tnt")
+    return (
+      <g>
+        <rect x={-size * 0.6} y={-size * 0.55} width={size * 1.2} height={size * 1.1} rx="0.8" fill="var(--danger)" />
+        <path d={`M0 ${-size * 0.55} Q${size * 0.4} ${-size * 1.3} ${size * 0.1} ${-size * 1.45}`} stroke="var(--accent)" strokeWidth="0.55" fill="none" />
+        <text textAnchor="middle" dominantBaseline="central" fontSize={size * 0.62} fill="var(--surface)" fontWeight="700">TNT</text>
+      </g>
+    );
+  return (
+    <g>
+      <path
+        d={`M0 ${-size * 0.3} Q${-size} ${-size * 0.9} ${-size * 1.1} 0 Q${-size * 0.45} ${-size * 0.1} 0 ${size * 0.35} Q${size * 0.45} ${-size * 0.1} ${size * 1.1} 0 Q${size} ${-size * 0.9} 0 ${-size * 0.3} Z`}
+        fill="var(--muted)"
+      />
+      <circle r={size * 0.25} fill="var(--surface)" />
+    </g>
+  );
+}
+
 function hookEnd(angle: number, length: number) {
   const radians = (angle * Math.PI) / 180;
   return {
@@ -252,6 +350,24 @@ function LiveBoard({
           <linearGradient id="miner-soil" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="var(--surface)" />
             <stop offset="1" stopColor="var(--canvas)" />
+          </linearGradient>
+          <radialGradient id="miner-gold" cx="35%" cy="30%">
+            <stop offset="0" stopColor="#f9df8a" />
+            <stop offset="0.35" stopColor="#e8b63e" />
+            <stop offset="1" stopColor="#b8791b" />
+          </radialGradient>
+          <linearGradient id="miner-rock" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#a8a49b" />
+            <stop offset="1" stopColor="#6f706e" />
+          </linearGradient>
+          <linearGradient id="miner-diamond" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#f0feff" />
+            <stop offset="0.5" stopColor="#8ad8e8" />
+            <stop offset="1" stopColor="#3f9fb8" />
+          </linearGradient>
+          <linearGradient id="miner-bag" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#e3bc7a" />
+            <stop offset="1" stopColor="#96612f" />
           </linearGradient>
         </defs>
         <rect x="0" y="0" width="100" height="100" fill="url(#miner-soil)" />
@@ -377,14 +493,7 @@ function LiveBoard({
                   stroke="var(--line)"
                   strokeWidth="0.5"
                 />
-                <text
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize={object.radius * 80}
-                  style={{ userSelect: "none" }}
-                >
-                  {definition.emoji}
-                </text>
+                <ObjectSprite kind={object.kind} radius={object.radius} />
               </g>
             );
           })}
@@ -400,11 +509,12 @@ function LiveBoard({
                 stroke={playerColor[item.seat % playerColor.length]}
                 strokeWidth={item.seat === actor ? 1 : 0.7}
               />
-              <circle
-                cx={itemEnd.x}
-                cy={itemEnd.y}
-                r={1.1}
-                fill={playerColor[item.seat % playerColor.length]}
+              <path
+                d={`M${itemEnd.x - 1.3} ${itemEnd.y - 0.7} L${itemEnd.x} ${itemEnd.y + 0.8} L${itemEnd.x + 1.3} ${itemEnd.y - 0.7}`}
+                fill="none"
+                stroke={playerColor[item.seat % playerColor.length]}
+                strokeWidth="0.9"
+                strokeLinecap="round"
               />
               {item.hook.targetId && (
                 <circle
