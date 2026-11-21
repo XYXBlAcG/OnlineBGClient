@@ -399,10 +399,10 @@
 .miner-hud {
   position: sticky;
   top: 0;
-  z-index: 4;
+  z-index: 10;
   padding: 8px 0;
-  background: color-mix(in srgb, var(--canvas) 88%, transparent);
-  backdrop-filter: blur(8px);
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
 }
 .miner-hud-title {
   min-width: 190px;
@@ -560,7 +560,9 @@
 }
 .miner-mine {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, transparent), var(--canvas));
+    radial-gradient(circle at 20% 30%, rgb(255 255 255 / 22%), transparent 18%),
+    radial-gradient(circle at 76% 62%, rgb(0 0 0 / 8%), transparent 16%),
+    linear-gradient(180deg, rgb(222 191 143), rgb(180 139 91));
   box-shadow: inset 0 0 0 1px var(--line);
 }
 .miner-table[data-last="catch"] .miner-mine {
@@ -662,4 +664,33 @@
   color: var(--accent);
   font-style: normal;
   font-size: 11px;
+}
+.miner-live-summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.miner-live-summary strong {
+  min-width: 42px;
+  color: var(--accent);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.miner-live-summary strong.is-low {
+  color: var(--danger);
+}
+.miner-live-summary span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--canvas));
+  color: var(--muted);
+  font-size: 10px;
+}
+@media (max-width: 760px) {
+  .miner-live-summary {
+    width: 100%;
+    order: 4;
+  }
 }

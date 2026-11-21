@@ -350,8 +350,9 @@ function LiveBoard({
       >
         <defs>
           <linearGradient id="miner-soil" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="var(--surface)" />
-            <stop offset="1" stopColor="var(--canvas)" />
+            <stop offset="0" stopColor="rgb(224 192 142)" />
+            <stop offset="0.6" stopColor="rgb(190 151 104)" />
+            <stop offset="1" stopColor="rgb(151 110 72)" />
           </linearGradient>
           <radialGradient id="miner-gold" cx="35%" cy="30%">
             <stop offset="0" stopColor="#f9df8a" />
@@ -463,7 +464,7 @@ function LiveBoard({
                 key={object.id}
                 opacity={
                   hidden
-                    ? 0.05
+                    ? 0.18
                     : object.phantom
                       ? 0.55
                       : underwater
@@ -937,6 +938,20 @@ export function MinerTable({
             />
           </div>
         </div>
+        {view.phase === "live" && view.node && (
+          <div className="miner-live-summary">
+            <strong
+              className={view.node.timeLeftMs < 10_000 ? "is-low" : undefined}
+            >
+              {Math.ceil(view.node.timeLeftMs / 1000)}s
+            </strong>
+            {view.node.mechanics.map((id) => (
+              <span key={id} title={minerMechanics[id].description}>
+                {minerMechanics[id].name}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="miner-team-perks">
           {view.perks.map((id) => (
             <span key={id} title={minerPerks[id].description}>
