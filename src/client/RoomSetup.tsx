@@ -11,6 +11,7 @@ import { fitSeats } from "../domain/room-seats";
 import { GraphwarOptionsControl } from "./graphwar/GraphwarOptionsControl";
 import { FlightOptionsControl } from "./flight/FlightOptionsControl";
 import { CheckersOptionsControl } from "./checkers/CheckersOptionsControl";
+import { MinerOptionsControl } from "./miner/MinerOptionsControl";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
@@ -325,6 +326,12 @@ export function RoomSetup({
                 onChange={(checkers) => setConfig({ ...config, checkers })}
               />
             )}
+            {config.kind === "miner" && (
+              <MinerOptionsControl
+                value={config.miner}
+                onChange={(miner) => setConfig({ ...config, miner })}
+              />
+            )}
             {config.ai.map((ai, i) => (
               <div className="setting-row" key={i}>
                 <TextField
@@ -425,7 +432,7 @@ export function RoomSetup({
                   type="checkbox"
                   checked={config.team}
                   disabled={
-                    config.kind === "uno" &&
+                    ["uno", "miner"].includes(config.kind) &&
                     ![4, 6].includes(config.humans + config.ai.length)
                   }
                   onChange={(event) =>

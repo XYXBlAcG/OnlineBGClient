@@ -694,3 +694,197 @@
     order: 4;
   }
 }
+.miner-team-scores {
+  display: flex;
+  gap: 6px;
+}
+.miner-team-scores span {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 12px;
+}
+.miner-team-scores span[data-team="0"] {
+  border-left: 3px solid rgb(59 130 190);
+}
+.miner-team-scores span[data-team="1"] {
+  border-left: 3px solid rgb(200 100 80);
+}
+.miner-active-seat span[data-team="0"],
+.miner-live-stats div[data-team="0"] {
+  border-bottom: 2px solid rgb(59 130 190);
+}
+.miner-active-seat span[data-team="1"],
+.miner-live-stats div[data-team="1"] {
+  border-bottom: 2px solid rgb(200 100 80);
+}
+.miner-lives {
+  color: var(--danger);
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-align: center;
+}
+.miner-profile-button {
+  justify-self: end;
+  align-self: start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+}
+.miner-profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgb(0 0 0 / 42%);
+}
+.miner-profile-panel {
+  display: grid;
+  gap: 12px;
+  width: min(540px, 90vw);
+  max-height: 86vh;
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 18px 60px rgb(0 0 0 / 26%);
+}
+.miner-profile-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.miner-profile-panel h3,
+.miner-profile-panel h4 {
+  margin: 0;
+}
+.miner-profile-panel h4 {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.miner-profile-panel header button,
+.miner-profile-panel footer {
+  background: none;
+  color: var(--muted);
+}
+.miner-rank-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--canvas);
+}
+.miner-rank-medal {
+  font-size: 30px;
+}
+.miner-rank-card > div:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+.miner-rank-card small {
+  color: var(--muted);
+}
+.miner-rank-track {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+.miner-rank-track span {
+  width: 7px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--line);
+}
+.miner-rank-track span[data-done="true"] {
+  background: var(--accent);
+}
+.miner-rank-track span[data-current="true"] {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.miner-profile-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 11px;
+}
+.miner-profile-stats span {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--canvas);
+}
+.miner-leaderboard {
+  display: grid;
+  gap: 3px;
+}
+.miner-leaderboard span {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: var(--canvas);
+  font-size: 12px;
+}
+.miner-leaderboard em {
+  color: var(--accent);
+  font-style: normal;
+}
+.miner-leaderboard small {
+  color: var(--muted);
+}
+.miner-leaderboard strong {
+  margin-left: auto;
+}
+.miner-unlocks {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+}
+.miner-unlocks button {
+  display: grid;
+  gap: 2px;
+  padding: 7px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--canvas);
+}
+.miner-unlocks button:disabled {
+  opacity: 0.45;
+}
+.miner-unlocks small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.miner-looks {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.miner-looks button {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--canvas);
+  font-size: 11px;
+}
+.miner-looks button[data-current="true"] {
+  color: var(--accent);
+  outline: 1px solid var(--accent);
+}
+.miner-profile-button[data-look="emerald"] {
+  color: rgb(64 150 105);
+}
+.miner-profile-button[data-look="sapphire"] {
+  color: rgb(70 120 200);
+}
+.miner-profile-button[data-look="ruby"] {
+  color: rgb(190 70 80);
+}

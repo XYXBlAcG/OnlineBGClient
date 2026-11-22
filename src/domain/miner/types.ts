@@ -103,7 +103,19 @@ export const minerMoveSchema = z.discriminatedUnion("type", [
 ]);
 export type MinerMove = z.infer<typeof minerMoveSchema>;
 
+export const minerModeSchema = z.enum([
+  "quick",
+  "ranked",
+  "endless",
+  "party",
+  "daily",
+  "bossRush",
+  "suddenDeath",
+]);
+export type MinerMode = z.infer<typeof minerModeSchema>;
+
 export const minerOptionsSchema = z.object({
+  mode: minerModeSchema.default("quick"),
   quota: z.number().int().min(100).max(50000).optional(),
   levels: z.number().int().min(3).max(12).default(6),
 });
@@ -165,9 +177,13 @@ export interface MinerMineNode {
 
 export interface MinerResult {
   won: boolean;
+  mode: MinerMode;
   quota: number;
   score: number;
   ranking: { seat: number; score: number; caught: number }[];
+  teamScores?: [number, number];
+  winningTeam?: 0 | 1;
+  lives?: number;
 }
 
 export type MinerPhase =
@@ -197,10 +213,16 @@ export interface MinerView {
   perkBought: boolean;
   perks: MinerPerkId[];
   players: MinerPlayerView[];
+  mode: MinerMode;
   teamQuota: number;
   teamScore: number;
   matchLevels: number;
   levelsPlayed: number;
+  teams: number[];
+  teamScores: [number, number];
+  lives: number;
+  levelTarget: number;
+  levelScore: number;
   tick: number;
   log: { id: number; text: string }[];
   sequence: number;

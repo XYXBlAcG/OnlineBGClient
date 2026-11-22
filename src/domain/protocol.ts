@@ -107,6 +107,13 @@ export const configSchema = z
   )
   .refine(
     (value) =>
+      value.kind !== "miner" ||
+      !value.team ||
+      [4, 6].includes(value.humans + value.ai.length),
+    "黄金矿脉组队模式需要 4 或 6 人",
+  )
+  .refine(
+    (value) =>
       value.kind !== "tq" ||
       value.checkers.mode !== "siege" ||
       value.humans + value.ai.length === 2,

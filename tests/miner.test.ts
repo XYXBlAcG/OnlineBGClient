@@ -75,6 +75,41 @@ describe("miner capabilities", () => {
   });
 });
 
+describe("miner modes", () => {
+  it("splits 4-player team mode into 2v2", () => {
+    const engine = new GameEngine();
+    const state = engine.create("miner", 4, "miner:team", true);
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(state.view.teams).toEqual([0, 1, 0, 1]);
+    expect(gameCatalogue.miner.team).toBe(true);
+  });
+
+  it("starts endless with three lives and no six-level cap", () => {
+    const engine = new GameEngine();
+    const state = engine.create("miner", 2, "miner:endless", false, {
+      miner: { mode: "endless", levels: 6 },
+    });
+    if (state.kind !== "miner") throw new Error("wrong game");
+    expect(state.view.mode).toBe("endless");
+    expect(state.view.lives).toBe(3);
+    expect(state.view.levelTarget).toBeGreaterThan(0);
+  });
+
+  it("accepts ranked and party mode options", () => {
+    const engine = new GameEngine();
+    const ranked = engine.create("miner", 2, "miner:ranked", false, {
+      miner: { mode: "ranked", levels: 6 },
+    });
+    const party = engine.create("miner", 2, "miner:party", false, {
+      miner: { mode: "party", levels: 6 },
+    });
+    if (ranked.kind !== "miner" || party.kind !== "miner")
+      throw new Error("wrong game");
+    expect(ranked.view.mode).toBe("ranked");
+    expect(party.view.mode).toBe("party");
+  });
+});
+
 describe("miner content", () => {
   it("ships the Gold Miner object and item set", () => {
     expect(Object.keys(minerObjects)).toHaveLength(10);

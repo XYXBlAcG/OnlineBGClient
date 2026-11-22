@@ -23,6 +23,8 @@ import { FlightOptionsControl } from "./flight/FlightOptionsControl";
 import { flightOptionsSchema } from "../domain/flight";
 import { CheckersOptionsControl } from "./checkers/CheckersOptionsControl";
 import { checkersOptionsSchema } from "../domain/checkers";
+import { MinerOptionsControl } from "./miner/MinerOptionsControl";
+import { minerOptionsSchema } from "../domain/miner/types";
 import { invitationLink } from "./invitation";
 import { MahjongOptionsControl } from "./mahjong/MahjongOptionsControl";
 import {
@@ -89,6 +91,7 @@ export function Lobby({
   const [graphwar, setGraphwar] = useState(graphwarOptionsSchema.parse({}));
   const [flight, setFlight] = useState(flightOptionsSchema.parse({}));
   const [checkers, setCheckers] = useState(checkersOptionsSchema.parse({}));
+  const [miner, setMiner] = useState(minerOptionsSchema.parse({}));
   const [expedition, setExpedition] = useState(
     expeditionOptionsSchema.parse({}),
   );
@@ -143,6 +146,14 @@ export function Lobby({
     ai: fitted.ai,
   }).ai;
   const total = displayHumans + displayAi.length;
+  useEffect(() => {
+    if (
+      team &&
+      (kind === "uno" || kind === "miner") &&
+      ![4, 6].includes(total)
+    )
+      setTeam(false);
+  }, [team, kind, total]);
   const seatCap =
     kind === "tq" && checkers.mode === "siege"
       ? 2
@@ -411,6 +422,7 @@ export function Lobby({
                   "scmj",
                   "fxq",
                   "tq",
+                  "miner",
                 ].includes(kind) && (
                   <section
                     className="lobby-options lobby-options-open"
@@ -472,6 +484,9 @@ export function Lobby({
                         value={checkers}
                         onChange={setCheckers}
                       />
+                    )}
+                    {kind === "miner" && (
+                      <MinerOptionsControl value={miner} onChange={setMiner} />
                     )}
                   </section>
                 )}
@@ -592,12 +607,16 @@ export function Lobby({
               {game.team && (
                 <Switch
                   label={
-                    kind === "uno" && ![4, 6].includes(total)
+                    (kind === "uno" || kind === "miner") &&
+                    ![4, 6].includes(total)
                       ? "组队模式 · 需要 4 或 6 人"
                       : "组队模式"
                   }
                   checked={team}
-                  disabled={kind === "uno" && ![4, 6].includes(total)}
+                  disabled={
+                    (kind === "uno" || kind === "miner") &&
+                    ![4, 6].includes(total)
+                  }
                   onCheckedChange={setTeam}
                 />
               )}
@@ -645,6 +664,7 @@ export function Lobby({
                       graphwar,
                       flight,
                       checkers,
+                      miner,
                       performance: preferences.performance,
                     }),
                     name,

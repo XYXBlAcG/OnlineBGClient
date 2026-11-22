@@ -3,6 +3,7 @@ import type {
   MinerCharacterId,
   MinerItemId,
   MinerMechanicId,
+  MinerMode,
   MinerObjectKind,
   MinerPerkId,
 } from "./types";
@@ -410,6 +411,19 @@ export const minerMechanics: Record<
 export const minerMechanicsPool = Object.keys(
   minerMechanics,
 ) as MinerMechanicId[];
+
+export const minerModes: Record<
+  MinerMode,
+  { name: string; description: string }
+> = {
+  quick: { name: "快速匹配", description: "六关定胜负，团队目标 + 个人排名。" },
+  ranked: { name: "排位赛", description: "六关定级/升段，记录 RP 与段位。" },
+  endless: { name: "无尽模式", description: "团队三条命，关卡目标递增，越挖越深。" },
+  party: { name: "混乱派对", description: "六关，每个矿洞额外一个机制，节奏更快。" },
+  daily: { name: "每日挑战", description: "固定种子的一局挑战，记录每日最佳。" },
+  bossRush: { name: "Boss Rush", description: "六关全部首领矿洞，钻石与 TNT 更多。" },
+  suddenDeath: { name: "极速模式", description: "三关，每关 25 秒，速战速决。" },
+};
 
 export const minerSceneLabels: Record<NodeKind, string> = {
   battle: "矿洞",

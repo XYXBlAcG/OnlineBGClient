@@ -6,6 +6,7 @@ import {
   minerCharacters,
   minerItemPool,
   minerItems,
+  minerMechanicsPool,
   minerPerkPool,
   minerPerks,
   minerObjects,
@@ -163,6 +164,7 @@ function collect(
   player.score += value;
   player.coins += value;
   view.teamScore += value;
+  view.teamScores[view.teams[player.seat] ?? 0] += value;
   if (
     (object.kind === "goldSmall" ||
       object.kind === "goldMedium" ||
@@ -325,11 +327,16 @@ export class MinerRules implements Rules<"miner"> {
 
   create(
     players: number,
-    _team: boolean,
+    team: boolean,
     options?: GameOptions,
   ): MinerGameState {
-    const seed = `${this.random()}:${this.random()}`;
+    const mode = options?.miner?.mode ?? "quick";
+    const seed =
+      mode === "daily"
+        ? `daily-${new Date().toISOString().slice(0, 10)}`
+        : `${this.random()}:${this.random()}`;
     const map = generateMinerMap(seed);
+    const teamMode = team && (players === 4 || players === 6);
     const view: MinerView = {
       phase: "character",
       map,
@@ -346,10 +353,20 @@ export class MinerRules implements Rules<"miner"> {
       perkBought: false,
       perks: [],
       players: Array.from({ length: players }, (_, seat) => makePlayer(seat)),
+      mode,
       teamQuota: options?.miner?.quota ?? 2500 + players * 2200,
       teamScore: 0,
-      matchLevels: options?.miner?.levels ?? 6,
+      matchLevels:
+        mode === "suddenDeath" ? 3 : (options?.miner?.levels ?? 6),
       levelsPlayed: 0,
+      teams: teamMode
+        ? Array.from({ length: players }, (_, seat) => seat % 2)
+        : Array.from({ length: players }, () => 0),
+      teamScores: [0, 0],
+      lives: mode === "endless" ? 3 : 0,
+      levelTarget:
+        mode === "endless" ? 500 + players * 250 : 0,
+      levelScore: 0,
       tick: 0,
       log: [],
       sequence: 0,
@@ -888,9 +905,24 @@ export class MinerRules implements Rules<"miner"> {
     view.ready = [];
     view.shopSpinsUsed = [];
     view.teamGambleUsed = false;
-    view.node = createNode(node, view.players.length, this.random);
+    const scene =
+      view.mode === "bossRush" ? { ...node, kind: "boss" as const } : node;
+    view.node = createNode(scene, view.players.length, this.random);
+    if (view.mode === "suddenDeath") {
+      view.node.durationMs = 25_000;
+      view.node.timeLeftMs = 25_000;
+    }
+    if (view.mode === "party") {
+      const extra =
+        minerMechanicsPool[
+          Math.floor(this.random() * minerMechanicsPool.length)
+        ]!;
+      if (view.node.scene === "mine" && !view.node.mechanics.includes(extra))
+        view.node.mechanics.push(extra);
+    }
     view.node.durationMs += perkCount(view, "timeWarp") * 8_000;
     view.node.timeLeftMs = view.node.durationMs;
+    if (view.node.scene === "mine") view.levelScore = view.teamScore;
     view.perkOffers =
       view.node.scene === "shop" ? perkOffers(this.random) : [];
     view.perkBought = false;
@@ -953,8 +985,24 @@ export class MinerRules implements Rules<"miner"> {
     view.node = null;
     view.ready = [];
     if (node?.scene === "mine") {
+      const levelScore = view.teamScore - view.levelScore;
+      view.levelScore = view.teamScore;
       view.levelsPlayed++;
-      if (view.levelsPlayed >= view.matchLevels) return this.finalResult(view);
+      if (view.mode === "endless") {
+        if (levelScore < view.levelTarget) {
+          view.lives--;
+          log(
+            view,
+            `本关 ${levelScore} 未达到目标 ${view.levelTarget}，失去 1 条命。`,
+          );
+          if (view.lives <= 0) return this.finalResult(view);
+        } else {
+          log(view, `本关 ${levelScore} 达标，继续深入。`);
+        }
+        view.levelTarget = Math.ceil(view.levelTarget * 1.18);
+      } else if (view.levelsPlayed >= view.matchLevels) {
+        return this.finalResult(view);
+      }
       view.phase = "intermission";
       view.node = {
         id: `intermission-${view.levelsPlayed}`,
@@ -982,17 +1030,26 @@ export class MinerRules implements Rules<"miner"> {
   private finishIntermission(view: MinerView): MinerView {
     view.node = null;
     view.ready = [];
-    view.phase = "map";
-    view.votes = {};
-    log(view, "补给完成，选择下一处矿点。");
-    return view;
+    return this.continueMap(view);
   }
 
   private continueMap(view: MinerView): MinerView {
     const current = view.map.flat().find((node) => node.id === view.current);
     const choices = current ? mapChoices(view) : [];
-    if (!current || choices.length === 0 || current.floor >= view.map.length - 1)
+    if (!current || choices.length === 0 || current.floor >= view.map.length - 1) {
+      if (view.mode === "endless") {
+        view.map = generateMinerMap(`${this.random()}:${this.random()}`);
+        view.current = null;
+        view.floor = 0;
+        view.path = [];
+        view.phase = "map";
+        view.votes = {};
+        view.ready = [];
+        log(view, "矿道更深了，新的矿层出现。");
+        return view;
+      }
       return this.finalResult(view);
+    }
     view.phase = "map";
     view.votes = {};
     view.ready = [];
@@ -1001,10 +1058,20 @@ export class MinerRules implements Rules<"miner"> {
   }
 
   private finalResult(view: MinerView): MinerView {
-    const won = view.teamScore >= view.teamQuota;
-    view.phase = won ? "won" : "lost";
+    const teamMode = view.teams.some((team) => team !== view.teams[0]);
+    const won = !teamMode && view.teamScore >= view.teamQuota;
+    const winningTeam: 0 | 1 | undefined =
+      teamMode && view.teamScores[0] !== view.teamScores[1]
+        ? view.teamScores[0] > view.teamScores[1]
+          ? 0
+          : 1
+        : teamMode
+          ? 0
+          : undefined;
+    view.phase = won || (teamMode && winningTeam !== undefined) ? "won" : "lost";
     view.result = {
       won,
+      mode: view.mode,
       quota: view.teamQuota,
       score: view.teamScore,
       ranking: [...view.players]
@@ -1014,8 +1081,19 @@ export class MinerRules implements Rules<"miner"> {
           score: player.score,
           caught: 0,
         })),
+      ...(teamMode
+        ? { teamScores: view.teamScores, winningTeam }
+        : {}),
+      ...(view.mode === "endless" ? { lives: view.lives } : {}),
     };
-    log(view, won ? "全队完成矿脉目标，升井！" : "团队没有完成矿脉目标。");
+    log(
+      view,
+      teamMode
+        ? `对局结束，${winningTeam === 0 ? "A" : "B"} 队获胜。`
+        : won
+          ? "全队完成矿脉目标，升井！"
+          : "团队没有完成矿脉目标。",
+    );
     return view;
   }
 }

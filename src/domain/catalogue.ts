@@ -23,7 +23,7 @@ export const gameCatalogue = {
     minPlayers: 2,
     maxPlayers: 6,
     presentation: { kind: "miner" },
-    team: false,
+    team: true,
     symbol: "⛏",
     ai: true,
     mobile: true,

@@ -11,6 +11,7 @@ import {
   minerItems,
   minerMechanics,
   minerObjects,
+  minerModes,
   minerPerks,
   minerSceneLabels,
 } from "../../domain/miner/content";
@@ -19,6 +20,7 @@ import { useEffect } from "react";
 import { MapViewport } from "../MapViewport";
 import { NodeSymbol } from "../expedition/NodeSymbol";
 import { routeLayout } from "../expedition/map-layout";
+import { MinerProfileLayer } from "./MinerProfilePanel";
 import { playMinerSound } from "./sound";
 import "./miner.css";
 
@@ -553,7 +555,13 @@ function LiveBoard({
       </svg>
       <div className="miner-live-stats">
         {view.players.map((item) => (
-          <div key={item.seat} data-seat={item.seat}>
+          <div
+            key={item.seat}
+            data-seat={item.seat}
+            data-team={view.teams.some((team) => team !== view.teams[0])
+              ? view.teams[item.seat]
+              : undefined}
+          >
             <strong>
               {playerCharacter(item).emoji} {playerName(item.seat)}
             </strong>
@@ -816,6 +824,7 @@ export function MinerTable({
   if (!state || state.kind !== "miner") return null;
   const view = (state as MinerGameState).view;
   const actor = snapshot.actor;
+  const teamMode = view.teams.some((team) => team !== view.teams[0]);
   const send = (move: MinerMove) =>
     act({ type: "miner-action", move });
   const content = (() => {
@@ -868,7 +877,11 @@ export function MinerTable({
         <header>
           <h3>{view.phase === "won" ? "全队升井成功！" : "矿灯熄灭"}</h3>
           <p>
-            团队 {view.result?.score ?? view.teamScore} / {view.teamQuota}
+            {view.result?.teamScores
+              ? `A 队 ${view.result.teamScores[0]} · B 队 ${view.result.teamScores[1]}`
+              : view.mode === "endless"
+                ? `无尽深度 ${view.levelsPlayed} 关 · 生命 ${view.result?.lives ?? 0}`
+                : `团队 ${view.result?.score ?? view.teamScore} / ${view.teamQuota}`}
           </p>
         </header>
         <div className="miner-podium">
@@ -899,15 +912,19 @@ export function MinerTable({
   return (
     <div className="miner-table" data-phase={view.phase}>
       <MinerSounds view={view} />
+      {actor >= 0 && <MinerProfileLayer view={view} actor={actor} />}
       <header className="miner-hud">
         <div className="miner-hud-title">
           <strong>黄金矿脉</strong>
           <span>
+            {minerModes[view.mode].name} ·{" "}
             {view.phase === "character"
               ? "选择角色"
               : view.phase === "won" || view.phase === "lost"
                 ? "本局结束"
-                : `第 ${Math.min(view.levelsPlayed + 1, view.matchLevels)} / ${view.matchLevels} 关 · ${
+                : view.mode === "endless"
+                  ? `第 ${view.levelsPlayed + 1} 关 · 无尽`
+                  : `第 ${Math.min(view.levelsPlayed + 1, view.matchLevels)} / ${view.matchLevels} 关 · ${
                     view.phase === "live"
                       ? "矿洞"
                       : view.phase === "map"
@@ -915,29 +932,46 @@ export function MinerTable({
                         : "关间补给"
                   }`}
           </span>
-          <div className="miner-levels" aria-label="关卡进度">
-            {Array.from({ length: view.matchLevels }, (_, index) => (
-              <span
-                key={index}
-                data-done={index < view.levelsPlayed}
-                data-current={index === view.levelsPlayed}
-              />
-            ))}
-          </div>
+          {view.mode !== "endless" && (
+            <div className="miner-levels" aria-label="关卡进度">
+              {Array.from({ length: view.matchLevels }, (_, index) => (
+                <span
+                  key={index}
+                  data-done={index < view.levelsPlayed}
+                  data-current={index === view.levelsPlayed}
+                />
+              ))}
+            </div>
+          )}
         </div>
-        <div className="miner-quota">
-          <span>团队目标</span>
-          <strong>
-            {view.teamScore}/{view.teamQuota}
-          </strong>
-          <div className="miner-team-bar">
-            <span
-              style={{
-                width: `${Math.min(100, (view.teamScore / view.teamQuota) * 100)}%`,
-              }}
-            />
+        {teamMode ? (
+          <div className="miner-team-scores">
+            <span data-team="0">A 队 {view.teamScores[0]}</span>
+            <span data-team="1">B 队 {view.teamScores[1]}</span>
           </div>
-        </div>
+        ) : (
+          <div className="miner-quota">
+            <span>{view.mode === "endless" ? "本关目标" : "团队目标"}</span>
+            <strong>
+              {view.mode === "endless"
+                ? `${view.levelTarget}`
+                : `${view.teamScore}/${view.teamQuota}`}
+            </strong>
+            {view.mode === "endless" ? (
+              <div className="miner-lives">
+                {"❤️".repeat(Math.max(0, view.lives))}
+              </div>
+            ) : (
+              <div className="miner-team-bar">
+                <span
+                  style={{
+                    width: `${Math.min(100, (view.teamScore / view.teamQuota) * 100)}%`,
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
         {view.phase === "live" && view.node && (
           <div className="miner-live-summary">
             <strong
@@ -961,7 +995,11 @@ export function MinerTable({
         </div>
         <div className="miner-active-seat">
           {view.players.map((player) => (
-            <span key={player.seat} data-seat={player.seat}>
+            <span
+              key={player.seat}
+              data-seat={player.seat}
+              data-team={teamMode ? view.teams[player.seat] : undefined}
+            >
               {playerCharacter(player).emoji} {playerName(player.seat)} ·{" "}
               {player.score}
             </span>
