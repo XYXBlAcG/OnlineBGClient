@@ -29,13 +29,12 @@ import type {
 
 const TICK_MS = 120;
 const MAX_LENGTH = 1.02;
-const PIVOT_X = 0.5;
-const PIVOT_Y = 0.03;
+const PIVOT_Y = 0.1;
 const SWING_SPEED = 58;
 const SHOOT_SPEED = 1.45;
 const BASE_REEL = 0.82;
 
-function makePlayer(seat: number): MinerPlayerView {
+function makePlayer(seat: number, players: number): MinerPlayerView {
   return {
     seat,
     score: 0,
@@ -44,6 +43,10 @@ function makePlayer(seat: number): MinerPlayerView {
     hook: {
       phase: "swing",
       angle: (seat % 2 ? 1 : -1) * 32,
+      pivotX:
+        players <= 1
+          ? 0.5
+          : 0.14 + (seat / (players - 1)) * 0.72,
       direction: seat % 2 ? -1 : 1,
       length: 0,
       targetId: null,
@@ -117,7 +120,7 @@ function rayHit(
   for (const object of node.objects) {
     if (object.removed || object.hookedBy !== null) continue;
     if (node.waterLevel > 0 && object.y > node.waterLevel) continue;
-    const ox = object.x - PIVOT_X;
+    const ox = object.x - hook.pivotX;
     const oy = object.y - PIVOT_Y;
     const t = ox * dx + oy * dy;
     if (t < previous || t > next || t > MAX_LENGTH) continue;
@@ -242,7 +245,7 @@ function updateHook(
         0.08,
         Math.min(
           MAX_LENGTH,
-          (hit.x - PIVOT_X) * Math.sin((hook.angle * Math.PI) / 180) +
+          (hit.x - hook.pivotX) * Math.sin((hook.angle * Math.PI) / 180) +
             (hit.y - PIVOT_Y) * Math.cos((hook.angle * Math.PI) / 180),
         ),
       );
@@ -330,7 +333,7 @@ export class MinerRules implements Rules<"miner"> {
     team: boolean,
     options?: GameOptions,
   ): MinerGameState {
-    const mode = options?.miner?.mode ?? "quick";
+    const mode = options?.miner?.mode ?? "friendly";
     const seed =
       mode === "daily"
         ? `daily-${new Date().toISOString().slice(0, 10)}`
@@ -352,7 +355,9 @@ export class MinerRules implements Rules<"miner"> {
       perkOffers: [],
       perkBought: false,
       perks: [],
-      players: Array.from({ length: players }, (_, seat) => makePlayer(seat)),
+      players: Array.from({ length: players }, (_, seat) =>
+        makePlayer(seat, players),
+      ),
       mode,
       teamQuota: options?.miner?.quota ?? 2500 + players * 2200,
       teamScore: 0,
@@ -688,7 +693,8 @@ export class MinerRules implements Rules<"miner"> {
       if (move.type === "buy-perk") {
         if (view.perkBought || !view.perkOffers.includes(move.perkId))
           throw new Error("该天赋不可购买");
-        const price = minerPerks[move.perkId].cost;
+        const price =
+          view.mode === "endless" ? 0 : minerPerks[move.perkId].cost;
         if (player.coins < price) throw new Error("金币不足");
         player.coins -= price;
         view.perks.push(move.perkId);
@@ -945,6 +951,7 @@ export class MinerRules implements Rules<"miner"> {
       player.hook = {
         phase: "swing",
         angle: (player.seat % 2 ? 1 : -1) * 32,
+        pivotX: player.hook.pivotX,
         direction: player.seat % 2 ? -1 : 1,
         length: 0,
         targetId: null,

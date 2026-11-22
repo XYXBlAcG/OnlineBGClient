@@ -2,7 +2,6 @@ import { beforeEach, expect, it, vi } from "vitest";
 import type { MinerView } from "../src/domain/miner/types";
 import {
   loadMinerProfile,
-  rankFor,
   recordMinerResult,
 } from "../src/client/miner/profile";
 
@@ -14,22 +13,16 @@ const localStorageMock = {
   clear: () => storage.clear(),
 };
 
-function view(mode: "ranked" | "endless", score: number): MinerView {
+function view(mode: "friendly" | "endless", score: number): MinerView {
   return {
     mode,
     teams: [0],
     teamScore: score,
     levelTarget: 100,
     levelsPlayed: mode === "endless" ? 7 : 6,
-    players: [
-      {
-        seat: 0,
-        character: "miner",
-        score,
-      },
-    ],
+    players: [{ seat: 0, character: "miner", score }],
     result: {
-      won: false,
+      won: true,
       mode,
       quota: 0,
       score,
@@ -44,22 +37,22 @@ beforeEach(() => {
   vi.stubGlobal("localStorage", localStorageMock);
 });
 
-it("tracks ranked placement, RP, leaderboard and tier", () => {
-  for (let index = 0; index < 3; index++)
-    recordMinerResult(view("ranked", 1000 + index), 0);
+it("tracks matches, wins and titles", () => {
+  recordMinerResult(view("friendly", 1000), 0);
   let profile = loadMinerProfile();
-  expect(profile.placement).toBe(3);
-  expect(profile.rp).toBe(0);
-  recordMinerResult(view("ranked", 1500), 0);
+  expect(profile.matches).toBe(1);
+  expect(profile.wins).toBe(1);
+  expect(profile.unlocks).toContain("rookie");
+  for (let index = 0; index < 4; index++)
+    recordMinerResult(view("friendly", 1000), 0);
   profile = loadMinerProfile();
-  expect(profile.rp).toBe(32);
-  expect(profile.leaderboard.ranked[0]?.score).toBe(1500);
-  expect(rankFor(profile.rp).name).toBe("青铜");
+  expect(profile.matches).toBe(5);
+  expect(profile.unlocks).toContain("veteran");
+  expect(profile.title).toBe("老矿工");
 });
 
 it("tracks endless best and unlocks", () => {
   const profile = recordMinerResult(view("endless", 900), 0);
   expect(profile.endlessBest).toBe(7);
   expect(profile.unlocks).toContain("deep");
-  expect(profile.matches).toBe(1);
 });

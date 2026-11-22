@@ -22,6 +22,17 @@ import { NodeSymbol } from "../expedition/NodeSymbol";
 import { routeLayout } from "../expedition/map-layout";
 import { MinerProfileLayer } from "./MinerProfilePanel";
 import { playMinerSound } from "./sound";
+import goldCoinArt from "../../assets/miner/objects/gold-coin.png";
+import gemBlueArt from "../../assets/miner/objects/gem-blue.png";
+import rockArt from "../../assets/miner/objects/rock.png";
+import bombArt from "../../assets/miner/objects/bomb.png";
+import batArt from "../../assets/miner/objects/bat.png";
+import bagArt from "../../assets/miner/objects/bag.png";
+import boneArt from "../../assets/miner/objects/bone.png";
+import minerCharacterArt from "../../assets/miner/characters/miner.png";
+import merchantCharacterArt from "../../assets/miner/characters/merchant.png";
+import strongmanCharacterArt from "../../assets/miner/characters/strongman.png";
+import beastTamerCharacterArt from "../../assets/miner/characters/beast-tamer.png";
 import "./miner.css";
 
 const playerColor = [
@@ -32,6 +43,26 @@ const playerColor = [
   "#5aa878",
   "#b26fa8",
 ];
+
+const objectArt: Record<string, string> = {
+  goldSmall: goldCoinArt,
+  goldMedium: goldCoinArt,
+  goldLarge: goldCoinArt,
+  diamond: gemBlueArt,
+  rockSmall: rockArt,
+  rockLarge: rockArt,
+  bag: bagArt,
+  skull: boneArt,
+  tnt: bombArt,
+  critter: batArt,
+};
+
+const characterArt: Record<string, string> = {
+  miner: minerCharacterArt,
+  merchant: merchantCharacterArt,
+  strongman: strongmanCharacterArt,
+  beastTamer: beastTamerCharacterArt,
+};
 
 function playerName(seat: number) {
   return `玩家 ${seat + 1}`;
@@ -65,7 +96,7 @@ function CharacterBoard({
             disabled={pending || view.characterChoices[actor] !== undefined}
             onClick={() => send({ type: "character", character: character.id })}
           >
-            <span>{character.emoji}</span>
+            <img src={characterArt[character.id]} alt="" />
             <strong>{character.name}</strong>
             <em>{character.special}</em>
             <small>{character.description}</small>
@@ -206,101 +237,29 @@ function ObjectSprite({
   radius: number;
 }) {
   const size = radius * 100;
-  if (kind === "goldSmall" || kind === "goldMedium" || kind === "goldLarge")
-    return (
-      <g>
-        <path
-          d={`M${-size} 0 L${-size * 0.55} ${-size * 0.8} L${size * 0.35} ${-size * 0.9} L${size} ${-size * 0.15} L${size * 0.7} ${size * 0.75} L${-size * 0.25} ${size * 0.85} Z`}
-          fill="url(#miner-gold)"
-          stroke="#a46b1c"
-          strokeWidth="0.35"
-        />
-        <path
-          d={`M${-size * 0.5} ${-size * 0.2} L${-size * 0.1} ${-size * 0.5} L${size * 0.45} ${-size * 0.2}`}
-          fill="none"
-          stroke="var(--surface)"
-          strokeWidth="0.45"
-          opacity="0.55"
-        />
-      </g>
-    );
-  if (kind === "rockSmall" || kind === "rockLarge")
-    return (
-      <g>
-        <path
-          d={`M${-size} ${size * 0.2} L${-size * 0.65} ${-size * 0.7} L${size * 0.15} ${-size * 0.95} L${size * 0.9} ${-size * 0.25} L${size * 0.7} ${size * 0.75} L${-size * 0.25} ${size * 0.9} Z`}
-          fill="url(#miner-rock)"
-          stroke="var(--line)"
-          strokeWidth="0.3"
-        />
-        <path
-          d={`M${-size * 0.45} ${size * 0.05} L${size * 0.1} ${-size * 0.3} L${size * 0.5} ${size * 0.25}`}
-          fill="none"
-          stroke="var(--muted)"
-          strokeWidth="0.3"
-          opacity="0.5"
-        />
-      </g>
-    );
-  if (kind === "diamond")
-    return (
-      <path
-        d={`M0 ${-size} L${size} ${-size * 0.15} L0 ${size} L${-size} ${-size * 0.15} Z M${-size} ${-size * 0.15} H${size} M0 ${-size} V${size}`}
-        fill="url(#miner-diamond)"
-        stroke="var(--accent)"
-        strokeWidth="0.35"
-      />
-    );
-  if (kind === "bag")
-    return (
-      <g>
-        <path
-          d={`M${-size * 0.75} ${-size * 0.2} Q${-size * 0.9} ${size} 0 ${size} Q${size * 0.9} ${size} ${size * 0.75} ${-size * 0.2} Z`}
-          fill="url(#miner-bag)"
-          stroke="var(--line)"
-          strokeWidth="0.35"
-        />
-        <path
-          d={`M${-size * 0.35} ${-size * 0.25} L${-size * 0.25} ${-size * 0.75} H${size * 0.25} L${size * 0.35} ${-size * 0.25}`}
-          fill="none"
-          stroke="#7a4f24"
-          strokeWidth="0.5"
-        />
-      </g>
-    );
-  if (kind === "skull")
-    return (
-      <g>
-        <circle r={size * 0.8} fill="var(--surface)" stroke="var(--muted)" strokeWidth="0.35" />
-        <circle cx={-size * 0.3} cy={-size * 0.1} r={size * 0.18} fill="var(--muted)" />
-        <circle cx={size * 0.3} cy={-size * 0.1} r={size * 0.18} fill="var(--muted)" />
-        <path d={`M${-size * 0.2} ${size * 0.35} Q0 ${size * 0.55} ${size * 0.2} ${size * 0.35}`} stroke="var(--muted)" strokeWidth="0.3" fill="none" />
-      </g>
-    );
-  if (kind === "tnt")
-    return (
-      <g>
-        <rect x={-size * 0.6} y={-size * 0.55} width={size * 1.2} height={size * 1.1} rx="0.8" fill="var(--danger)" />
-        <path d={`M0 ${-size * 0.55} Q${size * 0.4} ${-size * 1.3} ${size * 0.1} ${-size * 1.45}`} stroke="var(--accent)" strokeWidth="0.55" fill="none" />
-        <text textAnchor="middle" dominantBaseline="central" fontSize={size * 0.62} fill="var(--surface)" fontWeight="700">TNT</text>
-      </g>
-    );
+  const art = objectArt[kind];
+  if (!art) return null;
   return (
-    <g>
-      <path
-        d={`M0 ${-size * 0.3} Q${-size} ${-size * 0.9} ${-size * 1.1} 0 Q${-size * 0.45} ${-size * 0.1} 0 ${size * 0.35} Q${size * 0.45} ${-size * 0.1} ${size * 1.1} 0 Q${size} ${-size * 0.9} 0 ${-size * 0.3} Z`}
-        fill="var(--muted)"
-      />
-      <circle r={size * 0.25} fill="var(--surface)" />
-    </g>
+    <image
+      href={art}
+      x={-size}
+      y={-size}
+      width={size * 2}
+      height={size * 2}
+      preserveAspectRatio="xMidYMid meet"
+    />
   );
 }
 
-function hookEnd(angle: number, length: number) {
+const MINE_HEIGHT = 30;
+const MINE_TOP = 3;
+const MINE_DEPTH = 26;
+
+function hookEnd(angle: number, length: number, pivotX: number) {
   const radians = (angle * Math.PI) / 180;
   return {
-    x: 50 + Math.sin(radians) * length * 100,
-    y: 3 + Math.cos(radians) * length * 100,
+    x: pivotX * 100 + Math.sin(radians) * length * 100,
+    y: MINE_TOP + Math.cos(radians) * length * MINE_DEPTH,
   };
 }
 
@@ -320,7 +279,9 @@ function LiveBoard({
   const player = view.players[actor];
   const hook = player?.hook;
   const specialist = view.perks.filter((perk) => perk === "specialist").length;
-  const end = hook ? hookEnd(hook.angle, hook.length) : { x: 50, y: 3 };
+  const end = hook
+    ? hookEnd(hook.angle, hook.length, hook.pivotX)
+    : { x: 50, y: MINE_TOP };
   return (
     <section className="miner-live" data-cave={node.sourceKind}>
       <div className="miner-live-head">
@@ -328,24 +289,9 @@ function LiveBoard({
           <h3>{node.name}</h3>
           <small>{minerSceneLabels[node.sourceKind]} · 倒计时</small>
         </div>
-        <strong className={node.timeLeftMs < 10_000 ? "is-low" : ""}>
-          {Math.ceil(node.timeLeftMs / 1000)}s
-        </strong>
-        <span className="miner-team-progress">
-          团队 {view.teamScore}/{view.teamQuota}
-        </span>
-        <div className="miner-mechanics">
-          {node.mechanics.includes("goldFever") &&
-            view.tick % 150 < 40 && <span className="fever">黄金热 ×2</span>}
-          {node.mechanics.map((id) => (
-            <span key={id} title={minerMechanics[id].description}>
-              {minerMechanics[id].name}
-            </span>
-          ))}
-        </div>
       </div>
       <svg
-        viewBox="0 0 100 100"
+        viewBox={`0 -7 100 ${MINE_HEIGHT + 7}`}
         className="miner-mine"
         role="img"
         aria-label="黄金矿工矿洞"
@@ -362,8 +308,8 @@ function LiveBoard({
             <stop offset="1" stopColor="#b8791b" />
           </radialGradient>
           <linearGradient id="miner-rock" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#a8a49b" />
-            <stop offset="1" stopColor="#6f706e" />
+            <stop offset="0" stopColor="#a8b4c2" />
+            <stop offset="1" stopColor="#647180" />
           </linearGradient>
           <linearGradient id="miner-diamond" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#f0feff" />
@@ -376,17 +322,41 @@ function LiveBoard({
           </linearGradient>
         </defs>
         <rect x="0" y="0" width="100" height="100" fill="url(#miner-soil)" />
-        <path
-          d="M0 5 H100 M6 0 V13 M94 0 V13 M0 9 H8 M92 9 H100"
-          stroke="var(--muted)"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          opacity="0.55"
-        />
-        <circle cx="50" cy="3" r="3.6" fill="none" stroke="var(--muted)" strokeWidth="0.9" />
-        <text x="50" y="-2.5" textAnchor="middle" fontSize="4.5">
-          👷
-        </text>
+        <line x1="0" y1={MINE_TOP} x2="100" y2={MINE_TOP} stroke="rgb(125 88 54)" strokeWidth="1.6" strokeLinecap="round" />
+        <line x1="0" y1={MINE_TOP + 1.8} x2="100" y2={MINE_TOP + 1.8} stroke="rgb(90 61 36)" strokeWidth="0.8" opacity="0.55" />
+        {view.players.map((item) => (
+          <g
+            key={`winch-${item.seat}`}
+            transform={`translate(${item.hook.pivotX * 100} ${MINE_TOP})`}
+          >
+            <image
+              href={characterArt[item.character]}
+              x="-2.7"
+              y="-6.9"
+              width="5.4"
+              height="5.9"
+              preserveAspectRatio="xMidYMid meet"
+            />
+            <rect x="-4" y="-1.3" width="8" height="3.2" rx="0.8" fill="rgb(115 77 43)" stroke="rgb(77 49 28)" strokeWidth="0.35" />
+            {[-2.8, -1.8, -0.8, 0.2, 1.2, 2.2, 3.2].map((line) => (
+              <line
+                key={line}
+                x1={line}
+                y1={-1}
+                x2={line}
+                y2={1.5}
+                stroke="rgb(63 39 21)"
+                strokeWidth="0.3"
+                opacity="0.65"
+              />
+            ))}
+            <circle cx="-4" cy="0.3" r="1.1" fill="rgb(148 103 61)" stroke="rgb(77 49 28)" strokeWidth="0.3" />
+            <rect x="-3.6" y="2.2" width="7.2" height="1.8" rx="0.4" fill={playerColor[item.seat % playerColor.length]} />
+            <text y="3.5" textAnchor="middle" fontSize="1.2" fill="var(--accent-text)">
+              {playerName(item.seat)}
+            </text>
+          </g>
+        ))}
         <path
           d="M0 8 Q 50 42 100 8"
           fill="none"
@@ -413,7 +383,7 @@ function LiveBoard({
             x="48.5"
             y="0"
             width="3"
-            height="78"
+            height={MINE_HEIGHT - 2}
             rx="1"
             fill="var(--line)"
             opacity="0.75"
@@ -423,16 +393,16 @@ function LiveBoard({
           <g>
             <rect
               x="0"
-              y={node.waterLevel * 100}
+              y={MINE_TOP + node.waterLevel * MINE_DEPTH}
               width="100"
-              height={100 - node.waterLevel * 100}
+              height={MINE_HEIGHT - (MINE_TOP + node.waterLevel * MINE_DEPTH)}
               fill="color-mix(in srgb, var(--accent) 14%, transparent)"
             />
             <line
               x1="0"
               x2="100"
-              y1={node.waterLevel * 100}
-              y2={node.waterLevel * 100}
+              y1={MINE_TOP + node.waterLevel * MINE_DEPTH}
+              y2={MINE_TOP + node.waterLevel * MINE_DEPTH}
               stroke="var(--accent)"
               strokeWidth="0.6"
               opacity="0.55"
@@ -440,14 +410,18 @@ function LiveBoard({
           </g>
         )}
         {node.objects
-          .filter((object) => !object.removed)
+          .filter((object) => !object.removed && object.hookedBy === null)
           .map((object) => {
             const definition = minerObjects[object.kind];
             const hooked = object.hookedBy !== null;
-            const endPoint = hookEnd(hook?.angle ?? 0, hook?.length ?? 0);
+            const endPoint = hookEnd(
+              hook?.angle ?? 0,
+              hook?.length ?? 0,
+              hook?.pivotX ?? 0.5,
+            );
             const distance = Math.hypot(
               object.x * 100 - endPoint.x,
-              object.y * 100 - endPoint.y,
+              MINE_TOP + object.y * MINE_DEPTH - endPoint.y,
             );
             const hidden = node.mechanics.some((id) => id === "blackout")
               ? distance > 34
@@ -475,62 +449,46 @@ function LiveBoard({
                           ? 0.95
                           : 1
                 }
-                transform={`translate(${object.x * 100} ${object.y * 100})`}
+                transform={`translate(${object.x * 100} ${MINE_TOP + object.y * MINE_DEPTH})`}
               >
-                {(object.phantom ||
-                  (object.value > definition.value * 1.2 &&
-                    node.mechanics.includes("hotspot"))) && (
-                  <circle
-                    r={object.radius * 100 + 2}
-                    fill="none"
-                    stroke="var(--accent)"
-                    strokeWidth="0.7"
-                    strokeDasharray="2 2"
-                  />
-                )}
-                <circle
-                  r={object.radius * 100}
-                  fill={
-                    hooked
-                      ? "color-mix(in srgb, var(--accent) 34%, transparent)"
-                      : "color-mix(in srgb, var(--surface) 70%, transparent)"
-                  }
-                  stroke="var(--line)"
-                  strokeWidth="0.5"
-                />
+                {object.value > definition.value * 1.2 &&
+                  node.mechanics.includes("hotspot") && (
+                    <path
+                      d="M0 -12 L2 -3 L11 0 L2 3 L0 12 L-2 3 L-11 0 L-2 -3 Z"
+                      fill="var(--accent)"
+                      opacity="0.65"
+                      transform={`scale(${object.radius * 1.4})`}
+                    />
+                  )}
                 <ObjectSprite kind={object.kind} radius={object.radius} />
               </g>
             );
           })}
         {view.players.map((item) => {
-          const itemEnd = hookEnd(item.hook.angle, item.hook.length);
+          const itemEnd = hookEnd(
+            item.hook.angle,
+            item.hook.length,
+            item.hook.pivotX,
+          );
           return (
-            <g key={item.seat} opacity={item.seat === actor ? 1 : 0.6}>
+            <g key={item.seat} opacity={item.seat === actor ? 1 : 0.8}>
               <line
-                x1={50}
-                y1={3}
+                x1={item.hook.pivotX * 100}
+                y1={MINE_TOP}
                 x2={itemEnd.x}
                 y2={itemEnd.y}
                 stroke={playerColor[item.seat % playerColor.length]}
                 strokeWidth={item.seat === actor ? 1 : 0.7}
               />
-              <path
-                d={`M${itemEnd.x - 1.3} ${itemEnd.y - 0.7} L${itemEnd.x} ${itemEnd.y + 0.8} L${itemEnd.x + 1.3} ${itemEnd.y - 0.7}`}
-                fill="none"
-                stroke={playerColor[item.seat % playerColor.length]}
-                strokeWidth="0.9"
-                strokeLinecap="round"
-              />
-              {item.hook.targetId && (
-                <circle
-                  cx={itemEnd.x}
-                  cy={itemEnd.y}
-                  r={2.4}
+              <g transform={`translate(${itemEnd.x} ${itemEnd.y})`}>
+                <path
+                  d="M-1.2 0.1 C-1.2 1.8 -0.5 2.5 0 2.5 C0.5 2.5 1.2 1.8 1.2 0.1 M0 -0.6 V2.2 M-1.2 0.1 H1.2"
                   fill="none"
-                  stroke={playerColor[item.seat % playerColor.length]}
-                  strokeWidth="0.5"
+                  stroke="rgb(183 196 204)"
+                  strokeWidth="0.45"
+                  strokeLinecap="round"
                 />
-              )}
+              </g>
             </g>
           );
         })}
@@ -544,38 +502,29 @@ function LiveBoard({
           />
         </g>
         <line
-          x1={50}
-          y1={3}
+          x1={(hook?.pivotX ?? 0.5) * 100}
+          y1={MINE_TOP}
           x2={end.x}
           y2={end.y}
           stroke={playerColor[actor % playerColor.length]}
           strokeWidth="1.2"
-          opacity="0.8"
+          opacity="0.9"
         />
       </svg>
-      <div className="miner-live-stats">
-        {view.players.map((item) => (
-          <div
-            key={item.seat}
-            data-seat={item.seat}
-            data-team={view.teams.some((team) => team !== view.teams[0])
-              ? view.teams[item.seat]
-              : undefined}
-          >
-            <strong>
-              {playerCharacter(item).emoji} {playerName(item.seat)}
-            </strong>
-            <span>{item.score} 分</span>
-            <span>{item.coins} 金币</span>
-            <small>
-              {playerCharacter(item).special} ·{" "}
-              {item.specialCharge}/
-              {Math.max(1, playerCharacter(item).charge - specialist)}
-            </small>
-            <small>{item.lastCatch || "等待下钩"}</small>
-          </div>
-        ))}
-      </div>
+      {player && (
+        <div className="miner-own-bar">
+          <strong>
+            {playerCharacter(player).emoji} {playerName(player.seat)}
+          </strong>
+          <span>{player.score} 分</span>
+          <span>{player.coins} 金币</span>
+          <span className="miner-special-meter">
+            {playerCharacter(player).special} {player.specialCharge}/
+            {Math.max(1, playerCharacter(player).charge - specialist)}
+          </span>
+          <small>{player.lastCatch || "等待下钩"}</small>
+        </div>
+      )}
       <div className="miner-live-actions">
         <button
           type="button"
@@ -677,14 +626,19 @@ function ShopBoard({
             disabled={
               pending ||
               view.perkBought ||
-              (player?.coins ?? 0) < minerPerks[perkId].cost
+              (player?.coins ?? 0) <
+                (view.mode === "endless" ? 0 : minerPerks[perkId].cost)
             }
             onClick={() => send({ type: "buy-perk", perkId })}
           >
             <span>{minerPerks[perkId].emoji}</span>
             <strong>{minerPerks[perkId].name}</strong>
             <small>{minerPerks[perkId].description}</small>
-            <em>{minerPerks[perkId].cost} 金币</em>
+            <em>
+              {view.mode === "endless"
+                ? "免费"
+                : `${minerPerks[perkId].cost} 金币`}
+            </em>
           </button>
         ))}
       </div>
@@ -923,7 +877,7 @@ export function MinerTable({
               : view.phase === "won" || view.phase === "lost"
                 ? "本局结束"
                 : view.mode === "endless"
-                  ? `第 ${view.levelsPlayed + 1} 关 · 无尽`
+                  ? `第 ${view.levelsPlayed + 1} 关`
                   : `第 ${Math.min(view.levelsPlayed + 1, view.matchLevels)} / ${view.matchLevels} 关 · ${
                     view.phase === "live"
                       ? "矿洞"
@@ -990,18 +944,6 @@ export function MinerTable({
           {view.perks.map((id) => (
             <span key={id} title={minerPerks[id].description}>
               {minerPerks[id].emoji} {minerPerks[id].name}
-            </span>
-          ))}
-        </div>
-        <div className="miner-active-seat">
-          {view.players.map((player) => (
-            <span
-              key={player.seat}
-              data-seat={player.seat}
-              data-team={teamMode ? view.teams[player.seat] : undefined}
-            >
-              {playerCharacter(player).emoji} {playerName(player.seat)} ·{" "}
-              {player.score}
             </span>
           ))}
         </div>

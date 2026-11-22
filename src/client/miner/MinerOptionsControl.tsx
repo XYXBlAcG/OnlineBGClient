@@ -11,9 +11,9 @@ export function MinerOptionsControl({
 }) {
   return (
     <label className="setting-row">
-      模式
+      玩法
       <Select
-        aria-label="黄金矿脉模式"
+        aria-label="黄金矿脉玩法"
         value={value.mode}
         onValueChange={(mode) =>
           onChange({ ...value, mode: mode as MinerMode })

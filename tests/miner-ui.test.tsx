@@ -30,6 +30,6 @@ it("renders the shared route map and HUD", () => {
   expect(html).toContain("团队目标");
   expect(html).toContain("选择角色");
   expect(html).toContain("矿工");
-  expect(html).toContain("玩家 1");
-  expect(html).toContain("玩家 2");
+  expect(html).toContain("档案");
+  expect(html).toContain("团队目标");
 });

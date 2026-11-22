@@ -104,8 +104,7 @@ export const minerMoveSchema = z.discriminatedUnion("type", [
 export type MinerMove = z.infer<typeof minerMoveSchema>;
 
 export const minerModeSchema = z.enum([
-  "quick",
-  "ranked",
+  "friendly",
   "endless",
   "party",
   "daily",
@@ -115,7 +114,7 @@ export const minerModeSchema = z.enum([
 export type MinerMode = z.infer<typeof minerModeSchema>;
 
 export const minerOptionsSchema = z.object({
-  mode: minerModeSchema.default("quick"),
+  mode: minerModeSchema.default("friendly"),
   quota: z.number().int().min(100).max(50000).optional(),
   levels: z.number().int().min(3).max(12).default(6),
 });
@@ -138,6 +137,7 @@ export interface MinerObject {
 export interface MinerHook {
   phase: "swing" | "shoot" | "reel";
   angle: number;
+  pivotX: number;
   direction: 1 | -1;
   length: number;
   targetId: string | null;

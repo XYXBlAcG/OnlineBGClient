@@ -181,8 +181,10 @@
 }
 .miner-mine {
   width: 100%;
-  min-height: 320px;
-  max-height: 58vh;
+  height: auto;
+  aspect-ratio: 100 / 37;
+  min-height: 260px;
+  max-height: 40vh;
   border-radius: 14px;
   background: var(--canvas);
 }
@@ -211,6 +213,13 @@
   width: 100%;
   color: var(--muted);
   font-size: 10px;
+}
+.miner-live-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 8px 0;
+  background: var(--surface);
 }
 .miner-live-actions .primary {
   min-width: 120px;
@@ -270,7 +279,7 @@
 .miner-log {
   display: grid;
   gap: 3px;
-  max-height: 120px;
+  max-height: 80px;
   overflow: auto;
   margin-top: 10px;
   padding: 8px 10px;
@@ -293,8 +302,8 @@
     height: 340px;
   }
   .miner-mine {
-    min-height: 260px;
-    max-height: 46vh;
+    min-height: 220px;
+    max-height: 38vh;
   }
   .miner-live-actions .primary {
     flex: 1;
@@ -887,4 +896,113 @@
 }
 .miner-profile-button[data-look="ruby"] {
   color: rgb(190 70 80);
+}
+.miner-table {
+  position: relative;
+}
+.miner-profile-button {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  z-index: 12;
+  justify-self: auto;
+}
+.miner-hud {
+  padding-right: 128px;
+}
+.miner-quota {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 230px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.miner-quota > span {
+  text-align: left;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.miner-quota strong {
+  font-size: 17px;
+  color: var(--accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.miner-quota .miner-team-bar {
+  flex: 1;
+  min-width: 70px;
+}
+.miner-quota .miner-lives {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.miner-live-summary {
+  margin-left: auto;
+}
+.miner-own-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.miner-own-bar strong {
+  color: var(--text);
+  font-size: 12px;
+}
+.miner-own-bar .miner-special-meter {
+  color: var(--accent);
+}
+.miner-own-bar small {
+  margin-left: auto;
+  color: var(--muted);
+}
+@media (max-width: 760px) {
+  .miner-hud {
+    padding-right: 90px;
+  }
+  .miner-profile-button {
+    top: 6px;
+    right: 4px;
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+  .miner-quota {
+    min-width: 0;
+    flex: 1 1 100%;
+    order: 5;
+  }
+  .miner-own-bar small {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+.miner-quota {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 3px 10px;
+  min-width: 210px;
+}
+.miner-quota > span {
+  grid-column: 1;
+}
+.miner-quota > strong {
+  grid-column: 2;
+}
+.miner-quota .miner-team-bar,
+.miner-quota .miner-lives {
+  grid-column: 1 / -1;
+}
+.miner-character-card img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  object-position: center bottom;
 }

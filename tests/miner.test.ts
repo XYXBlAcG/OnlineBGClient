@@ -61,10 +61,10 @@ function enterMine(
   return state;
 }
 
-function angleTo(x: number, y: number) {
+function angleTo(x: number, y: number, pivotX = 0.5) {
   return Math.max(
     -84,
-    Math.min(84, (Math.atan2(x - 0.5, y - 0.03) * 180) / Math.PI),
+    Math.min(84, (Math.atan2(x - pivotX, y - 0.1) * 180) / Math.PI),
   );
 }
 
@@ -95,17 +95,17 @@ describe("miner modes", () => {
     expect(state.view.levelTarget).toBeGreaterThan(0);
   });
 
-  it("accepts ranked and party mode options", () => {
+  it("accepts friendly and party mode options", () => {
     const engine = new GameEngine();
-    const ranked = engine.create("miner", 2, "miner:ranked", false, {
-      miner: { mode: "ranked", levels: 6 },
+    const friendly = engine.create("miner", 2, "miner:friendly", false, {
+      miner: { mode: "friendly", levels: 6 },
     });
     const party = engine.create("miner", 2, "miner:party", false, {
       miner: { mode: "party", levels: 6 },
     });
-    if (ranked.kind !== "miner" || party.kind !== "miner")
+    if (friendly.kind !== "miner" || party.kind !== "miner")
       throw new Error("wrong game");
-    expect(ranked.view.mode).toBe("ranked");
+    expect(friendly.view.mode).toBe("friendly");
     expect(party.view.mode).toBe("party");
   });
 });
@@ -171,7 +171,14 @@ describe("real-time mining", () => {
         actor,
         {
           type: "miner-action",
-          move: { type: "drop", angle: angleTo(object.x, object.y) },
+          move: {
+            type: "drop",
+            angle: angleTo(
+              object.x,
+              object.y,
+              state.view.players[actor]!.hook.pivotX,
+            ),
+          },
         },
         `drop:${attempt}`,
       );
