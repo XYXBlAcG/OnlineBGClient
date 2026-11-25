@@ -27,8 +27,15 @@ it("registers rare achievements for every game without duplicate ids", () => {
       definition.rarity,
     );
   }
+  const progressOnly = new Set(["miner", "drawguess", "golf"]);
   for (const game of gameKinds) {
     const gameAchievements = achievementsForGame(game);
+    if (progressOnly.has(game)) {
+      expect(gameAchievements.map(({ id }) => id)).toEqual([
+        `${game}.first-clear`, `${game}.first-win`, `${game}.veteran`,
+      ]);
+      continue;
+    }
     expect(gameAchievements.length).toBeGreaterThanOrEqual(6);
     expect(
       new Set(gameAchievements.map((definition) => definition.rarity)).size,

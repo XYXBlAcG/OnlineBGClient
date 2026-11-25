@@ -1660,6 +1660,7 @@ export class Room {
   }
 
   setAiRunning(token: string, enabled: boolean): void {
+    this.identity(token);
     if (!this.canManage(token)) throw new Error("仅房主可以控制 AI");
     const wasPaused = this.paused;
     this.aiPaused = !enabled;

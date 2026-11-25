@@ -5,13 +5,13 @@ import { putt } from "./physics";
 import { golfRoute } from "./routing";
 
 const playStyle = {
-  easy: { maxPower: 0.65, error: 0.18, targetCount: 3 },
-  normal: { maxPower: 0.73, error: 0.11, targetCount: 4 },
-  hard: { maxPower: 0.81, error: 0.06, targetCount: 5 },
+  easy: { openingPower: 0.51, maxPower: 0.65, error: 0.18, targetCount: 3 },
+  normal: { openingPower: 0.57, maxPower: 0.73, error: 0.11, targetCount: 4 },
+  hard: { openingPower: 0.81, maxPower: 0.81, error: 0.06, targetCount: 5 },
 };
 
 export class GolfStrategy extends Strategy {
-  static readonly version = "4";
+  static readonly version = "5";
   readonly version = GolfStrategy.version;
 
   budget() {
@@ -24,7 +24,8 @@ export class GolfStrategy extends Strategy {
     if (view.phase !== "putting") return super.candidates(request);
     const player = view.players[request.actor]!;
     const course = view.courses[view.hole]!;
-    const { error, maxPower, targetCount } = playStyle[request.difficulty];
+    const { error, openingPower, maxPower, targetCount } = playStyle[request.difficulty];
+    const powerLimit = view.hole === 0 && player.strokes === 0 ? openingPower : maxPower;
     const accuracy = (seedrandom(request.seed)() - 0.5) * error;
     const terrainOffsets = course.terrain ? [-0.22, 0.22] : [];
     const route = golfRoute(course);
@@ -32,7 +33,7 @@ export class GolfStrategy extends Strategy {
     const candidates = new Map<string, Candidate>();
     const add = (angle: number, power: number) => {
       const aim = Math.atan2(Math.sin(angle), Math.cos(angle));
-      const boundedPower = Math.max(0.035, Math.min(maxPower, power));
+      const boundedPower = Math.max(0.035, Math.min(powerLimit, power));
       const key = `${aim.toFixed(3)}:${boundedPower.toFixed(3)}`;
       candidates.set(key, {
         action: { type: "golf-putt", hole: view.hole, previousStrokes: player.strokes, aim, power: boundedPower },

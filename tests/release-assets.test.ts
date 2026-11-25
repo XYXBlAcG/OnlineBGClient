@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, basename } from "node:path";
+import history from "../src/client/releases.json";
 import { prepareRelease } from "../scripts/release-assets.mjs";
 it("requires both signed desktop platforms and ignores iOS packages", async () => {
   const root = await mkdtemp(join(tmpdir(), "onlinebg-release-"));
@@ -106,12 +107,13 @@ it("builds preview installers without an updater manifest", async () => {
       await writeFile(join(root, name), bytes);
       await writeFile(join(root, name + ".sig"), Buffer.from("signature fixture for preview").toString("base64"));
     }
-    const result = await prepareRelease(root, join(root, "out"), "0.6.2-preview.1", "v0.6.2-preview.1", "owner/repo");
+    const version = history.find((entry) => entry.version.includes("-preview."))!.version;
+    const result = await prepareRelease(root, join(root, "out"), version, `v${version}`, "owner/repo");
     expect(result.assets.map((asset) => basename(asset))).toEqual([
-      "OnlineBGClient-0.6.2-preview.1-Windows-x64.exe",
-      "OnlineBGClient-0.6.2-preview.1-Windows-x64.exe.sig",
-      "OnlineBGClient-0.6.2-preview.1-macOS-arm64.app.tar.gz",
-      "OnlineBGClient-0.6.2-preview.1-macOS-arm64.app.tar.gz.sig",
+      `OnlineBGClient-${version}-Windows-x64.exe`,
+      `OnlineBGClient-${version}-Windows-x64.exe.sig`,
+      `OnlineBGClient-${version}-macOS-arm64.app.tar.gz`,
+      `OnlineBGClient-${version}-macOS-arm64.app.tar.gz.sig`,
       "SHA256SUMS.txt",
     ]);
   } finally {

@@ -70,7 +70,7 @@ it("never includes another seat's hidden hand", () => {
     cardList: [],
     drawCards: [],
     playedCards: [0],
-    playerCards: [[5], [6, 7]],
+    playerCards: [[5], [31, 57]],
     playerTopCard: [],
     playerFinish: [0, 0],
     lastOpInfo: {
@@ -95,7 +95,7 @@ it("never includes another seat's hidden hand", () => {
     memory: [],
   });
   const serialized = JSON.stringify(situation);
-  expect(serialized).not.toContain(unoCardLabel(6));
-  expect(serialized).not.toContain(unoCardLabel(7));
+  expect(serialized).not.toContain(unoCardLabel(31));
+  expect(serialized).not.toContain(unoCardLabel(57));
   expect(situation.selfFacts.join()).toContain(unoCardLabel(5));
 });

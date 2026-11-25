@@ -23,8 +23,8 @@ it("正式远征使用职业、路线、场景和本人手牌，回放不提供�
         replay={replay}
       />,
     );
-  expect(render()).toContain("exp-health");
-  expect(render()).toContain("exp-gold");
+  expect(render()).toMatch(/aria-label="生命 \d+ \/ \d+"/);
+  expect(render()).toContain('aria-label="金币 0"');
   expect(render()).toContain('data-guide-target="expedition.profession"');
   expect(render()).toContain('class="exp-status-triggers"');
   expect(render()).toContain(">操作<");

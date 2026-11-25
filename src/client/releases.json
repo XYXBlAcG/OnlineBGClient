@@ -1,6 +1,6 @@
 [
   {
-    "version": "0.6.2-preview.1",
+    "version": "0.6.2-preview.2",
     "date": "2026-11-25",
     "changes": [
       "迷你高尔夫新增挑战球场，修复 AI 击球时镜头复位与坡面显示。",
