@@ -1,0 +1,32 @@
+.roguelike-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.roguelike-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  padding: 0.34em 0.58em;
+  border-radius: var(--radius-md, 8px);
+  background: var(--hover);
+  font-size: var(--font-size-control);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.roguelike-metric strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.roguelike-metric[data-tone="health"] strong {
+  color: var(--action-danger, var(--text));
+}
+
+.roguelike-metric[data-tone="gold"] strong,
+.roguelike-metric[data-tone="energy"] strong {
+  color: var(--accent);
+}

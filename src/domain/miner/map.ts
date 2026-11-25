@@ -1,3 +1,4 @@
+import { MINE_DEPTH } from "./geometry";
 import type { MapNode, NodeKind } from "../expedition/adventure-types";
 import { generateMap } from "../expedition/map";
 import {
@@ -17,8 +18,22 @@ import type {
 } from "./types";
 
 const pools: Partial<Record<NodeKind, MinerObjectKind[]>> = {
-  battle: ["goldSmall", "goldSmall", "goldMedium", "rockSmall", "rockSmall", "bag"],
-  elite: ["goldMedium", "goldLarge", "rockLarge", "rockSmall", "diamond", "bag"],
+  battle: [
+    "goldSmall",
+    "goldSmall",
+    "goldMedium",
+    "rockSmall",
+    "rockSmall",
+    "bag",
+  ],
+  elite: [
+    "goldMedium",
+    "goldLarge",
+    "rockLarge",
+    "rockSmall",
+    "diamond",
+    "bag",
+  ],
   boss: ["goldLarge", "diamond", "diamond", "bag", "rockLarge", "skull"],
   treasure: ["goldMedium", "goldLarge", "diamond", "bag", "bag"],
   secret: ["diamond", "goldLarge", "bag", "tnt"],
@@ -49,9 +64,9 @@ export function nodeLabel(kind: NodeKind): string {
 }
 
 function objectCount(kind: NodeKind, players: number): number {
-  if (kind === "boss") return 12 + players * 2;
-  if (kind === "elite" || kind === "rift") return 10 + players * 3;
-  return 8 + players * 3;
+  if (kind === "boss") return 14 + players * 2;
+  if (kind === "elite" || kind === "rift") return 12 + players * 3;
+  return 10 + players * 3;
 }
 
 function objectPool(kind: NodeKind): MinerObjectKind[] {
@@ -83,17 +98,22 @@ function placeObjects(
   nodeKind: NodeKind,
   players: number,
   random: () => number,
+  special: MinerObjectKind[],
 ): MinerObject[] {
   const pool = objectPool(nodeKind);
   const objects: MinerObject[] = [];
-  for (let index = 0; index < objectCount(nodeKind, players); index++) {
-    const kind = pool[Math.floor(random() * pool.length)]!;
-    let candidate = createObject(`o${index}`, kind, random);
+  for (
+    let index = 0;
+    index < objectCount(nodeKind, players) + special.length;
+    index++
+  ) {
+    const kind = special[index] ?? pool[Math.floor(random() * pool.length)]!;
+    let candidate: MinerObject | undefined;
     for (let attempt = 0; attempt < 30; attempt++) {
       const next = createObject(`o${index}`, kind, random);
       const overlaps = objects.some((object) => {
         const dx = object.x - next.x;
-        const dy = object.y - next.y;
+        const dy = (object.y - next.y) * MINE_DEPTH;
         return Math.hypot(dx, dy) < object.radius + next.radius + 0.018;
       });
       if (!overlaps) {
@@ -101,7 +121,7 @@ function placeObjects(
         break;
       }
     }
-    objects.push(candidate);
+    if (candidate) objects.push(candidate);
   }
   return objects;
 }
@@ -110,17 +130,20 @@ export function createNode(
   node: MapNode,
   players: number,
   random: () => number,
+  partyBonus = false,
 ): MinerMineNode {
   const scene = minerSceneFor(node.kind);
   const durationMs =
     node.kind === "boss" || node.kind === "elite" || node.kind === "rift"
       ? 50_000
       : 60_000;
-  const objects = scene === "mine" ? placeObjects(node.kind, players, random) : [];
+
   const mechanics =
     scene === "mine"
       ? (() => {
-          const count = node.kind === "battle" ? 1 : random() < 0.5 ? 2 : 1;
+          const count =
+            (node.kind === "battle" ? 1 : random() < 0.5 ? 2 : 1) +
+            Number(partyBonus);
           const pool = [...minerMechanicsPool];
           return Array.from({ length: count }, () => {
             const index = Math.floor(random() * pool.length);
@@ -128,12 +151,16 @@ export function createNode(
           });
         })()
       : [];
+  const special: MinerObjectKind[] = [];
+  if (mechanics.includes("unstableOre")) special.push("timeTrap", "timeTrap");
+  if (mechanics.includes("chargedVein"))
+    special.push("chargeCrystal", "chargeCrystal");
+  const objects =
+    scene === "mine" ? placeObjects(node.kind, players, random, special) : [];
   if (mechanics.includes("frozenThaw"))
-    for (const object of objects)
-      if (random() < 0.35) object.frozen = true;
+    for (const object of objects) if (random() < 0.35) object.frozen = true;
   if (mechanics.includes("phantom"))
-    for (const object of objects)
-      if (random() < 0.18) object.phantom = true;
+    for (const object of objects) if (random() < 0.18) object.phantom = true;
   if (mechanics.includes("hotspot") && objects.length)
     objects[Math.floor(random() * objects.length)]!.value *= 2;
   if (mechanics.includes("critters") || mechanics.includes("batSwarm")) {
@@ -152,7 +179,11 @@ export function createNode(
     mechanics,
     durationMs: scene === "mine" ? durationMs : 0,
     timeLeftMs: scene === "mine" ? durationMs : 0,
-    waterLevel: mechanics.includes("flood") ? 0.55 : mechanics.includes("tide") ? 0.5 : 0,
+    waterLevel: mechanics.includes("flood")
+      ? 0.55
+      : mechanics.includes("tide")
+        ? 0.5
+        : 0,
     crittersStoppedTicks: 0,
     freezeTicks: 0,
   };

@@ -4,10 +4,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import {
-  poolLayout,
-  type PoolTableLayout,
-} from "../../domain/pool/table";
+import { poolLayout, type PoolTableLayout } from "../../domain/pool/table";
 import type { PoolBall, PoolShot, PoolView } from "../../domain/pool/types";
 import type { Action } from "../../domain/types";
 import { POOL_PLAYBACK_RATE, interpolateBalls } from "./frames";
@@ -15,11 +12,11 @@ import { poolBallColors } from "./colors";
 import { poolAudio } from "./audio";
 import { poolBallCursor, type PoolCursor } from "./aim";
 import { ballAtPoint } from "./hit-ball";
-import { CUE_BUTT_LENGTH, elevationAngle, requiredCueElevation } from "./cue";
+import { CUE_BUTT_LENGTH, elevationAngle, requiredCueElevation } from "../../domain/pool/cue";
 import { poolBallLabel } from "./labels";
 import { predictShot, type PoolPrediction } from "./prediction";
 import { usePoolAim } from "./use-pool-aim";
-import { usePoolClock } from "./use-pool-clock";
+import { useTurnClock } from "../use-turn-clock";
 import type { PoolPlayback } from "./use-pool-playback";
 import { PoolTableShell } from "./PoolTableShell";
 import { useLayoutEffectSafe } from "../use-layout-effect";
@@ -422,7 +419,7 @@ export function PoolTable({
       ? requiredCueElevation(layout, view.balls, aim.cue, aim.aim)
       : 0;
   const effectiveElevation = Math.max(aim.elevation, requiredElevation);
-  const remaining = usePoolClock(turnDeadline, serverTime, paused);
+  const remaining = useTurnClock(turnDeadline, serverTime, paused);
   const prediction =
     predict && aim.cue && own
       ? predictShot(
@@ -664,6 +661,12 @@ export function PoolTable({
       view={view}
       remaining={remaining}
       power={aim.power}
+      onPower={aim.setShotPower}
+      shotReady={!view.ballInHand || !!aim.placement}
+      onShoot={() => {
+        const shot = aim.shoot();
+        if (shot) act({ type: "pool-shot", ...shot });
+      }}
       spin={aim.spin}
       onSpin={aim.setSpin}
       elevation={aim.elevation}
@@ -679,16 +682,16 @@ export function PoolTable({
     >
       <div className="pool-canvas-wrap">
         <canvas
-        ref={canvas}
-        className="pool-canvas"
-        data-cursor={cursor}
-        data-guide-target="pool.table"
-        onPointerDown={begin}
-        onPointerMove={move}
-        onPointerUp={end}
-        onPointerLeave={leave}
-        onPointerCancel={cancel}
-        aria-label="台球桌"
+          ref={canvas}
+          className="pool-canvas"
+          data-cursor={cursor}
+          data-guide-target="pool.table"
+          onPointerDown={begin}
+          onPointerMove={move}
+          onPointerUp={end}
+          onPointerLeave={leave}
+          onPointerCancel={cancel}
+          aria-label="台球桌"
         />
         {hoverBall && (
           <span

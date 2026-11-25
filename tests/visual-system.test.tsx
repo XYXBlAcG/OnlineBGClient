@@ -90,6 +90,7 @@ it("keeps the lobby form stable and the expedition drawer large enough for detai
   const preferences = preferencesSchema.parse({});
   expect(preferences.uiFontScale).toBe(1);
   expect(preferences.uiScale).toBe(1);
+  expect(preferences.fullscreenTable).toBe(false);
 });
 
 it("uses stable settings, neutral buttons and readable shortcut chips", () => {

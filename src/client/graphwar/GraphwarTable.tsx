@@ -215,7 +215,8 @@ export function GraphwarTable({
           }
         >
           {graphwarModes[view.options.mode].name} ·{" "}
-          {graphwarMaps[view.options.map]} · {view.sequence}/{actionLimit(view)}
+          {graphwarMaps[view.options.map]} · {view.sequence}
+          {!view.arcadeUncapped && `/${actionLimit(view)}`}
           {view.options.scenario === "storm"
             ? ` · 风场 ${(view.wind ?? 0).toFixed(2)} · 函数限制 ${view.allowedFamily ?? "any"}`
             : ""}

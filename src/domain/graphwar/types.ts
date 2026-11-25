@@ -98,6 +98,8 @@ export interface GraphwarLogEntry {
   point?: Point;
 }
 export interface GraphwarView {
+  arcadeUncapped?: true;
+  arcadeCooperative?: true;
   solver: 2;
   options: GraphwarOptions;
   sequence: number;

@@ -9,7 +9,7 @@ import { SnapshotStream } from "../domain/sync";
 import { availableParallelism, networkInterfaces } from "node:os";
 import { ComputePool, SearchCoordinator } from "../domain/compute";
 import { computeThreads } from "../domain/performance";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, chmodSync } from "node:fs";
 import { RoomStore } from "./storage";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -19,12 +19,8 @@ import { WebSocketServer, WebSocket } from "ws";
 import { Gateway } from "../domain/gateway";
 import type { Room } from "../domain/room";
 import { protocolVersion, type Response } from "../domain/protocol";
-import {
-  aiConfigCommandSchema,
-  aiTestCommandSchema,
-} from "../domain/companion";
-import { createAiProvider } from "./ai-providers";
-import { createTableMind, type TableMind } from "./table-mind/runtime";
+import { RoomTableMinds } from "./table-mind/rooms";
+import { AiCommands } from "./ai-commands";
 
 const gateway = new Gateway();
 const voiceConfig =
@@ -57,8 +53,12 @@ const voiceSweep = setInterval(() => {
 }, 4000);
 voiceSweep.unref();
 const dataRoot = resolve(process.env.DATA_ROOT || ".data");
-mkdirSync(dataRoot, { recursive: true });
-const media = new MediaHttp(gateway,new AttachmentStore(resolve(dataRoot,"attachments")));
+mkdirSync(dataRoot, { recursive: true, mode: 0o700 });
+if (process.platform !== "win32") chmodSync(dataRoot, 0o700);
+const media = new MediaHttp(
+  gateway,
+  new AttachmentStore(resolve(dataRoot, "attachments")),
+);
 const mediaCleanup = setInterval(() => {
   void media.store
     .prune(new Set(gateway.rooms.keys()))
@@ -175,17 +175,18 @@ const server = createServer(async (request, response) => {
 const sockets = new WebSocketServer({
   server,
   path: "/connect",
-  maxPayload: 16384,
+  maxPayload: 524288,
 });
 const sessions = new Map<WebSocket, { room: string; token: string }>();
 const send = (socket: WebSocket, response: Response) => {
   if (socket.readyState === WebSocket.OPEN)
     socket.send(JSON.stringify(response));
 };
-let tableMind: TableMind | null = null;
+let tableMinds: RoomTableMinds;
 const snapshotOf = (room: Room, token: string) => {
   const snapshot = room.snapshot(token);
-  snapshot.companion.configured = tableMind?.configured ?? false;
+  snapshot.companion.configured = tableMinds.get(room).configured;
+  snapshot.companion.server = true;
   return snapshot;
 };
 const publish = (
@@ -229,10 +230,13 @@ const heartbeat = setInterval(() => {
   }
 }, 15000);
 heartbeat.unref();
-tableMind = createTableMind({
+tableMinds = new RoomTableMinds({
   publish: (roomId) => publish(roomId),
 });
+const aiCommands = new AiCommands(gateway, tableMinds, (id) => publish(id));
 sockets.on("connection", (socket) => {
+  const lifetime = new AbortController();
+  socket.once("close", () => lifetime.abort());
   streams.set(socket, new SnapshotStream());
   let serial = Promise.resolve();
   socket.on("message", (data) => {
@@ -241,76 +245,23 @@ sockets.on("connection", (socket) => {
       try {
         const input = JSON.parse(data.toString());
         requestId = typeof input?.id === "string" ? input.id : undefined;
-        const aiTest = aiTestCommandSchema.safeParse(input);
-        if (aiTest.success) {
-          const session = sessions.get(socket);
-          if (!session || aiTest.data.token !== session.token)
-            throw new Error("连接身份不匹配");
-          const room = gateway.rooms.get(session.room);
-          if (!room) throw new Error("房间不存在");
-          if (!room.canManage(aiTest.data.token))
-            throw new Error("只有房主可以测试 AI");
-          const requestId = aiTest.data.requestId;
-          const key = aiTest.data.apiKey.trim();
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 15000);
-          const started = Date.now();
-          try {
-            const provider = createAiProvider(aiTest.data.provider, key);
-            await provider.generateText({
-              system: "你是连接测试助手。",
-              messages: [{ role: "user", content: "请只回复 OK。" }],
-              temperature: 0,
-              maxOutputTokens: 8,
-              signal: controller.signal,
-            });
-            send(socket, {
-              type: "ai-test",
-              requestId,
-              ok: true,
-              message: `连接成功（${Date.now() - started}ms）`,
-            });
-          } catch (error) {
-            const message = (error instanceof Error ? error.message : "未知错误")
-              .split(key || "\u0000")
-              .join("***")
-              .slice(0, 200);
-            send(socket, {
-              type: "ai-test",
-              requestId,
-              ok: false,
-              message: `连接失败：${message}`,
-            });
-          } finally {
-            clearTimeout(timer);
-          }
+        if (
+          aiCommands.handle(
+            input,
+            sessions.get(socket),
+            (response) => send(socket, response),
+            lifetime.signal,
+          )
+        )
           return;
-        }
-        const aiConfig = aiConfigCommandSchema.safeParse(input);
-        if (aiConfig.success) {
-          const session = sessions.get(socket);
-          if (!session || aiConfig.data.token !== session.token)
-            throw new Error("连接身份不匹配");
-          const room = gateway.rooms.get(session.room);
-          if (!room) throw new Error("房间不存在");
-          if (!room.canManage(aiConfig.data.token))
-            throw new Error("只有房主可以配置 AI");
-          if (!tableMind) throw new Error("AI 服务未就绪");
-          const provider = createAiProvider(
-            aiConfig.data.provider,
-            aiConfig.data.apiKey,
-          );
-          room.setAiProvider(aiConfig.data.token, aiConfig.data.provider);
-          tableMind.configure(provider, aiConfig.data.provider);
-          publish(session.room);
-          return;
-        }
         if (
           input?.type === "companion" &&
-          input.config?.policy?.enabled === true &&
-          !tableMind?.configured
-        )
-          throw new Error("房主服务端未配置 AI 模型");
+          input.config?.policy?.enabled === true
+        ) {
+          const room = gateway.rooms.get(sessions.get(socket)?.room ?? "");
+          if (!room || !tableMinds.get(room).configured)
+            throw new Error("房主服务端未配置 AI 模型");
+        }
         if (input.type === "chat-image") {
           const session = sessions.get(socket);
           if (!session || session.token !== input.token)
@@ -327,7 +278,12 @@ sockets.on("connection", (socket) => {
           )
             throw new Error("图片信息不匹配");
         }
+        const previousRoom = gateway.rooms.get(
+          sessions.get(socket)?.room ?? "",
+        );
         const result = gateway.handle(input, sessions.get(socket));
+        if (previousRoom && gateway.rooms.get(previousRoom.id) !== previousRoom)
+          tableMinds.release(previousRoom);
         store.saveRuns(gateway.runs);
         if (result.response?.type === "run-abandoned") {
           publish(result.session.room);
@@ -447,6 +403,7 @@ const pending = new Map<
 >();
 const failed = new Map<string, number>();
 setInterval(() => {
+  aiCommands.reconcile();
   for (const [id, active] of pending) {
     const room = gateway.rooms.get(id);
     if (
@@ -460,8 +417,9 @@ setInterval(() => {
     }
   }
   for (const room of gateway.rooms.values()) {
-    void tableMind?.tick(room);
-    const gameChanged = room.commitIfDue() || room.resolveIfDue();
+    void tableMinds.get(room).tick(room);
+    const committed = room.commitIfDue();
+    const gameChanged = room.resolveIfDue() || committed;
     if (room.tickParty() || gameChanged) publish(room.id);
     if (pending.has(room.id)) continue;
     const request = room.aiRequest();
@@ -479,16 +437,27 @@ setInterval(() => {
         (progress) => {
           if (
             pending.get(room.id) === active &&
-            room.updateComputation(request.actor, request.version, progress)
+            room.updateComputation(
+              request.actor,
+              request.version,
+              request.driver === "llm"
+                ? { ...progress, status: "computing" }
+                : progress,
+            )
           )
             publish(room.id, undefined, undefined, false);
         },
       )
       .then(async (result) => {
-        const finalResult =
-          (await tableMind?.onDecision(room, request, result)) ?? result;
-        if (gateway.rooms.get(room.id) === room)
-          room.queueDecision(finalResult, request.version);
+        const finalResult = await tableMinds
+          .get(room)
+          .onDecision(room, request, result, active.controller.signal);
+        if (
+          gateway.rooms.get(room.id) === room &&
+          !active.controller.signal.aborted &&
+          room.queueDecision(finalResult, request.version)
+        )
+          publish(room.id, undefined, undefined, false);
       })
       .catch((error) => {
         if (active.controller.signal.aborted) return;

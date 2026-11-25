@@ -1,3 +1,4 @@
+import type { GameOptions } from "./game-options";
 import { UpstreamRuntime } from "../upstream/runtime";
 import type { Action, Candidate, GameState, SgsView } from "./types";
 import { cardName, heroName, skillName } from "./terms";
@@ -13,13 +14,26 @@ export class SgsRules {
     this.rules = runtime.load(6749);
     this.cards = runtime.load(8280);
   }
-  create(players: number, team = false): SgsState {
+  create(players: number, team = false, options?: GameOptions): SgsState {
     const codec = this.runtime.load(575).L;
     const data = this.sgs.Lq(
       { playerList: Array.from({ length: players }, () => ({})) },
       codec.encode({ rule: 1 | (team ? 2 : 0) }).finish(),
     );
-    return { kind: "sgs", view: this.sgs.my(data, players) };
+    let view: SgsView = this.sgs.my(data, players);
+    if (options?.arcadeScenario?.kind === "sgs") {
+      const guard = players - 1;
+      view.roles.fill(this.constants.XP.FAN);
+      view.roles[guard] = this.constants.XP.ZHU;
+      view.whoseTurn = guard;
+      view = this.rules.chooseHero(view, 23, guard);
+      const allies = [9, 10, 12, 13];
+      for (let seat = 0; seat < guard; seat++)
+        view = this.rules.chooseHero(view, allies[seat], seat);
+      view.playerBlood[guard] = options.arcadeScenario.guardHealth;
+      view.arcadeGuard = guard;
+    }
+    return { kind: "sgs", view };
   }
   finished(state: SgsState): boolean {
     return state.view.stage === this.constants.PR.FINISH;
@@ -254,6 +268,7 @@ export class SgsRules {
       this.constants.D7.TEAM_MODE;
     view.roles = view.roles.map((role, id) =>
       team ||
+      view.arcadeGuard !== undefined ||
       view.hero.length < 4 ||
       id === actor ||
       role === this.constants.XP.ZHU ||
@@ -327,7 +342,13 @@ export class SgsRules {
               : 3;
   }
   private normalizeSgs(view: SgsView): SgsView {
-    return this.sgs.my(this.sgs.qA(view), view.hero.length);
+    const normalized: SgsView = this.sgs.my(
+      this.sgs.qA(view),
+      view.hero.length,
+    );
+    if (view.arcadeGuard !== undefined)
+      normalized.arcadeGuard = view.arcadeGuard;
+    return normalized;
   }
   private selection(view: SgsView, actor: number, skill: number, tuple: any[]) {
     const active = skill >= 0;

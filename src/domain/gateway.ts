@@ -1,5 +1,10 @@
 import { v4 as randomId } from "uuid";
-import { commandSchema, type ChatMessage, type Command, type Response } from "./protocol";
+import {
+  commandSchema,
+  type ChatMessage,
+  type Command,
+  type Response,
+} from "./protocol";
 import { Room, type RoomArchive } from "./room";
 
 export class Gateway {
@@ -172,7 +177,11 @@ export class Gateway {
       }
     >,
   ): ChatMessage | undefined {
-    if (command.type === "ai-config" || command.type === "ai-test")
+    if (
+      command.type === "ai-config" ||
+      command.type === "ai-test" ||
+      command.type === "ai-clear"
+    )
       throw new Error("AI 配置只能由房主服务处理");
     if (command.type === "queue-set")
       room.setQueue(command.token, command.revision, command.entries);
@@ -191,13 +200,16 @@ export class Gateway {
       room.setAvatar(command.token, command.avatar);
     if (command.type === "ready") room.setReady(command.token, command.ready);
     if (command.type === "leave") room.leave(command.token);
-    if (command.type === "start") room.start(command.token);
+    if (command.type === "start") room.start(command.token, command.drawWords);
+    if (command.type === "arcade") room.arcadeAction(command.token, command.action);
     if (command.type === "computation")
       room.setComputation(command.token, command.audit, command.performance);
     if (command.type === "tempo") room.setTempo(command.token, command.delayMs);
     if (command.type === "game") room.changeGame(command.token, command.setup);
     if (command.type === "ai-run")
       room.setAiRunning(command.token, command.enabled);
+    if (command.type === "miner-pause")
+      room.setMinerPaused(command.token, command.paused);
     if (command.type === "end") room.end(command.token);
     if (command.type === "action")
       room.act(command.token, command.id, command.version, command.action);

@@ -74,6 +74,18 @@ it("keys room lifecycle without including ordinary turn or snapshot versions", (
   expect(sceneKey(null)).toBe("lobby");
 });
 
+it("changes scenes between expedition route, table, and reward while vote updates stay put", () => {
+  const round = { room: "club", kind: "golf", playing: true, finished: false };
+  const route = { ...round, arcade: { id: "run", stage: 1, phase: "route" } };
+  const play = { ...route, arcade: { ...route.arcade, phase: "playing" } };
+  const reward = { ...play, arcade: { ...play.arcade, phase: "reward" } };
+  expect(sceneKey(route)).not.toBe(sceneKey(play));
+  expect(sceneKey(play)).not.toBe(sceneKey(reward));
+  expect(
+    sceneKey({ ...route, arcade: { ...route.arcade, votes: { 0: "golf" } } }),
+  ).toBe(sceneKey(route));
+});
+
 it("keeps the scene wrapper outside the explicit UI scope so game animation retains its independent policy", async () => {
   const React = await import("react"),
     { renderToStaticMarkup } = await import("react-dom/server"),
@@ -98,7 +110,7 @@ it("uses opacity for the outer scene without transforming the containing block o
   motion.update("lobby", true);
   motion.update("room", true);
   expect(f.animate.mock.calls.at(-1)![0]).toEqual([
-    { opacity: 0 },
+    { opacity: 0.55 },
     { opacity: 1 },
   ]);
   motion.dispose();

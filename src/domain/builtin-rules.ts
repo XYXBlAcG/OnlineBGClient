@@ -24,7 +24,7 @@ export function sgsPlugin(runtime: UpstreamRuntime) {
 export function ddzPlugin(runtime: UpstreamRuntime) {
   const rules = new DdzRules(runtime);
   return new GameAdapter("ddz", {
-    create: (players) => ({ kind: "ddz", view: rules.create(players) }),
+    create: (players, _team, options) => ({ kind: "ddz", view: rules.create(players, options) }),
     finished: (state) => state.view.isFinish,
     actors: (state) => rules.actors(state.view),
     candidates: (state, actor) => rules.candidates(state.view, actor),

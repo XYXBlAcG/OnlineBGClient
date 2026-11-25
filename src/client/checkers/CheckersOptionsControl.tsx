@@ -1,3 +1,4 @@
+import { checkersModeChoices } from "../../domain/setup-choices";
 import type { CheckersOptions } from "../../domain/checkers";
 import { RadioChoice } from "../ui/Controls";
 
@@ -13,10 +14,7 @@ export function CheckersOptionsControl({
       label="跳棋玩法"
       value={value.mode}
       onValueChange={(mode) => onChange({ mode })}
-      options={[
-        { value: "classic", label: "经典竞速" },
-        { value: "siege", label: "据点攻防" },
-      ]}
+      options={checkersModeChoices}
     />
   );
 }

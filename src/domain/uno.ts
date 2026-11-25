@@ -1,21 +1,37 @@
+import type { GameOptions } from "./game-options";
+import { unoCardLabel, unoColorName } from "./uno-cards";
 import { UpstreamRuntime } from "../upstream/runtime";
 import type { Action, Candidate, GameState, UnoView } from "./types";
 type UnoState = Extract<GameState, { kind: "uno" }>;
 export class UnoRules {
   readonly original;
+  private readonly drawPosition: number;
   constructor(runtime: UpstreamRuntime) {
     this.original = runtime.load(6435);
+    this.drawPosition = runtime.load(8410).nX.TO_BE_DRAW;
   }
-  create(players: number, team = false): UnoState {
-    const view = this.original.my(
-      this.original.Lq({ playerList: Array(players).fill({}) }),
-    );
+  create(players: number, team = false, options?: GameOptions): UnoState {
+    const deal = this.original.Lq({ playerList: Array(players).fill({}) });
+    const short = options?.arcadeScenario?.kind === "uno";
+    if (short) {
+      const count = Array<number>(players).fill(0);
+      deal.cardList = deal.cardList.map((seat: number) =>
+        seat > 0 && ++count[seat - 1] > 4 ? this.drawPosition : seat,
+      );
+    }
+    const initial = this.original.my(deal);
+    const view = short
+      ? this.original.my(this.original.qA(this.original.Lk(initial, 0)))
+      : initial;
     return {
       kind: "uno",
       view: {
         ...view,
+        ...(short ? { arcadeShort: true } : {}),
         teamMode: team,
-        teams: team ? Array.from({ length: players }, (_, index) => index % 2) : [],
+        teams: team
+          ? Array.from({ length: players }, (_, index) => index % 2)
+          : [],
         teamWinner: null,
       },
     };
@@ -58,16 +74,23 @@ export class UnoRules {
     else throw new Error("游戏类型不匹配");
     const projected = this.original.my(this.original.qA(next));
     const teams = state.view.teams ?? [];
+    if (state.view.arcadeShort) {
+      projected.arcadeShort = true;
+      projected.isEnd ||= projected.playerFinish.some((finish: number) => finish > 0);
+    }
     projected.teamMode = state.view.teamMode;
     projected.teams = teams;
-    projected.teamWinner = state.view.teamMode ? this.winningTeam(projected) : null;
+    projected.teamWinner = state.view.teamMode
+      ? this.winningTeam(projected)
+      : null;
     return { kind: "uno", view: projected };
   }
   project(state: UnoState, actor: number): UnoState {
     const projected = structuredClone(state);
     const view = projected.view;
     view.playerCards = view.playerCards.map((cards, id) =>
-      id === actor || (view.teamMode && view.teams?.[id] === view.teams?.[actor])
+      id === actor ||
+      (view.teamMode && view.teams?.[id] === view.teams?.[actor])
         ? cards
         : cards.map((_, index) => -index - 1),
     );
@@ -123,7 +146,7 @@ export class UnoRules {
           : [false])
           result.push({
             action: { type: "uno-play", card, color, jump, saidUno },
-            label: `${jump ? "抢出" : "出"} ${this.original.SV[Math.min(3, Math.floor(card / 25))]} ${type === 14 ? "万能" : type === 15 ? "+4" : this.original.uj[type]}${type > 13 ? ` → ${this.original.SV[color]}` : ""}${saidUno ? "，UNO" : ""}`,
+            label: `${jump ? "抢出" : "出"} ${unoCardLabel(card)}${type > 13 ? ` → ${unoColorName(color)}` : ""}${saidUno ? "，UNO" : ""}`,
           });
     }
     const previous = view.lastOpInfo;

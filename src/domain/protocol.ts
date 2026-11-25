@@ -1,3 +1,12 @@
+import {
+  arcadeGameKinds,
+  arcadeSettingsSchema,
+  arcadeRewardIds,
+  arcadeStageCount,
+  type ArcadeChallenge,
+  type ArcadeReward,
+  type ArcadeRun,
+} from "./arcade/campaign";
 import { roomPluginsSchema } from "./workshop/model";
 import {
   partyPolicySchema,
@@ -25,6 +34,7 @@ import {
 } from "./social";
 import type { ChallengeBoard } from "./challenges";
 import {
+  aiClearCommandSchema,
   aiConfigCommandSchema,
   aiTestCommandSchema,
   companionConfigSchema,
@@ -33,10 +43,11 @@ import {
 export type { ChatMessage } from "./social";
 import type { ChatMessage } from "./social";
 import { actionSchema } from "./actions";
+import { drawWordSchema } from "./drawguess/words";
 export { actionSchema } from "./actions";
 import type { ReplayRecord } from "./replay";
 import { z } from "zod";
-import { gameCatalogue, gameKinds } from "./catalogue";
+import { gameCatalogue, gameKinds, gameSeatMinimum } from "./catalogue";
 import { poolOptionsSchema } from "./pool/types";
 import { minerOptionsSchema } from "./miner/types";
 import type {
@@ -47,10 +58,18 @@ import type {
   GameState,
 } from "./types";
 
+import { golfDifficulties } from "./golf/types";
+
 export const roomIdSchema = z.string().min(1).max(12);
+export const drawguessOptionsSchema = z.object({
+  mode: z.enum(["classic", "fayu"]).default("classic"),
+});
+
 export const configSchema = z
   .object({
     kind: z.enum(gameKinds),
+    arcade: z.literal(true).optional(),
+    arcadeSettings: arcadeSettingsSchema.optional(),
     humans: z.number().int().min(0).max(maxRoomSeats),
     ai: z
       .array(
@@ -75,7 +94,9 @@ export const configSchema = z
     flight: flightOptionsSchema.default(flightOptionsSchema.parse({})),
     checkers: checkersOptionsSchema.default(checkersOptionsSchema.parse({})),
     miner: minerOptionsSchema.default(minerOptionsSchema.parse({})),
+    golf: z.object({ difficulty: z.enum(golfDifficulties) }).optional(),
     pool: poolOptionsSchema.default(poolOptionsSchema.parse({})),
+    drawguess: drawguessOptionsSchema.default(drawguessOptionsSchema.parse({})),
     dominion: dominionOptionsSchema.default(dominionOptionsSchema.parse({})),
     mahjong: mahjongOptionsSchema.default({ cap: 3, selfDraw: "base" }),
     catanTrades: z.boolean().default(true),
@@ -85,10 +106,23 @@ export const configSchema = z
   .transform(balanceSeats)
   .refine(
     (value) =>
-      value.humans + value.ai.length >= gameCatalogue[value.kind].minPlayers &&
-      value.humans + value.ai.length <= gameCatalogue[value.kind].maxPlayers,
-    "总席位超出该游戏人数范围",
+      !value.arcade ||
+      (arcadeGameKinds.some((kind) => kind === value.kind) &&
+        !value.team &&
+        value.humans >= 1 &&
+        value.humans + value.ai.length >= 2 &&
+        (value.humans + value.ai.length <= 4 ||
+          (value.kind === "graphwar" && value.humans <= 4 && value.humans + value.ai.length <= 8) ||
+          (value.kind === "sgs" &&
+            value.humans === 4 &&
+            value.ai.length === 1))),
+    "多游戏远征需要 2–4 个席位",
   )
+  .refine((value) => {
+    const seats = value.humans + value.ai.length;
+    const minPlayers = gameSeatMinimum(value.kind, value.drawguess.mode);
+    return seats >= minPlayers && seats <= gameCatalogue[value.kind].maxPlayers;
+  }, "总席位超出该游戏人数范围")
   .refine(
     (value) => value.humans > 0 || ["tq", "scmj"].includes(value.kind),
     "该游戏不支持全 AI 对战",
@@ -146,7 +180,38 @@ export const seatConfigSchema = z.discriminatedUnion("type", [
   }),
 ]);
 export type SeatConfig = z.infer<typeof seatConfigSchema>;
+const arcadeStage = {
+  stage: z
+    .number()
+    .int()
+    .min(0)
+    .max(arcadeStageCount - 1),
+  run: z.uuid(),
+};
+const arcadeActionSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("vote"),
+    ...arcadeStage,
+    option: z.string().min(1).max(100),
+  }),
+  z.object({
+    type: z.literal("ready"),
+    ...arcadeStage,
+    reward: z.enum(arcadeRewardIds).optional(),
+  }),
+  z.object({
+    type: z.enum(["reroute", "camp-heal", "retreat"]),
+    ...arcadeStage,
+  }),
+]);
+export type ArcadeAction = z.infer<typeof arcadeActionSchema>;
+
 export const commandSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("arcade"),
+    token: z.string(),
+    action: arcadeActionSchema,
+  }),
   z.object({
     type: z.literal("queue-set"),
     token: z.string(),
@@ -227,7 +292,11 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("ready"), token: z.string(), ready: z.boolean() }),
   z.object({ type: z.literal("leave"), token: z.string() }),
   z.object({ type: z.literal("close"), token: z.string() }),
-  z.object({ type: z.literal("start"), token: z.string() }),
+  z.object({
+    type: z.literal("start"),
+    token: z.string(),
+    drawWords: z.array(drawWordSchema).max(1000).optional(),
+  }),
   z.object({
     type: z.literal("tempo"),
     token: z.string(),
@@ -249,6 +318,11 @@ export const commandSchema = z.discriminatedUnion("type", [
     token: z.string(),
     enabled: z.boolean(),
   }),
+  z.object({
+    type: z.literal("miner-pause"),
+    token: z.string(),
+    paused: z.boolean(),
+  }),
   z.object({ type: z.literal("end"), token: z.string() }),
   z.object({
     type: z.literal("action"),
@@ -268,6 +342,7 @@ export const commandSchema = z.discriminatedUnion("type", [
     token: z.string(),
     config: companionConfigSchema,
   }),
+  aiClearCommandSchema,
   aiConfigCommandSchema,
   aiTestCommandSchema,
   z.object({
@@ -309,8 +384,28 @@ export interface DecisionSummary {
   simulations: number;
   version: number;
 }
-export const protocolVersion = 20;
+export const protocolVersion = 26;
+type PublicArcadeChallenge = Omit<ArcadeChallenge, "seed">;
+export interface ArcadeSnapshot extends Omit<
+  ArcadeRun,
+  "seed" | "options" | "current" | "results"
+> {
+  id: string;
+  rewards: ArcadeReward[];
+  reward?: ArcadeReward;
+  rewardConfirmed?: boolean;
+  options: PublicArcadeChallenge[];
+  current: PublicArcadeChallenge | null;
+  results: (Omit<ArcadeRun["results"][number], "challenge"> & {
+    challenge: PublicArcadeChallenge;
+  })[];
+  deadline?: number;
+  remainingMs: number;
+  actionsLeft?: number;
+}
+
 export interface Snapshot {
+  arcade?: ArcadeSnapshot;
   partyQueue?: PartyQueue;
   resumeRoles?: { profession: string; name: string }[];
   serverTime: number;
@@ -337,14 +432,20 @@ export interface Snapshot {
     ready: boolean;
   }[];
   state: GameState | null;
+  canvas?: {
+    canvases: import("./drawguess/types").DrawStroke[][];
+    fills: Record<number, import("./fayu/types").FayuFill[]>;
+  };
   candidates: Candidate[];
   computation: AiComputation | null;
   aiPaused: boolean;
+  minerPaused?: boolean;
   companion: {
     enabled: boolean;
     name: string;
     avatar: string;
     configured: boolean;
+    server?: boolean;
     available: boolean;
   };
   bannerPolicy: BannerPolicy;
@@ -384,7 +485,12 @@ export type Response =
       diagnostic?: ComputeDiagnostic;
     }
   | { type: "interaction"; event: InteractionEvent }
-  | { type: "ai-test"; requestId: string; ok: boolean; message: string }
+  | {
+      type: "ai-test" | "ai-status";
+      requestId: string;
+      ok: boolean;
+      message: string;
+    }
   | { type: "ack"; id: string }
   | { type: "left" }
   | { type: "closed"; replay?: ReplayRecord | null };

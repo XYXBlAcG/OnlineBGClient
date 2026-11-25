@@ -34,6 +34,8 @@ export function useMobileViewport(enabled: boolean): void {
           width: innerWidth,
           height: layoutHeight,
           visualHeight: viewport?.height ?? innerHeight,
+          visualWidth: viewport?.width ?? innerWidth,
+          scale: viewport?.scale ?? 1,
           offsetTop: viewport?.offsetTop ?? 0,
           windowHeight: innerHeight,
           orientation,
@@ -43,6 +45,7 @@ export function useMobileViewport(enabled: boolean): void {
           : "portrait";
         root.dataset.mobileKeyboard = String(value.keyboard);
         root.style.setProperty("--mobile-top", `${viewport?.offsetTop ?? 0}px`);
+        root.style.setProperty("--mobile-width", `${value.width}px`);
         root.style.setProperty("--mobile-height", `${value.height}px`);
         root.style.setProperty(
           "--mobile-chat-height",
@@ -65,6 +68,7 @@ export function useMobileViewport(enabled: boolean): void {
       delete root.dataset.mobileOrientation;
       delete root.dataset.mobileKeyboard;
       for (const name of [
+        "--mobile-width",
         "--mobile-height",
         "--mobile-chat-height",
         "--mobile-keyboard-bottom",

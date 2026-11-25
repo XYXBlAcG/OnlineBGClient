@@ -201,7 +201,7 @@ setInterval(() => {
       if (
         !session ||
         !room ||
-        room.version !== pending.version ||
+        (room.version !== pending.version && !room.acceptsLateActions()) ||
         room.paused ||
         !room.aiRequest()
       ) {
@@ -212,7 +212,8 @@ setInterval(() => {
     if (!session) return;
     const room = gateway.rooms.get(session.room)!;
     try {
-      const changed = room.commitIfDue() || room.resolveIfDue();
+      const committed = room.commitIfDue();
+      const changed = room.resolveIfDue() || committed;
       if (room.tickParty() || changed) await publish();
       if (pending) return;
       const request = room.aiRequest();
@@ -244,7 +245,7 @@ setInterval(() => {
           serial = serial.then(async () => {
             if (
               session?.room === room.id &&
-              room.queueDecision(result, request.version)
+              room.queueDecision(request.driver === "llm" ? { ...result, source: "search-fallback", fallbackReason: "unconfigured" } : { ...result, source: "search" }, request.version)
             ) {
               room.commitIfDue();
               await publish();

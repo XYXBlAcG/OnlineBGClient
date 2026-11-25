@@ -10,6 +10,7 @@ import { themes } from "./themes";
 import { gameKinds } from "../domain/catalogue";
 import { capabilities, type RuntimePlatform } from "./platform";
 import { poolRenderers } from "./pool/renderer";
+import { golfEnvironments, poolEnvironments, sceneRenderers } from "./scene3d/environment";
 
 export const preferencesSchema = z.object({
   party: partyPreferencesSchema.default(partyPreferencesSchema.parse({})),
@@ -29,11 +30,11 @@ export const preferencesSchema = z.object({
       proxyFallback: true,
       proxyUrl: "http://127.0.0.1:7897",
     }),
-  showQuickStart: z.boolean().default(true),
-  showVoiceShortcut: z.boolean().default(true),
+  fullscreenTable: z.boolean().default(false),
+  cardScale: z.number().finite().min(0.85).max(1.6).default(1),
+  cardClickMotion: z.boolean().default(true),
   computeDetails: z.boolean().default(false),
   showFps: z.boolean().default(false),
-  quickStartOpen: z.boolean().default(true),
   voice: voicePreferencesSchema.default(voicePreferencesSchema.parse({})),
   gameSizes: z
     .record(z.string(), z.number().finite().min(0.5).max(3))
@@ -50,6 +51,10 @@ export const preferencesSchema = z.object({
   sidebarWidth: z.number().int().min(280).max(520).default(320),
   imageQuality: z.enum(["clear", "data"]).default("clear"),
   poolRenderer: z.enum(poolRenderers).default("auto"),
+  golfRenderer: z.enum(sceneRenderers).default("auto"),
+  golfEnvironment: z.enum(golfEnvironments).default("coast"),
+  poolEnvironment: z.enum(poolEnvironments).default("midnight"),
+  scene3dQuality: z.enum(["high", "balanced", "performance"]).default("balanced"),
   bannerColor: bannerColorSchema.default("#ffce37"),
   bannerDisplay: z.boolean().default(true),
   soundVolume: z.number().min(0).max(1).default(0.5),

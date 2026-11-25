@@ -174,10 +174,7 @@ function shuffle<T>(values: T[], random: () => number): T[] {
   return result;
 }
 
-const triangle = (
-  layout: PoolTableLayout,
-  rows: number,
-): PoolPoint[] => {
+const triangle = (layout: PoolTableLayout, rows: number): PoolPoint[] => {
   const r = layout.table.ballRadius,
     dx = r * Math.sqrt(3) + 0.0002,
     dy = r * 2 + 0.0002,
@@ -251,8 +248,7 @@ export function rackBalls(
       specials = partySpecialBalls(players);
     return [
       cue,
-      ...triangle(layout, 4)
-        .concat(triangle(layout, 5).slice(0, Math.max(0, count - 10)))
+      ...triangle(layout, count > 10 ? 5 : 4)
         .slice(0, count)
         .map((point, index) => ({
           id: order[index],

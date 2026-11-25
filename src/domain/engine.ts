@@ -1,6 +1,6 @@
 import type { GameOptions } from "./game-options";
 import { UpstreamRuntime } from "../upstream/runtime";
-import { gameCatalogue, gameKinds, type GameKind } from "./catalogue";
+import { gameSeatMinimum, gameCatalogue, gameKinds, type GameKind } from "./catalogue";
 import { gameRules } from "./rule-catalogue";
 import { CheckersRules } from "./checkers";
 import { SgsRules } from "./sgs";
@@ -39,12 +39,59 @@ export class GameEngine {
     if (
       !game ||
       !Number.isInteger(players) ||
-      players < game.minPlayers ||
+      players < gameSeatMinimum(kind, options?.drawguess?.mode) ||
       players > game.maxPlayers
     )
       throw new Error("玩家数量超出该游戏人数范围");
+    if (options?.arcadeScenario?.kind === "pool")
+      options = {
+        ...options,
+        pool: {
+          mode: players === 2 ? "nine-ball" : "party",
+          assist: true,
+          shotSeconds: 0,
+        },
+      };
+    if (options?.arcadeScenario?.kind === "graphwar")
+      options = {
+        ...options,
+        graphwar: {
+          mode: "classic",
+          scenario: "classic",
+          map: "open",
+          size: "standard",
+          soldiers: 1,
+          preview: true,
+          turnSeconds: 0,
+        },
+      };
+    if (options?.arcadeScenario?.kind === "tq")
+      options = {
+        ...options,
+        checkers: {
+          ...options.checkers,
+          mode:
+            players === 2 && !options.arcadeScenario.noActionCap
+              ? "siege"
+              : "classic",
+        },
+      };
+    if (options?.arcadeScenario?.kind === "scmj")
+      options = {
+        ...options,
+        mahjong: { mode: "sichuan", cap: 3, selfDraw: "base" },
+      };
     this.seed(seed);
-    const state = this.plugins.get(kind)!.create(players, team, options);
+    const state = this.plugins.get(kind)!.create(players, team, {
+      ...options,
+      roundSeed: seed,
+    });
+    if (
+      state.kind === "graphwar" &&
+      options?.arcadeScenario?.kind === "graphwar" &&
+      options.arcadeScenario.noActionCap
+    )
+      state.view.arcadeUncapped = true;
     if (state.kind === "scmj" && options?.mahjong)
       state.view.options = structuredClone(options.mahjong);
     return state;
@@ -69,6 +116,9 @@ export class GameEngine {
   }
   acceptsLateActions(state: GameState): boolean {
     return this.plugins.get(state.kind)!.acceptsLateActions?.(state) ?? false;
+  }
+  keepsDeadline(state: GameState, action: Action): boolean {
+    return this.plugins.get(state.kind)!.keepsDeadline?.(state, action) ?? false;
   }
   resolve(state: GameState, seed: string): GameState {
     this.seed(seed);

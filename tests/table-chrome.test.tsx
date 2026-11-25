@@ -23,17 +23,17 @@ it("derives one status for the table chrome with a fixed priority", () => {
     label: "动作已发送，等待服务器确认…",
   });
   expect(
-    tableChromeStatus(chrome({ paused: true, candidates: [{}] as never }), false),
-  ).toEqual({ state: "paused", label: "有玩家掉线，等待恢复连接" });
-  expect(
     tableChromeStatus(
-      chrome({ paused: true, aiPaused: true }),
+      chrome({ paused: true, candidates: [{}] as never }),
       false,
     ),
+  ).toEqual({ state: "paused", label: "有玩家掉线，等待恢复连接" });
+  expect(
+    tableChromeStatus(chrome({ paused: true, aiPaused: true }), false),
   ).toEqual({ state: "paused", label: "AI 性能测试已暂停" });
   expect(tableChromeStatus(chrome({ resolving: true }), false)).toEqual({
     state: "resolving",
-    label: "等待无懈可击响应，房间服务自动结算",
+    label: "等待玩家响应",
   });
   expect(
     tableChromeStatus(chrome({ candidates: [{}] as never }), false),
@@ -91,11 +91,59 @@ it("hides the generic turn row when the table shows its own status", () => {
   );
   expect(hidden).not.toContain("轮到你了");
   const pending = renderToStaticMarkup(
-    <TableChrome
-      snapshot={chrome({}) as never}
-      pending
-      showTurn={false}
-    />,
+    <TableChrome snapshot={chrome({}) as never} pending showTurn={false} />,
   );
   expect(pending).toContain("动作已发送，等待服务器确认…");
+});
+
+it("shows one resolving message and only names 无懈可击 in 三国杀", () => {
+  const one = renderToStaticMarkup(
+    <TableChrome
+      snapshot={{ ...chrome({ resolving: true }), kind: "sgs" }}
+      pending={false}
+    />,
+  );
+  expect(one.match(/等待无懈可击响应/g)).toHaveLength(1);
+  const other = renderToStaticMarkup(
+    <TableChrome
+      snapshot={{ ...chrome({ resolving: true }), kind: "scmj" }}
+      pending={false}
+    />,
+  );
+  expect(other).toContain("等待玩家响应");
+  expect(other).not.toContain("无懈可击");
+});
+
+it("uses UNO's real turn even when an out-of-turn action is legal", () => {
+  const snapshot = {
+    ...chrome({ candidates: [{}] as never }),
+    kind: "uno" as const,
+    actor: 1,
+    state: {
+      kind: "uno",
+      view: { isStart: true, waitFor: 0 },
+    } as Snapshot["state"],
+    seats: [{ name: "阿青" }] as Snapshot["seats"],
+  };
+  expect(tableChromeStatus(snapshot, false)).toEqual({
+    state: "turn",
+    label: "阿青的回合",
+  });
+});
+
+it("keeps one status slot through idle, thinking and pending updates", () => {
+  const views = [
+    renderToStaticMarkup(<TableChrome snapshot={chrome({})} pending={false} />),
+    renderToStaticMarkup(
+      <TableChrome
+        snapshot={chrome({})}
+        pending={false}
+        secondary={<span>陪练正在决策</span>}
+      />,
+    ),
+    renderToStaticMarkup(<TableChrome snapshot={chrome({})} pending />),
+  ];
+  for (const view of views)
+    expect(view.match(/class="game-status-row"/g)).toHaveLength(1);
+  expect(views[1]).toContain("陪练正在决策");
 });

@@ -1,3 +1,7 @@
+import { GolfDifficultyControl } from "./golf/GolfDifficultyControl";
+import { DrawModeControl } from "./drawguess/DrawModeControl";
+import { gameSeatMinimum } from "../domain/catalogue";
+import { supportsLlmDecisions } from "../domain/companion";
 import { PoolOptionsControl } from "./pool/PoolOptionsControl";
 import type { CommandRegistry } from "./commands";
 import { Shortcut } from "./ui/Shortcut";
@@ -36,9 +40,11 @@ export function RoomSetup({
   overlayClassName,
   purpose = "game",
   proposedConfig,
+  showLlm = true,
 }: {
   purpose?: "game" | "enqueue";
   proposedConfig?: Snapshot["config"];
+  showLlm?: boolean;
   snapshot: Snapshot;
   registry?: CommandRegistry;
   binding?: string;
@@ -100,7 +106,7 @@ export function RoomSetup({
   ) => {
     const g = gameCatalogue[kind],
       total = Math.max(
-        g.minPlayers,
+        gameSeatMinimum(kind, config.drawguess.mode),
         Math.min(config.humans + config.ai.length, g.maxPlayers),
       ),
       humans = g.ai
@@ -126,6 +132,7 @@ export function RoomSetup({
     });
   };
   const game = gameCatalogue[config.kind];
+  const minSeats = gameSeatMinimum(config.kind, config.drawguess.mode);
   const aiDifficultyNames =
     config.kind === "expedition"
       ? expeditionAiDifficultyNames
@@ -185,7 +192,7 @@ export function RoomSetup({
                       ? Array.from(
                           {
                             length: Math.max(
-                              game.minPlayers - humans,
+                              minSeats - humans,
                               Math.min(manual.length, game.maxPlayers - humans),
                             ),
                           },
@@ -206,7 +213,7 @@ export function RoomSetup({
                         ? 0
                         : game.ai
                           ? 1
-                          : game.minPlayers) +
+                          : minSeats) +
                       1,
                   },
                   (_, i) => (
@@ -218,7 +225,7 @@ export function RoomSetup({
                           ? 0
                           : game.ai
                             ? 1
-                            : game.minPlayers)
+                            : minSeats)
                       }
                     >
                       {i +
@@ -226,7 +233,7 @@ export function RoomSetup({
                           ? 0
                           : game.ai
                             ? 1
-                            : game.minPlayers)}
+                            : minSeats)}
                     </option>
                   ),
                 )}
@@ -264,15 +271,15 @@ export function RoomSetup({
                     {
                       length:
                         game.maxPlayers -
-                        Math.max(config.humans, game.minPlayers) +
+                        Math.max(config.humans, minSeats) +
                         1,
                     },
                     (_, i) => (
                       <option
                         key={i}
-                        value={i + Math.max(0, game.minPlayers - config.humans)}
+                        value={i + Math.max(0, minSeats - config.humans)}
                       >
-                        {i + Math.max(0, game.minPlayers - config.humans)}
+                        {i + Math.max(0, minSeats - config.humans)}
                       </option>
                     ),
                   )}
@@ -314,11 +321,21 @@ export function RoomSetup({
                 onChange={(flight) => setConfig({ ...config, flight })}
               />
             )}
+            {config.kind === "golf" && <GolfDifficultyControl value={config.golf?.difficulty ?? "standard"} onChange={(difficulty) => setConfig({ ...config, golf: { difficulty } })} />}
             {config.kind === "pool" && (
               <PoolOptionsControl
                 value={config.pool}
                 onChange={(pool) => setConfig({ ...config, pool })}
               />
+            )}
+            {config.kind === "drawguess" && (
+              <DrawModeControl value={config.drawguess.mode} onChange={(mode) =>
+                setConfig({
+                  ...config,
+                  drawguess: { mode },
+                  humans: Math.max(config.humans, gameSeatMinimum(config.kind, mode)),
+                })
+              } />
             )}
             {config.kind === "tq" && (
               <CheckersOptionsControl
@@ -373,9 +390,15 @@ export function RoomSetup({
                     </option>
                   ))}
                 </Select>
+                {showLlm && (
                 <Select
                   aria-label={`AI ${i + 1} 驱动`}
-                  value={ai.driver ?? "search"}
+                  value={
+                    supportsLlmDecisions(config.kind) &&
+                    snapshot.companion.server
+                      ? (ai.driver ?? "search")
+                      : "search"
+                  }
                   onValueChange={(driver) =>
                     setConfig({
                       ...config,
@@ -391,16 +414,25 @@ export function RoomSetup({
                   }
                 >
                   <option value="search">搜索策略</option>
-                  <option value="llm">LLM 决策</option>
+                  <option
+                    value="llm"
+                    disabled={
+                      !supportsLlmDecisions(config.kind) ||
+                      !snapshot.companion.server
+                    }
+                  >
+                    LLM 决策（UNO 联机）
+                  </option>
                 </Select>
+                )}
               </div>
             ))}
-            {config.ai.some((seat) => seat.driver === "llm") && (
+            {showLlm && config.ai.some((seat) => seat.driver === "llm") && (
               <p className="muted">
                 LLM 席位需要先在设置 → 接入 AI 配置模型；失败时回退搜索。
               </p>
             )}
-            {game.ai && config.ai.length > 0 && (
+            {showLlm && game.ai && config.ai.length > 0 && (
               <label className="setting-row">
                 聊天 AI
                 <Select

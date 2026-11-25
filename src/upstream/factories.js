@@ -3694,6 +3694,7 @@ export default {
 },
 2262: function (n, e, t) {
   var companionFeedbackBridge = t.bridge;
+  var companionBridge = t.bridge;
   t.d(e, {
     Z: function () {
       return E;
@@ -4537,7 +4538,16 @@ export default {
           gameVersion: p
         })],
         "data-table-region": "actions"
-      }), (0, o.jsxs)("details", {
+      }), companionBridge.collection ? (0, o.jsx)(companionBridge.collection, {
+        className: "table-collection",
+        title: "玩家与收藏",
+        children: (0, o.jsx)(j, {
+          view: e,
+          revealBooked: u,
+          renderSeat: m
+        }),
+        "data-table-region": "collection"
+      }) : (0, o.jsxs)("details", {
         className: "table-collection",
         open: true,
         children: [(0, o.jsx)("summary", {

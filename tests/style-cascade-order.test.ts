@@ -13,6 +13,7 @@ it("loads the global style entry in the approved order", () => {
   expect(cssImportsOf(read("src/main.tsx"))).toEqual([
     "./client/ui/art-experience.css",
     "./client/ui/focus.css",
+    "./client/ui/table-workspace.css",
     "./client/ui/layers.css",
     "./styles.css",
     "./client/ui/experience.css",
@@ -22,6 +23,7 @@ it("loads the global style entry in the approved order", () => {
     "./client/ui/mobile-usability.css",
     "./client/ui/mobile-home.css",
     "./client/ui/native-table.css",
+    "./client/ui/mobile-foundation.css",
   ]);
 });
 

@@ -47,7 +47,22 @@ for (const kind of gameKinds)
       />,
     );
     expect(html).toContain(`data-game="${kind}"`);
-    expect(
-      readFileSync("src/client/ui/mobile-usability.css", "utf8"),
-    ).toContain(`[data-game="${kind}"]`);
+    if (kind === "miner") {
+      expect(html).toContain('class="miner-table"');
+      const styles = readFileSync("src/client/miner/miner.css", "utf8");
+      expect(styles).toContain("@media (max-width: 640px)");
+      expect(styles).toContain("@media (orientation: landscape)");
+    } else if (kind === "drawguess" || kind === "golf") {
+      expect(html).toContain(kind === "drawguess" ? "绘画画布" : "果岭");
+      const styles = readFileSync("src/client/ui/party-games.css", "utf8");
+      expect(styles).toContain("@media (max-width: 640px) and (orientation: portrait)");
+      expect(styles).toContain("@media (orientation: landscape)");
+      expect(styles).toContain("grid-area: board;");
+      expect(styles).toContain("touch-action: none");
+      expect(html).toContain('class="party-board"');
+    } else {
+      expect(
+        readFileSync("src/client/ui/mobile-usability.css", "utf8"),
+      ).toContain(`[data-game="${kind}"]`);
+    }
   });

@@ -30,6 +30,7 @@ export interface UnoView {
     opCard: number;
     isShuffle: number;
   };
+  arcadeShort?: true;
   teamMode?: boolean;
   teams?: number[];
   teamWinner?: number | null;
@@ -47,6 +48,7 @@ export interface SgsEvent {
 }
 
 export interface SgsView {
+  arcadeGuard?: number;
   v: number;
   rule: number;
   roles: number[];
@@ -205,6 +207,9 @@ export type GameState =
   | { kind: "uno"; view: UnoView }
   | { kind: "sgs"; view: SgsView }
   | import("./pool/types").PoolState
+  | import("./golf/types").GolfState
+  | import("./drawguess/types").DrawState
+  | import("./fayu/types").FayuState
   | import("./miner/types").MinerGameState;
 export interface Candidate {
   action: Action;
@@ -247,10 +252,21 @@ export interface Decision {
   simulations: number;
 }
 
+export type AiDecisionSource = "search" | "llm" | "search-fallback";
+export type AiFallbackReason =
+  | "unconfigured"
+  | "unsupported"
+  | "timeout"
+  | "invalid-output"
+  | "cancelled"
+  | "provider-error";
 export interface AiResult {
   actor: number;
   chosen: Action;
   difficulty: Difficulty;
   simulations: number;
   audit?: Decision;
+  choices?: DecisionCandidate[];
+  source?: AiDecisionSource;
+  fallbackReason?: AiFallbackReason;
 }

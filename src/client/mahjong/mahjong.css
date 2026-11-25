@@ -460,10 +460,10 @@
   .mobile-shell .game-area:has(.scmj-table) > .room-navigation {
     grid-area: 1 / 2;
   }
-  .mobile-shell .game-area:has(.scmj-table) > .compute-status {
+  .mobile-shell .game-area:has(.scmj-table) > .arcade-progress {
     grid-area: 2 / 1 / 3 / -1;
   }
-  .mobile-shell .game-area:has(.scmj-table) > .game-stage {
+  .mobile-shell .game-area:has(.scmj-table) > .room-game-scene {
     grid-area: 3 / 1 / 4 / -1;
   }
   .scmj-center > small {

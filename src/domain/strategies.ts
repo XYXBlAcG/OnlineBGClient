@@ -3,6 +3,7 @@ import { ExpeditionStrategy } from "./expedition/ai";
 import { DominionStrategy } from "./dominion/strategy";
 import { GraphwarStrategy } from "./graphwar/strategy";
 import { PoolStrategy } from "./pool/strategy";
+import { GolfStrategy } from "./golf/strategy";
 import { MinerStrategy } from "./miner/strategy";
 import { MahjongStrategy } from "./mahjong/strategy";
 import { CatanStrategy } from "./catan-strategy";
@@ -38,6 +39,7 @@ export class Strategies {
       [GraphwarStrategy, ["graphwar"]],
       [SplendorStrategy, ["ccbs"]],
       [PoolStrategy, ["pool"]],
+      [GolfStrategy, ["golf"]],
       [MinerStrategy, ["miner"]],
     ] as [typeof Strategy, GameKind[]][]) {
       let instance: Strategy | undefined;

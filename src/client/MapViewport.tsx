@@ -118,7 +118,14 @@ export function MapViewport({
     });
     observer.observe(box);
     return () => observer.disconnect();
-  }, []);
+  }, [
+    fitContainOnMount,
+    fitWidthOnMount,
+    initialZoom,
+    naturalSize?.height,
+    naturalSize?.width,
+    readingSize,
+  ]);
   useMapGesture(
     {
       onDrag: ({ event, pinching, cancel, tap, movement: [x, y], memo }) => {

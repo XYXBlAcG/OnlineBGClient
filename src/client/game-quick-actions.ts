@@ -21,7 +21,7 @@ export const gameQuickActions: Partial<Record<GameKind, QuickAction[]>> = {
     {
       id: "miner-ready",
       title: "离开 / 休整",
-      binding: " ",
+      binding: "E",
       matches: (action) =>
         action.type === "miner-action" && action.move.type === "ready",
     },

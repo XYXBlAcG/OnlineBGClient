@@ -1,3 +1,5 @@
+import type { ReplayRecord } from "./domain/replay";
+import { ArcadeProgress, ArcadeTable } from "./client/arcade/ArcadeTable";
 import { PartyQueue } from "./client/PartyQueue";
 import { RoundContinuation } from "./client/RoundContinuation";
 import { FontAssets } from "./client/fonts";
@@ -13,13 +15,15 @@ import { RoomOperation } from "./client/room-operation";
 import { SceneSurface } from "./client/SceneSurface";
 import { sceneKey } from "./client/scene-transition";
 import { usePreferences } from "./client/use-preferences";
-import { QuickStart } from "./client/QuickStart";
 import { FocusControls } from "./client/FocusControls";
 import {
   focusPresentation,
+  useTableFocus,
+  borderlessToggleBinding,
   focusToggleBinding,
 } from "./client/focus-presentation";
 import "./client/ui/focus.css";
+import "./client/ui/table-workspace.css";
 import { GameCommandProvider } from "./client/use-game-commands";
 import { ResumeDrawer } from "./client/lobby/ResumeDrawer";
 import { RunShelf } from "./client/expedition/RunShelf";
@@ -30,17 +34,12 @@ import { VoiceToolbar } from "./client/voice/VoiceControls";
 import { useMobileViewport } from "./client/use-mobile-viewport";
 import type { Attachment } from "./domain/attachments";
 import {
-  aiProviderNeedsKey,
   type CompanionConfig,
 } from "./domain/companion";
-import {
-  loadAiApiKey,
-  loadAiProvider,
-  migrateAiCredentials,
-  saveAiApiKey,
-  saveAiProvider as saveAiProviderSettings,
-  type AiConfig,
-} from "./client/ai-config";
+import { migrateAiCredentials, type AiConfig } from "./client/ai-config";
+import { AiProviderSession, type AiHostContext } from "./client/ai/provider-session";
+import { isLoopbackEndpoint } from "./domain/ai-connection";
+import type { AiProviderSettings } from "./domain/companion";
 import { BannerLayer } from "./client/social/BannerLayer";
 import { useGameFeedback } from "./client/use-game-feedback";
 import { cuePlayer } from "./client/sound";
@@ -56,6 +55,8 @@ import { guideFor } from "./client/beginner-guides";
 import { BeginnerGuide } from "./client/BeginnerGuide";
 import { Notices } from "./client/Notices";
 import { MotionProvider } from "./client/motion";
+import { loadDrawWordLibrary } from "./client/drawguess/library";
+import { llmUiEnabled } from "./client/llm-ui";
 import { HeroDescription } from "./client/HeroSurface";
 import { HeroGuides } from "./domain/hero-guide";
 import { useWindowWidth, useMobile } from "./client/use-mobile";
@@ -84,7 +85,7 @@ import {
   isRecoveredTransition,
 } from "./client/connection-phase";
 import { Records } from "./client/Records";
-import { ClientStore } from "./client/storage";
+import { ClientStore, recordKey } from "./client/storage";
 import {
   achievementById,
   evaluateReplay,
@@ -122,7 +123,7 @@ import {
   NetworkConnection,
   type Connection,
 } from "./client/connection";
-import { OriginalGameLazy } from "./client/OriginalGameLazy";
+import { OriginalGameLazy, prefetchGameSurface } from "./client/OriginalGameLazy";
 import { Audit } from "./client/Audit";
 import type { Action } from "./domain/types";
 import type { Response, RoomConfig, Snapshot } from "./domain/protocol";
@@ -143,6 +144,7 @@ import "./client/ui/platform-controls.css";
 import "./client/ui/mobile-usability.css";
 import "./client/ui/mobile-home.css";
 import "./client/ui/native-table.css";
+import "./client/ui/mobile-foundation.css";
 
 const emptyInteractions: InteractionEvent[] = [];
 const invited = new URLSearchParams(location.search);
@@ -297,11 +299,26 @@ function App() {
   );
   const [unread, setUnread] = useState(0);
   const [sidebarTab, setSidebarTab] = useState<"chat" | "guide" | null>(null);
+  useEffect(() => { if (mobile && inviteOpen) setSidebarTab(null); }, [mobile, inviteOpen]);
+  useEffect(() => { if (mobile && sidebarTab) setInviteOpen(false); }, [mobile, sidebarTab]);
   const [guideDock, setGuideDock] = useState<HTMLDivElement | null>(null);
   const [guideLocated, setGuideLocated] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
   const [guideLocation, setGuideLocation] = useState(0);
-  const [focused, setFocused] = useState(false);
+  const [borderless, setBorderless] = useState(false);
+  const fullscreenPending = useRef(false);
+  const toggleBorderless = useCallback(async () => {
+    if (!capabilities.desktop || fullscreenPending.current) return;
+    fullscreenPending.current = true;
+    try {
+      await invoke("set_borderless_fullscreen", { enabled: !borderless });
+      setBorderless(!borderless);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : String(error));
+    } finally {
+      fullscreenPending.current = false;
+    }
+  }, [borderless]);
   const [practice, setPractice] = useState<{
     kind: GameKind;
     config: RoomConfig;
@@ -328,6 +345,10 @@ function App() {
       ? { ...value, chatVisible: false, auditVisible: false }
       : value;
   });
+  const [focused, setFocused] = useTableFocus(
+    snapshot?.playing ? snapshot.arcade?.id ?? snapshot.playId ?? snapshot.room : null,
+    preferences.fullscreenTable,
+  );
   useEffect(() => {
     voice.configure(
       nativeMain() && mode === "network" && session.current && snapshot
@@ -375,16 +396,13 @@ function App() {
     !!guideFor(snapshot.kind, snapshot.config) &&
     !!preferences.beginnerGuides[snapshot.kind];
   useGameFeedback(snapshot, preferences);
-  useEffect(() => {
-    if (!snapshot?.playing) setFocused(false);
-  }, [snapshot?.playing]);
   const guideShown = guideEnabled && sidebarTab === "guide";
   const sidebarOpen =
     guideShown || (sidebarTab === "chat" && preferences.chatVisible);
   const detachedSidebar = capabilities.auxiliaryWindows && narrowLayout;
   const tableFocused = focusPresentation({
     focused,
-    playing: !!snapshot?.state && !snapshot.finished,
+    playing: !!snapshot?.playing && !snapshot.finished,
     tab,
   });
   useEffect(() => {
@@ -409,7 +427,7 @@ function App() {
     };
     window.addEventListener("keydown", exit);
     return () => window.removeEventListener("keydown", exit);
-  }, [tableFocused]);
+  }, [tableFocused, snapshot?.playId]);
   const immersive = mobile && tableFocused;
   const sidebarVisible =
     sidebarOpen && (!tableFocused || sidebarTab === "chat") && !detachedSidebar;
@@ -447,6 +465,7 @@ function App() {
     if (preview) pushAchievementToasts([preview]);
   };
   const [recordsOpen, setRecordsOpen] = useState(false);
+  const [initialReplay, setInitialReplay] = useState<ReplayRecord>();
   const appProgress = useAppProgress({
     store,
     snapshot,
@@ -630,8 +649,10 @@ function App() {
     };
   }, []);
   useEffect(() => {
-    const receive = (event: Event) =>
+    const receive = (event: Event) => {
+      if (!llmUiEnabled) return;
       setNotice((event as CustomEvent<string>).detail);
+    };
     window.addEventListener("companion-notice", receive);
     return () => {
       window.removeEventListener("companion-notice", receive);
@@ -664,99 +685,27 @@ function App() {
         config,
       });
   }, []);
-  const saveAiProvider = useCallback(async (config: AiConfig) => {
-    await migrateAiCredentials();
-    saveAiProviderSettings(config.provider);
-    const typedKey = config.apiKey.trim();
-    if (typedKey) await saveAiApiKey(typedKey);
-    const apiKey = typedKey || (await loadAiApiKey());
-    if (!session.current) return;
-    connection.current?.send({
-      type: "ai-config",
-      token: session.current.token,
-      provider: config.provider,
-      apiKey,
-    });
-  }, []);
-  const aiTestPending = useRef(
-    new Map<
-      string,
-      {
-        resolve: (message: string) => void;
-        reject: (error: Error) => void;
-        timer: ReturnType<typeof setTimeout>;
-      }
-    >(),
-  );
-  const testAiProvider = useCallback(async (config: AiConfig) => {
-    const current = session.current;
-    if (!current) throw new Error("进入房间后可以测试连接");
-    const typedKey = config.apiKey.trim();
-    const apiKey = typedKey || (await loadAiApiKey());
-    if (aiProviderNeedsKey(config.provider.format) && !apiKey)
-      throw new Error("请填写 API Key");
-    const requestId = randomId();
-    return new Promise<string>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        aiTestPending.current.delete(requestId);
-        reject(new Error("测试超时"));
-      }, 25000);
-      aiTestPending.current.set(requestId, { resolve, reject, timer });
-      connection.current?.send({
-        type: "ai-test",
-        id: requestId,
-        token: current.token,
-        requestId,
-        provider: config.provider,
-        apiKey,
-      });
-    });
-  }, []);
-  const aiConfigSynced = useRef("");
+  const aiContext = useRef<AiHostContext>({ connection: null, session: null, canManage: false, trusted: false });
+  const [aiProvider] = useState(() => new AiProviderSession(() => aiContext.current));
+  const aiConnectionAvailable = connection.current instanceof NetworkConnection && isLoopbackEndpoint(connection.current.endpoint) && (hosting.current || import.meta.env.DEV);
+  useLayoutEffect(() => {
+    aiContext.current = { connection: connection.current, session: session.current ? { ...session.current } : null, canManage: !!snapshot?.canManage, trusted: aiConnectionAvailable };
+  });
+  const saveAiProvider = useCallback((config: AiConfig) => aiProvider.save(config), [aiProvider]);
+  const testAiProvider = useCallback((config: AiConfig) => aiProvider.test(config), [aiProvider]);
+  const clearAiProvider = useCallback((provider: AiProviderSettings) => aiProvider.clear(provider), [aiProvider]);
   useEffect(() => {
-    void migrateAiCredentials().catch((error) =>
-      setNotice(error instanceof Error ? error.message : String(error)),
-    );
-  }, []);
+    if (!llmUiEnabled) return;
+    void migrateAiCredentials().catch((error) => setNotice(error instanceof Error ? error.message : String(error)));
+    return () => aiProvider.reset();
+  }, [aiProvider]);
   useEffect(() => {
-    if (status !== "已连接") {
-      aiConfigSynced.current = "";
-      return;
-    }
-    if (!snapshot?.canManage || !session.current) return;
-    const key = `${snapshot.room}:${session.current.token}`;
-    if (aiConfigSynced.current === key) return;
-    aiConfigSynced.current = key;
-    void (async () => {
-      try {
-        await migrateAiCredentials();
-        const provider = loadAiProvider();
-        if (!provider?.model) return;
-        const apiKey = await loadAiApiKey();
-        if (aiProviderNeedsKey(provider.format) && !apiKey) return;
-        if (!session.current) return;
-        connection.current?.send({
-          type: "ai-config",
-          token: session.current.token,
-          provider,
-          apiKey,
-        });
-      } catch (error) {
-        setNotice(error instanceof Error ? error.message : String(error));
-      }
-    })();
-  }, [status, snapshot?.room, snapshot?.canManage]);
+    if (!llmUiEnabled) return;
+    if (status !== "已连接") { aiProvider.reset(); return; }
+    void aiProvider.sync().catch((error) => setNotice(error instanceof Error ? error.message : String(error)));
+  }, [aiProvider, status, snapshot?.room, snapshot?.canManage]);
   const receive = async (response: Response) => {
-    if (response.type === "ai-test") {
-      const pending = aiTestPending.current.get(response.requestId);
-      if (pending) {
-        clearTimeout(pending.timer);
-        aiTestPending.current.delete(response.requestId);
-        if (response.ok) pending.resolve(response.message);
-        else pending.reject(new Error(response.message));
-      }
-      return;
-    }
+    if (llmUiEnabled && aiProvider.receive(response)) return;
     if (nativeShell && (response.type === "closed" || response.type === "left"))
       postNativeShell({ type: "closed" });
     if (
@@ -802,14 +751,6 @@ function App() {
     if (response.type === "interaction" && preferencesRef.current.interactions)
       setInteractions((events) => [...events, response.event].slice(-8));
     if (response.type === "error") {
-      const failedTest = response.id
-        ? aiTestPending.current.get(response.id)
-        : undefined;
-      if (failedTest && response.id) {
-        clearTimeout(failedTest.timer);
-        aiTestPending.current.delete(response.id);
-        failedTest.reject(new Error(response.message));
-      }
       setNotice(response.message);
       if (preferencesRef.current.turnSound) cuePlayer.play("reject");
       if (response.diagnostic) setComputeFailure(response.diagnostic);
@@ -829,7 +770,15 @@ function App() {
           token: response.token,
           ready: true,
         });
-        connection.current?.send({ type: "start", token: response.token });
+        const words =
+          nativeTableKind === "drawguess"
+            ? loadDrawWordLibrary().words
+            : [];
+        connection.current?.send({
+          type: "start",
+          token: response.token,
+          ...(words.length ? { drawWords: words } : {}),
+        });
       }
     }
     if (response.type === "snapshot") {
@@ -1052,7 +1001,9 @@ function App() {
     connectRef.current = connect;
   });
   useEffect(() => {
-    if (!nativeTableKind || nativeTableStarted.current) return;
+    let active = true;
+    queueMicrotask(() => {
+    if (!active || !nativeTableKind || nativeTableStarted.current) return;
     nativeTableStarted.current = true;
     void connectRef.current(
       localRoomConfigFromParams(nativeTableKind, invited),
@@ -1062,6 +1013,8 @@ function App() {
       false,
       false,
     );
+    });
+    return () => { active = false; };
   }, [nativeTableKind]);
   useEffect(() => {
     if (!nativeRuns) return;
@@ -1103,14 +1056,19 @@ function App() {
   const autoJoined = useRef(false);
   useEffect(() => {
     if (autoJoined.current || !invited.has("room") || snapshot) return;
-    autoJoined.current = true;
-    join(
-      invited.get("name")?.trim() ||
-        localStorage.getItem("player-name") ||
-        "我",
-      invitationLink(invited.get("room") || "", initialService),
-      nativeSpectator,
-    );
+    let active = true;
+    queueMicrotask(() => {
+      if (!active || autoJoined.current) return;
+      autoJoined.current = true;
+      join(
+        invited.get("name")?.trim() ||
+          localStorage.getItem("player-name") ||
+          "我",
+        invitationLink(invited.get("room") || "", initialService),
+        nativeSpectator,
+      );
+    });
+    return () => { active = false; };
   }, [snapshot, invited, initialService, join]);
   const leave = async () => {
     if (!session.current || !snapshot) return;
@@ -1287,6 +1245,9 @@ function App() {
     },
     [snapshot?.version, snapshot?.room],
   );
+  useEffect(() => {
+    if (snapshot?.room) prefetchGameSurface();
+  }, [snapshot?.room]);
   const end = useCallback(() => {
     const current = session.current;
     if (!current) return;
@@ -1298,9 +1259,16 @@ function App() {
       });
   }, []);
   const restart = useCallback(() => {
-    if (session.current && operation.begin("start", session.current.room))
-      connection.current?.send({ type: "start", token: session.current.token });
-  }, []);
+    if (session.current && operation.begin("start", session.current.room)) {
+      const words =
+        snapshot?.kind === "drawguess" ? loadDrawWordLibrary().words : [];
+      connection.current?.send({
+        type: "start",
+        token: session.current.token,
+        ...(words.length ? { drawWords: words } : {}),
+      });
+    }
+  }, [snapshot?.kind]);
   const review = useCallback(() => setTab("audit"), []);
   const gameSnapshot = useMemo(
     () => (snapshot ? toGameSnapshot(snapshot) : null),
@@ -1367,6 +1335,12 @@ function App() {
             voice.send({ type: "push", pressed: true });
         },
       },
+      ...(capabilities.desktop ? [{
+        id: "view.borderless",
+        title: borderless ? "退出无边框全屏" : "无边框全屏",
+        binding: borderlessToggleBinding,
+        run: () => { void toggleBorderless(); },
+      }] : []),
       {
         id: "app.shortcuts",
         title: "查看快捷键",
@@ -1448,7 +1422,7 @@ function App() {
       stop.forEach((dispose) => dispose());
       window.removeEventListener("keydown", handle);
     };
-  }, [registry, snapshot, mode, preferences.bindings, settingsOpen, mobile]);
+  }, [registry, snapshot, mode, preferences.bindings, settingsOpen, mobile, borderless, toggleBorderless]);
   useEffect(() => {
     const commands = [
       {
@@ -1532,7 +1506,7 @@ function App() {
       },
       {
         id: "view.focus",
-        title: focused ? "退出专注" : "专注模式",
+        title: focused ? "退出沉浸" : "沉浸模式",
         binding: focusToggleBinding,
         enabled: () => !!snapshot?.playing && !snapshot.finished,
         run: () => setFocused((value) => !value),
@@ -1759,7 +1733,12 @@ function App() {
           />
         )}
         <div
-          className={`app-shell ${mobile ? "mobile-shell" : ""} ${nativeTableKind ? "native-table-shell" : ""} ${nativeRoomMode || (nativeRuns && snapshot) ? "native-room-shell" : ""} ${nativeRuns && !snapshot ? "native-runs-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""}`}
+          className={`app-shell ${mobile ? "mobile-shell" : ""} ${nativeTableKind ? "native-table-shell" : ""} ${nativeRoomMode || (nativeRuns && snapshot) ? "native-room-shell" : ""} ${nativeRuns && !snapshot ? "native-runs-shell" : ""} ${immersive ? "mobile-immersive" : ""} ${tableFocused ? "table-focused" : ""} ${preferences.cardClickMotion ? "" : "card-motion-off"}`}
+          style={
+            {
+              "--card-scale": preferences.cardScale,
+            } as React.CSSProperties
+          }
         >
           <Confirmation />
           <FpsMeter visible={preferences.showFps} />
@@ -1813,12 +1792,17 @@ function App() {
           {!mobile && (
             <Records
               open={recordsOpen}
-              onOpenChange={setRecordsOpen}
+              initialReplay={initialReplay}
+              onOpenChange={(open) => {
+                setRecordsOpen(open);
+                if (!open) setInitialReplay(undefined);
+              }}
               onError={setNotice}
             />
           )}
           <Settings
             initialSection={settingsSection}
+            showLlm={llmUiEnabled}
             mediaSession={
               snapshot?.canManage && session.current && mode === "network"
                 ? { ...session.current, endpoint: service }
@@ -1840,6 +1824,8 @@ function App() {
             onCompanionChange={sendCompanion}
             onSaveAiConfig={saveAiProvider}
             onTestAiConfig={testAiProvider}
+            onClearAiConfig={clearAiProvider}
+            aiConnectionAvailable={aiConnectionAvailable}
             onError={setNotice}
             open={settingsOpen}
             onOpenChange={setSettingsOpen}
@@ -1883,25 +1869,16 @@ function App() {
                   onAbandonRun={abandonRun}
                 />
               )}
+              {capabilities.desktop && (
+                <Button onClick={() => void toggleBorderless()} aria-pressed={borderless}>
+                  {borderless ? "退出全屏" : "全屏"} <Shortcut binding={preferences.bindings["view.borderless"] ?? borderlessToggleBinding} />
+                </Button>
+              )}
               {!mobile && (
                 <Button onClick={() => setAboutOpen(true)}>关于</Button>
               )}
               {!mobile && (
                 <Button onClick={() => setRecordsOpen(true)}>对局记录</Button>
-              )}
-              {snapshot && (
-                <Button
-                  className={unread ? "chat-unread" : ""}
-                  onClick={toggleChat}
-                >
-                  聊天{unread ? ` · ${unread}` : ""}{" "}
-                  <Shortcut
-                    binding={
-                      preferences.bindings["app.chat"] ??
-                      `${platformModifier()}+J`
-                    }
-                  />
-                </Button>
               )}
               {snapshot && (
                 <VoiceToolbar
@@ -1957,7 +1934,7 @@ function App() {
               void cancelConnect().catch((error) => setNotice(String(error)))
             }
           />
-          <SceneSurface scene={sceneKey(snapshot)}>
+          <SceneSurface scene={snapshot?.room ?? "lobby"}>
             {!snapshot && mobile ? (
               nativeRuns ? (
                 <main className="native-runs-page">
@@ -1965,6 +1942,7 @@ function App() {
                     选择一次远征继续，存档保存在本机或原房间服务。
                   </p>
                   <RunShelf
+                    showEmpty
                     busy={busy}
                     onRestore={restoreRun}
                     onAbandon={abandonRun}
@@ -2007,16 +1985,6 @@ function App() {
               )
             ) : !snapshot ? (
               <>
-                <QuickStart
-                  desktop={isTauri()}
-                  showGuide={preferences.showQuickStart}
-                  showVoice={preferences.showVoiceShortcut}
-                  expanded={preferences.quickStartOpen}
-                  onExpandedChange={(quickStartOpen) =>
-                    changePreferences({ ...preferences, quickStartOpen })
-                  }
-                  onVoiceSettings={() => voice.send({ type: "settings" })}
-                />
                 <Lobby
                   service={service}
                   initialRoom={invited.get("room") || ""}
@@ -2030,6 +1998,7 @@ function App() {
             ) : (
               <main
                 className={`room-layout ${sidebarVisible ? "sidebar-open" : "chat-hidden"} ${snapshot.state && tab === "game" ? "playing-room" : ""} ${tableFocused ? "focused-room" : ""} ${guideLocated ? "guide-located" : ""}`}
+                data-table-workspace={snapshot.playing && (snapshot.config.arcade || ["miner", "sgs", "uno"].includes(snapshot.kind)) ? "shared" : undefined}
                 style={
                   {
                     "--chat-width": `${sidebarWidth}px`,
@@ -2041,7 +2010,10 @@ function App() {
                     snapshot={snapshot}
                     mobile={mobile}
                     focused={tableFocused}
-                    onFocus={() => setFocused(!focused)}
+                    onChat={toggleChat}
+                    chatOpen={sidebarOpen && sidebarTab === "chat"}
+                    unread={unread}
+                    onFocus={() => setFocused((value) => !value)}
                     onEnd={tab === "game" ? end : undefined}
                     preferences={preferences}
                     onTheme={(theme) =>
@@ -2066,6 +2038,7 @@ function App() {
                       !mobile && !!guideFor(snapshot.kind, snapshot.config)
                     }
                     guideShown={guideShown}
+                    showLlm={llmUiEnabled}
                     onPractice={
                       gameCatalogue[snapshot.kind].ai
                         ? () =>
@@ -2103,18 +2076,6 @@ function App() {
                             });
                           }
                         : undefined
-                    }
-                  />
-                  <ComputeStatus
-                    details={preferences.computeDetails}
-                    benchmarkVisible={preferences.benchmarkVisible}
-                    snapshot={snapshot}
-                    control={(enabled) =>
-                      connection.current!.send({
-                        type: "ai-run",
-                        token: session.current!.token,
-                        enabled,
-                      })
                     }
                   />
                   <div className="room-navigation">
@@ -2200,12 +2161,50 @@ function App() {
                         </nav>
                       )}
                   </div>
+                  {tab === "game" && snapshot.arcade && (
+                    <ArcadeProgress
+                      arcade={snapshot.arcade}
+                      serverTime={snapshot.serverTime}
+                      paused={snapshot.paused}
+                      onRetreat={snapshot.arcade.phase === "playing" && snapshot.canManage && !snapshot.paused && snapshot.arcade.settings?.countdown === false ? () => {
+                        const run = snapshot.arcade!;
+                        const current = session.current;
+                        if (!current) return;
+                        void confirmation.request("撤离会按本节失败结算。", "提前撤离").then((confirmed) => {
+                          if (confirmed && session.current === current)
+                            connection.current?.send({ type: "arcade", token: current.token, action: { type: "retreat", run: run.id, stage: run.stage } });
+                        });
+                      } : undefined}
+                    />
+                  )}
                   {tab === "game" && (
-                    <>
-                      {!snapshot.state ? (
+                    <SceneSurface scene={sceneKey(snapshot)} className="room-game-scene">
+                      {snapshot.arcade && snapshot.arcade.phase !== "playing" ? (
+                        <>
+                          {snapshot.paused && <TableChrome snapshot={snapshot} pending={false} showTurn={false} />}
+                          <div className="game-stage">
+                            <ArcadeTable
+                              snapshot={{ ...snapshot, arcade: snapshot.arcade }}
+                              act={(action) => {
+                                if (session.current)
+                                  connection.current?.send({ type: "arcade", token: session.current.token, action });
+                              }}
+                              onReplay={mobile ? undefined : (playId) => {
+                                const replay = snapshot.records.find((record) => recordKey(record) === playId);
+                                if (replay) {
+                                  setInitialReplay(replay);
+                                  setRecordsOpen(true);
+                                }
+                              }}
+                              onStart={restart}
+                            />
+                          </div>
+                        </>
+                      ) : !snapshot.state ? (
                         <div className="lobby">
                           <PregamePanel
                             snapshot={snapshot}
+                            showLlm={llmUiEnabled}
                             starting={pendingOperation?.kind === "start"}
                             onReady={() =>
                               connection.current!.send({
@@ -2242,6 +2241,10 @@ function App() {
                               setSettingsSection("接入 AI");
                               setSettingsOpen(true);
                             }}
+                            onOpenWordLibrary={() => {
+                              setSettingsSection("数据");
+                              setSettingsOpen(true);
+                            }}
                           />
                         </div>
                       ) : (
@@ -2252,6 +2255,20 @@ function App() {
                             showTurn={
                               gameCatalogue[snapshot.kind].presentation
                                 .kind === "upstream"
+                            }
+                            secondary={
+                              <ComputeStatus
+                                details={preferences.computeDetails}
+                                benchmarkVisible={preferences.benchmarkVisible}
+                                snapshot={snapshot}
+                                control={(enabled) =>
+                                  connection.current!.send({
+                                    type: "ai-run",
+                                    token: session.current!.token,
+                                    enabled,
+                                  })
+                                }
+                              />
                             }
                             finishedActions={
                               <>
@@ -2300,6 +2317,7 @@ function App() {
                           />
                           <div
                             className="game-stage"
+                            data-game={snapshot.kind}
                             aria-busy={actionPending}
                             onClickCapture={(event) => {
                               if (actionPending) {
@@ -2313,6 +2331,13 @@ function App() {
                               bindings={preferences.bindings}
                             >
                               <OriginalGameLazy
+                                onMinerPause={(paused) => {
+                                  if (session.current) connection.current?.send({
+                                    type: "miner-pause",
+                                    token: session.current.token,
+                                    paused,
+                                  });
+                                }}
                                 pending={actionPending}
                                 onAutoplay={(enabled, index) =>
                                   connection.current!.send({
@@ -2332,6 +2357,16 @@ function App() {
                                 sound={preferences.interactionSound}
                                 poolRenderer={preferences.poolRenderer}
                                 poolSound={preferences.poolSound}
+                                golfRenderer={preferences.golfRenderer}
+                                golfEnvironment={preferences.golfEnvironment}
+                                poolEnvironment={preferences.poolEnvironment}
+                                scene3dQuality={preferences.scene3dQuality}
+                                onGolfRendererChange={(golfRenderer) =>
+                                  setPreferences((value) => ({
+                                    ...value,
+                                    golfRenderer,
+                                  }))
+                                }
                                 soundVolume={preferences.soundVolume}
                                 onPoolRendererChange={(poolRenderer) =>
                                   setPreferences((value) => ({
@@ -2340,7 +2375,7 @@ function App() {
                                   }))
                                 }
                                 onInteractionEnd={finishInteraction}
-                                restart={restart}
+                                restart={snapshot.arcade ? undefined : restart}
                                 snapshot={gameSnapshot!}
                                 motionPreferences={preferences}
                                 onMotion={(motion) =>
@@ -2363,15 +2398,10 @@ function App() {
                                 }
                               />
                             </GameCommandProvider>
-                            {actionPending && (
-                              <div className="action-feedback" role="status">
-                                正在同步操作…
-                              </div>
-                            )}
                           </div>
                         </>
                       )}
-                    </>
+                    </SceneSurface>
                   )}
                   {!mobile && preferences.auditVisible && tab === "audit" && (
                     <Audit snapshot={snapshot} />
@@ -2470,6 +2500,7 @@ function App() {
                   />
 
                   <ChatPanel
+                    hideCompanion={!llmUiEnabled}
                     showClose={false}
                     snapshot={snapshot}
                     endpoint={mode === "network" ? service : undefined}

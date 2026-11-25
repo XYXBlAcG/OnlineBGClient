@@ -1,3 +1,4 @@
+import { requestAiWindow } from "./ai-request";
 import "../ui/platform-controls.css";
 import { GameSizeProvider } from "../game-sizing/GameSizing";
 import { bindAuxiliary, useWindowReady } from "./windows";
@@ -6,10 +7,10 @@ import { useEffect, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ChatPanel } from "../ChatPanel";
+import { llmUiEnabled } from "../llm-ui";
 import { BeginnerGuide } from "../BeginnerGuide";
 import { RoomSetup } from "../RoomSetup";
 import { Settings } from "../Settings";
-import type { AiConfig } from "../ai-config";
 import { About } from "../About";
 import { Invite } from "../Invite";
 import { Records } from "../Records";
@@ -71,36 +72,6 @@ export function AuxiliaryRoot() {
     void sendAuxiliary(intent).catch((error) => setError(String(error)));
   };
   const close = () => send({ view: auxiliaryView!, type: "close" });
-  const testAiConfig = (config: AiConfig): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const request =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random()}`;
-      let dispose: (() => void) | undefined;
-      const timer = setTimeout(() => {
-        dispose?.();
-        reject(new Error("测试超时"));
-      }, 30000);
-      void listen<{ request: string; ok: boolean; message: string }>(
-        "ai-test-result",
-        (event) => {
-          if (event.payload.request !== request) return;
-          clearTimeout(timer);
-          dispose?.();
-          if (event.payload.ok) resolve(event.payload.message);
-          else reject(new Error(event.payload.message));
-        },
-      )
-        .then((stop) => {
-          dispose = stop;
-          send({ view: "settings", type: "ai-test", request, config });
-        })
-        .catch((error) => {
-          clearTimeout(timer);
-          reject(error);
-        });
-    });
   const onError = (message: string) => {
     setError(message);
     send({ view: auxiliaryView!, type: "error", message });
@@ -155,6 +126,7 @@ export function AuxiliaryRoot() {
                 send({ type: "chat-banners", view: "chat", enabled })
               }
               showClose={false}
+              hideCompanion={!llmUiEnabled}
               snapshot={payload.snapshot}
               endpoint={payload.endpoint}
               preferences={{
@@ -201,6 +173,8 @@ export function AuxiliaryRoot() {
                 enabled: () => true,
               }))}
               canConfigureAI={payload.canConfigureAI}
+              showLlm={llmUiEnabled}
+              aiConnectionAvailable={payload.aiConnectionAvailable}
               roomPerformance={payload.roomPerformance}
               mediaSession={payload.mediaSession}
               initialSection={payload.initialSection}
@@ -213,9 +187,14 @@ export function AuxiliaryRoot() {
                 send({ view: "settings", type: "companion", config })
               }
               onSaveAiConfig={(config) =>
-                send({ view: "settings", type: "ai-provider", config })
+                requestAiWindow({ type: "ai-provider", config })
               }
-              onTestAiConfig={testAiConfig}
+              onTestAiConfig={(config) =>
+                requestAiWindow({ type: "ai-test", config })
+              }
+              onClearAiConfig={(provider) =>
+                requestAiWindow({ type: "ai-clear", provider })
+              }
               onBind={bindAuxiliary}
               onError={onError}
               onTestAchievement={() =>
@@ -226,6 +205,7 @@ export function AuxiliaryRoot() {
           {payload?.view === "roomsetup" && (
             <RoomSetup
               snapshot={payload.snapshot}
+              showLlm={llmUiEnabled}
               onApply={(setup) =>
                 send({ view: "roomsetup", type: "setup", setup })
               }
@@ -247,6 +227,7 @@ export function AuxiliaryRoot() {
           {payload?.view === "records" && (
             <Records
               open
+              initialReplay={payload.initialReplay}
               onOpenChange={close}
               onError={onError}
               onReady={acceptRecords}

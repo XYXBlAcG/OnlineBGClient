@@ -26,10 +26,21 @@ export class GraphwarRules {
     _team: boolean,
     options?: GameOptions,
   ): GraphwarState {
+    const cooperativeSeats = options?.arcadeScenario?.kind === "graphwar"
+      ? options.arcadeScenario.cooperativeSeats
+      : undefined;
+    const teams = cooperativeSeats
+      ? Array.from({ length: players }, (_, seat) => seat)
+          .sort((left, right) => Number(cooperativeSeats.includes(right)) - Number(cooperativeSeats.includes(left)))
+          .reduce<number[]>((result, seat, index) => {
+            result[seat] = Number(index >= players / 2);
+            return result;
+          }, [])
+      : undefined;
     const config = graphwarOptionsSchema.parse(options?.graphwar ?? {}),
       map = options?.graphwarInitial
         ? graphwarInitialSchema.parse(options.graphwarInitial)
-        : generateBattlefield(players, config, this.random);
+        : generateBattlefield(players, config, this.random, teams);
     if (
       map.teams.length !== players ||
       map.soldiers.length !== players * config.soldiers ||
@@ -46,6 +57,7 @@ export class GraphwarRules {
         solver: 2,
         options: config,
         ...map,
+        ...(cooperativeSeats ? { arcadeCooperative: true } : {}),
         craters: [],
         sequence: 0,
         turn: 0,
@@ -201,7 +213,10 @@ export class GraphwarRules {
     const survivors = [0, 1].map((team) =>
       v.soldiers.filter((s) => s.hp > 0 && v.teams[s.player] === team),
     );
-    if (survivors.some((s) => !s.length) || v.sequence >= actionLimit(v)) {
+    if (
+      survivors.some((s) => !s.length) ||
+      (!v.arcadeUncapped && v.sequence >= actionLimit(v))
+    ) {
       const value = survivors.map(
         (units) =>
           units.length * (balance.hp * v.soldiers.length + 1) +
@@ -214,8 +229,14 @@ export class GraphwarRules {
     const own = v.soldiers.filter((s) => s.player === actor);
     v.cursors[actor] =
       (own.findIndex((s) => s.id === v.currentSoldier) + 1) % own.length;
-    for (let i = 1; i <= v.teams.length; i++) {
-      const player = (actor + i) % v.teams.length,
+    const seats = v.teams.map((_, seat) => seat);
+    const rivals = seats.filter((seat) => v.teams[seat] === 1);
+    const order = v.arcadeCooperative
+      ? seats.filter((seat) => v.teams[seat] === 0).flatMap((seat, index) => [seat, rivals[index]!])
+      : seats;
+    const turnIndex = order.indexOf(actor);
+    for (let i = 1; i <= order.length; i++) {
+      const player = order[(turnIndex + i) % order.length]!,
         army = v.soldiers.filter((s) => s.player === player);
       for (let slot = 0; slot < army.length; slot++) {
         const index = (v.cursors[player] + slot) % army.length;

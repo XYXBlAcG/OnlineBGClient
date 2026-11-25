@@ -11,22 +11,20 @@ import {
   type CompanionConfig,
 } from "../domain/companion";
 import type { Snapshot } from "../domain/protocol";
-import {
-  hasAiApiKey,
-  loadAiProvider,
-  type AiConfig,
-} from "./ai-config";
+import { hasAiApiKey, loadAiProvider, type AiConfig } from "./ai-config";
 
 export function AiProviderSettings({
   fallbackProvider,
   status,
   onSaveProvider,
   onTestProvider,
+  onClearProvider,
   onError,
 }: {
   fallbackProvider?: AiProviderSettings;
   status?: Snapshot["companion"];
-  onSaveProvider: (config: AiConfig) => void | Promise<void>;
+  onSaveProvider: (config: AiConfig) => Promise<string>;
+  onClearProvider?: (provider: AiProviderSettings) => Promise<string>;
   onTestProvider?: (config: AiConfig) => Promise<string>;
   onError: (message: string) => void;
 }) {
@@ -35,17 +33,16 @@ export function AiProviderSettings({
   );
   const [apiKey, setApiKey] = useState("");
   const [hasKey, setHasKey] = useState(false);
-  const [saved, setSaved] = useState(
-    () => !!loadAiProvider()?.model,
-  );
-  const [busy, setBusy] = useState<"save" | "test" | null>(null);
+  const [saved, setSaved] = useState(() => !!loadAiProvider()?.model);
+  const [busy, setBusy] = useState<"save" | "test" | "clear" | null>(null);
   const [notice, setNotice] = useState("");
   const formatInfo = aiProviderFormatInfo[provider.format];
   const configured = status?.configured ?? false;
 
   useEffect(() => {
     let active = true;
-    void hasAiApiKey()
+    setHasKey(false);
+    void hasAiApiKey(provider)
       .then((value) => {
         if (active) setHasKey(value);
       })
@@ -53,7 +50,7 @@ export function AiProviderSettings({
     return () => {
       active = false;
     };
-  }, []);
+  }, [provider.format, provider.baseUrl]);
 
   const changeFormat = (format: AiProviderFormat): void => {
     setProvider((current) => {
@@ -75,19 +72,20 @@ export function AiProviderSettings({
       onError("请填写模型名称");
       return null;
     }
-    if (
-      aiProviderNeedsKey(provider.format) &&
-      !apiKey.trim() &&
-      !hasKey
-    ) {
+    if (aiProviderNeedsKey(provider.format) && !apiKey.trim() && !hasKey) {
       onError("请填写 API Key");
       return null;
     }
-    return aiProviderSettingsSchema.parse({
+    const parsed = aiProviderSettingsSchema.safeParse({
       ...provider,
       model,
       baseUrl: provider.baseUrl.trim(),
     });
+    if (!parsed.success) {
+      onError(parsed.error.issues.map((issue) => issue.message).join("；"));
+      return null;
+    }
+    return parsed.data;
   };
 
   const saveProvider = async (): Promise<void> => {
@@ -97,14 +95,15 @@ export function AiProviderSettings({
     setNotice("");
     try {
       const typedKey = apiKey.trim();
-      await onSaveProvider({ provider: next, apiKey: typedKey });
+      const message = await onSaveProvider({
+        provider: next,
+        apiKey: typedKey,
+      });
       setProvider(next);
       setApiKey("");
       setSaved(true);
-      setNotice("已保存 AI 配置。");
-      setHasKey(
-        typedKey ? true : await hasAiApiKey().catch(() => hasKey),
-      );
+      setNotice(message);
+      setHasKey(typedKey ? true : await hasAiApiKey(next).catch(() => hasKey));
     } catch (error) {
       onError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -122,10 +121,27 @@ export function AiProviderSettings({
     setBusy("test");
     setNotice("");
     try {
-      setNotice(await onTestProvider({ provider: next, apiKey: apiKey.trim() }));
+      setNotice(
+        await onTestProvider({ provider: next, apiKey: apiKey.trim() }),
+      );
     } catch (error) {
       setNotice(error instanceof Error ? error.message : String(error));
     } finally {
+      setBusy(null);
+    }
+  };
+
+  const clearProvider = async (): Promise<void> => {
+    if (!onClearProvider) return;
+    setBusy("clear");
+    try {
+      setNotice(await onClearProvider(provider));
+      setApiKey("");
+      setHasKey(false);
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "清除失败");
+    } finally {
+      setHasKey(await hasAiApiKey(provider).catch(() => hasKey));
       setBusy(null);
     }
   };
@@ -137,9 +153,7 @@ export function AiProviderSettings({
         <Select
           aria-label="AI 接口格式"
           value={provider.format}
-          onValueChange={(format) =>
-            changeFormat(format as AiProviderFormat)
-          }
+          onValueChange={(format) => changeFormat(format as AiProviderFormat)}
         >
           {Object.entries(aiProviderFormatInfo).map(([value, info]) => (
             <option key={value} value={value}>
@@ -195,10 +209,60 @@ export function AiProviderSettings({
           onChange={(event) => setApiKey(event.target.value)}
         />
       </label>
+      <details>
+        <summary>生成参数</summary>
+        {(provider.format === "openai" || provider.format === "opencode") && (
+          <label className="setting-row ai-provider-row">
+            参数格式
+            <Select
+              aria-label="模型参数格式"
+              value={provider.compatibility}
+              onValueChange={(compatibility) =>
+                setProvider({
+                  ...provider,
+                  compatibility: compatibility as "standard" | "reasoning",
+                })
+              }
+            >
+              <option value="standard">标准对话</option>
+              <option value="reasoning">推理模型（不发送随机性）</option>
+            </Select>
+          </label>
+        )}
+        {(
+          [
+            ["temperature", "随机性", 0, 2, 0.1],
+            ["contextWindow", "上下文窗口", 1024, 1000000, 1],
+            ["maxOutputTokens", "输出上限", 16, 4096, 1],
+            ["timeoutMs", "请求时限（毫秒）", 1000, 120000, 1000],
+          ] as const
+        ).map(([key, label, min, max, step]) => (
+          <label className="setting-row ai-provider-row" key={key}>
+            {label}
+            <input
+              className="ai-provider-input"
+              type="number"
+              aria-label={label}
+              min={min}
+              max={max}
+              step={step}
+              value={provider[key]}
+              onChange={(event) =>
+                setProvider({ ...provider, [key]: Number(event.target.value) })
+              }
+            />
+          </label>
+        ))}
+      </details>
+      {!onTestProvider && (
+        <p className="muted">
+          创建本机联机房间后可测试模型。本地对局使用搜索 AI。
+        </p>
+      )}
       <div className="ai-provider-actions">
         <button
           type="button"
-          disabled={busy !== null}
+          disabled={busy !== null || !onTestProvider}
           onClick={() => void testProvider()}
         >
           {busy === "test" ? "测试中…" : "测试连接"}
@@ -210,11 +274,20 @@ export function AiProviderSettings({
         >
           {busy === "save" ? "保存中…" : "保存 AI 配置"}
         </button>
+        {onClearProvider && (
+          <button
+            type="button"
+            disabled={busy !== null || (!hasKey && !configured)}
+            onClick={() => void clearProvider()}
+          >
+            {busy === "clear" ? "清除中…" : "清除密钥并断开 AI"}
+          </button>
+        )}
       </div>
       <p className="muted" role="status">
         {notice ||
           (configured
-            ? `已接入 ${formatInfo.label} · ${provider.model || "未填写模型"}`
+            ? "当前房间已配置模型；修改后请重新保存并测试。"
             : status
               ? "保存后即可启用 AI 聊天。"
               : saved
@@ -254,7 +327,10 @@ export function AiChatSettings({
       <Switch
         label="启用 AI 聊天"
         checked={config.policy.enabled}
-        disabled={!status.available}
+        disabled={
+          !config.policy.enabled &&
+          (!status.available || !status.server || !status.configured)
+        }
         onCheckedChange={(enabled) =>
           onChange({
             ...config,
@@ -263,10 +339,12 @@ export function AiChatSettings({
           })
         }
       />
-      {!status.available ? (
+      {!status.server ? (
         <p className="muted">
-          请先在准备页面添加 AI 席位，并选择聊天 AI。
+          本地对局使用搜索 AI；本机联机房间可启用 AI 聊天。
         </p>
+      ) : !status.available ? (
+        <p className="muted">请先在准备页面添加 AI 席位，并选择聊天 AI。</p>
       ) : (
         <p className="muted">
           保存 AI 配置后开启；聊天 AI 和 AI 驱动可在准备页面调整。

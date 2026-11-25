@@ -7,9 +7,10 @@ import {
 } from "node:fs/promises";
 import { resolve, join, sep } from "node:path";
 import { createHash } from "node:crypto";
+import { releaseChannel } from "./lib/release-sources.mjs";
+
 export async function prepareRelease(input, output, version, tag, repo) {
-  if (!/^\d+\.\d+\.\d+$/.test(version) || tag !== `v${version}`)
-    throw Error("正式标签与应用版本不一致");
+  const { preview } = releaseChannel(version, tag);
   if (!/^[\w.-]+\/[\w.-]+$/.test(repo || "")) throw Error("发布仓库无效");
   const history = JSON.parse(
       await readFile("src/client/releases.json", "utf8"),
@@ -86,21 +87,23 @@ export async function prepareRelease(input, output, version, tag, repo) {
     checks.push(`${createHash("sha256").update(bytes).digest("hex")}  ${name}`);
     downloads.push(`| 共享字体（可选） | \`${name}\` | 按需下载 |`);
   }
-  const latest = join(out, "latest.json");
-  await writeFile(
-    latest,
-    JSON.stringify(
-      {
-        version,
-        notes: release.changes.join("\n"),
-        pub_date: `${release.date}T00:00:00Z`,
-        platforms: targets,
-      },
-      null,
-      2,
-    ) + "\n",
-  );
-  assets.push(latest);
+  if (!preview) {
+    const latest = join(out, "latest.json");
+    await writeFile(
+      latest,
+      JSON.stringify(
+        {
+          version,
+          notes: release.changes.join("\n"),
+          pub_date: `${release.date}T00:00:00Z`,
+          platforms: targets,
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    assets.push(latest);
+  }
   const sums = join(out, "SHA256SUMS.txt");
   await writeFile(sums, checks.join("\n") + "\n");
   assets.push(sums);
@@ -110,6 +113,6 @@ export async function prepareRelease(input, output, version, tag, repo) {
       "\n",
     )}\n\n## 下载\n\n| 平台 | 文件 | 安装 |\n| --- | --- | --- |\n${downloads.join(
     "\n",
-  )}\n\n\`latest.json\`、\`.sig\` 和 \`SHA256SUMS.txt\` 用于自动更新与完整性校验，无需手动下载。\n`;
+  )}\n\n${preview ? "预览版请手动安装。SHA256SUMS.txt 用于校验下载文件。" : "`latest.json`、`.sig` 和 `SHA256SUMS.txt` 用于自动更新与完整性校验。"}\n`;
   return { assets, notes, tag, version };
 }

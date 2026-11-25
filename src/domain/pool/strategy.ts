@@ -1,3 +1,4 @@
+import seedrandom from "seedrandom";
 import { Strategy, type SearchRequest } from "../strategy";
 import type {
   Candidate,
@@ -6,6 +7,7 @@ import type {
   Difficulty,
   GameState,
 } from "../types";
+import { requiredCueElevation } from "./cue";
 import { applyOutcome } from "./rules";
 import { simulateShot } from "./physics";
 import {
@@ -41,8 +43,7 @@ function ballInHandPlacement(view: PoolView, cue: PoolPoint): PoolPoint | null {
     { x: width / 3, y: height / 4 },
   ];
   return (
-    candidates.find((cue) => cuePlacementValid(view.balls, cue, layout)) ??
-    null
+    candidates.find((cue) => cuePlacementValid(view.balls, cue, layout)) ?? null
   );
 }
 
@@ -183,7 +184,7 @@ function shotCandidates(view: PoolView): Candidate[] {
         label: `安全击打 ${fallback.id} 号球`,
       });
   }
-  return candidates.slice(0, 18);
+  return candidates;
 }
 
 function evaluateCandidate(
@@ -201,7 +202,7 @@ function evaluateCandidate(
           : ball,
       )
     : view.balls;
-  const shot = simulateShot(balls, action, poolLayout(view.mode));
+  const shot = simulateShot(balls, action, poolLayout(view.mode), false);
   const next = applyOutcome(view, actor, shot);
   const target = Number(candidate.label.match(/\d+/)?.[0] ?? -1);
   const pocketed = shot.pocketed.some((item) => item.id === target);
@@ -229,6 +230,7 @@ function evaluateCandidate(
   if (next.winner === actor) score += 1000;
   if (next.winner !== null && next.winner !== actor) score -= 1000;
   if (next.foul) score -= 90;
+  score -= (action.elevation ?? 0) * 16;
   if (difficulty === "easy")
     score += (Math.sin(seed.length + target + shot.pocketed.length) * 35) % 35;
   if (difficulty === "hard" && !shot.cuePocketed) {
@@ -265,7 +267,43 @@ export class PoolStrategy extends Strategy {
 
   candidates(request: SearchRequest): Candidate[] {
     if (request.observation.kind !== "pool") return [];
-    return shotCandidates(request.observation.view);
+    const settings = {
+      easy: { limit: 4, aim: 0.14, power: 0.18 },
+      normal: { limit: 8, aim: 0.075, power: 0.11 },
+      hard: { limit: 14, aim: 0.026, power: 0.06 },
+    }[request.difficulty];
+    const { view } = request.observation;
+    const cue = view.balls.find((ball) => ball.id === 0);
+    if (!cue) return [];
+    const layout = poolLayout(view.mode);
+    const random = seedrandom(request.seed);
+    const direction = random() < 0.5 ? -1 : 1;
+    const offset = direction * (0.45 + 0.55 * random()) * settings.aim;
+    const strength = 1 + (random() * 2 - 1) * settings.power;
+    return shotCandidates(view)
+      .slice(0, settings.limit)
+      .map((candidate) => {
+        if (candidate.action.type !== "pool-shot") return candidate;
+        const aim = candidate.action.aim + offset;
+        const elevation = requiredCueElevation(
+          layout,
+          view.balls,
+          candidate.action.cue ?? cue,
+          aim,
+        );
+        return {
+          ...candidate,
+          action: {
+            ...candidate.action,
+            aim: Math.atan2(Math.sin(aim), Math.cos(aim)),
+            elevation,
+            power: Math.max(
+              0.12,
+              Math.min(1, candidate.action.power * strength),
+            ),
+          },
+        };
+      });
   }
 
   score(request: SearchRequest, moves: Candidate[]): DecisionCandidate[] {

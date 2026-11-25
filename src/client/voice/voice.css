@@ -200,3 +200,26 @@
   align-items: center;
   gap: 6px;
 }
+
+.voice-setup-guide {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--field);
+}
+.voice-setup-guide ol {
+  padding-left: 20px;
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.voice-setup-guide li + li {
+  margin-top: 10px;
+}
+.voice-setup-guide a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.voice-setup-guide .voice-heading {
+  flex-wrap: wrap;
+}

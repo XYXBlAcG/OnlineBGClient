@@ -3,7 +3,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 import { ThemeControl } from "../src/client/ThemeControl";
-import { gameKinds } from "../src/domain/catalogue";
 
 it("shares a labelled manual theme choice with phone and desktop controls", () => {
   const html = renderToStaticMarkup(
@@ -16,13 +15,16 @@ it("shares a labelled manual theme choice with phone and desktop controls", () =
 
 it("covers every board with shared theme tokens and keeps phone immersion full-height", () => {
   const theme = readFileSync("src/client/ui/board-themes.css", "utf8");
-  for (const kind of gameKinds)
-    expect(theme).toContain(`[data-game="${kind}"]`);
+  const board = readFileSync("src/styles.css", "utf8");
+  expect(board).toMatch(
+    /\.original-game \{[^}]+background: var\(--board-surface\)/,
+  );
+  expect(theme).toContain('[data-color-scheme="dark"] .original-game');
   expect(theme).not.toContain("invert(");
   const mobile = readFileSync("src/client/ui/mobile-table.css", "utf8");
   expect(mobile).toContain(".mobile-shell.mobile-immersive .room-layout");
   expect(mobile).toContain(
-    ".mobile-immersive .game-area > :not(.game-stage,.game-status-row)",
+    ".mobile-immersive .game-area > :not(.room-game-scene,.arcade-progress)",
   );
   expect(mobile).not.toContain(
     ".mobile-immersive .room-sidebar { display:none",

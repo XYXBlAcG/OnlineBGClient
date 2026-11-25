@@ -13,6 +13,65 @@ import * as SliderPrimitive from "@radix-ui/react-slider";
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
+export function Stepper({
+  value,
+  min,
+  max,
+  onValueChange,
+  label,
+  disabled = false,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onValueChange: (value: number) => void;
+  label: string;
+  disabled?: boolean;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  const clamp = (next: number) =>
+    Math.min(max, Math.max(min, Number.isFinite(next) ? next : value));
+  useEffect(() => setDraft(String(value)), [value]);
+  const commit = (raw: string) => {
+    const parsed = Number.parseInt(raw, 10);
+    const next = clamp(parsed);
+    onValueChange(next);
+    setDraft(String(next));
+  };
+  return (
+    <div className="ui-stepper" role="group" aria-label={label}>
+      <button
+        type="button"
+        aria-label={`减少${label}`}
+        disabled={disabled || value <= min}
+        onClick={() => onValueChange(clamp(value - 1))}
+      >
+        −
+      </button>
+      <input
+        aria-label={label}
+        inputMode="numeric"
+        value={draft}
+        disabled={disabled}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={() => commit(draft)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") commit(draft);
+          if (event.key === "Escape") setDraft(String(value));
+        }}
+      />
+      <button
+        type="button"
+        aria-label={`增加${label}`}
+        disabled={disabled || value >= max}
+        onClick={() => onValueChange(clamp(value + 1))}
+      >
+        ＋
+      </button>
+    </div>
+  );
+}
+
 export function Select({
   value,
   onValueChange,

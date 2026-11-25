@@ -1,96 +1,124 @@
 import {
   LlmError,
+  estimateTokens,
   type LlmProvider,
   type LlmRequest,
   type LlmTextResult,
   type LlmUsage,
 } from "companion-core";
-import type { AiProviderSettings } from "../domain/companion";
+import {
+  aiProviderSettingsSchema,
+  type AiProviderSettings,
+} from "../domain/companion";
 
 export interface LlmRunnerOptions {
   provider: LlmProvider | null;
   model: string;
+  temperature?: number;
   contextWindow?: number;
   maxOutputTokens?: number;
   timeoutMs?: number;
 }
 
-const DEFAULT_CONTEXT_WINDOW = 8192;
-const DEFAULT_MAX_OUTPUT_TOKENS = 160;
-const DEFAULT_TIMEOUT_MS = 8000;
-
 export class LlmRunner {
   private provider: LlmProvider | null;
-  private model: string;
-  private contextWindow: number;
-  private maxOutputTokens: number;
-  private timeoutMs: number;
+  private config: AiProviderSettings;
+  private active = new Set<AbortController>();
 
   constructor(options: LlmRunnerOptions) {
     this.provider = options.provider;
-    this.model = options.model;
-    this.contextWindow = options.contextWindow ?? DEFAULT_CONTEXT_WINDOW;
-    this.maxOutputTokens =
-      options.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
-    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.config = aiProviderSettingsSchema.parse(options);
   }
 
   get configured(): boolean {
     return this.provider !== null;
   }
+  get settings(): AiProviderSettings {
+    return { ...this.config };
+  }
 
   configure(provider: LlmProvider, settings: AiProviderSettings): void {
+    const next = aiProviderSettingsSchema.parse(settings);
+    this.clear();
     this.provider = provider;
-    this.model = settings.model;
-    this.contextWindow = settings.contextWindow;
-    this.maxOutputTokens = settings.maxOutputTokens;
-    this.timeoutMs = settings.timeoutMs;
+    this.config = next;
+  }
+
+  clear(): void {
+    for (const request of this.active) request.abort();
+    this.active.clear();
+    this.provider = null;
   }
 
   async complete(
     system: string,
     user: string,
-    maxOutputTokens = Math.min(32, this.maxOutputTokens),
-    timeoutMs = Math.min(8000, this.timeoutMs),
+    outputCap?: number,
+    timeoutCap?: number,
+    signal?: AbortSignal,
   ): Promise<string> {
-    if (!this.provider) throw new Error("AI 未配置");
-    return this.generate(system, user, maxOutputTokens, timeoutMs);
-  }
-
-  private async generate(
-    system: string,
-    user: string,
-    maxOutputTokens: number,
-    timeoutMs: number,
-  ): Promise<string> {
+    const provider = this.provider;
+    if (!provider) throw new Error("AI 未配置");
+    if (signal?.aborted) throw new LlmError("AI 请求已取消", "abort");
+    const settings = this.settings;
+    const maxOutputTokens = Math.min(
+      outputCap ?? settings.maxOutputTokens,
+      settings.maxOutputTokens,
+    );
+    if (
+      estimateTokens(system) + estimateTokens(user) + maxOutputTokens >
+      settings.contextWindow
+    )
+      throw new LlmError("AI 上下文超出已配置的预算", "invalid-output");
+    const timeoutMs = Math.min(
+      timeoutCap ?? settings.timeoutMs,
+      settings.timeoutMs,
+    );
+    const timeout = new AbortController();
+    const lifetime = new AbortController();
+    this.active.add(lifetime);
+    const combined = AbortSignal.any([
+      timeout.signal,
+      lifetime.signal,
+      ...(signal ? [signal] : []),
+    ]);
+    const timer = setTimeout(() => timeout.abort(), timeoutMs);
+    let onAbort: () => void = () => {};
+    const cancelled = new Promise<never>((_resolve, reject) => {
+      onAbort = () =>
+        reject(
+          new LlmError(
+            timeout.signal.aborted ? "AI 请求超时" : "AI 请求已取消",
+            timeout.signal.aborted ? "timeout" : "abort",
+          ),
+        );
+      if (combined.aborted) onAbort();
+      else combined.addEventListener("abort", onAbort, { once: true });
+    });
     try {
-      return await this.attempt(system, user, maxOutputTokens, timeoutMs);
-    } catch (error) {
-      if (!retryable(error)) throw error;
-      return this.attempt(system, user, maxOutputTokens, timeoutMs);
-    }
-  }
-
-  private async attempt(
-    system: string,
-    user: string,
-    maxOutputTokens: number,
-    timeoutMs: number,
-  ): Promise<string> {
-    const provider = this.provider!;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const result = await provider.generateText({
-        system,
-        messages: [{ role: "user", content: user }],
-        temperature: 0.8,
-        maxOutputTokens,
-        signal: controller.signal,
-      });
-      return result.text;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const result = await Promise.race([
+            provider.generateText({
+              model: settings.model,
+              system,
+              messages: [{ role: "user", content: user }],
+              temperature: settings.temperature,
+              maxOutputTokens,
+              signal: combined,
+            }),
+            cancelled,
+          ]);
+          return result.text;
+        } catch (error) {
+          if (combined.aborted || attempt >= 1 || !retryable(error))
+            throw error;
+        }
+      }
     } finally {
       clearTimeout(timer);
+      this.active.delete(lifetime);
+      combined.removeEventListener("abort", onAbort);
     }
   }
 }

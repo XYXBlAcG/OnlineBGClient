@@ -1,9 +1,11 @@
+import { supportsLlmDecisions } from "../domain/companion";
 import { gameCatalogue } from "../domain/catalogue";
 import type { SeatConfig, Snapshot } from "../domain/protocol";
 import { expeditionAiDifficultyNames } from "./expedition/ExpeditionOptionsControl";
 import { difficultyNames } from "./game-difficulty";
 import { roomReadiness } from "./room-readiness";
 import { Select, Switch } from "./ui/Controls";
+import { loadDrawWordLibrary } from "./drawguess/library";
 
 export function PregamePanel({
   snapshot,
@@ -14,6 +16,8 @@ export function PregamePanel({
   onChatAiSeatChange,
   onChatEnabledChange,
   onOpenAiSettings,
+  onOpenWordLibrary,
+  showLlm = true,
 }: {
   snapshot: Snapshot;
   starting: boolean;
@@ -23,6 +27,8 @@ export function PregamePanel({
   onChatAiSeatChange?: (index: number | null) => void;
   onChatEnabledChange?: (enabled: boolean) => void;
   onOpenAiSettings?: () => void;
+  onOpenWordLibrary?: () => void;
+  showLlm?: boolean;
 }) {
   const game = gameCatalogue[snapshot.kind],
     readiness = roomReadiness(snapshot.seats),
@@ -74,7 +80,10 @@ export function PregamePanel({
                   : "确认席位后准备"}
           </small>
         </div>
-        <div className="pregame-progress" aria-label={`${readyCount} 个席位已就绪`}>
+        <div
+          className="pregame-progress"
+          aria-label={`${readyCount} 个席位已就绪`}
+        >
           <strong>
             {readyCount}/{snapshot.seats.length}
           </strong>
@@ -94,7 +103,17 @@ export function PregamePanel({
             : "纯真人"}
         </span>
       </div>
-      {snapshot.canManage && (
+      {snapshot.kind === "drawguess" && snapshot.canManage && (
+        <div className="pregame-word-library">
+          <span>本局词库 · {loadDrawWordLibrary().words.length} 个自定义词</span>
+          {onOpenWordLibrary && (
+            <button type="button" onClick={onOpenWordLibrary}>
+              管理词库
+            </button>
+          )}
+        </div>
+      )}
+      {showLlm && snapshot.canManage && (
         <div className="pregame-ai-controls">
           <span>
             {snapshot.companion.configured ? "AI 模型已接入" : "AI 模型未接入"}
@@ -107,9 +126,7 @@ export function PregamePanel({
                   aria-label="聊天 AI 席位"
                   value={snapshot.config.companion.aiSeatIndex ?? ""}
                   onValueChange={(value) =>
-                    onChatAiSeatChange(
-                      value === "" ? null : Number(value),
-                    )
+                    onChatAiSeatChange(value === "" ? null : Number(value))
                   }
                 >
                   <option value="">自动（第一个 AI）</option>
@@ -190,10 +207,15 @@ export function PregamePanel({
                       </option>
                     ))}
                 </Select>
-                {seat.difficulty && (
+                {showLlm && seat.difficulty && (
                   <Select
                     aria-label={`席位 ${index + 1} AI 驱动`}
-                    value={seat.driver ?? "search"}
+                    value={
+                      supportsLlmDecisions(snapshot.kind) &&
+                      snapshot.companion.server
+                        ? (seat.driver ?? "search")
+                        : "search"
+                    }
                     onValueChange={(driver) =>
                       onSeatChange(index, {
                         type: "ai",
@@ -204,7 +226,15 @@ export function PregamePanel({
                     }
                   >
                     <option value="search">搜索</option>
-                    <option value="llm">LLM</option>
+                    <option
+                      value="llm"
+                      disabled={
+                        !supportsLlmDecisions(snapshot.kind) ||
+                        !snapshot.companion.server
+                      }
+                    >
+                      LLM（UNO 联机）
+                    </option>
                   </Select>
                 )}
               </div>
@@ -215,9 +245,7 @@ export function PregamePanel({
       <footer className="pregame-actions">
         <div>
           <strong>{readiness.message}</strong>
-          <small>
-            房主可以在“更换游戏 / 下一局”中调整游戏、人数与 AI。
-          </small>
+          <small>房主可以在“更换游戏 / 下一局”中调整游戏、人数与 AI。</small>
         </div>
         <div className="room-ready-actions">
           {snapshot.actor >= 0 && (

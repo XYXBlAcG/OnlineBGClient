@@ -18,8 +18,7 @@
 
 .native-room-shell .room-layout {
   height: 100%;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: 0;
 }
 
 .native-room-shell .game-area {
@@ -55,8 +54,7 @@
 
 .native-table-shell .room-layout {
   height: 100%;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: 0;
   display: block;
 }
 
@@ -66,7 +64,7 @@
   overflow: hidden;
 }
 
-.native-table-shell .game-area > :not(.game-stage, .game-status-row) {
+.native-table-shell .game-area > :not(.room-game-scene, .arcade-progress) {
   display: none;
 }
 

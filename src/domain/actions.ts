@@ -8,6 +8,27 @@ import {
 } from "./graphwar/types";
 import { mahjongMoveSchema } from "./mahjong/types";
 import { poolShotActionSchema } from "./pool/types";
+import { golfNextSchema, golfPuttSchema } from "./golf/types";
+import {
+  drawGuessSchema,
+  drawNextSchema,
+  drawStrokeSchema,
+  drawHistorySchema,
+  drawUndoSchema,
+} from "./drawguess/types";
+import {
+  fayuClearSchema,
+  fayuEndSchema,
+  fayuGuessSchema,
+  fayuVoteSchema,
+  fayuFinishSchema,
+  fayuTransformSchema,
+  fayuDeleteSchema,
+  fayuFillSchema,
+  fayuRestoreSchema,
+  fayuNextSchema,
+  fayuPromptSchema,
+} from "./fayu/types";
 import { minerMoveSchema } from "./miner/types";
 import { splendorMoveSchema } from "./splendor-actions";
 import { catanMoveSchema } from "./catan-actions";
@@ -24,6 +45,24 @@ export const actionSchema = z.discriminatedUnion("type", [
   graphwarMoveSchema,
   graphwarGuardSchema,
   poolShotActionSchema,
+  golfPuttSchema,
+  golfNextSchema,
+  drawStrokeSchema,
+  drawHistorySchema,
+  drawUndoSchema,
+  drawGuessSchema,
+  drawNextSchema,
+  fayuPromptSchema,
+  fayuGuessSchema,
+  fayuClearSchema,
+  fayuVoteSchema,
+  fayuFinishSchema,
+  fayuTransformSchema,
+  fayuDeleteSchema,
+  fayuFillSchema,
+  fayuRestoreSchema,
+  fayuNextSchema,
+  fayuEndSchema,
   z.object({ type: z.literal("scmj-action"), move: mahjongMoveSchema }),
   z.object({ type: z.literal("miner-action"), move: minerMoveSchema }),
   z.object({ type: z.literal("ccbs-action"), move: splendorMoveSchema }),

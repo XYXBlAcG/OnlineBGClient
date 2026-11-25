@@ -25,6 +25,7 @@ export class UpstreamRuntime {
     sink?: (action: unknown) => void;
     heroCard?: React.ComponentType<any>;
     trickCard?: React.ComponentType<any>;
+    collection?: React.ComponentType<{ title: string; children: React.ReactNode }>;
   } = {};
   private cache = new Map<number, Exports>();
   random: () => number = Math.random;

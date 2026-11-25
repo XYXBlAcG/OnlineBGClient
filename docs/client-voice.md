@@ -6,7 +6,7 @@ macOS 与 Windows 客户端使用独立语音通道；浏览器不提供连麦�
 
 ## 找到入口
 
-大厅「快速上手」旁的「连麦设置」直接进入声音与语音；设置顶部提供房主配置与加入者的分步引导。没有配置时，房主配置表单默认展开。房间内「聊天 → 房间语音 → 设备与连麦设置」也可进入；未配置的房主可直接点击「配置房主语音」。收起大厅引导后，连麦快捷入口仍保留。
+设置 → 声音与语音提供房主配置与加入者的分步引导。没有配置时，房主配置表单默认展开。房间内「聊天 → 房间语音 → 设备与连麦设置」也可进入；未配置的房主可直接点击「配置房主语音」。
 
 ## 手动审核
 
@@ -49,7 +49,7 @@ macOS 与 Windows 客户端使用独立语音通道；浏览器不提供连麦�
 | 原生退出、后台与麦克风权限 | [桌面](../src-tauri/src/desktop.rs)、[窗口](../src-tauri/src/windows.rs)、[应用配置](../src-tauri/tauri.conf.json)、[权限说明](../src-tauri/Info.plist)、[签名权限](../src-tauri/Entitlements.plist) |
 | 唯一会话与多窗口控制 | [Provider](../src/client/voice/VoiceProvider.tsx)、[会话](../src/client/voice/session.ts) |
 | SDK 与本机输入测试 | [媒体适配](../src/client/voice/livekit.ts)、[输入测试](../src/client/voice/probe.ts) |
-| 首次使用与配置引导 | [大厅入口](../src/client/QuickStart.tsx)、[分步引导](../src/client/voice/VoiceSetupGuide.tsx)、[入口测试](../tests/quick-start.test.tsx) |
+| 首次使用与配置引导 | [设置](../src/client/Settings.tsx)、[分步引导](../src/client/voice/VoiceSetupGuide.tsx)、[设置搜索](../src/client/settings-search.ts) |
 | 聊天控件与设置 | [控件](../src/client/voice/VoiceControls.tsx)、[设置](../src/client/voice/VoiceSettings.tsx) |
 | 授权、生命周期与本机输入取消 | [服务测试](../tests/voice-server.test.ts)、[会话测试](../tests/voice-session.test.ts)、[输入测试](../tests/voice-probe.test.ts) |
 | 官方 SDK 的真实本机 HTTP 请求 | [接口测试](../tests/voice-http.test.ts)，上游媒体 RPC 为测试服务，不是真实通话 |

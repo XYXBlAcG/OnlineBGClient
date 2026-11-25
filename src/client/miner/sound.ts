@@ -1,12 +1,5 @@
 type SoundKind =
-  | "drop"
-  | "catch"
-  | "special"
-  | "tnt"
-  | "spin"
-  | "gamble"
-  | "win"
-  | "lose";
+  "drop" | "catch" | "special" | "tnt" | "spin" | "gamble" | "win" | "lose";
 
 let context: AudioContext | null = null;
 
@@ -21,8 +14,8 @@ const tones: Record<SoundKind, [number, number, OscillatorType]> = {
   lose: [180, 0.45, "triangle"],
 };
 
-export function playMinerSound(kind: SoundKind): void {
-  if (typeof window === "undefined") return;
+export function playMinerSound(kind: SoundKind, volume: number): void {
+  if (!volume || typeof window === "undefined") return;
   try {
     context ??= new AudioContext();
     if (context.state === "suspended") void context.resume();

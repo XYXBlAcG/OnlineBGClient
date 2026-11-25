@@ -33,6 +33,28 @@ export class SnapshotStream {
         };
   }
 }
+export function mergeSnapshotCanvas(snapshot: Snapshot): Snapshot {
+  if (
+    snapshot.kind !== "drawguess" ||
+    snapshot.config.drawguess?.mode !== "fayu" ||
+    !snapshot.canvas ||
+    snapshot.state?.kind !== "drawguess" ||
+    snapshot.state.mode !== "fayu"
+  )
+    return snapshot;
+  return {
+    ...snapshot,
+    state: {
+      ...snapshot.state,
+      view: {
+        ...snapshot.state.view,
+        canvases: snapshot.canvas.canvases,
+        fills: snapshot.canvas.fills,
+      },
+    },
+  };
+}
+
 export class SnapshotReplica {
   private snapshot: Snapshot | null = null;
   private revision = 0;
@@ -51,6 +73,6 @@ export class SnapshotReplica {
       for (const key of update.removed ?? []) delete this.snapshot[key];
       this.revision = update.revision;
     }
-    return this.snapshot;
+    return mergeSnapshotCanvas(this.snapshot);
   }
 }

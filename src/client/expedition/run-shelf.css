@@ -35,3 +35,11 @@
   font-size: 13px;
   overflow-wrap: anywhere;
 }
+.mobile-shell .run-shelf .record-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.mobile-shell .run-shelf .record-row > button {
+  min-height: 44px;
+}

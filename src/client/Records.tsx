@@ -7,10 +7,11 @@ import { auxiliaryView } from "./native/contract";
 import { useNativeWindow } from "./native/windows";
 import { useEffect, useState, useRef } from "react";
 import { gameCatalogue } from "../domain/catalogue";
+import { upgradeDrawRecord } from "../domain/drawguess/legacy";
 import { Replay, type ReplayRecord } from "../domain/replay";
 import type { GameState } from "../domain/types";
 import { protocolVersion, type Snapshot } from "../domain/protocol";
-import { ClientStore, subscribeRecords } from "./storage";
+import { ClientStore, recordKey, subscribeRecords } from "./storage";
 import { exportJson, importJson } from "./files";
 import { OriginalGameLazy } from "./OriginalGameLazy";
 import { Panel, Select, Slider, Switch } from "./ui/Controls";
@@ -20,8 +21,10 @@ export function Records({
   onOpenChange,
   onError,
   onReady,
+  initialReplay,
 }: {
   onReady?: () => void;
+  initialReplay?: ReplayRecord;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onError: (message: string) => void;
@@ -29,7 +32,7 @@ export function Records({
   const detached = useNativeWindow(
     "records",
     open,
-    { view: "records" },
+    { view: "records", initialReplay },
     (intent) => {
       if (intent.type === "close") onOpenChange(false);
       if (intent.type === "error") onError(intent.message);
@@ -39,7 +42,14 @@ export function Records({
   const [timeline, setTimeline] = useState<ReplayMarker[]>([]);
   const [bookmarks, setBookmarks] = useState<ReplayBookmark[]>([]);
   const [bookmarkLabel, setBookmarkLabel] = useState("");
-  const [records, setRecords] = useState<ReplayRecord[]>([]);
+  const [storedRecords, setRecords] = useState<ReplayRecord[]>([]);
+  const records =
+    initialReplay &&
+    !storedRecords.some(
+      (record) => recordKey(record) === recordKey(initialReplay),
+    )
+      ? [initialReplay, ...storedRecords]
+      : storedRecords;
   const [selected, setSelected] = useState<ReplayRecord | null>(null);
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
@@ -217,6 +227,17 @@ export function Records({
     });
     if (missing.length) worker.postMessage({ actor, indexes: missing });
   }, [gameStep, actor, speed, frameCount, selected]);
+  const openedReplay = useRef<string>();
+  useEffect(() => {
+    if (!open || !initialReplay) {
+      openedReplay.current = undefined;
+      return;
+    }
+    const key = recordKey(initialReplay);
+    if (openedReplay.current === key) return;
+    openedReplay.current = key;
+    selectRecord(initialReplay);
+  }, [open, initialReplay]);
   useEffect(() => {
     if (!selected || loading || !playing || frameCount < 2) return;
     let frameId = 0,
@@ -243,7 +264,7 @@ export function Records({
     setFrame(null);
     setStep(0);
     setLoading(true);
-    setSelected(record);
+    setSelected(upgradeDrawRecord(record) as ReplayRecord);
     setActor((value) => Math.min(value, record.names.length - 1));
     setPlaying(autoplay);
   };
@@ -344,7 +365,9 @@ export function Records({
                 if (!auxiliaryView) onOpenChange(false);
               }}
             >
-              {gameCatalogue[record.config.kind].name}
+              {record.arcadeRunId ? "远征 · " : ""}
+              {gameCatalogue[record.config.kind]?.name ?? ((record.config.kind as string) === "fayu" ? "你画我猜 · 法语" : "旧版对局")}
+              {record.drawStart && ` · 第 ${record.drawStart.round + 1} 轮`}
               <small>
                 {new Date(record.startedAt).toLocaleString()} ·{" "}
                 {record.names.join("、")}
@@ -382,7 +405,7 @@ export function Records({
               setSelected(null);
             }
           }}
-          title={`${gameCatalogue[selected.config.kind].name} · 回放`}
+          title={`${gameCatalogue[selected.config.kind]?.name ?? "旧版对局"}${selected.drawStart ? ` · 第 ${selected.drawStart.round + 1} 轮` : ""} · 回放`}
         >
           {auxiliaryView && (
             <button
@@ -394,6 +417,7 @@ export function Records({
               返回记录
             </button>
           )}
+          {selected.truncated && <small role="status">这段回放只保存到记录上限。</small>}
           <div className="replay-controls">
             <button
               disabled={!adjacentReplay(records, selected, -1)}

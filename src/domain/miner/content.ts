@@ -15,6 +15,8 @@ export interface MinerObjectDefinition {
   value: number;
   weight: number;
   radius: number;
+  timeChangeMs?: number;
+  charge?: number;
 }
 
 export const minerObjects: Record<MinerObjectKind, MinerObjectDefinition> = {
@@ -98,11 +100,27 @@ export const minerObjects: Record<MinerObjectKind, MinerObjectDefinition> = {
     weight: 1,
     radius: 0.04,
   },
+  timeTrap: {
+    kind: "timeTrap",
+    name: "罚时石",
+    emoji: "⏱",
+    value: 0,
+    weight: 2,
+    radius: 0.045,
+    timeChangeMs: -3000,
+  },
+  chargeCrystal: {
+    kind: "chargeCrystal",
+    name: "充能晶体",
+    emoji: "⚡",
+    value: 0,
+    weight: 1,
+    radius: 0.04,
+    charge: 2,
+  },
 };
 
-export const minerObjectPool = Object.keys(
-  minerObjects,
-) as MinerObjectKind[];
+export const minerObjectPool = Object.keys(minerObjects) as MinerObjectKind[];
 
 export interface MinerItemDefinition {
   id: MinerItemId;
@@ -302,111 +320,129 @@ export interface MinerMechanicDefinition {
   description: string;
 }
 
-export const minerMechanics: Record<
-  MinerMechanicId,
-  MinerMechanicDefinition
-> = {
-  blackout: {
-    id: "blackout",
-    name: "黑屏",
-    description: "矿灯熄灭，只能看清钩子附近。",
-  },
-  fog: {
-    id: "fog",
-    name: "迷雾",
-    description: "雾从矿洞深处涌来，远处物体看不清。",
-  },
-  sonar: {
-    id: "sonar",
-    name: "声呐",
-    description: "物体在钩子靠近时才显形。",
-  },
-  flood: {
-    id: "flood",
-    name: "洪水",
-    description: "水位上涨，水面下的物体无法下钩。",
-  },
-  tide: {
-    id: "tide",
-    name: "潮汐",
-    description: "水位来回涨落，时机决定能抓什么。",
-  },
-  conveyor: {
-    id: "conveyor",
-    name: "传送带",
-    description: "物体随传送带左右移动。",
-  },
-  minecart: {
-    id: "minecart",
-    name: "矿车",
-    description: "矿车把物体沿轨道推来推去。",
-  },
-  zeroGravity: {
-    id: "zeroGravity",
-    name: "零重力",
-    description: "物体缓慢漂浮，位置不断变化。",
-  },
-  frozenThaw: {
-    id: "frozenThaw",
-    name: "冰冻解冻",
-    description: "部分物体被冻住，第一钩只能破冰。",
-  },
-  critters: {
-    id: "critters",
-    name: "矿洞动物",
-    description: "蝙蝠和地鼠在矿洞里乱窜。",
-  },
-  fallingRocks: {
-    id: "fallingRocks",
-    name: "落石",
-    description: "碎石不断落下，物体位置缓慢下沉。",
-  },
-  fogRollsIn: {
-    id: "fogRollsIn",
-    name: "迷雾涌入",
-    description: "雾团周期性地吞没矿洞。",
-  },
-  risingFog: {
-    id: "risingFog",
-    name: "升雾",
-    description: "雾越升越高，可见范围越来越小。",
-  },
-  hotspot: {
-    id: "hotspot",
-    name: "热点",
-    description: "随机一个物体被矿灯照亮，价值更高。",
-  },
-  phantom: {
-    id: "phantom",
-    name: "幻影",
-    description: "矿洞里混入了没有价值的水晶幻影。",
-  },
-  centerWall: {
-    id: "centerWall",
-    name: "中央矿柱",
-    description: "矿洞中央立起一根石柱，挡住部分视线。",
-  },
-  magnet: {
-    id: "magnet",
-    name: "磁场",
-    description: "物体被慢慢吸向矿洞中央。",
-  },
-  geyser: {
-    id: "geyser",
-    name: "间歇泉",
-    description: "泉水周期性地把物体向上推。",
-  },
-  batSwarm: {
-    id: "batSwarm",
-    name: "蝙蝠群",
-    description: "一大群蝙蝠在矿洞里盘旋。",
-  },
-  goldFever: {
-    id: "goldFever",
-    name: "黄金热",
-    description: "周期性进入黄金热，所有价值翻倍。",
-  },
-};
+export const minerMechanics: Record<MinerMechanicId, MinerMechanicDefinition> =
+  {
+    blackout: {
+      id: "blackout",
+      name: "黑屏",
+      description: "矿灯熄灭，只能看清钩子附近。",
+    },
+    fog: {
+      id: "fog",
+      name: "迷雾",
+      description: "雾从矿洞深处涌来，远处物体看不清。",
+    },
+    sonar: {
+      id: "sonar",
+      name: "声呐",
+      description: "物体在钩子靠近时才显形。",
+    },
+    flood: {
+      id: "flood",
+      name: "洪水",
+      description: "水位上涨。照常下钩，钩尖入水后减速。",
+    },
+    tide: {
+      id: "tide",
+      name: "潮汐",
+      description: "水位来回涨落。水下矿物照样能抓，退潮后收放更快。",
+    },
+    conveyor: {
+      id: "conveyor",
+      name: "传送带",
+      description: "物体随传送带左右移动。",
+    },
+    minecart: {
+      id: "minecart",
+      name: "矿车",
+      description: "矿车把物体沿轨道推来推去。",
+    },
+    zeroGravity: {
+      id: "zeroGravity",
+      name: "零重力",
+      description: "物体缓慢漂浮，位置不断变化。",
+    },
+    frozenThaw: {
+      id: "frozenThaw",
+      name: "冰冻解冻",
+      description: "部分物体被冻住，第一钩只能破冰。",
+    },
+    critters: {
+      id: "critters",
+      name: "矿洞动物",
+      description: "蝙蝠和地鼠在矿洞里乱窜。",
+    },
+    fallingRocks: {
+      id: "fallingRocks",
+      name: "落石",
+      description: "碎石不断落下，物体位置缓慢下沉。",
+    },
+    fogRollsIn: {
+      id: "fogRollsIn",
+      name: "迷雾涌入",
+      description: "雾团周期性地吞没矿洞。",
+    },
+    risingFog: {
+      id: "risingFog",
+      name: "升雾",
+      description: "雾越升越高，可见范围越来越小。",
+    },
+    hotspot: {
+      id: "hotspot",
+      name: "热点",
+      description: "随机一个物体被矿灯照亮，价值更高。",
+    },
+    phantom: {
+      id: "phantom",
+      name: "幻影",
+      description: "矿洞里混入了没有价值的水晶幻影。",
+    },
+    centerWall: {
+      id: "centerWall",
+      name: "中央矿柱",
+      description: "矿洞中央立起一根石柱，挡住部分视线。",
+    },
+    magnet: {
+      id: "magnet",
+      name: "磁场",
+      description: "物体被慢慢吸向矿洞中央。",
+    },
+    geyser: {
+      id: "geyser",
+      name: "间歇泉",
+      description: "泉水周期性地把物体向上推。",
+    },
+    batSwarm: {
+      id: "batSwarm",
+      name: "蝙蝠群",
+      description: "一大群蝙蝠在矿洞里盘旋。",
+    },
+    goldFever: {
+      id: "goldFever",
+      name: "黄金热",
+      description: "周期性进入黄金热，所有价值翻倍。",
+    },
+    crystalVein: {
+      id: "crystalVein",
+      name: "裂矿晶脉",
+      description: "收回岩石后，原位会露出小金块。",
+    },
+    teamRelay: {
+      id: "teamRelay",
+      name: "队友接力",
+      description: "同队不同矿工在 3 秒内连续收获，后一钩额外获得 25%。",
+    },
+    unstableOre: {
+      id: "unstableOre",
+      name: "不稳定矿层",
+      description: "红色罚时石收回时扣除 3 秒。",
+    },
+    chargedVein: {
+      id: "chargedVein",
+      name: "带电矿脉",
+      description: "蓝色闪电晶体收回时增加 2 格技能充能。",
+    },
+  };
 
 export const minerMechanicsPool = Object.keys(
   minerMechanics,
@@ -416,12 +452,30 @@ export const minerModes: Record<
   MinerMode,
   { name: string; description: string }
 > = {
-  friendly: { name: "好友局", description: "六关定胜负，团队目标 + 个人排名。" },
-  endless: { name: "无尽模式", description: "团队三条命，关卡目标递增，越挖越深。" },
-  party: { name: "混乱派对", description: "六关，每个矿洞额外一个机制，节奏更快。" },
-  daily: { name: "每日挑战", description: "固定种子的一局挑战，记录每日最佳。" },
-  bossRush: { name: "Boss Rush", description: "六关全部首领矿洞，钻石与 TNT 更多。" },
-  suddenDeath: { name: "极速模式", description: "三关，每关 25 秒，速战速决。" },
+  friendly: {
+    name: "好友局",
+    description: "六关定胜负，团队目标 + 个人排名。",
+  },
+  endless: {
+    name: "无尽模式",
+    description: "团队三条命，关卡目标递增，越挖越深。",
+  },
+  party: {
+    name: "混乱派对",
+    description: "六关，每个矿洞额外一个机制，节奏更快。",
+  },
+  daily: {
+    name: "每日挑战",
+    description: "固定种子的一局挑战，记录每日最佳。",
+  },
+  bossRush: {
+    name: "Boss Rush",
+    description: "六关全部首领矿洞，钻石与 TNT 更多。",
+  },
+  suddenDeath: {
+    name: "极速模式",
+    description: "三关，每关 25 秒，速战速决。",
+  },
 };
 
 export const minerSceneLabels: Record<NodeKind, string> = {

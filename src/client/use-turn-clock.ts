@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export function usePoolClock(
+export function useTurnClock(
   turnDeadline: number | undefined,
   serverTime: number | undefined,
   paused: boolean,

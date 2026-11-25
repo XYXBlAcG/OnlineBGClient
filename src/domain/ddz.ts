@@ -1,3 +1,4 @@
+import type { GameOptions } from "./game-options";
 import { ddzCombinations } from "./ddz-combinations";
 import { UpstreamRuntime } from "../upstream/runtime";
 import type { Action, Candidate, DdzView } from "./types";
@@ -9,14 +10,24 @@ export class DdzRules {
     this.original = runtime.load(6139);
     this.codec = runtime.load(9474).w;
   }
-  create(players: number): DdzView {
-    return this.original.my(
+  create(players: number, options?: GameOptions): DdzView {
+    const view = this.original.my(
       this.original.Bx(
         { playerList: Array(players).fill({}) },
         this.codec.encode({ rule: 0 }).finish(),
       ),
       players,
-    );
+    ) as DdzView;
+    if (options?.arcadeScenario?.kind !== "ddz") return view;
+    const landlord = this.original.JY(view, players, players) as DdzView;
+    const remaining = [0, 6, 6, 8 - landlord.holeCardList.length];
+    const cardPositionList = landlord.cardPositionList.map((position) => {
+      const seat = position & 7;
+      return position & 8 || (seat <= players && remaining[seat]-- > 0)
+        ? position
+        : 7;
+    });
+    return this.original.my({ ...landlord, cardPositionList }, players);
   }
   actors(view: DdzView): number[] {
     return view.isFinish ? [] : view.state === 0 ? [0, 1, 2] : [view.state - 1];

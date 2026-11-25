@@ -1,3 +1,4 @@
+import type { GameOptions } from "./game-options";
 import type { UpstreamRuntime } from "../upstream/runtime";
 import type { Action, Candidate, GameState, PoisonView } from "./types";
 type PoisonState = Extract<GameState, { kind: "dy" }>;
@@ -6,14 +7,29 @@ export class PoisonRules {
   constructor(runtime: UpstreamRuntime) {
     this.original = runtime.load(2437);
   }
-  create(players: number): PoisonState {
-    return {
-      kind: "dy",
-      view: this.original.my(
-        this.original.Bx({ playerList: Array(players).fill({}) }),
-        players,
-      ),
-    };
+  create(players: number, _team = false, options?: GameOptions): PoisonState {
+    const deal = this.original.Bx({ playerList: Array(players).fill({}) });
+    let view: PoisonView = this.original.my(deal, players);
+    if (options?.arcadeScenario?.kind === "dy") {
+      const deck = Array.from(
+        { length: deal.cardPositionList.length },
+        (_, id) => id,
+      );
+      view.pots = [1, 2, 3].map((color) =>
+        deck
+          .filter((card) => {
+            const [suit, value] = this.original.nX(card);
+            return suit === color && value === 5;
+          })
+          .slice(0, 2),
+      );
+      const reserved = new Set(view.pots.flat());
+      view.players = view.players.map((cards) =>
+        cards.filter((card) => !reserved.has(card)).slice(0, 4),
+      );
+      view = this.original.my(this.original.qA(view), players);
+    }
+    return { kind: "dy", view };
   }
   finished(state: PoisonState): boolean {
     return !!state.view.finish;

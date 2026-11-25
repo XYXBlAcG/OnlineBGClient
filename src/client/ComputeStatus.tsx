@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { llmUiEnabled } from "./llm-ui";
 import type { Snapshot } from "../domain/protocol";
 export function ComputeStatus({
   snapshot,
@@ -33,7 +34,11 @@ export function ComputeStatus({
   const work = metric?.simulations || metric?.scoredCandidates || 0;
   const benchmark =
     benchmarkVisible && snapshot.kind === "tq" && snapshot.config.humans === 0;
-  if (!snapshot.playing || snapshot.finished || (!metric && !benchmark))
+  const active =
+    metric?.version === snapshot.version &&
+    !snapshot.paused &&
+    !snapshot.aiPaused;
+  if (!snapshot.playing || snapshot.finished || (!active && !benchmark))
     return null;
   return (
     <div className="compute-status" aria-label="AI计算统计">
@@ -41,7 +46,15 @@ export function ComputeStatus({
         <span>
           {snapshot.paused || snapshot.aiPaused
             ? "AI 已暂停"
-            : `${snapshot.seats[metric.actor]?.name ?? "AI"}${metric.status === "computing" && !snapshot.finished ? "正在决策" : "已完成决策"}`}
+            : `${snapshot.seats[metric.actor]?.name ?? "AI"}${metric.status === "computing" ? "正在决策" : "已决策，等待行动"}`}
+          {llmUiEnabled &&
+            metric.status === "completed" &&
+            metric.source === "llm" &&
+            "（模型决策）"}
+          {llmUiEnabled &&
+            metric.status === "completed" &&
+            metric.source === "search-fallback" &&
+            `（搜索策略：${{ unconfigured: "模型未配置", unsupported: "当前玩法使用搜索", timeout: "模型超时", "invalid-output": "模型输出无效", cancelled: "模型请求已取消", "provider-error": "模型连接异常" }[metric.fallbackReason ?? "provider-error"]}）`}
           {details && (
             <>
               {" "}

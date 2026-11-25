@@ -1,4 +1,5 @@
 import {
+  LlmError,
   markSpoken,
   sanitizeReply,
   type CompanionProfile,
@@ -6,12 +7,12 @@ import {
   type ParticipationState,
 } from "companion-core";
 import {
+  supportsLlmDecisions,
   buildCompanionView,
   type AiProviderSettings,
   type CompanionConfig,
   type PublicRoomContext,
 } from "../../domain/companion";
-import { gameCatalogue } from "../../domain/catalogue";
 import type { ChatMessage } from "../../domain/protocol";
 import type { Room } from "../../domain/room";
 import type { TableEvent } from "../../domain/table-mind/model";
@@ -20,15 +21,17 @@ import { planSocialReaction } from "../../domain/table-mind/director";
 import { buildDecisionPrompt } from "../../domain/table-mind/prompt";
 import { buildSocialPrompt } from "../../domain/table-mind/social";
 import { buildUnoSituation } from "../../domain/table-mind/perspectives/uno";
-import type { AiResult } from "../../domain/types";
+import type { AiFallbackReason, AiResult } from "../../domain/types";
 import { createLlmRunner } from "../llm-runner";
-import { chooseCandidateWithLlm, parseCandidateChoice } from "../llm-seat";
+import { parseCandidateChoice } from "../llm-seat";
 
 export type TableAiRequest = NonNullable<ReturnType<Room["aiRequest"]>>;
 
 export interface TableMindRoom {
   readonly id: string;
   readonly hasEnded: boolean;
+  readonly paused: boolean;
+  readonly version: number;
   readonly playId: string | undefined;
   readonly config: { readonly companion: CompanionConfig };
   companionProfile(): CompanionProfile | null;
@@ -39,12 +42,15 @@ export interface TableMindRoom {
 
 export interface TableMindRunner {
   readonly configured: boolean;
+  readonly settings: AiProviderSettings;
+  clear(): void;
   configure(provider: LlmProvider, settings: AiProviderSettings): void;
   complete(
     system: string,
     user: string,
     maxOutputTokens?: number,
     timeoutMs?: number,
+    signal?: AbortSignal,
   ): Promise<string>;
 }
 
@@ -61,7 +67,10 @@ export class TableMind {
     TableMindRoom,
     ParticipationState
   >();
-  private readonly pendingSocial = new Set<string>();
+  private roomId?: string;
+  private playId?: string;
+  private socialController: AbortController | null = null;
+  private decisionController: AbortController | null = null;
   private readonly log: (message: string) => void;
   private readonly publish?: (roomId: string) => void;
   private readonly now: () => number;
@@ -80,34 +89,67 @@ export class TableMind {
   }
 
   configure(provider: LlmProvider, settings: AiProviderSettings): void {
+    this.cancel();
     this.runner.configure(provider, settings);
   }
 
+  clear(): void {
+    this.cancel();
+    this.runner.clear();
+  }
+
+  cancel(): void {
+    this.socialController?.abort();
+    this.decisionController?.abort();
+    this.socialController = null;
+    this.decisionController = null;
+  }
+
+  reconcile(room: TableMindRoom): void {
+    if (this.roomId && this.roomId !== room.id)
+      throw new Error("AI 运行时不属于该房间");
+    this.roomId = room.id;
+    const playId = room.playId ?? "lobby";
+    if (this.playId !== playId) {
+      this.cancel();
+      this.timeline.length = 0;
+      this.memory.clear();
+      this.playId = playId;
+    }
+    if (room.hasEnded || room.paused) this.cancel();
+    if (!room.config.companion.policy.enabled) {
+      this.socialController?.abort();
+      this.socialController = null;
+    }
+  }
+
   async tick(room: TableMindRoom): Promise<void> {
-    const events = room.drainTableEvents();
-    if (!events.length) return;
+    this.reconcile(room);
+    const events = room.drainTableEvents().filter((event) => event.public);
     this.remember(events);
     if (
+      !events.length ||
       !this.runner.configured ||
-      this.pendingSocial.has(room.id) ||
-      room.hasEnded
+      this.socialController ||
+      room.hasEnded ||
+      room.paused
     )
       return;
     const profile = room.companionProfile();
     const policy = room.config.companion.policy;
     if (!profile || !policy.enabled) return;
-    const now = this.now();
-    const state = this.stateFor(room, now);
     const event = planSocialReaction(
       events,
       profile,
       policy,
-      state,
-      now,
+      this.stateFor(room, this.now()),
+      this.now(),
       room.id,
     );
     if (!event) return;
-    this.pendingSocial.add(room.id);
+    const active = new AbortController();
+    this.socialController = active;
+    const playId = room.playId;
     try {
       const context = room.publicContext();
       const view = buildCompanionView(
@@ -120,12 +162,26 @@ export class TableMind {
         profile,
         this.timeline.slice(-8),
         this.memory.recall(8),
+        this.runner.settings,
       );
       const text = sanitizeReply(
-        await this.runner.complete(prompt.system, prompt.user, 120, 8000),
+        await this.runner.complete(
+          prompt.system,
+          prompt.user,
+          120,
+          undefined,
+          active.signal,
+        ),
         { maxChars: 160 },
       );
-      if (!text || room.hasEnded || !room.config.companion.policy.enabled)
+      if (
+        active.signal.aborted ||
+        !text ||
+        room.playId !== playId ||
+        room.hasEnded ||
+        room.paused ||
+        !room.config.companion.policy.enabled
+      )
         return;
       const message = room.addCompanionMessage(event.id, text);
       if (!message) return;
@@ -136,11 +192,12 @@ export class TableMind {
       );
       this.publish?.(room.id);
     } catch (error) {
-      this.log(
-        `AI 回复失败：${error instanceof Error ? error.message : String(error)}`,
-      );
+      if (!active.signal.aborted)
+        this.log(
+          `AI 回复失败：${error instanceof LlmError ? error.code : "provider-error"}`,
+        );
     } finally {
-      this.pendingSocial.delete(room.id);
+      if (this.socialController === active) this.socialController = null;
     }
   }
 
@@ -148,70 +205,86 @@ export class TableMind {
     room: TableMindRoom,
     request: TableAiRequest,
     result: AiResult,
+    signal?: AbortSignal,
   ): Promise<AiResult> {
-    if (
-      !this.runner.configured ||
-      request.driver !== "llm" ||
-      !result.audit ||
-      result.audit.candidates.length <= 1
-    )
-      return result;
+    this.reconcile(room);
+    if (request.driver !== "llm") return { ...result, source: "search" };
+    const fallback = (reason: AiFallbackReason): AiResult => ({
+      ...result,
+      source: "search-fallback",
+      fallbackReason: reason,
+    });
+    if (!supportsLlmDecisions(request.observation.kind))
+      return fallback("unsupported");
+    if (!this.runner.configured) return fallback("unconfigured");
+    const candidates = result.choices;
+    if (!candidates || candidates.length <= 1)
+      return { ...result, source: "search" };
+    this.decisionController?.abort();
+    const active = new AbortController();
+    this.decisionController = active;
+    const combined = signal
+      ? AbortSignal.any([active.signal, signal])
+      : active.signal;
+    const playId = room.playId;
     try {
-      if (request.observation.kind === "uno") {
-        const situation = buildUnoSituation({
-          observation: request.observation,
-          actor: request.actor,
-          candidates: result.audit.candidates,
-          players: room.publicContext().players,
-          events: this.timeline.slice(-12),
-          memory: this.memory.recall(8),
-        });
-        const prompt = buildDecisionPrompt(situation);
-        const text = await this.runner.complete(
-          prompt.system,
-          prompt.user,
-          24,
-          6000,
-        );
-        const index = parseCandidateChoice(text, prompt.candidates.length);
-        if (index === null) return result;
-        const action = result.audit.candidates[index]!.action;
-        return {
-          ...result,
-          chosen: action,
-          audit: {
-            ...result.audit,
-            chosen: action,
-            assumptions: [
-              ...result.audit.assumptions,
-              `TableMind 基于 UNO 局面选择候选 #${index}。`,
-            ],
-          },
-        };
-      }
-      const choice = await chooseCandidateWithLlm(
-        this.runner,
-        gameCatalogue[request.observation.kind].name,
-        result.audit.candidates,
+      if (request.observation.kind !== "uno") return fallback("unsupported");
+      const situation = buildUnoSituation({
+        observation: request.observation,
+        actor: request.actor,
+        candidates,
+        players: room.publicContext().players,
+        events: this.timeline.slice(-12),
+        memory: this.memory.recall(8),
+      });
+      const prompt = buildDecisionPrompt(situation, this.runner.settings);
+      const text = await this.runner.complete(
+        prompt.system,
+        prompt.user,
+        24,
+        undefined,
+        combined,
       );
-      if (!choice) return result;
+      if (
+        combined.aborted ||
+        room.playId !== playId ||
+        room.version !== request.version ||
+        room.hasEnded ||
+        room.paused
+      )
+        return fallback("cancelled");
+      const index = parseCandidateChoice(text, prompt.candidates.length);
+      if (index === null) return fallback("invalid-output");
+      const action = candidates[index].action;
       return {
         ...result,
-        chosen: choice.chosen,
-        audit: {
-          ...result.audit,
-          chosen: choice.chosen,
-          assumptions: [
-            ...result.audit.assumptions,
-            `LLM 从搜索候选中选择 #${choice.index}。`,
-          ],
-        },
+        chosen: action,
+        source: "llm",
+        ...(result.audit
+          ? {
+              audit: {
+                ...result.audit,
+                chosen: action,
+                assumptions: [
+                  ...result.audit.assumptions,
+                  `TableMind 基于 UNO 局面选择候选 #${index}。`,
+                ],
+              },
+            }
+          : {}),
       };
     } catch (error) {
-      this.log(
-        `LLM 决策失败，回退搜索：${error instanceof Error ? error.message : String(error)}`,
-      );
-      return result;
+      const reason: AiFallbackReason = combined.aborted
+        ? "cancelled"
+        : error instanceof LlmError && error.code === "timeout"
+          ? "timeout"
+          : error instanceof LlmError && error.code === "invalid-output"
+            ? "invalid-output"
+            : "provider-error";
+      if (reason !== "cancelled") this.log(`LLM 决策回退搜索：${reason}`);
+      return fallback(reason);
+    } finally {
+      if (this.decisionController === active) this.decisionController = null;
     }
   }
 
@@ -237,7 +310,10 @@ export class TableMind {
     return next;
   }
 
-  private triggerFor(context: PublicRoomContext, event: TableEvent): ChatMessage {
+  private triggerFor(
+    context: PublicRoomContext,
+    event: TableEvent,
+  ): ChatMessage {
     const existing = context.recentChat.find(
       (message) => message.id === event.id,
     );

@@ -9,7 +9,8 @@ import { ChatReadState } from "./chat-read";
 import { notifyMessage, playCue } from "./notifications";
 
 export function ChatPanel({
-  snapshot,
+  snapshot: inputSnapshot,
+  hideCompanion = false,
   endpoint,
   preferences,
   onText,
@@ -22,6 +23,7 @@ export function ChatPanel({
   showClose = true,
 }: {
   snapshot: Snapshot;
+  hideCompanion?: boolean;
   endpoint?: string;
   preferences: Preferences;
   onText: (text: string) => void;
@@ -33,6 +35,23 @@ export function ChatPanel({
   onClose: () => void;
   showClose?: boolean;
 }) {
+  const snapshot = useMemo(
+    () =>
+      hideCompanion
+        ? {
+            ...inputSnapshot,
+            companion: {
+              ...inputSnapshot.companion,
+              enabled: false,
+              configured: false,
+              available: false,
+              name: "",
+            },
+            chat: inputSnapshot.chat.filter((message) => message.source !== "ai"),
+          }
+        : inputSnapshot,
+    [hideCompanion, inputSnapshot],
+  );
   const panel = useRef<HTMLElement>(null);
   const ownId =
     snapshot.actor < 0 ? snapshot.host!.id : snapshot.seats[snapshot.actor].id;

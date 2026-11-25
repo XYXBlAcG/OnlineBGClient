@@ -1,3 +1,4 @@
+import { mahjongDrawChoices } from "../../domain/setup-choices";
 import {
   mahjongModeNames,
   type MahjongOptions,
@@ -46,10 +47,7 @@ export function MahjongOptionsControl({
             label="自摸计分"
             value={value.selfDraw}
             onValueChange={(selfDraw) => onChange({ ...value, selfDraw })}
-            options={[
-              { value: "base", label: "加底" },
-              { value: "fan", label: "加番" },
-            ]}
+            options={mahjongDrawChoices}
           />
         </>
       )}

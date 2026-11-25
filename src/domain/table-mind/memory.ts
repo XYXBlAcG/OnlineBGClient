@@ -14,7 +14,11 @@ export class TableMemory {
 
   observe(events: TableEvent[]): void {
     for (const event of events) {
-      if (!["action", "chat", "achievement"].includes(event.kind)) continue;
+      if (
+        !event.public ||
+        !["action", "chat", "achievement"].includes(event.kind)
+      )
+        continue;
       this.facts.push({
         id: event.id,
         kind: event.kind,
@@ -27,6 +31,10 @@ export class TableMemory {
       });
     }
     if (this.facts.length > 200) this.facts.splice(0, this.facts.length - 200);
+  }
+
+  clear(): void {
+    this.facts = [];
   }
 
   recall(limit = 6): TableMemoryFact[] {

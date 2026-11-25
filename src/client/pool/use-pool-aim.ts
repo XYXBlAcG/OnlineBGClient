@@ -140,6 +140,10 @@ export function usePoolAim({
     powerRef.current = 0;
     startRef.current = null;
     if (strength < 0.03) return null;
+    return shot(strength);
+  };
+
+  const shot = (strength: number): PoolShotInput => {
     const placed = placementRef.current;
     return {
       aim: aimRef.current,
@@ -160,6 +164,23 @@ export function usePoolAim({
     startRef.current = null;
   };
 
+  const setShotPower = (value: number) => {
+    if (!own || !Number.isFinite(value)) return;
+    const strength = Math.max(0, Math.min(1, value));
+    powerRef.current = strength;
+    setPower(strength);
+  };
+  const shoot = (): PoolShotInput | null => {
+    if (
+      !own ||
+      powerRef.current < 0.03 ||
+      (ballInHand && !placementRef.current)
+    )
+      return null;
+    const action = shot(powerRef.current);
+    cancel();
+    return action;
+  };
   return {
     aim,
     spin,
@@ -171,6 +192,8 @@ export function usePoolAim({
     pulling,
     placing,
     power,
+    setShotPower,
+    shoot,
     hover,
     begin,
     move,

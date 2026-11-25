@@ -18,7 +18,7 @@
   gap: 6px;
   width: 100%;
 }
-.table-focused .game-area > :not(.game-stage,.game-status-row) {
+.table-focused .game-area > :not(.room-game-scene, .arcade-progress) {
   display: none;
 }
 .table-focused .game-stage {
@@ -43,4 +43,35 @@
 .focus-controls button {
   font-size: var(--font-size-control);
   min-height: 36px;
+}
+
+.focus-more {
+  position: relative;
+}
+.focus-more summary {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  min-width: 38px;
+  min-height: 36px;
+  border-radius: 8px;
+  background: var(--surface);
+  list-style: none;
+}
+.focus-more summary::-webkit-details-marker {
+  display: none;
+}
+.focus-more-actions {
+  position: absolute;
+  inset: auto 0 calc(100% + 8px) auto;
+  display: grid;
+  z-index: var(--layer-drawer);
+  padding: 6px;
+  white-space: nowrap;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.table-focused .miner-profile-button {
+  display: none;
 }

@@ -21,6 +21,9 @@ it("finds settings sections by labels and keywords", () => {
   expect(
     searchSettingsSections("成就", true).map((item) => item.label),
   ).toEqual(["成就"]);
+  expect(
+    searchSettingsSections("全屏游玩", true).map((item) => item.label),
+  ).toEqual(["外观"]);
 });
 
 it("keeps desktop-only settings out of browser search", () => {
@@ -31,6 +34,9 @@ it("keeps desktop-only settings out of browser search", () => {
     searchSettingsSections("更新", true).map((item) => item.label),
   ).toContain("软件更新");
   expect(searchSettingsSections("不存在的设置", true)).toEqual([]);
+  expect(
+    searchSettingsSections("接入 AI", true, true, false).map((item) => item.label),
+  ).not.toContain("接入 AI");
 });
 
 it("shows voice settings on iOS but keeps host-only sections desktop-only", () => {

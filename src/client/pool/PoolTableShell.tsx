@@ -1,8 +1,9 @@
+import { useMobile } from "../use-mobile";
 import type { ReactNode } from "react";
 import type { PoolView } from "../../domain/pool/types";
 import { Button, Slider } from "../ui/Controls";
 import { poolBallColors } from "./colors";
-import { elevationDegrees } from "./cue";
+import { elevationDegrees } from "../../domain/pool/cue";
 
 const spinOptions: [string, number, number][] = [
   ["高杆", 0, 0.8],
@@ -16,6 +17,9 @@ export function PoolTableShell({
   view,
   remaining,
   power,
+  onPower,
+  onShoot,
+  shotReady = true,
   spin,
   onSpin,
   elevation,
@@ -36,6 +40,9 @@ export function PoolTableShell({
   view: PoolView;
   remaining: number | null;
   power: number;
+  onPower?: (value: number) => void;
+  onShoot?: () => void;
+  shotReady?: boolean;
   spin: { x: number; y: number };
   onSpin: (spin: { x: number; y: number }) => void;
   elevation: number;
@@ -53,6 +60,7 @@ export function PoolTableShell({
   replay: boolean;
   children: ReactNode;
 }) {
+  const mobile = useMobile();
   const percent = Math.round(power * 100);
   return (
     <section className="pool-table" data-renderer={renderer}>
@@ -82,8 +90,7 @@ export function PoolTableShell({
         >
           {view.party.owners.map((ids, index) => {
             const left = ids.filter(
-              (id) =>
-                !view.balls.find((ball) => ball.id === id)?.pocketed,
+              (id) => !view.balls.find((ball) => ball.id === id)?.pocketed,
             ).length;
             return (
               <span
@@ -124,7 +131,29 @@ export function PoolTableShell({
               </span>
               力度 {percent}%
             </span>
-            <small className="pool-hint">{hint}</small>
+            {mobile && onPower && onShoot && (
+              <div className="pool-touch-shot">
+                <Slider
+                  aria-label="击球力度"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={power}
+                  onValueChange={onPower}
+                  disabled={disabled}
+                />
+                <Button
+                  variant="primary"
+                  disabled={disabled || !shotReady || power < 0.03}
+                  onClick={onShoot}
+                >
+                  {shotReady ? "击球" : "先放置白球"}
+                </Button>
+              </div>
+            )}
+            <small className="pool-hint">
+              {mobile ? "点桌面瞄准，调节力度后击球" : hint}
+            </small>
             <Button
               data-guide-target="pool.predict"
               variant={predict ? "primary" : "secondary"}

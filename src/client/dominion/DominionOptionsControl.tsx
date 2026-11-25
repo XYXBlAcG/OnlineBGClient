@@ -1,3 +1,4 @@
+import { dominionModeChoices } from "../../domain/setup-choices";
 import {
   cardDefinition,
   firstKingdom,
@@ -27,9 +28,11 @@ export function DominionOptionsControl({
             })
           }
         >
-          <option value="first">首局推荐</option>
-          <option value="random">随机十种</option>
-          <option value="custom">自选十种</option>
+          {dominionModeChoices.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
         </Select>
       </label>
       {value.mode === "custom" && (

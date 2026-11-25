@@ -1,0 +1,25 @@
+@media (max-width: 900px) {
+  :is(.app-shell, .mobile-shell) .room-layout[data-table-workspace="shared"].sidebar-open {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(130px, 29dvh);
+  }
+
+  :root :is(.app-shell, .mobile-shell) .room-layout[data-table-workspace="shared"] > .room-sidebar {
+    position: relative;
+    inset: auto;
+    inline-size: auto;
+    block-size: 100%;
+    max-block-size: none;
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  :is(.app-shell, .mobile-shell) .room-layout[data-table-workspace="shared"].sidebar-open {
+    grid-template-columns: minmax(0, 1fr) minmax(160px, 29%);
+    grid-template-rows: minmax(0, 1fr);
+  }
+}

@@ -1,6 +1,12 @@
 import { access } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { WebSocket } from "ws";
+import { tsImport } from "tsx/esm/api";
+
+const { aimAt } = await tsImport(
+  "../src/domain/miner/geometry.ts",
+  import.meta.url,
+);
 
 await access("dist-server/main.mjs").catch(() => {
   throw new Error("请先运行 npm run server:build");
@@ -21,10 +27,15 @@ child.stderr.on("data", (chunk) => process.stderr.write(chunk));
 
 const ready = await new Promise((resolve, reject) => {
   let buffer = "";
-  const timer = setTimeout(() => reject(new Error("room server not ready")), 10000);
+  const timer = setTimeout(
+    () => reject(new Error("room server not ready")),
+    10000,
+  );
   child.stdout.on("data", (chunk) => {
     buffer += chunk.toString();
-    const line = buffer.split("\n").find((item) => item.startsWith("ROOM_READY "));
+    const line = buffer
+      .split("\n")
+      .find((item) => item.startsWith("ROOM_READY "));
     if (!line) return;
     clearTimeout(timer);
     resolve(JSON.parse(line.slice("ROOM_READY ".length)));
@@ -44,7 +55,9 @@ class Client {
       this.socket.once("open", resolve);
       this.socket.once("error", reject);
     });
-    this.socket.on("message", (raw) => this.receive(JSON.parse(raw.toString())));
+    this.socket.on("message", (raw) =>
+      this.receive(JSON.parse(raw.toString())),
+    );
   }
   receive(response) {
     if (response.type === "session") this.session = response;
@@ -67,7 +80,9 @@ class Client {
     if (view.phase === "character") {
       const candidate = snapshot.candidates?.find((item) => {
         const action = item.action;
-        return action.type === "miner-action" && action.move.type === "character";
+        return (
+          action.type === "miner-action" && action.move.type === "character"
+        );
       });
       move = candidate?.action.move ?? null;
     } else if (view.phase === "map") {
@@ -78,7 +93,18 @@ class Client {
         const node = view.map
           .flat()
           .find((item) => item.id === action.move.nodeId);
-        return node && ["battle", "elite", "boss", "treasure", "hunt", "rift", "secret"].includes(node.kind);
+        return (
+          node &&
+          [
+            "battle",
+            "elite",
+            "boss",
+            "treasure",
+            "hunt",
+            "rift",
+            "secret",
+          ].includes(node.kind)
+        );
       });
       move = candidate?.action.move ?? null;
     } else if (view.phase === "live") {
@@ -88,12 +114,10 @@ class Client {
           .filter((item) => !item.removed && item.hookedBy === null)
           .sort((a, b) => b.value - a.value)[0];
         if (object) {
-          const radians = Math.atan2(object.x - 0.5, object.y - 0.03);
-          const angle = Math.max(-84, Math.min(84, (radians * 180) / Math.PI));
-          move = { type: "drop", angle };
+          move = { type: "drop", angle: aimAt(object, player.hook.pivotX) };
         }
       }
-    } else if (["shop", "camp", "event"].includes(view.phase)) {
+    } else if (["shop", "intermission", "camp", "event"].includes(view.phase)) {
       const candidate = snapshot.candidates?.find((item) => {
         const action = item.action;
         return (
@@ -160,15 +184,14 @@ try {
   while (Date.now() < deadline) {
     host.maybeAct();
     guest.maybeAct();
-    const view = host.snapshot?.state?.kind === "miner"
-      ? host.snapshot.state.view
-      : null;
+    const view =
+      host.snapshot?.state?.kind === "miner" ? host.snapshot.state.view : null;
     if (view && view.phase === "live" && view.tick > 0) causedTicks = view.tick;
     if (
       view &&
       view.teamScore > 0 &&
       causedTicks > 10 &&
-      (withAi ? view.players.some((player) => player.score > 0) : true)
+      (withAi ? view.players.slice(2).some((player) => player.score > 0) : true)
     ) {
       const errors = [...host.errors, ...guest.errors].filter(
         (error) => !error.includes("对局已更新"),
@@ -180,9 +203,11 @@ try {
           mode: withAi ? "ai" : "two-human",
           phase: view.phase,
           score: view.teamScore,
+          playerScores: view.players.map((player) => player.score),
           tick: view.tick,
           causedTicks,
-          objectsLeft: view.node?.objects.filter((item) => !item.removed).length,
+          objectsLeft: view.node?.objects.filter((item) => !item.removed)
+            .length,
         }),
       );
       succeeded = true;

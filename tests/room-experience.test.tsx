@@ -4,7 +4,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { Room } from "../src/domain/room";
 import { ComputeStatus } from "../src/client/ComputeStatus";
-import { QuickStart } from "../src/client/QuickStart";
 import { preferencesSchema } from "../src/client/preferences";
 it("hides compute details by default but identifies the deciding AI", () => {
   const room = new Room("ui", {
@@ -19,6 +18,7 @@ it("hides compute details by default but identifies the deciding AI", () => {
   const snapshot = room.snapshot(token);
   snapshot.computation = {
     actor: 1,
+    version: snapshot.version,
     status: "computing",
     elapsedMs: 10,
     simulations: 9,
@@ -36,33 +36,6 @@ it("hides compute details by default but identifies the deciding AI", () => {
     ),
   ).toContain("线程");
 });
-it("independently hides both home helpers without leaving a container", () => {
-  expect(preferencesSchema.parse({}).computeDetails).toBe(false);
-  const html = renderToStaticMarkup(
-    <QuickStart
-      desktop
-      expanded
-      showGuide={false}
-      showVoice={false}
-      onExpandedChange={() => {}}
-      onVoiceSettings={() => {}}
-    />,
-  );
-  expect(html).toBe("");
-  expect(
-    renderToStaticMarkup(
-      <QuickStart
-        desktop
-        expanded
-        showGuide={false}
-        showVoice
-        onExpandedChange={() => {}}
-        onVoiceSettings={() => {}}
-      />,
-    ),
-  ).toContain("连麦设置");
-});
-
 it("provides a single shared host end control for every game and hides it outside live play", async () => {
   const { gameKinds, gameCatalogue } = await import("../src/domain/catalogue");
   const { RoomToolbar } = await import("../src/client/RoomToolbar");

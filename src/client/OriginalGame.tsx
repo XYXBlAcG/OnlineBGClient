@@ -1,4 +1,5 @@
 import { useGameScale } from "./game-sizing/GameSizing";
+import { TableCollection } from "./ui/TableCollection";
 import { tableInteractive } from "./game-sizing/table-state";
 import { ExpeditionTable } from "./expedition/ExpeditionTable";
 import { MinerTable } from "./miner/MinerTable";
@@ -6,6 +7,9 @@ import { DominionTable } from "./dominion/DominionTable";
 import { GraphwarTable } from "./graphwar/GraphwarTable";
 import { SichuanTable } from "./mahjong/SichuanTable";
 import { PoolGame } from "./pool/PoolGame";
+import { DrawGuessTable } from "./drawguess/DrawGuessTable";
+import { FayuTable } from "./fayu/FayuTable";
+import { GolfGame } from "./golf/GolfGame";
 import type { PoolRenderer } from "./pool/renderer";
 import { FlightSpecialPanel } from "./flight/FlightSpecialPanel";
 import { FlightMapViewport } from "./flight/FlightMapViewport";
@@ -43,14 +47,23 @@ export type GameSnapshot = Pick<
   | "finished"
 > &
   Partial<
-    Pick<Snapshot, "turnDeadline" | "serverTime" | "paused" | "candidates">
-  >;
+    Pick<
+      Snapshot,
+      | "turnDeadline"
+      | "serverTime"
+      | "paused"
+      | "candidates"
+      | "minerPaused"
+      | "config"
+    >
+  > & { minerCanPause?: boolean };
 export const OriginalGame = memo(function OriginalGame({
   snapshot,
   pending = false,
   act,
   end,
   onAutoplay,
+  onMinerPause,
   onReplay,
   restart,
   onInteract,
@@ -68,6 +81,11 @@ export const OriginalGame = memo(function OriginalGame({
   poolRenderer = "auto",
   onPoolRendererChange,
   poolSound = true,
+  golfRenderer = "auto",
+  golfEnvironment = "coast",
+  scene3dQuality = "balanced",
+  poolEnvironment = "midnight",
+  onGolfRendererChange,
   soundVolume = 0.5,
 }: {
   customPhrases?: import("../domain/phrases").PhraseGroup[];
@@ -84,12 +102,20 @@ export const OriginalGame = memo(function OriginalGame({
   poolRenderer?: PoolRenderer;
   onPoolRendererChange?: (renderer: PoolRenderer) => void;
   poolSound?: boolean;
+  golfRenderer?: import("./scene3d/environment").SceneRenderer;
+  golfEnvironment?: import("./scene3d/environment").GolfEnvironment;
+  poolEnvironment?: import("./scene3d/environment").PoolEnvironment;
+  scene3dQuality?: import("./scene3d/environment").Scene3dQuality;
+  onGolfRendererChange?: (
+    renderer: import("./scene3d/environment").SceneRenderer,
+  ) => void;
   soundVolume?: number;
   snapshot: GameSnapshot;
   pending?: boolean;
   act: (action: Action) => void;
   end: () => void;
   onAutoplay?: (enabled: boolean, index?: number) => void;
+  onMinerPause?: (paused: boolean) => void;
   onReplay?: () => void;
   restart?: () => void;
   onInteract?: (
@@ -98,6 +124,7 @@ export const OriginalGame = memo(function OriginalGame({
     units?: import("../domain/social").InteractionUnits,
   ) => void;
 }) {
+  const live = !replay;
   replay ||= snapshot.actor < 0;
   const interactive = tableInteractive(snapshot, replay);
   const { game: gameMotion } = usePresentation();
@@ -172,6 +199,7 @@ export const OriginalGame = memo(function OriginalGame({
   runtime.bridge.heroCard = HeroSurface;
   runtime.bridge.trickCard = CardSurface;
   runtime.bridge.avatar = AvatarSurface;
+  runtime.bridge.collection = TableCollection;
   const avatarContext = {
     snapshot,
     replay,
@@ -241,6 +269,11 @@ export const OriginalGame = memo(function OriginalGame({
       data-motion-scope="game"
       data-game-motion={animationActive ? gameMotion : "reduced"}
       data-game={snapshot.kind}
+      data-draw-mode={
+        snapshot.kind === "drawguess"
+          ? (snapshot.config?.drawguess.mode ?? "classic")
+          : undefined
+      }
       data-flight-players={
         snapshot.kind === "fxq"
           ? flightPlayersCollapsed
@@ -293,6 +326,8 @@ export const OriginalGame = memo(function OriginalGame({
         ) : presentation.kind === "miner" &&
           snapshot.state?.kind === "miner" ? (
           <MinerTable
+            onPause={onMinerPause}
+            volume={sound ? soundVolume : 0}
             snapshot={snapshot}
             act={dispatch}
             replay={replay}
@@ -341,6 +376,34 @@ export const OriginalGame = memo(function OriginalGame({
             onRendererChange={onPoolRendererChange}
             soundEnabled={poolSound}
             soundVolume={soundVolume}
+            environment={poolEnvironment}
+            quality={scene3dQuality}
+          />
+        ) : snapshot.state?.kind === "drawguess" && snapshot.state.mode === "fayu" ? (
+          <FayuTable
+            view={snapshot.state.view}
+            snapshot={snapshot}
+            act={dispatch}
+            control={live && snapshot.canManage && snapshot.actor === snapshot.state.view.host ? act : undefined}
+            pending={pending}
+            replay={replay}
+          />
+        ) : snapshot.state?.kind === "drawguess" ? (
+          <DrawGuessTable key={snapshot.state.view.round} view={snapshot.state.view} snapshot={snapshot} act={dispatch} pending={pending} replay={replay} />
+        ) : snapshot.state?.kind === "golf" ? (
+          <GolfGame
+            key={snapshot.state.view.hole}
+            view={snapshot.state.view}
+            snapshot={snapshot}
+            act={dispatch}
+            pending={pending}
+            replay={replay}
+            animate={animationActive && gameMotion !== "reduced"}
+            rate={animationRate}
+            renderer={golfRenderer}
+            environment={golfEnvironment}
+            quality={scene3dQuality}
+            onRendererChange={onGolfRendererChange}
           />
         ) : Game ? (
           <>

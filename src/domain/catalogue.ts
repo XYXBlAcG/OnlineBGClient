@@ -1,3 +1,4 @@
+import type { DrawMode } from "./drawguess/types";
 import type { MahjongMode } from "./mahjong/types";
 import { balance as graphwarBalance } from "./graphwar/balance";
 export const gameCatalogue = {
@@ -27,7 +28,7 @@ export const gameCatalogue = {
     symbol: "⛏",
     ai: true,
     mobile: true,
-    version: "1",
+    version: "5",
   },
   dominion: {
     apiVersion: 1,
@@ -194,8 +195,36 @@ export const gameCatalogue = {
     team: false,
     ai: true,
     mobile: true,
-    version: "1",
+    version: "2",
     symbol: "🎱",
+  },
+  drawguess: {
+    apiVersion: 1,
+    name: "你画我猜",
+    category: "聚会",
+    description: "经典轮流画题，或法语同时作画猜句",
+    minPlayers: 3,
+    maxPlayers: 8,
+    presentation: { kind: "drawguess" },
+    team: false,
+    ai: false,
+    mobile: true,
+    version: "3",
+    symbol: "✎",
+  },
+  golf: {
+    apiVersion: 1,
+    name: "迷你高尔夫",
+    category: "体育",
+    description: "五洞主题果岭，比拼总杆数",
+    minPlayers: 2,
+    maxPlayers: 6,
+    presentation: { kind: "golf" },
+    team: false,
+    ai: true,
+    mobile: true,
+    version: "1",
+    symbol: "⚑",
   },
 } as const;
 export type GameKind = keyof typeof gameCatalogue;
@@ -211,6 +240,10 @@ export const mobileGameKinds = gameKinds.filter(
 export const maxRoomSeats = Math.max(
   ...gameKinds.map((kind) => gameCatalogue[kind].maxPlayers),
 );
+
+export function gameSeatMinimum(kind: GameKind, drawMode?: DrawMode) {
+  return kind === "drawguess" && drawMode === "fayu" ? 2 : gameCatalogue[kind].minPlayers;
+}
 
 export function gameRulesVersion(kind: GameKind, mahjongMode?: MahjongMode) {
   return kind === "scmj" && mahjongMode === "washizu"

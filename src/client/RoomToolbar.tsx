@@ -23,6 +23,9 @@ export function RoomToolbar({
   snapshot,
   mobile,
   focused,
+  onChat,
+  chatOpen,
+  unread = 0,
   onFocus,
   onEnd,
   preferences,
@@ -41,10 +44,14 @@ export function RoomToolbar({
   guideShown,
   onGuide,
   onPractice,
+  showLlm = true,
 }: {
   snapshot: Snapshot;
   mobile: boolean;
   focused: boolean;
+  onChat?: () => void;
+  chatOpen?: boolean;
+  unread?: number;
   onFocus: () => void;
   onEnd?: () => void;
   preferences: Preferences;
@@ -71,6 +78,7 @@ export function RoomToolbar({
   guideShown: boolean;
   onGuide: () => void;
   onPractice?: () => void;
+  showLlm?: boolean;
 }) {
   const [surface, dispatch] = useReducer(roomSurfaceTransition, null);
   const open = surface === "menu";
@@ -85,12 +93,14 @@ export function RoomToolbar({
         )));
   const controls = (
     <>
-      <PartyQueue
-        snapshot={snapshot}
-        send={send}
-        onError={onError}
-        nestedDialogs
-      />
+      {!snapshot.config.arcade && (
+        <PartyQueue
+          snapshot={snapshot}
+          send={send}
+          onError={onError}
+          nestedDialogs
+        />
+      )}
       <section className="room-drawer-section">
         {guideAvailable && (
           <Button
@@ -111,7 +121,7 @@ export function RoomToolbar({
               onFocus();
             }}
           >
-            {focused ? "恢复界面" : "专注牌桌"}{" "}
+            {focused ? "退出沉浸" : "沉浸牌桌"}{" "}
             <Shortcut
               binding={preferences.bindings["view.focus"] ?? focusToggleBinding}
             />
@@ -170,17 +180,20 @@ export function RoomToolbar({
       )}
       {snapshot.canManage && (
         <section className="room-drawer-section">
-          <RoomSetup
-            registry={registry}
-            binding={preferences.bindings["room.setup"] ?? ""}
-            snapshot={snapshot}
-            onError={onError}
-            overlayClassName="nested-dialog-overlay"
-            onApply={(setup) => {
-              send({ type: "game", setup });
-              setOpen(false);
-            }}
-          />
+          {(!snapshot.arcade || snapshot.arcade.phase === "finished") && (
+            <RoomSetup
+              registry={registry}
+              binding={preferences.bindings["room.setup"] ?? ""}
+              snapshot={snapshot}
+              onError={onError}
+              overlayClassName="nested-dialog-overlay"
+              showLlm={showLlm}
+              onApply={(setup) => {
+                send({ type: "game", setup });
+                setOpen(false);
+              }}
+            />
+          )}
           {snapshot.state && snapshot.config.ai.length > 0 && (
             <Button
               onClick={() =>
@@ -215,7 +228,7 @@ export function RoomToolbar({
                   .sort((a, b) => a - b)
                   .map((value) => (
                     <option key={value} value={value}>
-                      {value / 1000} 秒
+                      {value === 0 ? "最快" : `${value / 1000} 秒`}
                     </option>
                   ))}
               </Select>
@@ -288,7 +301,11 @@ export function RoomToolbar({
       >
         <div className="room-heading">
           <strong aria-label={roomSurface.game}>
-            {gameCatalogue[snapshot.kind].name}
+            {snapshot.config.arcade && (
+              <>{snapshot.state ? "远征 · " : "多游戏远征"}</>
+            )}
+            {(!snapshot.config.arcade || snapshot.state) &&
+              gameCatalogue[snapshot.kind].name}
           </strong>
           <small>
             {snapshot.seats.filter((seat) => seat.name).length}/
@@ -331,6 +348,15 @@ export function RoomToolbar({
               pending={pending}
               onReveal={focused ? onFocus : undefined}
             />
+          )}
+          {onChat && (
+            <Button
+              className={unread ? "chat-unread" : ""}
+              aria-expanded={chatOpen}
+              onClick={onChat}
+            >
+              聊天{unread ? ` · ${unread}` : ""}
+            </Button>
           )}
           <Button aria-expanded={open} onClick={() => setOpen(true)}>
             房间菜单

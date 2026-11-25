@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { WebGLRenderer } from "three";
+import { Color, type WebGLRenderer, type WebGLRenderTarget } from "three";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Pool3DPreview } from "../src/client/dev/Pool3DPreview";
 import {
@@ -26,6 +26,14 @@ const context = {
   textAlign: "",
   textBaseline: "",
   fillText() {},
+  clearRect() {},
+  moveTo() {},
+  lineTo() {},
+  bezierCurveTo() {},
+  stroke() {},
+  strokeRect() {},
+  createLinearGradient() { return { addColorStop() {} }; },
+  createRadialGradient() { return { addColorStop() {} }; },
 };
 
 function createHost(width: number, height: number) {
@@ -58,6 +66,10 @@ function createRenderer() {
     }) as DOMRect;
   const sizes: [number, number][] = [];
   let renders = 0;
+  let target: WebGLRenderTarget | null = null;
+  const targets: (WebGLRenderTarget | null)[] = [];
+  const clearColor = new Color();
+  let clearAlpha = 0;
   const renderer = {
     domElement: canvas,
     shadowMap: { enabled: false, type: 0 },
@@ -66,6 +78,18 @@ function createRenderer() {
     capabilities: { isWebGL2: true },
     setPixelRatio() {},
     getPixelRatio: () => 1,
+    getRenderTarget: () => target,
+    setRenderTarget(value: WebGLRenderTarget | null) {
+      target = value;
+      targets.push(value);
+    },
+    getClearColor: (value: Color) => value.copy(clearColor),
+    getClearAlpha: () => clearAlpha,
+    setClearColor(value: Color, alpha = clearAlpha) {
+      clearColor.set(value);
+      clearAlpha = alpha;
+    },
+    clear() {},
     setSize(width: number, height: number) {
       sizes.push([width, height]);
     },
@@ -75,7 +99,7 @@ function createRenderer() {
     dispose() {},
     getContext: () => null,
   } as unknown as WebGLRenderer;
-  return { renderer, sizes, renders: () => renders };
+  return { renderer, sizes, targets, renders: () => renders };
 }
 
 function stubFrames() {
@@ -196,7 +220,9 @@ it("renders immediately when the host already has a size", () => {
     rendererFactory: () => fake.renderer,
   });
   expect(fake.sizes[0]).toEqual([1024, 768]);
-  expect(fake.renders()).toBeGreaterThan(0);
+  expect(fake.renders()).toBeGreaterThan(1);
+  expect(fake.targets.some((target) => target !== null)).toBe(true);
+  expect(fake.renderer.getRenderTarget()).toBeNull();
   scene.setCursor("not-allowed");
   expect(fake.renderer.domElement.style.cursor).toBe("not-allowed");
   scene.setCursor("grab");
@@ -295,4 +321,56 @@ it("builds the larger party table with its special balls in 3D", () => {
   expect(metrics.balls).toBe(12);
   expect(metrics.camera.z).toBeGreaterThan(2);
   scene.destroy();
+});
+
+it("reports WebGL context loss and disposes the canvas and render resources", () => {
+  const frames = stubFrames();
+  const host = createHost(800, 600);
+  const fake = createRenderer();
+  const dispose = vi.spyOn(fake.renderer, "dispose");
+  const statuses: PoolSceneStatus[] = [];
+  const scene = new PoolScene3D(host, view, {
+    rendererFactory: () => fake.renderer,
+    onStatus: (status) => statuses.push(status),
+  });
+  expect(statuses.at(-1)?.phase).toBe("ready");
+  const canvas = fake.renderer.domElement;
+  const event = new Event("webglcontextlost", { cancelable: true });
+  canvas.dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(true);
+  expect(statuses.at(-1)).toEqual({ phase: "error", message: "WebGL 上下文丢失" });
+  expect(host.querySelector("canvas")).toBeNull();
+  expect(dispose).toHaveBeenCalledOnce();
+  const renders = fake.renders();
+  frames[0](0);
+  expect(fake.renders()).toBe(renders);
+  scene.destroy();
+  expect(dispose).toHaveBeenCalledOnce();
+});
+
+it("uses the nearest visible sphere when balls overlap in the camera", () => {
+  const host = createHost(800, 600);
+  stubFrames();
+  const { renderer } = createRenderer();
+  const scene = new PoolScene3D(host, view, { rendererFactory: () => renderer });
+  try {
+    const { camera, balls } = scene as unknown as {
+      camera: import("three").PerspectiveCamera;
+      balls: Map<number, import("three").Mesh>;
+    };
+    camera.position.set(0, 4, 7);
+    camera.lookAt(0, 0, 0);
+    const front = balls.get(2)!;
+    const back = balls.get(1)!;
+    for (const mesh of balls.values()) mesh.visible = false;
+    back.visible = front.visible = true;
+    back.position.set(0, 0, 0);
+    front.position.copy(camera.position).multiplyScalar(0.25);
+    const { width, height } = renderer.domElement.getBoundingClientRect();
+    expect(scene.ballAt(width / 2, height / 2)).toBe(2);
+    front.visible = false;
+    expect(scene.ballAt(width / 2, height / 2)).toBe(1);
+  } finally {
+    scene.destroy();
+  }
 });

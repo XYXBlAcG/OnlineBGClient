@@ -19,9 +19,8 @@ const jsonResponse = (value: unknown): Response =>
   });
 
 const callsOf = (fetchImpl: typeof fetch) =>
-  (
-    fetchImpl as unknown as { mock: { calls: Array<[string, RequestInit]> } }
-  ).mock.calls;
+  (fetchImpl as unknown as { mock: { calls: Array<[string, RequestInit]> } })
+    .mock.calls;
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -78,9 +77,11 @@ describe("createAiProvider", () => {
 
     expect(result.text).toBe("嗨");
     const [url] = callsOf(fetchImpl)[0]!;
-    expect(url).toContain(
-      "/models/gemini-test:generateContent?key=secret",
-    );
+    expect(url).toContain("/models/gemini-test:generateContent");
+    expect(url).not.toContain("secret");
+    expect(
+      new Headers(callsOf(fetchImpl)[0]![1].headers).get("x-goog-api-key"),
+    ).toBe("secret");
   });
 
   it("calls OpenCode Go's OpenAI-compatible endpoint", async () => {
@@ -132,4 +133,23 @@ describe("createAiProvider", () => {
     const [url] = callsOf(fetchImpl)[0]!;
     expect(url).toBe("http://127.0.0.1:11434/api/chat");
   });
+});
+
+it("uses completion-token parameters and omits unsupported temperature for reasoning profiles", async () => {
+  const fetchImpl = vi.fn(async () =>
+    jsonResponse({ choices: [{ message: { content: "0" } }] }),
+  ) as unknown as typeof fetch;
+  vi.stubGlobal("fetch", fetchImpl);
+  await createAiProvider(
+    settings({ compatibility: "reasoning" }),
+    "synthetic",
+  ).generateText({
+    messages: [{ role: "user", content: "test" }],
+    temperature: 0,
+    maxOutputTokens: 128,
+  });
+  const body = JSON.parse(callsOf(fetchImpl)[0]![1].body as string);
+  expect(body.max_completion_tokens).toBe(128);
+  expect(body).not.toHaveProperty("max_tokens");
+  expect(body).not.toHaveProperty("temperature");
 });

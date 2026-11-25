@@ -275,7 +275,7 @@ const upstreamSelectors: Partial<Record<GuideTargetKey, string>> = {
   "sgs.hero": ".sgs-hero",
   "gw.fire":
     '.original-game[data-game="graphwar"] .gw-input-row button.primary-button',
-  "expedition.status": ".exp-resource",
+  "expedition.status": ".exp-status-resources .roguelike-metric",
   "expedition.party": ".exp-party > div",
   "expedition.profession": ".exp-professions > button",
   "expedition.map": ".exp-route-options > button",

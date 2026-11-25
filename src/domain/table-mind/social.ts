@@ -1,3 +1,5 @@
+import type { AiProviderSettings } from "../companion";
+import { estimateTokens } from "companion-core";
 import type { CompanionProfile, SpeakerView } from "companion-core";
 import { compilePrompt } from "companion-core";
 import type { TableEvent } from "./model";
@@ -17,6 +19,7 @@ export function buildSocialPrompt(
   profile: CompanionProfile,
   events: TableEvent[],
   memory: TableMemoryFact[],
+  settings: AiProviderSettings,
 ): SocialPrompt {
   const facts = new Map(view.facts.map((fact) => [fact.id, fact.text]));
   const system = [
@@ -75,10 +78,13 @@ export function buildSocialPrompt(
       content: facts.get("event") ?? "",
     },
   ];
+  const trigger = sections.find((section) => section.id === "trigger")!;
+  trigger.minTokens = estimateTokens(trigger.content);
+  trigger.maxTokens = trigger.minTokens;
   const plan = compilePrompt(sections, {
-    model: "table-mind",
-    contextWindow: 8192,
-    reservedOutput: 80,
+    model: settings.model,
+    contextWindow: settings.contextWindow - estimateTokens(system) - 128,
+    reservedOutput: Math.min(120, settings.maxOutputTokens),
   });
   const user = plan.sections
     .filter((section) => section.included && section.content)

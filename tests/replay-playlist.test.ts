@@ -32,3 +32,18 @@ it("groups a continued expedition by run identity across rooms", () => {
   const c = { ...a, startedAt: 3, expeditionRunId: "different" };
   expect(replayPlaylist([c, b, a], a)).toEqual([a, b]);
 });
+
+it("keeps mixed arcade replays together and excludes normal matches from the same room", () => {
+  const first = { ...record("one", 1), arcadeRunId: "chapter-one" };
+  const second = {
+    ...record("one", 2),
+    config: { ...record("one", 2).config, kind: "miner" as const },
+    arcadeRunId: "chapter-one",
+  };
+  const other = { ...record("one", 3), arcadeRunId: "chapter-two" };
+  const normal = record("one", 4);
+  const records = [normal, second, other, first];
+  expect(replayPlaylist(records, first)).toEqual([first, second]);
+  expect(adjacentReplay(records, first, 1)).toBe(second);
+  expect(replayPlaylist(records, normal)).toEqual([normal]);
+});

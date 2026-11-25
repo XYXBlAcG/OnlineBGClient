@@ -1,6 +1,5 @@
 import { VoiceEffectControls } from "./VoiceEffectControls";
 import { VoiceSetupGuide } from "./VoiceSetupGuide";
-import "../ui/quick-start.css";
 import { useEffect, useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";

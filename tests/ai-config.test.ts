@@ -14,6 +14,7 @@ const provider: AiProviderSettings = {
   format: "openai",
   baseUrl: "https://ai.test/v1",
   model: "test-model",
+  compatibility: "standard",
   temperature: 0.8,
   contextWindow: 8192,
   maxOutputTokens: 160,
@@ -59,13 +60,13 @@ describe("ai config storage", () => {
     await migrateAiCredentials(store);
     expect(loadAiProvider(store)).toEqual(provider);
     expect(store.values.has("onlinebg.ai-config")).toBe(false);
-    expect(await hasAiApiKey()).toBe(true);
-    expect(await loadAiApiKey()).toBe("legacy-secret");
+    expect(await hasAiApiKey(provider)).toBe(true);
+    expect(await loadAiApiKey(provider)).toBe("legacy-secret");
   });
 
   it("keeps the key in memory outside desktop", async () => {
-    await saveAiApiKey("memory-key");
-    expect(await hasAiApiKey()).toBe(true);
-    expect(await loadAiApiKey()).toBe("memory-key");
+    await saveAiApiKey("memory-key", provider);
+    expect(await hasAiApiKey(provider)).toBe(true);
+    expect(await loadAiApiKey(provider)).toBe("memory-key");
   });
 });

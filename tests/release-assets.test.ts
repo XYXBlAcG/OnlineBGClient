@@ -95,3 +95,26 @@ it("keeps the native, application and published version on the same source", asy
   const { version } = await import("../package.json");
   expect(await releaseVersion()).toBe(version);
 });
+
+it("builds preview installers without an updater manifest", async () => {
+  const root = await mkdtemp(join(tmpdir(), "onlinebg-preview-"));
+  try {
+    for (const [name, bytes] of [
+      ["setup.exe", Buffer.from("MZ")],
+      ["OnlineBGClient.app.tar.gz", Buffer.from([31, 139, 1, 2])],
+    ] as const) {
+      await writeFile(join(root, name), bytes);
+      await writeFile(join(root, name + ".sig"), Buffer.from("signature fixture for preview").toString("base64"));
+    }
+    const result = await prepareRelease(root, join(root, "out"), "0.6.2-preview.1", "v0.6.2-preview.1", "owner/repo");
+    expect(result.assets.map((asset) => basename(asset))).toEqual([
+      "OnlineBGClient-0.6.2-preview.1-Windows-x64.exe",
+      "OnlineBGClient-0.6.2-preview.1-Windows-x64.exe.sig",
+      "OnlineBGClient-0.6.2-preview.1-macOS-arm64.app.tar.gz",
+      "OnlineBGClient-0.6.2-preview.1-macOS-arm64.app.tar.gz.sig",
+      "SHA256SUMS.txt",
+    ]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

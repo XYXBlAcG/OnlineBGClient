@@ -1,9 +1,15 @@
-import { gameCatalogue, type GameKind } from "../../domain/catalogue";
+import type { DrawMode } from "../../domain/drawguess/types";
+import type { GameOptions } from "../../domain/game-options";
+import { gameSeatMinimum, gameCatalogue, type GameKind } from "../../domain/catalogue";
 import { configSchema, type RoomConfig } from "../../domain/protocol";
 import type { Difficulty } from "../../domain/types";
 import type { LegacyNodeId } from "../../domain/expedition/legacy";
 
 export interface LocalRoomOptions {
+  gameOptions?: Pick<
+    GameOptions,
+    "pool" | "mahjong" | "expedition" | "dominion" | "flight" | "checkers" | "drawguess" | "golf"
+  >;
   humans?: number;
   difficulty?: Difficulty;
   requestedAi?: number;
@@ -12,9 +18,9 @@ export interface LocalRoomOptions {
   expeditionLegacy?: LegacyNodeId[];
 }
 
-export function defaultLocalHumans(kind: GameKind): number {
+export function defaultLocalHumans(kind: GameKind, drawMode?: DrawMode): number {
   const game = gameCatalogue[kind];
-  return game.ai ? 1 : game.minPlayers;
+  return game.ai ? 1 : gameSeatMinimum(kind, drawMode);
 }
 
 export function localAiRange(
@@ -34,7 +40,7 @@ export function localRoomConfig(
   options: LocalRoomOptions = {},
 ): RoomConfig {
   const game = gameCatalogue[kind],
-    humans = options.humans ?? defaultLocalHumans(kind),
+    humans = options.humans ?? defaultLocalHumans(kind, options.gameOptions?.drawguess?.mode),
     range = localAiRange(kind, humans),
     aiCount = game.ai
       ? Math.min(
@@ -43,6 +49,7 @@ export function localRoomConfig(
         )
       : 0;
   return configSchema.parse({
+    ...options.gameOptions,
     kind,
     humans,
     ai: Array.from({ length: aiCount }, () => ({
@@ -57,6 +64,7 @@ export function localRoomConfig(
     ),
     expedition: {
       difficulty: options.expeditionDifficulty ?? "standard",
+      ...options.gameOptions?.expedition,
       ...(options.expeditionLegacy ? { legacy: options.expeditionLegacy } : {}),
     },
   });
@@ -72,6 +80,9 @@ export function localRoomConfigFromParams(
   const expeditionDifficulty = params.get("expeditionDifficulty");
   const difficulty = params.get("difficulty");
   return localRoomConfig(kind, {
+    gameOptions: params.has("gameOptions")
+      ? JSON.parse(params.get("gameOptions")!)
+      : undefined,
     humans: Number.isFinite(humans) ? humans : undefined,
     difficulty:
       difficulty === "easy" || difficulty === "hard" ? difficulty : "normal",

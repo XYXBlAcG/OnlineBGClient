@@ -1,3 +1,4 @@
+import { requiredCueElevation } from "./cue";
 import type { GameOptions } from "../game-options";
 import type { Candidate } from "../types";
 import type { Rules } from "../plugin";
@@ -63,8 +64,9 @@ function legalFirstHit(view: PoolView, actor: number, firstHit: number | null) {
       (view.party?.specials.some((special) => special.id === firstHit) ?? false)
     );
   if (view.groups[actor] === null)
-    return firstHit !== 8 ||
-      (view.openTable && remainingGroupCount(view.balls) <= 1);
+    return (
+      firstHit !== 8 || (view.openTable && remainingGroupCount(view.balls) <= 1)
+    );
   if (cleared(view, actor)) return firstHit === 8;
   return groupOf(firstHit) === view.groups[actor];
 }
@@ -212,14 +214,7 @@ export function applyOutcome(
   }
 
   if (view.mode === "party")
-    return applyPartyOutcome(
-      next,
-      view,
-      actor,
-      shot,
-      foul,
-      pocketedObjects,
-    );
+    return applyPartyOutcome(next, view, actor, shot, foul, pocketedObjects);
 
   const eight = pocketedObjects.includes(8);
   if (eight && breakShot) next.balls = respot(next.balls, 8);
@@ -237,9 +232,7 @@ export function applyOutcome(
     );
     const clearedGroupThisShot = [...pocketedGroups].some(
       (group) =>
-        !objectBalls(next.balls).some(
-          (ball) => groupOf(ball.id) === group,
-        ),
+        !objectBalls(next.balls).some((ball) => groupOf(ball.id) === group),
     );
     if (
       foul ||
@@ -368,7 +361,14 @@ export class PoolRules implements Rules<"pool"> {
       throw new Error("当前不能放置白球");
     if (action.cue && !cuePlacementValid(state.view.balls, action.cue, layout))
       throw new Error("白球放置位置无效");
-    const input: PoolShotAction = { ...action };
+    const cue = action.cue ?? state.view.balls.find((ball) => ball.id === 0)!;
+    const input: PoolShotAction = {
+      ...action,
+      elevation: Math.max(
+        action.elevation ?? 0,
+        requiredCueElevation(layout, state.view.balls, cue, action.aim),
+      ),
+    };
     if (input.cue) {
       state = {
         ...state,
@@ -382,8 +382,7 @@ export class PoolRules implements Rules<"pool"> {
         },
       };
     }
-    const shot =
-      recorded ?? simulateShot(state.view.balls, input, layout);
+    const shot = recorded ?? simulateShot(state.view.balls, input, layout);
     return { kind: "pool", view: applyOutcome(state.view, actor, shot) };
   }
 

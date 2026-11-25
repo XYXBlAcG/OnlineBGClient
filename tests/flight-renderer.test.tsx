@@ -1,6 +1,14 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
+const device = vi.hoisted(() => ({ mobile: false }));
+vi.mock("../src/client/use-mobile", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/client/use-mobile")>()),
+  useMobile: () => device.mobile,
+}));
+afterEach(() => {
+  device.mobile = false;
+});
 import { Room } from "../src/domain/room";
 import { OriginalGame } from "../src/client/OriginalGame";
 import { guideTarget } from "../src/client/guide-targets";
@@ -24,6 +32,16 @@ function flight(mode: "classic" | "storm") {
   room.start(tokens[0]);
   return room.snapshot(tokens[0]);
 }
+
+it("omits the turn forecast on phones while retaining storm abilities and weather", () => {
+  device.mobile = true;
+  const html = renderToString(
+    <OriginalGame snapshot={flight("storm")} act={() => {}} end={() => {}} />,
+  );
+  expect(html).not.toContain('data-guide-target="fxq.forecast"');
+  expect(html).toContain('data-guide-target="fxq.weather"');
+  expect(html).toContain('data-guide-target="fxq.energy"');
+});
 
 it("renders a classic flight board with a sizeable map canvas", () => {
   const snapshot = flight("classic");

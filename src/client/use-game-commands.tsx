@@ -24,6 +24,9 @@ export function GameCommandProvider({
     </GameCommandContext.Provider>
   );
 }
+export function useGameBinding(id: string, fallback: string): string {
+  return useContext(GameCommandContext)?.bindings[id] ?? fallback;
+}
 export function useGameCommands(commands: AppCommand[]): void {
   const environment = useContext(GameCommandContext),
     latest = useRef(commands);

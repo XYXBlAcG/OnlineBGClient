@@ -1,3 +1,4 @@
+import { defaultAiProviderSettings } from "../src/domain/companion";
 import { describe, expect, it, vi } from "vitest";
 import type { CompanionProfile } from "companion-core";
 import {
@@ -65,6 +66,8 @@ const actionEvent = (id = "a1"): TableEvent => ({
 class FakeRoom implements TableMindRoom {
   readonly id = "room-1";
   hasEnded = false;
+  paused = false;
+  version = 1;
   playId: string | undefined = "play-1";
   readonly config: { companion: CompanionConfig };
   readonly messages: ChatMessage[] = [];
@@ -111,6 +114,8 @@ class FakeRoom implements TableMindRoom {
 
 const runner = (reply = "收到"): TableMindRunner => ({
   configured: true,
+  settings: { ...defaultAiProviderSettings, model: "test" },
+  clear: vi.fn(),
   configure: vi.fn(),
   complete: vi.fn(async () => reply),
 });
@@ -129,7 +134,8 @@ describe("TableMind social reactions", () => {
       expect.stringContaining("只输出回复正文"),
       expect.stringContaining("@青竹 你好"),
       120,
-      8000,
+      undefined,
+      expect.any(AbortSignal),
     );
   });
 
@@ -177,9 +183,7 @@ describe("TableMind social reactions", () => {
     let now = 100_000;
     const r = runner();
     const mind = new TableMind(r, { log: vi.fn(), now: () => now });
-    const room = new FakeRoom(
-      config("mention-only", { cooldownMs: 5000 }),
-    );
+    const room = new FakeRoom(config("mention-only", { cooldownMs: 5000 }));
     room.events = [chatEvent("@青竹 一", "m1")];
     await mind.tick(room);
     expect(room.messages).toHaveLength(1);
@@ -206,7 +210,7 @@ describe("TableMind social reactions", () => {
     room.events = [chatEvent("@青竹 你好")];
     await expect(mind.tick(room)).resolves.toBeUndefined();
     expect(room.messages).toHaveLength(0);
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("provider down"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("provider-error"));
   });
 
   it("stays silent when disabled or unconfigured", async () => {
@@ -233,4 +237,20 @@ describe("TableMind social reactions", () => {
     await unconfiguredMind.tick(unconfiguredRoom);
     expect(unconfigured.complete).not.toHaveBeenCalled();
   });
+});
+
+it("keeps the complete current trigger instead of silently dropping a longer message", async () => {
+  const { buildSocialPrompt } = await import("../src/domain/table-mind/social");
+  const trigger = "本轮请回应这段消息".repeat(40);
+  const prompt = buildSocialPrompt(
+    {
+      actor: { kind: "companion", id: profile.id, name: profile.name },
+      facts: [{ id: "event", kind: "event", text: trigger, priority: 100 }],
+    },
+    profile,
+    [],
+    [],
+    { ...defaultAiProviderSettings, model: "test" },
+  );
+  expect(prompt.user).toContain(trigger);
 });

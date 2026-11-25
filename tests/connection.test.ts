@@ -234,3 +234,86 @@ it("merges incremental updates and acknowledges a single outstanding game action
     vi.unstubAllGlobals();
   }
 });
+
+it("blocks new moves until a foreground snapshot is restored", async () => {
+  vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} });
+  const server = new WebSocketServer({ port: 0, host: "127.0.0.1" });
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const commands: { type: string }[] = [],
+    events: any[] = [];
+  server.on("connection", (socket) =>
+    socket.on("message", (data) => {
+      const command = JSON.parse(data.toString());
+      commands.push(command);
+      if (command.type === "join")
+        socket.send(
+          JSON.stringify({ type: "session", room: "test", token: "identity" }),
+        );
+      if (command.type !== "action")
+        setTimeout(
+          () =>
+            socket.send(
+              JSON.stringify({
+                type: "snapshot",
+                snapshot: {
+                  kind: "uno",
+                  apiVersion: protocolVersion,
+                  rulesVersion: gameCatalogue.uno.version,
+                },
+              }),
+            ),
+          80,
+        );
+    }),
+  );
+  const connection = new NetworkConnection(
+    `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+    { type: "join", room: "test", name: "我" },
+    (event) => events.push(event),
+    () => {},
+  );
+  try {
+    await vi.waitFor(() =>
+      expect(events.filter((event) => event.type === "snapshot")).toHaveLength(
+        1,
+      ),
+    );
+    window.dispatchEvent(new Event("pageshow"));
+    connection.send({
+      type: "action",
+      token: "identity",
+      id: "stale",
+      version: 1,
+      action: { type: "uno-start" },
+    });
+    expect(events.at(-1)).toMatchObject({
+      type: "error",
+      message: expect.stringContaining("同步"),
+    });
+    await vi.waitFor(() =>
+      expect(events.filter((event) => event.type === "snapshot")).toHaveLength(
+        2,
+      ),
+    );
+    expect(
+      commands.filter((command) => command.type === "action"),
+    ).toHaveLength(0);
+    connection.send({
+      type: "action",
+      token: "identity",
+      id: "fresh",
+      version: 2,
+      action: { type: "uno-start" },
+    });
+    await vi.waitFor(() =>
+      expect(
+        commands.filter((command) => command.type === "action"),
+      ).toHaveLength(1),
+    );
+  } finally {
+    connection.close();
+    for (const socket of server.clients) socket.terminate();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    vi.unstubAllGlobals();
+  }
+});

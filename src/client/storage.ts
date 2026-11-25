@@ -50,7 +50,7 @@ interface CachedImage {
   bytes: Blob;
   preview: Blob;
 }
-const recordKey = (record: ReplayRecord) =>
+export const recordKey = (record: ReplayRecord) =>
   `${record.room}:${record.startedAt}`;
 const historyChanges = new EventTarget();
 const historyRevision = "onlinebg.history-revision";

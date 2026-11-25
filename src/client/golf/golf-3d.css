@@ -1,0 +1,30 @@
+.golf-3d-table {
+  min-height: 0;
+  gap: 8px;
+}
+.golf-3d-host {
+  grid-area: board;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--board-surface);
+  touch-action: none;
+}
+.golf-3d-canvas { display: block; width: 100%; height: 100%; }
+.golf-3d-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 13px;
+  background: color-mix(in srgb, var(--board-surface) 76%, transparent);
+}
+.golf-3d-table .party-game-scores { max-height: 100%; }
+@media (max-width: 900px) {
+  .golf-3d-host { min-height: 210px; }
+}

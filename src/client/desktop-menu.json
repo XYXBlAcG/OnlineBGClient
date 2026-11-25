@@ -32,7 +32,8 @@
     "id": "view",
     "title": "视图",
     "items": [
-      { "id": "view.focus", "title": "专注模式" },
+      { "id": "view.focus", "title": "沉浸模式" },
+      { "id": "view.borderless", "title": "无边框全屏" },
       { "id": "app.chat", "title": "聊天" },
       { "id": "view.guide", "title": "新手引导" },
       { "id": "app.records", "title": "对局记录" }

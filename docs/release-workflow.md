@@ -56,6 +56,10 @@ gh push origin vX.Y.Z
 - 发布资产只有 Windows 与 macOS；iOS 构建与 IPA 不参与发布。
 - 不在 GitHub 手工维护第二套资产名或说明格式。
 
+## 桌面预览版
+
+预览标签格式为 `vX.Y.Z-preview.N`，对应版本规则和发布标记见[版本校验](../scripts/lib/release-sources.mjs)及[发布脚本](../scripts/publish-release.mjs)。客户端的稳定版过滤见[原生更新服务](../src-tauri/src/updater.rs)，安装包清单见[发布资产脚本](../scripts/release-assets.mjs)。
+
 ## 共享字体包
 
 字体文件不进入应用安装包。macOS 直接使用系统字体，其他平台缺少字体时从固定的 0.4.1 Release 资源下载并缓存。

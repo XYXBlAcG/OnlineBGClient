@@ -21,12 +21,16 @@ import { PhraseSettings } from "./PhraseSettings";
 import { CacheSettings } from "./CacheSettings";
 import { AchievementGallery } from "./Achievements";
 import { AiChatSettings, AiProviderSettings } from "./AiSettings";
-import type { CompanionConfig } from "../domain/companion";
+import type {
+  AiProviderSettings as ProviderSettings,
+  CompanionConfig,
+} from "../domain/companion";
 import type { AiConfig } from "./ai-config";
 import { enableNotifications } from "./notifications";
 import { ThemeControl } from "./ThemeControl";
 import { Panel, SearchField, Select, Slider, Switch } from "./ui/Controls";
 import { searchSettingsSections } from "./settings-search";
+import { DrawingLibrariesSettings } from "./drawguess/DrawingLibrariesSettings";
 import type { Preferences } from "./preferences";
 import type { AppCommand } from "./commands";
 
@@ -44,10 +48,13 @@ export function Settings({
   initialSection = "外观",
   sizing: suppliedSizing,
   onTestAchievement,
+  showLlm = true,
   companion,
   onCompanionChange,
   onSaveAiConfig,
   onTestAiConfig,
+  onClearAiConfig,
+  aiConnectionAvailable = false,
 }: {
   sizing?: GameSizing;
   initialSection?: string;
@@ -62,6 +69,7 @@ export function Settings({
   onError: (message: string) => void;
   onBind: (id: string, binding: string) => Promise<void>;
   onTestAchievement?: () => void;
+  showLlm?: boolean;
   companion?: {
     config: CompanionConfig;
     status: {
@@ -73,7 +81,9 @@ export function Settings({
     };
   };
   onCompanionChange?: (config: CompanionConfig) => void;
-  onSaveAiConfig?: (config: AiConfig) => void | Promise<void>;
+  onSaveAiConfig?: (config: AiConfig) => Promise<string>;
+  onClearAiConfig?: (provider: ProviderSettings) => Promise<string>;
+  aiConnectionAvailable?: boolean;
   onTestAiConfig?: (config: AiConfig) => Promise<string>;
 }) {
   const localSizing = useGameSizing();
@@ -99,6 +109,7 @@ export function Settings({
         scope,
       })),
       canConfigureAI,
+      aiConnectionAvailable,
       roomPerformance,
       mediaSession,
       initialSection,
@@ -110,30 +121,36 @@ export function Settings({
       if (intent.type === "preferences") onChange(intent.preferences);
       if (intent.type === "achievement-test") onTestAchievement?.();
       if (intent.type === "companion") onCompanionChange?.(intent.config);
-      if (intent.type === "ai-provider") onSaveAiConfig?.(intent.config);
-      if (intent.type === "ai-test") {
-        if (!onTestAiConfig)
-          void emitTo("aux-settings", "ai-test-result", {
-            request: intent.request,
-            ok: false,
-            message: "主窗口当前不可测试",
-          });
-        else
-          void onTestAiConfig(intent.config)
-            .then((message) =>
-              emitTo("aux-settings", "ai-test-result", {
-                request: intent.request,
-                ok: true,
-                message,
-              }),
-            )
-            .catch((error) =>
-              emitTo("aux-settings", "ai-test-result", {
-                request: intent.request,
-                ok: false,
-                message: error instanceof Error ? error.message : String(error),
-              }),
-            );
+      if (
+        intent.type === "ai-provider" ||
+        intent.type === "ai-test" ||
+        intent.type === "ai-clear"
+      ) {
+        void Promise.resolve()
+          .then(() => {
+            const operation =
+              intent.type === "ai-provider"
+                ? onSaveAiConfig?.(intent.config)
+                : intent.type === "ai-test"
+                  ? onTestAiConfig?.(intent.config)
+                  : onClearAiConfig?.(intent.provider);
+            if (!operation) throw new Error("主窗口当前不可执行此 AI 操作");
+            return operation;
+          })
+          .then((message) =>
+            emitTo("aux-settings", "ai-result", {
+              request: intent.request,
+              ok: true,
+              message,
+            }),
+          )
+          .catch((error) =>
+            emitTo("aux-settings", "ai-result", {
+              request: intent.request,
+              ok: false,
+              message: error instanceof Error ? error.message : "AI 操作失败",
+            }),
+          );
       }
       if (intent.type === "binding")
         void onBind(intent.id, intent.binding)
@@ -161,11 +178,17 @@ export function Settings({
     search,
     desktop,
     capabilities.voice,
+    showLlm,
   );
   const searchEmpty = !!search.trim() && !visibleSections.length;
   const changeSearch = (value: string) => {
     setSearch(value);
-    const matches = searchSettingsSections(value, desktop, capabilities.voice);
+    const matches = searchSettingsSections(
+      value,
+      desktop,
+      capabilities.voice,
+      showLlm,
+    );
     if (
       value.trim() &&
       matches.length &&
@@ -225,23 +248,16 @@ export function Settings({
           )}
           <section hidden={section !== "外观"} className="settings-section">
             <h3>外观</h3>
-            <Switch
-              label="显示首页快速上手"
-              checked={preferences.showQuickStart}
-              onCheckedChange={(showQuickStart) =>
-                onChange({ ...preferences, showQuickStart })
-              }
-            />
-            <Switch
-              label="显示首页连麦设置入口"
-              checked={preferences.showVoiceShortcut}
-              onCheckedChange={(showVoiceShortcut) =>
-                onChange({ ...preferences, showVoiceShortcut })
-              }
-            />
             <ThemeControl
               value={preferences.theme}
               onChange={(theme) => onChange({ ...preferences, theme })}
+            />
+            <Switch
+              label="进入对局后自动沉浸"
+              checked={preferences.fullscreenTable}
+              onCheckedChange={(fullscreenTable) =>
+                onChange({ ...preferences, fullscreenTable })
+              }
             />
             <MotionControls
               preferences={preferences}
@@ -518,6 +534,7 @@ export function Settings({
               }
             />
           </section>
+          {showLlm && (
           <section hidden={section !== "接入 AI"} className="settings-section">
             <h3>接入 AI</h3>
             {onSaveAiConfig ? (
@@ -525,7 +542,10 @@ export function Settings({
                 fallbackProvider={companion?.config.provider}
                 status={companion?.status}
                 onSaveProvider={onSaveAiConfig}
-                onTestProvider={onTestAiConfig}
+                onTestProvider={
+                  aiConnectionAvailable ? onTestAiConfig : undefined
+                }
+                onClearProvider={onClearAiConfig}
                 onError={onError}
               />
             ) : (
@@ -545,6 +565,7 @@ export function Settings({
               </p>
             )}
           </section>
+          )}
           <div hidden={section !== "常用语"}>
             <PhraseSettings
               groups={preferences.phraseGroups}
@@ -558,6 +579,7 @@ export function Settings({
             <AchievementGallery onTestToast={onTestAchievement} />
           )}
           <div hidden={section !== "数据"}>
+            <DrawingLibrariesSettings />
             {mediaSession?.endpoint && (
               <MediaCacheControls session={mediaSession} onError={onError} />
             )}

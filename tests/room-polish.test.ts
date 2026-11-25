@@ -36,21 +36,10 @@ it("keeps catalogue icons and menu focus rules independent of upstream card styl
     lobbyCss = readFileSync("src/client/lobby/lobby.css", "utf8"),
     css = readFileSync("src/styles.css", "utf8");
   expect(lobby).not.toContain("className={`game-symbol ${key}`}");
-  expect(lobby.match(/<LobbySetupTransition/g)).toHaveLength(2);
-  expect(lobby).toContain("heading:${kind}");
-  expect(lobby).toContain("options:${kind}");
-  expect(lobby).toContain('variant="heading"');
-  expect(lobby).toContain('variant="options"');
-  expect(lobby).toContain("!preferences.lobbySwitchMotion");
-  expect(lobbyCss).toContain("@keyframes lobby-content-in");
-  expect(lobbyCss).toContain("@keyframes lobby-skeleton-pulse");
-  expect(lobbyCss).toContain(".lobby-setup-skeleton");
-  expect(lobbyCss).toContain(".lobby-setup-transition");
-  expect(lobbyCss).toContain("transition-duration: 60ms");
-  expect(lobbyCss).toContain("200ms var(--ease-emphasized) 60ms forwards");
-  expect(
-    readFileSync("src/client/lobby/LobbySetupTransition.tsx", "utf8"),
-  ).toContain("}, 300);");
+  expect(lobby.match(/<SceneSurface/g)).toHaveLength(2);
+  expect(lobby).toContain('profile="panel"');
+  expect(lobby).toContain("enabled={preferences.lobbySwitchMotion}");
+  expect(lobbyCss).not.toContain(".lobby-setup-skeleton");
   expect(css).toContain(".ui-select-menu .ui-select-item:focus-visible");
   expect(css).toContain(".about-links a");
 });

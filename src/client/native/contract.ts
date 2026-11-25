@@ -1,3 +1,4 @@
+import type { ReplayRecord } from "../../domain/replay";
 import type { GameSizing } from "../game-sizing/model";
 import type { MediaSession } from "../social/media";
 import { attachmentSchema } from "../../domain/attachments";
@@ -7,6 +8,7 @@ import { roomSetupSchema, type Snapshot } from "../../domain/protocol";
 import type { ComputeDiagnostic } from "../../domain/compute-diagnostics";
 import type { AppCommand } from "../commands";
 import {
+  aiProviderSettingsSchema,
   companionConfigSchema,
   type CompanionConfig,
 } from "../../domain/companion";
@@ -86,8 +88,15 @@ export const auxiliaryIntentSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("ai-provider"),
+    request: z.string().min(1),
     view: z.literal("settings"),
     config: aiConfigSchema,
+  }),
+  z.object({
+    type: z.literal("ai-clear"),
+    request: z.string().min(1),
+    view: z.literal("settings"),
+    provider: aiProviderSettingsSchema,
   }),
   z.object({
     type: z.literal("ai-test"),
@@ -114,6 +123,7 @@ export type AuxiliaryPayload =
       preferences: Preferences;
       commands: Pick<AppCommand, "id" | "title" | "binding" | "scope">[];
       canConfigureAI: boolean;
+      aiConnectionAvailable?: boolean;
       roomPerformance?: Snapshot["config"]["performance"];
       mediaSession?: MediaSession;
       initialSection?: string;
@@ -132,7 +142,7 @@ export type AuxiliaryPayload =
     }
   | { view: "guide"; snapshot: Snapshot; index: number }
   | { view: "about" }
-  | { view: "records" }
+  | { view: "records"; initialReplay?: ReplayRecord }
   | { view: "invite"; url: string }
   | { view: "diagnostics"; diagnostic: ComputeDiagnostic; canRetry: boolean }
   | { view: "roomsetup"; snapshot: Snapshot }

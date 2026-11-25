@@ -89,6 +89,12 @@ export class FlightRules {
       { playerList: Array(players).fill({}) },
       this.codec.encode({ rule: 0 }).finish(),
     ) as FlightView;
+    if (options?.arcadeScenario?.kind === "fxq") {
+      view.planePositionList = view.planePositionList.map((_, index) =>
+        index % 4 === 0 ? 46 : index % 4 === 1 ? 50 : 0,
+      );
+      return view;
+    }
     if (options?.flight?.mode !== "storm") return view;
     return {
       ...view,

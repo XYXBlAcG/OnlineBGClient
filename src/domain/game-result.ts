@@ -1,5 +1,6 @@
 import type { GameState } from "./types";
 import { catanVictoryPoints } from "./catan";
+import { golfTotal } from "./golf/rules";
 
 function unoWinner(state: Extract<GameState, { kind: "uno" }>, actor: number) {
   const view = state.view;
@@ -43,6 +44,15 @@ export function gameWinner(state: GameState, actor: number): boolean {
     }
     case "pool":
       return state.view.winner === actor;
+    case "drawguess":
+      return (
+        state.view.phase === "finished" &&
+        state.view.scores[actor] === Math.max(...state.view.scores)
+      );
+    case "golf": {
+      const totals = state.view.players.map(golfTotal);
+      return state.view.phase === "finished" && totals[actor] === Math.min(...totals);
+    }
   }
   return false;
 }

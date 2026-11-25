@@ -73,6 +73,22 @@ export function DisplaySettings({
           大
         </Button>
       </div>
+      <label>
+        手牌大小 · {Math.round(preferences.cardScale * 100)}%
+        <Slider
+          aria-label="手牌大小"
+          min={0.85}
+          max={1.6}
+          step={0.05}
+          value={preferences.cardScale}
+          onValueChange={(cardScale) => update({ cardScale })}
+        />
+      </label>
+      <Switch
+        label="卡牌点击动画"
+        checked={preferences.cardClickMotion}
+        onCheckedChange={(cardClickMotion) => update({ cardClickMotion })}
+      />
       <Switch
         label="显示帧率"
         checked={preferences.showFps}
@@ -92,6 +108,68 @@ export function DisplaySettings({
           <option value="auto">自动（桌面 3D）</option>
           <option value="3d">3D</option>
           <option value="2d">2D</option>
+        </Select>
+      </label>
+      <label className="setting-row">
+        高尔夫渲染
+        <Select
+          aria-label="高尔夫渲染"
+          value={preferences.golfRenderer}
+          onValueChange={(golfRenderer) =>
+            update({
+              golfRenderer: golfRenderer as Preferences["golfRenderer"],
+            })
+          }
+        >
+          <option value="auto">自动（桌面 3D）</option>
+          <option value="3d">3D</option>
+          <option value="2d">2D</option>
+        </Select>
+      </label>
+      <label className="setting-row">
+        台球环境
+        <Select
+          aria-label="台球环境"
+          value={preferences.poolEnvironment}
+          onValueChange={(poolEnvironment) =>
+            update({
+              poolEnvironment: poolEnvironment as Preferences["poolEnvironment"],
+            })
+          }
+        >
+          <option value="midnight">午夜球房</option>
+          <option value="arena">锦标赛舞台</option>
+        </Select>
+      </label>
+      <label className="setting-row">
+        高尔夫环境
+        <Select
+          aria-label="高尔夫环境"
+          value={preferences.golfEnvironment}
+          onValueChange={(golfEnvironment) =>
+            update({
+              golfEnvironment: golfEnvironment as Preferences["golfEnvironment"],
+            })
+          }
+        >
+          <option value="coast">海滨灯塔</option>
+          <option value="forest">森林午后</option>
+        </Select>
+      </label>
+      <label className="setting-row">
+        3D 画质
+        <Select
+          aria-label="3D 画质"
+          value={preferences.scene3dQuality}
+          onValueChange={(scene3dQuality) =>
+            update({
+              scene3dQuality: scene3dQuality as Preferences["scene3dQuality"],
+            })
+          }
+        >
+          <option value="high">高（后处理 · 精细阴影）</option>
+          <option value="balanced">均衡（推荐）</option>
+          <option value="performance">流畅（关闭后处理）</option>
         </Select>
       </label>
       <p className="muted">自动模式在桌面启用 3D，WebGL 不可用时回退 2D。</p>

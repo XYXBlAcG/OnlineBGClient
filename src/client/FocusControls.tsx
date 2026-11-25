@@ -19,7 +19,7 @@ export function FocusControls({
   onPlayer?: (id: string) => void;
 }) {
   return (
-    <nav className="focus-controls" aria-label="专注模式操作">
+    <nav className="focus-controls" aria-label="沉浸模式操作">
       {players.length > 1 && onPlayer && (
         <Select
           aria-label="当前本地玩家"
@@ -34,12 +34,17 @@ export function FocusControls({
         </Select>
       )}
       {onEnd && (
-        <Button variant="danger" data-room-action="end" onClick={onEnd}>
-          结束对局
-        </Button>
+        <details className="focus-more">
+          <summary aria-label="对局操作">⋯</summary>
+          <div className="focus-more-actions">
+            <Button variant="danger" data-room-action="end" onClick={onEnd}>
+              结束对局
+            </Button>
+          </div>
+        </details>
       )}
       <Button onClick={onExit}>
-        退出专注 <kbd>Esc</kbd>
+        退出沉浸 <kbd>Esc</kbd>
       </Button>
       <Button
         className={`immersive-chat ${unread ? "chat-unread" : ""}`}

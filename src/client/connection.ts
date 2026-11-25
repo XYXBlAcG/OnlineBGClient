@@ -5,7 +5,7 @@ import {
   ComputeFailure,
 } from "../domain/compute-diagnostics";
 import type { SearchHostRequest } from "./compute-ports";
-import { SnapshotReplica } from "../domain/sync";
+import { SnapshotReplica, mergeSnapshotCanvas } from "../domain/sync";
 import { gameRulesVersion } from "../domain/catalogue";
 import {
   protocolVersion,
@@ -35,7 +35,15 @@ export class LocalConnection implements Connection {
         event.data.type === "search-close"
       )
         this.host.handle(event.data);
-      else receive(event.data);
+      else
+        receive(
+          event.data.type === "snapshot"
+            ? {
+                ...event.data,
+                snapshot: mergeSnapshotCanvas(event.data.snapshot),
+              }
+            : event.data,
+        );
     };
     this.worker.onerror = (event) => {
       event.preventDefault();
@@ -63,6 +71,7 @@ export class NetworkConnection implements Connection {
   private socket: WebSocket | null = null;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private stopped = false;
+  private synchronized = false;
   private deadline: ReturnType<typeof setTimeout> | undefined;
   private pending = new Map<string, Command>();
   private attempts = 0;
@@ -93,11 +102,16 @@ export class NetworkConnection implements Connection {
     }
     document.addEventListener("visibilitychange", this.resume);
     window.addEventListener("online", this.resume);
+    window.addEventListener("pageshow", this.resume);
     this.connect();
   }
 
   send(command: Command): void {
     if (command.type === "action") {
+      if (!this.synchronized) {
+        this.receive({ type: "error", message: "牌桌正在同步，请稍后操作" });
+        return;
+      }
       if (this.action) return;
       this.action = {
         id: command.id,
@@ -133,6 +147,7 @@ export class NetworkConnection implements Connection {
     this.stopped = true;
     document.removeEventListener("visibilitychange", this.resume);
     window.removeEventListener("online", this.resume);
+    window.removeEventListener("pageshow", this.resume);
     clearTimeout(this.timer);
     clearTimeout(this.deadline);
     this.socket?.close();
@@ -141,6 +156,7 @@ export class NetworkConnection implements Connection {
   private resume = (): void => {
     if (this.stopped || document.hidden) return;
     if (this.socket?.readyState === WebSocket.OPEN && this.session) {
+      this.synchronized = false;
       this.status("正在恢复");
       this.send({ type: "snapshot", token: this.session.token });
       this.waitForSnapshot(this.socket);
@@ -162,6 +178,7 @@ export class NetworkConnection implements Connection {
     }, 15000);
   }
   private connect(): void {
+    this.synchronized = false;
     this.status(this.attempts ? "重连中" : "连接中");
     const url = new URL("/connect", this.endpoint);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
@@ -226,6 +243,8 @@ export class NetworkConnection implements Connection {
         return;
       }
       if (response.type === "snapshot") {
+        const resuming = !this.synchronized;
+        this.synchronized = true;
         const restoring = this.deadline !== undefined;
         clearTimeout(this.deadline);
         this.deadline = undefined;
@@ -236,6 +255,12 @@ export class NetworkConnection implements Connection {
             "connection",
             `synchronized version=${response.snapshot.version}`,
           );
+        if (resuming) {
+          for (const command of this.pending.values())
+            socket.send(JSON.stringify(command));
+          if (this.action && !this.action.acknowledged)
+            this.waitForSnapshot(socket);
+        }
       }
       if (response.type === "session") {
         this.session = { room: response.room, token: response.token };
@@ -244,8 +269,6 @@ export class NetworkConnection implements Connection {
           response.token,
         );
         this.status("正在同步牌桌");
-        for (const command of this.pending.values())
-          this.socket!.send(JSON.stringify(command));
       }
       if (response.type === "closed" || response.type === "left") {
         if (this.session)
@@ -285,6 +308,7 @@ export class NetworkConnection implements Connection {
     };
     socket.onclose = (event) => {
       if (this.stopped || socket !== this.socket) return;
+      this.synchronized = false;
       clearTimeout(this.deadline);
       recordClientLog(
         "connection",

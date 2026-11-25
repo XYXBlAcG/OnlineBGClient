@@ -469,3 +469,12 @@
   font-size: 14px;
   overflow-wrap: anywhere;
 }
+
+body:has(.lobby-shell) .achievement-toasts {
+  right: auto;
+  left: 18px;
+}
+
+body:has(.settings-panel) .achievement-toasts {
+  display: none;
+}

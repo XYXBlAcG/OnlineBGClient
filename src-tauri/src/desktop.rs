@@ -308,3 +308,20 @@ mod lifecycle_tests {
         );
     }
 }
+
+#[tauri::command]
+pub fn set_borderless_fullscreen(
+    window: tauri::WebviewWindow,
+    enabled: bool,
+) -> Result<(), String> {
+    if window.label() != "main" {
+        return Err("仅主窗口支持无边框全屏".into());
+    }
+    #[cfg(target_os = "macos")]
+    if enabled && window.is_fullscreen().map_err(|error| error.to_string())? {
+        return Err("请先退出系统全屏".into());
+    }
+    window
+        .set_simple_fullscreen(enabled)
+        .map_err(|error| format!("无法切换无边框全屏：{error}"))
+}

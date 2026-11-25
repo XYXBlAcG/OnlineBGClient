@@ -1,8 +1,19 @@
 import { useLayoutEffect, useRef } from "react";
 type Bounds = Pick<DOMRect, "left" | "top" | "width" | "height">;
+export type SceneProfile = "panel" | "scene";
 export function sceneKey<
-  T extends { room: string; kind: string; playing: boolean; finished: boolean },
+  T extends {
+    room: string;
+    kind: string;
+    playing: boolean;
+    finished: boolean;
+    arcade?: { id: string; stage: number; phase: string };
+  },
 >(snapshot: T | null): string {
+  if (snapshot?.arcade) {
+    const { id, stage, phase } = snapshot.arcade;
+    return `${snapshot.room}:${id}:${stage}:${phase}`;
+  }
   return snapshot
     ? `${snapshot.room}:${snapshot.kind}:${snapshot.playing ? "playing" : "waiting"}:${snapshot.finished ? "finished" : "active"}`
     : "lobby";
@@ -11,7 +22,10 @@ export class SceneMotion {
   private scene: string | undefined;
   private bounds = new Map<string, Bounds>();
   private animations = new Set<Animation>();
-  constructor(private readonly root: HTMLElement) {}
+  constructor(
+    private readonly root: HTMLElement,
+    private readonly profile: SceneProfile = "scene",
+  ) {}
   capture(): void {
     if (this.animations.size) return;
     this.bounds = new Map(
@@ -68,7 +82,12 @@ export class SceneMotion {
     for (const element of sizes) {
       const previous = before.get(element.dataset.sceneSize!),
         next = after.get(element)!;
-      if (previous && Math.abs(previous.height - next.height) > 0.5)
+      if (
+        previous &&
+        Math.min(previous.height, next.height) > 0 &&
+        Math.abs(previous.height - next.height) > 0.5 &&
+        Math.abs(previous.height - next.height) <= 160
+      )
         this.play(element, [
           { height: `${previous.height}px`, overflow: "clip" },
           { height: `${next.height}px`, overflow: "clip" },
@@ -84,18 +103,33 @@ export class SceneMotion {
       this.play(
         element,
         fade || element.dataset.sceneEnter === "fade"
-          ? [{ opacity: 0 }, { opacity: 1 }]
+          ? [{ opacity: this.profile === "panel" ? 0.7 : 0.55 }, { opacity: 1 }]
           : [
-              { opacity: 0.3, transform: "translateY(8px)" },
+              { opacity: 0.65, transform: "translateY(5px)" },
               { opacity: 1, transform: "translateY(0)" },
             ],
       );
   }
   private play(element: HTMLElement, keyframes: Keyframe[]): void {
     if (typeof element.animate !== "function") return;
+    const defaults = this.profile === "panel" ? 220 : 280;
+    const styles =
+      typeof getComputedStyle === "function"
+        ? getComputedStyle(this.root)
+        : undefined;
+    const token = styles
+      ?.getPropertyValue(
+        this.profile === "panel" ? "--motion-panel" : "--motion-smooth",
+      )
+      .trim();
+    const duration = token
+      ? Number.parseFloat(token) * (token.endsWith("ms") ? 1 : 1000)
+      : defaults;
     const animation = element.animate(keyframes, {
-      duration: 220,
-      easing: "cubic-bezier(.2,.8,.2,1)",
+      duration: Number.isFinite(duration) ? duration : defaults,
+      easing:
+        styles?.getPropertyValue("--ease-emphasized").trim() ||
+        "cubic-bezier(.16,1,.3,1)",
     });
     this.animations.add(animation);
     const release = () => {
@@ -112,18 +146,19 @@ export class SceneMotion {
 export function useSceneTransition<T extends HTMLElement = HTMLDivElement>(
   scene: string,
   enabled: boolean,
+  profile: SceneProfile = "panel",
 ) {
   const root = useRef<T>(null),
     motion = useRef<SceneMotion>();
   useLayoutEffect(() => {
     if (!root.current) return;
-    const current = new SceneMotion(root.current);
+    const current = new SceneMotion(root.current, profile);
     motion.current = current;
     return () => {
       current.dispose();
       motion.current = undefined;
     };
-  }, []);
+  }, [profile]);
   useLayoutEffect(() => {
     motion.current?.update(scene, enabled);
     if (!root.current || typeof ResizeObserver === "undefined") return;

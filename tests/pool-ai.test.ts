@@ -210,3 +210,79 @@ it("executes mid-rack choices through real workers in all difficulties", async (
     pool.close();
   }
 }, 30000);
+
+it("schedules room AI despite continuous shots having no fixed options", async () => {
+  const { Room } = await import("../src/domain/room");
+  const room = new Room("pool-ai", {
+    kind: "pool",
+    humans: 1,
+    ai: [{ difficulty: "easy", name: "甲" }],
+    team: false,
+    training: false,
+  });
+  const controller = room.claim("主持");
+  room.start(controller);
+  if (room.state?.kind !== "pool") throw Error("牌桌类型");
+  room.state.view.turn = 1;
+  const request = room.aiRequest();
+  expect(request?.observation.kind).toBe("pool");
+  expect(
+    new PoolStrategy().candidates({ ...request!, audit: false }).length,
+  ).toBeGreaterThan(0);
+});
+
+it("caps shot search and adds reproducible execution error by difficulty", () => {
+  const view = new PoolRules(() => 0.5).create(2, false);
+  const strategy = new PoolStrategy();
+  const request: SearchRequest = {
+    observation: view,
+    actor: 0,
+    difficulty: "easy",
+    seed: "aim-control",
+    audit: false,
+  };
+  const easy = strategy.candidates(request)[0].action;
+  const hard = strategy.candidates({ ...request, difficulty: "hard" })[0]
+    .action;
+  expect(easy).toMatchObject({ type: "pool-shot" });
+  if (easy.type !== "pool-shot" || hard.type !== "pool-shot")
+    throw Error("未出杆");
+  expect(Math.abs(easy.aim)).toBeGreaterThan(Math.abs(hard.aim));
+  expect(strategy.candidates(request)).toEqual(strategy.candidates(request));
+  expect(
+    strategy.candidates({ ...request, seed: "another-aim" })[0].action,
+  ).not.toEqual(easy);
+  expect(strategy.candidates(request).length).toBeLessThanOrEqual(4);
+});
+
+it("raises the AI cue along the final aim if a ball sits behind the cue", () => {
+  const state = new PoolRules(() => 0.5).create(2, false);
+  state.view.phase = "aim";
+  state.view.balls = [
+    { id: 0, x: 0, y: 0, pocketed: false },
+    { id: 1, x: 0.42, y: 0, pocketed: false },
+    { id: 2, x: -0.07, y: 0, pocketed: false },
+  ];
+  const strategy = new PoolStrategy();
+  const shots = strategy
+    .candidates({
+      observation: state,
+      actor: 0,
+      difficulty: "hard",
+      seed: "cue-obstacle",
+      audit: false,
+    })
+    .map(({ action }) => action);
+  expect(shots.length).toBeGreaterThan(0);
+  const shot = shots.find(
+    (shot) => shot.type === "pool-shot" && (shot.elevation ?? 0) > 0.1,
+  );
+  if (!shot || shot.type !== "pool-shot") throw Error("没有抬杆");
+  const played = new PoolRules(() => 0.5).apply(state, 0, shot);
+  expect(played.view.lastShot?.elevation).toBeCloseTo(shot.elevation!);
+  const normalized = new PoolRules(() => 0.5).apply(state, 0, {
+    ...shot,
+    elevation: 0,
+  });
+  expect(normalized.view.lastShot?.elevation).toBeCloseTo(shot.elevation!);
+});

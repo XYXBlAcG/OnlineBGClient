@@ -29,6 +29,13 @@ it("游戏目录保留选择、收藏、筛选和空结果状态", () => {
   expect(select).toHaveBeenCalledWith("uno");
   act(() => tree.root.findByProps({ "aria-label": "收藏UNO" }).props.onClick());
   expect(favorite).toHaveBeenCalledWith("uno");
+  const arcade = tree.root.findByProps({ "aria-label": "选择多游戏远征" });
+  expect(arcade.props.className).toBe("game-card-main");
+  act(() => arcade.props.onClick());
+  expect(select).toHaveBeenCalledWith("arcade");
+  act(() => tree.root.findByProps({ "aria-label": "收藏多游戏远征" }).props.onClick());
+  expect(favorite).toHaveBeenCalledWith("arcade");
+
   act(() =>
     tree.root
       .findByProps({ "aria-label": "搜索游戏" })
@@ -40,6 +47,15 @@ it("游戏目录保留选择、收藏、筛选和空结果状态", () => {
       .findByType("strong")
       .children.join(""),
   ).toContain("没有找到");
+  expect(renderToStaticMarkup(
+    <GameLibrary
+      selected="uno"
+      favorites={[]}
+      recent={[]}
+      onSelect={() => {}}
+      onFavorite={() => {}}
+    />,
+  )).not.toContain("协作构筑");
   act(() => tree.unmount());
 });
 it("主操作和危险操作共享控件，完整保留禁用、忙碌及辅助语义", () => {

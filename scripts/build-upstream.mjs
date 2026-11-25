@@ -328,11 +328,12 @@ traverse(tableAst, { ObjectExpression(path) {
   children.elements = [
     parse(`(0,o.jsxs)("div",{className:"table-public",children:[${sections.slice(0,2).map(n=>generate(n).code).join(",")}]})`).program.body[0].expression,
     parse(`(0,o.jsxs)("div",{className:"table-actions",children:[${sections.slice(2,5).map(n=>generate(n).code).join(",")}]})`).program.body[0].expression,
-    parse(`(0,o.jsxs)("details",{className:"table-collection",open:true,children:[(0,o.jsx)("summary",{children:"玩家与收藏"}),${generate(sections[5]).code}]})`).program.body[0].expression,
+    parse(`companionBridge.collection ? (0,o.jsx)(companionBridge.collection,{className:"table-collection",title:"玩家与收藏",children:${generate(sections[5]).code}}) : (0,o.jsxs)("details",{className:"table-collection",open:true,children:[(0,o.jsx)("summary",{children:"玩家与收藏"}),${generate(sections[5]).code}]})`).program.body[0].expression,
   ];
   tables++;
 } });
 if (tables !== 1) throw new Error("Splendor table boundary changed");
+tableAst.program.body[0].expression.body.body.unshift(parse("var companionBridge = t.bridge;").program.body[0]);
 selected.set(2262, generate(tableAst.program.body[0].expression, { comments:false }).code);
 const handAst = parse(`(${selected.get(6749)})`);
 let hands = 0, publicAreas = 0;

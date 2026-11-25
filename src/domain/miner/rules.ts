@@ -1,3 +1,16 @@
+import {
+  firstHookContact,
+  aimAt,
+  shopDrop,
+  isMinerShop,
+  hookReach,
+  quickHook,
+  hookTravelFactor,
+  MAX_SWING,
+  MINE_DEPTH,
+  MINER_STEP_MS as TICK_MS,
+  SWING_SPEED,
+} from "./geometry";
 import type { GameOptions } from "../game-options";
 import type { Rules } from "../plugin";
 import type { Action, Candidate } from "../types";
@@ -6,17 +19,11 @@ import {
   minerCharacters,
   minerItemPool,
   minerItems,
-  minerMechanicsPool,
   minerPerkPool,
   minerPerks,
   minerObjects,
 } from "./content";
-import {
-  createNode,
-  generateMinerMap,
-  mapChoices,
-  nodeLabel,
-} from "./map";
+import { createNode, generateMinerMap, mapChoices, nodeLabel } from "./map";
 import type {
   MinerGameState,
   MinerItemId,
@@ -24,13 +31,10 @@ import type {
   MinerObject,
   MinerPerkId,
   MinerPlayerView,
+  MinerShopOffer,
   MinerView,
 } from "./types";
 
-const TICK_MS = 120;
-const MAX_LENGTH = 1.02;
-const PIVOT_Y = 0.1;
-const SWING_SPEED = 58;
 const SHOOT_SPEED = 1.45;
 const BASE_REEL = 0.82;
 
@@ -43,10 +47,7 @@ function makePlayer(seat: number, players: number): MinerPlayerView {
     hook: {
       phase: "swing",
       angle: (seat % 2 ? 1 : -1) * 32,
-      pivotX:
-        players <= 1
-          ? 0.5
-          : 0.14 + (seat / (players - 1)) * 0.72,
+      pivotX: players <= 1 ? 0.5 : 0.14 + (seat / (players - 1)) * 0.72,
       direction: seat % 2 ? -1 : 1,
       length: 0,
       targetId: null,
@@ -75,9 +76,10 @@ function setLastAction(
   actor: number,
   kind: string,
   text: string,
+  detail?: { value?: number; bonus?: number; point?: { x: number; y: number } },
 ) {
-  view.lastAction = { actor, kind, text };
   log(view, text);
+  view.lastAction = { id: view.sequence, actor, kind, text, ...detail };
 }
 
 function perkCount(view: MinerView, id: MinerPerkId): number {
@@ -91,11 +93,55 @@ function specialRequired(player: MinerPlayerView, view: MinerView): number {
   );
 }
 
-function shopPrice(view: MinerView, cost: number): number {
+export function shopPrice(view: MinerView, price: number): number {
   return Math.max(
     1,
-    Math.floor(cost * (1 - 0.15 * perkCount(view, "deepPockets"))),
+    Math.floor(price * (1 - 0.15 * perkCount(view, "deepPockets"))),
   );
+}
+
+function shopOffers(
+  random: () => number,
+  generation: number,
+  count = 4,
+): MinerShopOffer[] {
+  const pool = [...minerItemPool];
+  return Array.from({ length: Math.min(count, pool.length) }, (_, index) => {
+    const itemId = pool.splice(Math.floor(random() * pool.length), 1)[0]!;
+    const roll = random();
+    const factor =
+      roll < 0.12
+        ? 0.15 + random() * 0.25
+        : roll > 0.88
+          ? 2.2 + random() * 1.6
+          : 0.45 + random() * 1.35;
+    return {
+      id: `${generation}:${index}`,
+      slot: index,
+      itemId,
+      price: Math.max(
+        5,
+        Math.round((minerItems[itemId].cost * factor) / 5) * 5,
+      ),
+    };
+  });
+}
+
+function shopCrate(offer: MinerShopOffer): MinerObject {
+  return {
+    id: offer.id,
+    kind: "bag",
+    x: 0.19 + offer.slot * 0.205,
+    y: 0.56,
+    radius: 0.061,
+    value: 0,
+    weight: 0,
+    removed: false,
+    hookedBy: null,
+    frozen: false,
+    phantom: false,
+    offerItem: offer.itemId,
+  };
 }
 
 function perkOffers(random: () => number): MinerPerkId[] {
@@ -106,68 +152,94 @@ function perkOffers(random: () => number): MinerPerkId[] {
   });
 }
 
-function rayHit(
-  hook: MinerPlayerView["hook"],
-  previous: number,
-  next: number,
-  node: MinerMineNode,
-): MinerObject | undefined {
-  const radians = (hook.angle * Math.PI) / 180;
-  const dx = Math.sin(radians);
-  const dy = Math.cos(radians);
-  let nearest: MinerObject | undefined;
-  let nearestT = Infinity;
-  for (const object of node.objects) {
-    if (object.removed || object.hookedBy !== null) continue;
-    if (node.waterLevel > 0 && object.y > node.waterLevel) continue;
-    const ox = object.x - hook.pivotX;
-    const oy = object.y - PIVOT_Y;
-    const t = ox * dx + oy * dy;
-    if (t < previous || t > next || t > MAX_LENGTH) continue;
-    const perpendicular = Math.abs(ox * dy - oy * dx);
-    if (perpendicular > object.radius) continue;
-    if (t < nearestT) {
-      nearestT = t;
-      nearest = object;
-    }
-  }
-  return nearest;
-}
-
 function collect(
   view: MinerView,
   player: MinerPlayerView,
   object: MinerObject,
 ): void {
+  if (object.removed || object.hookedBy !== player.seat) return;
   object.removed = true;
   object.hookedBy = null;
   player.hook.targetId = null;
+  player.hook.nextBeatTick = 0;
   player.hook.length = 0;
   player.hook.phase = "swing";
+  if (object.offerItem) return;
   const definition = minerObjects[object.kind];
+  const node = view.node!;
+  if (!object.phantom && (definition.timeChangeMs || definition.charge)) {
+    node.timeLeftMs = Math.max(
+      0,
+      node.timeLeftMs + (definition.timeChangeMs ?? 0),
+    );
+    player.specialCharge += definition.charge ?? 0;
+    player.lastCatch = definition.name;
+    setLastAction(
+      view,
+      player.seat,
+      "catch",
+      definition.timeChangeMs
+        ? "罚时石 · 剩余时间 −3 秒"
+        : "充能晶体 · 技能充能 +2",
+    );
+    return;
+  }
+  const rock = object.kind === "rockSmall" || object.kind === "rockLarge";
   let value = object.phantom ? 0 : object.value;
   if (view.node?.mechanics.includes("goldFever") && view.tick % 150 < 40)
     value *= 2;
   value = Math.floor(value * (1 + perkCount(view, "goldTouch") * 0.1));
-  if (
-    (object.kind === "rockSmall" || object.kind === "rockLarge") &&
-    perkCount(view, "rockSong") > 0
-  )
+  if (rock && perkCount(view, "rockSong") > 0)
     value *= 2 ** perkCount(view, "rockSong");
   if (perkCount(view, "luckyStart") > 0 && !player.luckyStartUsed) {
     value *= 2;
     player.luckyStartUsed = true;
   }
-  if (object.kind === "rockSmall" || object.kind === "rockLarge")
-    value *= player.rockBook ? 2 : 1;
+  if (rock && player.rockBook) value *= 2;
   if (player.lucky) {
     value = Math.floor(value * 1.5);
     player.lucky = false;
   }
+  const team = view.teams[player.seat] === 1 ? 1 : 0;
+  let bonus = 0;
+  if (
+    value > 0 &&
+    object.kind !== "tnt" &&
+    node.mechanics.includes("teamRelay")
+  ) {
+    const recent = (node.relayCatch ??= {});
+    const previous = recent[team];
+    if (
+      previous &&
+      previous.seat !== player.seat &&
+      (view.tick - previous.tick) * TICK_MS <= 3000
+    )
+      bonus = Math.floor(value * 0.25);
+    recent[team] = { seat: player.seat, tick: view.tick };
+  }
+  value += bonus;
+  const vein =
+    rock && !object.phantom && node.mechanics.includes("crystalVein");
+  if (vein) {
+    const gold = minerObjects.goldSmall;
+    node.objects.push({
+      id: `${object.id}:vein`,
+      kind: gold.kind,
+      x: object.x,
+      y: object.y,
+      radius: gold.radius,
+      weight: gold.weight,
+      value: gold.value,
+      hookedBy: null,
+      removed: false,
+      frozen: false,
+      phantom: false,
+    });
+  }
   player.score += value;
   player.coins += value;
   view.teamScore += value;
-  view.teamScores[view.teams[player.seat] ?? 0] += value;
+  view.teamScores[team] += value;
   if (
     (object.kind === "goldSmall" ||
       object.kind === "goldMedium" ||
@@ -179,19 +251,35 @@ function collect(
   setLastAction(
     view,
     player.seat,
-    object.kind === "tnt" ? "tnt" : "catch",
+    object.kind === "tnt" ? "tnt" : bonus ? "relay" : vein ? "vein" : "catch",
     object.kind === "tnt"
       ? `玩家 ${player.seat + 1} 钩到了 TNT，矿洞震了一下。`
-      : `玩家 ${player.seat + 1} 收回了${definition.name}，+${value}。`,
+      : `玩家 ${player.seat + 1} 收回了${definition.name}，+${value}${bonus ? `（接力 +${bonus}）` : ""}${vein ? "，露出小金块" : ""}。`,
+    {
+      ...(object.kind !== "tnt" ? { value } : {}),
+      ...(bonus ? { bonus } : {}),
+      ...(vein || object.kind === "tnt"
+        ? { point: { x: object.x, y: object.y } }
+        : {}),
+    },
   );
   if (object.kind === "tnt") {
     for (const other of view.node?.objects ?? []) {
       if (other.removed || other.id === object.id) continue;
       if (
-        Math.hypot(other.x - object.x, other.y - object.y) <
+        Math.hypot(other.x - object.x, (other.y - object.y) * MINE_DEPTH) <
         other.radius + 0.1
       ) {
         other.removed = true;
+        const otherHook =
+          other.hookedBy === null
+            ? undefined
+            : view.players[other.hookedBy]?.hook;
+        if (otherHook?.targetId === other.id) {
+          otherHook.targetId = null;
+          otherHook.nextBeatTick = 0;
+        }
+        other.hookedBy = null;
       }
     }
   }
@@ -204,83 +292,146 @@ function updateHook(
 ): void {
   const hook = player.hook;
   const dt = TICK_MS / 1000;
-  const quick =
-    (player.character === "miner" && player.specialTicks > 0) ||
-    perkCount(view, "quickHook") > 0;
+  const quick = quickHook(view, player);
   if (hook.phase === "swing") {
     hook.angle += hook.direction * SWING_SPEED * (quick ? 1.8 : 1) * dt;
-    if (hook.angle > 80) {
-      hook.angle = 80;
+    if (hook.angle > MAX_SWING) {
+      hook.angle = MAX_SWING;
       hook.direction = -1;
-    } else if (hook.angle < -80) {
-      hook.angle = -80;
+    } else if (hook.angle < -MAX_SWING) {
+      hook.angle = -MAX_SWING;
       hook.direction = 1;
     }
     return;
   }
-  if (hook.phase === "shoot") {
-    const previous = hook.length;
-    hook.length = Math.min(
-      MAX_LENGTH,
-      hook.length + SHOOT_SPEED * (quick ? 1.5 : 1) * dt,
-    );
-    const hit = rayHit(hook, previous, hook.length, node);
-    if (hit?.frozen) {
-      hit.frozen = false;
-      hook.phase = "reel";
+  if (hook.phase === "shoot") return;
+  const target = hook.targetId
+    ? node.objects.find(
+        (object) =>
+          object.id === hook.targetId &&
+          !object.removed &&
+          object.hookedBy === player.seat,
+      )
+    : undefined;
+  const rawWeight = target ? minerObjects[target.kind].weight : 0;
+  const weight =
+    player.character === "strongman" && player.specialTicks > 0 ? 0 : rawWeight;
+  const strength = player.strengthTicks > 0 ? 1.9 : 1;
+  const speedWeight = player.ropeNext ? 0 : weight;
+  const speed =
+    (BASE_REEL *
+      strength *
+      (quick ? 1.25 : 1) *
+      (1 + perkCount(view, "strongRope") * 0.2) *
+      (rawWeight >= 4 ? 1 + perkCount(view, "thickRope") * 0.25 : 1)) /
+    (1 + speedWeight * 0.45);
+  hook.length = Math.max(
+    0,
+    hook.length - speed * dt * hookTravelFactor(hook, node),
+  );
+  if (target && hook.nextBeatTick && view.tick > hook.nextBeatTick + 1)
+    hook.nextBeatTick += 6;
+  if (hook.length <= 0.001) {
+    if (target) {
+      player.ropeNext = false;
+      collect(view, player, target);
+    } else {
+      hook.phase = "swing";
+      hook.length = 0;
       hook.targetId = null;
+      hook.nextBeatTick = 0;
+    }
+  }
+}
+
+function advanceShots(view: MinerView, node: MinerMineNode): void {
+  const shots = view.players
+    .filter(({ hook }) => hook.phase === "shoot")
+    .map((player) => ({
+      player,
+      travel:
+        (SHOOT_SPEED *
+          (quickHook(view, player) ? 1.5 : 1) *
+          hookTravelFactor(player.hook, node) *
+          TICK_MS) /
+        1000,
+      limit: hookReach(player.hook),
+    }));
+  const firstSeat = view.levelsPlayed % view.players.length;
+  const priority = (seat: number) =>
+    (seat - firstSeat + view.players.length) % view.players.length;
+  while (shots.length) {
+    const contacts = shots.map((shot) => {
+      const { hook } = shot.player;
+      const next = Math.min(shot.limit, hook.length + shot.travel);
+      const contact = firstHookContact(hook, hook.length, next, node);
+      const valid =
+        node.scene === "shop" && contact?.object.id !== hook.offerId
+          ? undefined
+          : contact;
+      return {
+        ...shot,
+        next,
+        contact: valid,
+        arrival: valid
+          ? (valid.distance - hook.length) / shot.travel
+          : Infinity,
+      };
+    });
+    const earliest = contacts
+      .filter(({ contact }) => contact)
+      .sort(
+        (a, b) =>
+          a.arrival - b.arrival ||
+          priority(a.player.seat) - priority(b.player.seat),
+      )[0];
+    if (!earliest) {
+      for (const { player, next, limit } of contacts) {
+        player.hook.length = next;
+        if (next >= limit) player.hook.phase = "reel";
+      }
+      break;
+    }
+    const { player, contact } = earliest;
+    shots.splice(
+      shots.findIndex((shot) => shot.player === player),
+      1,
+    );
+    const { object, distance } = contact!;
+    const hook = player.hook;
+    hook.length = distance;
+    hook.phase = "reel";
+    if (node.scene === "shop") {
+      const index = view.shopOffers.findIndex(({ id }) => id === object.id);
+      const offer = view.shopOffers[index];
+      if (!offer) continue;
+      const price = shopPrice(view, offer.price);
+      if (player.coins < price) {
+        setLastAction(view, player.seat, "shop-miss", "金币不足");
+        continue;
+      }
+      player.coins -= price;
+      player.items[offer.itemId] = (player.items[offer.itemId] ?? 0) + 1;
+      view.shopOffers.splice(index, 1);
+      setLastAction(
+        view,
+        player.seat,
+        "buy",
+        `购得${minerItems[offer.itemId].name}`,
+      );
+    }
+    if (object.frozen) {
+      object.frozen = false;
       setLastAction(
         view,
         player.seat,
         "thaw",
         `玩家 ${player.seat + 1} 的钩子敲碎了冰层。`,
       );
-    } else if (hit) {
-      hit.hookedBy = player.seat;
-      hook.targetId = hit.id;
-      hook.phase = "reel";
-      hook.nextBeatTick =
-        minerObjects[hit.kind].weight >= 4 ? view.tick + 5 : 0;
-      hook.length = Math.max(
-        0.08,
-        Math.min(
-          MAX_LENGTH,
-          (hit.x - hook.pivotX) * Math.sin((hook.angle * Math.PI) / 180) +
-            (hit.y - PIVOT_Y) * Math.cos((hook.angle * Math.PI) / 180),
-        ),
-      );
-    } else if (hook.length >= MAX_LENGTH) {
-      hook.phase = "reel";
-    }
-    return;
-  }
-  const target = hook.targetId
-    ? node.objects.find((object) => object.id === hook.targetId)
-    : undefined;
-  const rawWeight = target ? minerObjects[target.kind].weight : 0;
-  const weight =
-    player.character === "strongman" && player.specialTicks > 0
-      ? 0
-      : rawWeight;
-  const strength = player.strengthTicks > 0 ? 1.9 : 1;
-  const rope = player.ropeNext ? 4 : 1;
-  player.ropeNext = false;
-  const speed =
-    (BASE_REEL *
-      strength *
-      rope *
-      (quick ? 1.25 : 1) *
-      (1 + perkCount(view, "strongRope") * 0.2) *
-      (rawWeight >= 4 ? 1 + perkCount(view, "thickRope") * 0.25 : 1)) /
-    (1 + weight * 0.45);
-  hook.length = Math.max(0, hook.length - speed * dt);
-  if (hook.length <= 0.001) {
-    if (target) collect(view, player, target);
-    else {
-      hook.phase = "swing";
-      hook.length = 0;
-      hook.targetId = null;
-      hook.nextBeatTick = 0;
+    } else {
+      object.hookedBy = player.seat;
+      hook.targetId = object.id;
+      hook.nextBeatTick = object.weight >= 4 ? view.tick + 5 : 0;
     }
   }
 }
@@ -293,11 +444,11 @@ function advanceMechanics(view: MinerView, node: MinerMineNode): void {
     return;
   }
   if (node.mechanics.includes("flood"))
-    node.waterLevel = Math.min(0.82, node.waterLevel + 0.0015);
+    node.waterLevel = Math.max(0.23, node.waterLevel - 0.00075);
   if (node.mechanics.includes("tide"))
     node.waterLevel = 0.42 + Math.sin(view.tick / 18) * 0.26;
   for (const [index, object] of node.objects.entries()) {
-    if (object.removed) continue;
+    if (object.removed || object.hookedBy !== null) continue;
     if (object.kind === "critter") {
       if (node.crittersStoppedTicks > 0) continue;
       object.x += (index % 2 ? 1 : -1) * 0.05 * dt;
@@ -310,8 +461,7 @@ function advanceMechanics(view: MinerView, node: MinerMineNode): void {
       object.y += Math.sin((view.tick + index) / 6) * 0.0025;
       object.x += Math.cos((view.tick + index) / 9) * 0.0015;
     }
-    if (node.mechanics.includes("fallingRocks"))
-      object.y += 0.006 * dt;
+    if (node.mechanics.includes("fallingRocks")) object.y += 0.006 * dt;
     if (node.mechanics.includes("magnet")) {
       object.x += (0.5 - object.x) * 0.012 * dt;
       object.y += (0.45 - object.y) * 0.008 * dt;
@@ -333,7 +483,11 @@ export class MinerRules implements Rules<"miner"> {
     team: boolean,
     options?: GameOptions,
   ): MinerGameState {
-    const mode = options?.miner?.mode ?? "friendly";
+    const scenario =
+      options?.arcadeScenario?.kind === "miner"
+        ? options.arcadeScenario
+        : undefined;
+    const mode = scenario ? "friendly" : (options?.miner?.mode ?? "friendly");
     const seed =
       mode === "daily"
         ? `daily-${new Date().toISOString().slice(0, 10)}`
@@ -342,6 +496,8 @@ export class MinerRules implements Rules<"miner"> {
     const teamMode = team && (players === 4 || players === 6);
     const view: MinerView = {
       phase: "character",
+      shopOffers: [],
+      shopRefreshes: 0,
       map,
       floor: 0,
       current: null,
@@ -359,23 +515,48 @@ export class MinerRules implements Rules<"miner"> {
         makePlayer(seat, players),
       ),
       mode,
-      teamQuota: options?.miner?.quota ?? 2500 + players * 2200,
+      teamQuota:
+        scenario?.target ?? options?.miner?.quota ?? 2500 + players * 2200,
       teamScore: 0,
-      matchLevels:
-        mode === "suddenDeath" ? 3 : (options?.miner?.levels ?? 6),
+      matchLevels: scenario
+        ? 1
+        : mode === "suddenDeath"
+          ? 3
+          : (options?.miner?.levels ?? 6),
       levelsPlayed: 0,
       teams: teamMode
         ? Array.from({ length: players }, (_, seat) => seat % 2)
         : Array.from({ length: players }, () => 0),
       teamScores: [0, 0],
       lives: mode === "endless" ? 3 : 0,
-      levelTarget:
-        mode === "endless" ? 500 + players * 250 : 0,
+      levelTarget: mode === "endless" ? 500 + players * 250 : 0,
       levelScore: 0,
       tick: 0,
       log: [],
       sequence: 0,
     };
+    if (scenario) {
+      if (scenario.untimed) view.untimed = true;
+      const entrance = map[0]![0]!;
+      this.enterNode(view, {
+        ...entrance,
+        kind: scenario.boss ? "boss" : "battle",
+      });
+      if (scenario.untimed) {
+        view.node!.objects = view.node!.objects.filter(
+          ({ kind }) => kind !== "timeTrap",
+        );
+        view.node!.mechanics = view.node!.mechanics.filter(
+          (id) => id !== "unstableOre",
+        );
+        view.node!.durationMs = 0;
+        view.node!.timeLeftMs = 0;
+        return { kind: "miner", view };
+      }
+      view.node!.durationMs = scenario.durationMs;
+      view.node!.timeLeftMs = scenario.durationMs;
+      return { kind: "miner", view };
+    }
     log(view, `矿灯亮起，${players} 名矿工选择角色。目标：${view.teamQuota}。`);
     return { kind: "miner", view };
   }
@@ -453,9 +634,8 @@ export class MinerRules implements Rules<"miner"> {
       if (
         player.hook.phase === "reel" &&
         player.hook.targetId &&
-        (view.node?.objects.find(
-          (object) => object.id === player.hook.targetId,
-        )?.weight ?? 0) >= 4
+        (view.node?.objects.find((object) => object.id === player.hook.targetId)
+          ?.weight ?? 0) >= 4
       )
         result.push({
           action: { type: "miner-action", move: { type: "haul" } },
@@ -474,17 +654,34 @@ export class MinerRules implements Rules<"miner"> {
       return result;
     }
     if (view.phase === "shop" || view.phase === "intermission") {
+      if (view.ready.includes(actor) || player.hook.phase !== "swing")
+        return [];
       return [
-        ...Object.values(minerItems)
-          .filter((item) => player.coins >= shopPrice(view, item.cost))
-          .map((item) => ({
-            action: {
-              type: "miner-action" as const,
-              move: { type: "buy" as const, itemId: item.id },
-            },
-            label: `购买${item.name}（${shopPrice(view, item.cost)}）`,
-          })),
-        ...(view.shopSpinsUsed.includes(actor)
+        ...view.shopOffers.flatMap((offer) => {
+          const crate = view.node!.objects.find(({ id }) => id === offer.id)!;
+          const move = shopDrop(view, actor, aimAt(crate, player.hook.pivotX));
+          const price = shopPrice(view, offer.price);
+          return move.offer === offer.id && player.coins >= price
+            ? [
+                {
+                  action: { type: "miner-action" as const, move },
+                  label: `抓取${minerItems[offer.itemId].name}（${price}）`,
+                },
+              ]
+            : [];
+        }),
+        ...(view.shopOffers.length > 0 && view.shopRefreshes < 3
+          ? [
+              {
+                action: {
+                  type: "miner-action" as const,
+                  move: { type: "refresh-shop" as const },
+                },
+                label: `刷新商品（${3 - view.shopRefreshes}）`,
+              },
+            ]
+          : []),
+        ...(view.shopSpinsUsed.includes(actor) || player.coins < 50
           ? []
           : [
               {
@@ -496,13 +693,19 @@ export class MinerRules implements Rules<"miner"> {
               },
             ]),
         ...(!view.perkBought
-          ? view.perkOffers.map((perkId) => ({
-              action: {
-                type: "miner-action" as const,
-                move: { type: "buy-perk" as const, perkId },
-              },
-              label: `${minerPerks[perkId].emoji} ${minerPerks[perkId].name}（${minerPerks[perkId].cost}）`,
-            }))
+          ? view.perkOffers
+              .filter(
+                (id) =>
+                  view.mode === "endless" ||
+                  player.coins >= minerPerks[id].cost,
+              )
+              .map((perkId) => ({
+                action: {
+                  type: "miner-action" as const,
+                  move: { type: "buy-perk" as const, perkId },
+                },
+                label: `${minerPerks[perkId].emoji} ${minerPerks[perkId].name}（${minerPerks[perkId].cost}）`,
+              }))
           : []),
         ...(view.teamGambleUsed
           ? []
@@ -516,10 +719,7 @@ export class MinerRules implements Rules<"miner"> {
               },
             ]),
         {
-          action: {
-            type: "miner-action" as const,
-            move: { type: "ready" as const },
-          },
+          action: { type: "miner-action", move: { type: "ready" } },
           label: "离开商店",
         },
       ];
@@ -556,17 +756,14 @@ export class MinerRules implements Rules<"miner"> {
 
   needsResolution(state: MinerGameState): boolean {
     const view = state.view;
-    if (view.phase === "live") return true;
+    if (view.phase === "live" || isMinerShop(view.phase)) return true;
     if (view.phase === "character")
-      return view.players.every((player) => player.seat in view.characterChoices);
+      return view.players.every(
+        (player) => player.seat in view.characterChoices,
+      );
     if (view.phase === "map")
       return view.players.every((player) => player.seat in view.votes);
-    if (
-      view.phase === "intermission" ||
-      view.phase === "shop" ||
-      view.phase === "camp" ||
-      view.phase === "event"
-    )
+    if (view.phase === "camp" || view.phase === "event")
       return view.players.every((player) => view.ready.includes(player.seat));
     return false;
   }
@@ -580,7 +777,7 @@ export class MinerRules implements Rules<"miner"> {
   }
 
   acceptsLateActions(state: MinerGameState): boolean {
-    return state.view.phase === "live";
+    return state.view.phase === "live" || isMinerShop(state.view.phase);
   }
 
   actionWindow(state: MinerGameState, action: Action): string | undefined {
@@ -601,11 +798,7 @@ export class MinerRules implements Rules<"miner"> {
     return undefined;
   }
 
-  apply(
-    state: MinerGameState,
-    actor: number,
-    action: Action,
-  ): MinerGameState {
+  apply(state: MinerGameState, actor: number, action: Action): MinerGameState {
     if (action.type !== "miner-action") throw new Error("不是矿工动作");
     const view = structuredClone(state.view);
     const player = view.players[actor];
@@ -637,22 +830,27 @@ export class MinerRules implements Rules<"miner"> {
       );
       return { kind: "miner", view };
     }
+    if (
+      move.type === "drop" &&
+      (view.phase === "live" || isMinerShop(view.phase))
+    ) {
+      if (view.ready.includes(actor) || player.hook.phase !== "swing")
+        throw new Error("当前不能下钩");
+      const angle = Math.max(-MAX_SWING, Math.min(MAX_SWING, move.angle));
+      if (
+        isMinerShop(view.phase) &&
+        shopDrop(view, actor, angle).offer !== move.offer
+      )
+        throw new Error("商品已变化，请重新下钩");
+      player.hook.phase = "shoot";
+      player.hook.angle = angle;
+      player.hook.length = 0;
+      player.hook.offerId = move.offer;
+      player.hook.targetId = null;
+      setLastAction(view, actor, "drop", `玩家 ${actor + 1} 下钩`);
+      return { kind: "miner", view };
+    }
     if (view.phase === "live") {
-      if (move.type === "drop") {
-        if (player.hook.phase !== "swing")
-          throw new Error("钩子还在回收");
-        player.hook.angle = Math.max(-85, Math.min(85, move.angle));
-        player.hook.phase = "shoot";
-        player.hook.length = 0;
-        player.hook.targetId = null;
-        setLastAction(
-          view,
-          actor,
-          "drop",
-          `玩家 ${actor + 1} 下钩，角度 ${Math.round(move.angle)}°。`,
-        );
-        return { kind: "miner", view };
-      }
       if (move.type === "use-item") {
         this.useItem(view, actor, move.itemId);
         return { kind: "miner", view };
@@ -668,17 +866,47 @@ export class MinerRules implements Rules<"miner"> {
       throw new Error("实时矿洞只能下钩、使用道具或释放 Special");
     }
     if (view.phase === "shop" || view.phase === "intermission") {
-      if (move.type === "buy") {
-        const item = minerItems[move.itemId];
-        const price = shopPrice(view, item.cost);
-        if (player.coins < price) throw new Error("金币不足");
-        player.coins -= price;
-        player.items[move.itemId] = (player.items[move.itemId] ?? 0) + 1;
+      if (view.ready.includes(actor)) throw new Error("已准备进入下一关");
+      if (player.hook.phase !== "swing") throw new Error("请等待收钩");
+      if (move.type === "refresh-shop") {
+        if (view.shopRefreshes >= 3) throw new Error("刷新次数已用完");
+        if (!view.shopOffers.length) throw new Error("补给已售罄");
+        const slots = view.shopOffers.map((_, index) => index);
+        const count = Math.min(slots.length, 1 + Math.floor(this.random() * 2));
+        for (let roll = 0; roll < count; roll += 1) {
+          const index = slots.splice(
+            Math.floor(this.random() * slots.length),
+            1,
+          )[0]!;
+          const itemId =
+            minerItemPool[Math.floor(this.random() * minerItemPool.length)]!;
+          const factor =
+            this.random() < 0.12
+              ? 0.15 + this.random() * 0.25
+              : this.random() > 0.88
+                ? 2.2 + this.random() * 1.6
+                : 0.45 + this.random() * 1.35;
+          const previous = view.shopOffers[index];
+          const replacement = {
+            id: `${view.sequence}:${index}`,
+            slot: previous.slot,
+            itemId,
+            price: Math.max(
+              5,
+              Math.round((minerItems[itemId].cost * factor) / 5) * 5,
+            ),
+          };
+          view.shopOffers[index] = replacement;
+          const objects = view.node!.objects;
+          const crateIndex = objects.findIndex(({ id }) => id === previous.id);
+          objects[crateIndex] = shopCrate(replacement);
+        }
+        view.shopRefreshes++;
         setLastAction(
           view,
           actor,
-          "buy",
-          `玩家 ${actor + 1} 购买了${item.name}。`,
+          "refresh",
+          `玩家 ${actor + 1} 刷新了商品，价格乱跳。`,
         );
         return { kind: "miner", view };
       }
@@ -698,6 +926,7 @@ export class MinerRules implements Rules<"miner"> {
         if (player.coins < price) throw new Error("金币不足");
         player.coins -= price;
         view.perks.push(move.perkId);
+
         view.perkBought = true;
         setLastAction(
           view,
@@ -708,7 +937,7 @@ export class MinerRules implements Rules<"miner"> {
         return { kind: "miner", view };
       }
       if (move.type !== "ready") throw new Error("请购买或离开商店");
-      if (!view.ready.includes(actor)) view.ready.push(actor);
+      view.ready.push(actor);
       setLastAction(view, actor, "ready", `玩家 ${actor + 1} 离开商店。`);
       return { kind: "miner", view };
     }
@@ -726,18 +955,33 @@ export class MinerRules implements Rules<"miner"> {
             player.score += 300;
             player.coins += 300;
             view.teamScore += 300;
-            setLastAction(view, actor, "event", `玩家 ${actor + 1} 赌石成功，+300。`);
+            setLastAction(
+              view,
+              actor,
+              "event",
+              `玩家 ${actor + 1} 赌石成功，+300。`,
+            );
           } else {
             player.score = Math.max(0, player.score - 100);
             player.coins = Math.max(0, player.coins - 100);
             view.teamScore = Math.max(0, view.teamScore - 100);
-            setLastAction(view, actor, "event", `玩家 ${actor + 1} 赌石失败，-100。`);
+            setLastAction(
+              view,
+              actor,
+              "event",
+              `玩家 ${actor + 1} 赌石失败，-100。`,
+            );
           }
         } else {
           player.score += 100;
           player.coins += 100;
           view.teamScore += 100;
-          setLastAction(view, actor, "event", `玩家 ${actor + 1} 稳妥拿到 100。`);
+          setLastAction(
+            view,
+            actor,
+            "event",
+            `玩家 ${actor + 1} 稳妥拿到 100。`,
+          );
         }
         view.ready.push(actor);
       }
@@ -750,11 +994,15 @@ export class MinerRules implements Rules<"miner"> {
     const view = structuredClone(state.view);
     if (view.phase === "character")
       return { kind: "miner", view: this.resolveCharacter(view) };
-    if (view.phase === "map") return { kind: "miner", view: this.resolveVote(view) };
+    if (view.phase === "map")
+      return { kind: "miner", view: this.resolveVote(view) };
     if (view.phase === "live") return { kind: "miner", view: this.tick(view) };
-    if (view.phase === "intermission")
+    if (isMinerShop(view.phase)) {
+      if (view.ready.length < view.players.length)
+        return { kind: "miner", view: this.tick(view) };
       return { kind: "miner", view: this.finishIntermission(view) };
-    if (view.phase === "shop" || view.phase === "camp" || view.phase === "event")
+    }
+    if (view.phase === "camp" || view.phase === "event")
       return { kind: "miner", view: this.finishNode(view) };
     return { kind: "miner", view };
   }
@@ -763,11 +1011,7 @@ export class MinerRules implements Rules<"miner"> {
     return structuredClone(state);
   }
 
-  private useItem(
-    view: MinerView,
-    actor: number,
-    itemId: MinerItemId,
-  ): void {
+  private useItem(view: MinerView, actor: number, itemId: MinerItemId): void {
     const player = view.players[actor]!;
     if (!player.items[itemId]) throw new Error("没有这个道具");
     player.items[itemId]--;
@@ -785,7 +1029,8 @@ export class MinerRules implements Rules<"miner"> {
       setLastAction(view, actor, "item", `玩家 ${actor + 1} 使用了炸药。`);
       return;
     }
-    if (itemId === "strength") player.strengthTicks = Math.ceil(20_000 / TICK_MS);
+    if (itemId === "strength")
+      player.strengthTicks = Math.ceil(20_000 / TICK_MS);
     if (itemId === "lucky") player.lucky = true;
     if (itemId === "rockBook") player.rockBook = true;
     if (itemId === "time" && view.node) view.node.timeLeftMs += 10_000;
@@ -822,7 +1067,8 @@ export class MinerRules implements Rules<"miner"> {
       const target = view.node?.objects.find(
         (object) => object.id === player.hook.targetId,
       );
-      if (!target) throw new Error("钩子上没有物体");
+      if (!target || target.removed || target.hookedBy !== actor)
+        throw new Error("钩子上没有物体");
       collect(view, player, target);
     } else {
       player.specialTicks = Math.ceil(
@@ -849,7 +1095,12 @@ export class MinerRules implements Rules<"miner"> {
     if (Math.abs(view.tick - player.hook.nextBeatTick) <= 1) {
       player.hook.length = Math.max(0, player.hook.length - 0.18);
       player.hook.nextBeatTick = view.tick + 6;
-      setLastAction(view, actor, "haul", `玩家 ${actor + 1} 踩准节拍，重物加速。`);
+      setLastAction(
+        view,
+        actor,
+        "haul",
+        `玩家 ${actor + 1} 踩准节拍，重物加速。`,
+      );
     } else {
       setLastAction(view, actor, "haul", `玩家 ${actor + 1} 节拍失误。`);
     }
@@ -863,9 +1114,15 @@ export class MinerRules implements Rules<"miner"> {
     view.shopSpinsUsed.push(actor);
     const roll = this.random();
     if (roll < 0.12) {
-      const item = minerItemPool[Math.floor(this.random() * minerItemPool.length)]!;
+      const item =
+        minerItemPool[Math.floor(this.random() * minerItemPool.length)]!;
       player.items[item] = (player.items[item] ?? 0) + 1;
-      setLastAction(view, actor, "spin", `老虎机中奖：${minerItems[item].name}。`);
+      setLastAction(
+        view,
+        actor,
+        "spin",
+        `老虎机中奖：${minerItems[item].name}。`,
+      );
     } else if (roll < 0.55) {
       player.coins += 80;
       setLastAction(view, actor, "spin", "老虎机：回收 80 金币。");
@@ -913,25 +1170,26 @@ export class MinerRules implements Rules<"miner"> {
     view.teamGambleUsed = false;
     const scene =
       view.mode === "bossRush" ? { ...node, kind: "boss" as const } : node;
-    view.node = createNode(scene, view.players.length, this.random);
+    view.node = createNode(
+      scene,
+      view.players.length,
+      this.random,
+      view.mode === "party",
+    );
     if (view.mode === "suddenDeath") {
       view.node.durationMs = 25_000;
       view.node.timeLeftMs = 25_000;
     }
-    if (view.mode === "party") {
-      const extra =
-        minerMechanicsPool[
-          Math.floor(this.random() * minerMechanicsPool.length)
-        ]!;
-      if (view.node.scene === "mine" && !view.node.mechanics.includes(extra))
-        view.node.mechanics.push(extra);
-    }
     view.node.durationMs += perkCount(view, "timeWarp") * 8_000;
     view.node.timeLeftMs = view.node.durationMs;
     if (view.node.scene === "mine") view.levelScore = view.teamScore;
-    view.perkOffers =
-      view.node.scene === "shop" ? perkOffers(this.random) : [];
+    view.perkOffers = view.node.scene === "shop" ? perkOffers(this.random) : [];
     view.perkBought = false;
+    view.shopOffers =
+      view.node.scene === "shop" ? shopOffers(this.random, view.sequence) : [];
+    view.shopRefreshes = 0;
+    if (view.node.scene === "shop")
+      view.node.objects = view.shopOffers.map(shopCrate);
     for (const player of view.players) {
       player.luckyStartUsed = false;
       if (view.node.scene === "mine" && perkCount(view, "blastStart") > 0)
@@ -962,7 +1220,7 @@ export class MinerRules implements Rules<"miner"> {
       view,
       -1,
       "enter",
-      `全队进入${view.node.name}${view.node.scene === "mine" ? `，限时 ${Math.round(view.node.durationMs / 1000)} 秒。` : "。"}`,
+      `全队进入${view.node.name}${view.node.scene === "mine" && !view.untimed ? `，限时 ${Math.round(view.node.durationMs / 1000)} 秒。` : "。"}`,
     );
   }
 
@@ -970,15 +1228,21 @@ export class MinerRules implements Rules<"miner"> {
     const node = view.node;
     if (!node) return view;
     view.tick++;
-    node.timeLeftMs -= TICK_MS;
-    advanceMechanics(view, node);
+    if (node.scene === "mine") {
+      if (!view.untimed) node.timeLeftMs -= TICK_MS;
+      advanceMechanics(view, node);
+    }
     for (const player of view.players) {
       if (player.strengthTicks > 0) player.strengthTicks--;
       if (player.specialTicks > 0) player.specialTicks--;
       updateHook(view, player, node);
     }
+    advanceShots(view, node);
+    if (node.scene === "shop") return view;
     if (
-      node.timeLeftMs <= 0 ||
+      (view.untimed
+        ? view.teamScore >= view.teamQuota
+        : node.timeLeftMs <= 0) ||
       node.objects.every((object) => object.removed)
     ) {
       node.timeLeftMs = Math.max(0, node.timeLeftMs);
@@ -1028,6 +1292,18 @@ export class MinerRules implements Rules<"miner"> {
       view.teamGambleUsed = false;
       view.perkOffers = perkOffers(this.random);
       view.perkBought = false;
+      view.shopOffers = shopOffers(this.random, view.sequence);
+      view.node.objects = view.shopOffers.map(shopCrate);
+      for (const player of view.players) {
+        Object.assign(player.hook, {
+          phase: "swing",
+          length: 0,
+          targetId: null,
+          nextBeatTick: 0,
+          offerId: undefined,
+        });
+      }
+      view.shopRefreshes = 0;
       log(view, `第 ${view.levelsPlayed} 关结束，进入关间商店。`);
       return view;
     }
@@ -1043,7 +1319,11 @@ export class MinerRules implements Rules<"miner"> {
   private continueMap(view: MinerView): MinerView {
     const current = view.map.flat().find((node) => node.id === view.current);
     const choices = current ? mapChoices(view) : [];
-    if (!current || choices.length === 0 || current.floor >= view.map.length - 1) {
+    if (
+      !current ||
+      choices.length === 0 ||
+      current.floor >= view.map.length - 1
+    ) {
       if (view.mode === "endless") {
         view.map = generateMinerMap(`${this.random()}:${this.random()}`);
         view.current = null;
@@ -1075,7 +1355,8 @@ export class MinerRules implements Rules<"miner"> {
         : teamMode
           ? 0
           : undefined;
-    view.phase = won || (teamMode && winningTeam !== undefined) ? "won" : "lost";
+    view.phase =
+      won || (teamMode && winningTeam !== undefined) ? "won" : "lost";
     view.result = {
       won,
       mode: view.mode,
@@ -1088,9 +1369,7 @@ export class MinerRules implements Rules<"miner"> {
           score: player.score,
           caught: 0,
         })),
-      ...(teamMode
-        ? { teamScores: view.teamScores, winningTeam }
-        : {}),
+      ...(teamMode ? { teamScores: view.teamScores, winningTeam } : {}),
       ...(view.mode === "endless" ? { lives: view.lives } : {}),
     };
     log(

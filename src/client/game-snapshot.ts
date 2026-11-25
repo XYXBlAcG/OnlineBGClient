@@ -13,6 +13,12 @@ export function toGameSnapshot(snapshot: Snapshot): GameSnapshot {
     candidates: snapshot.candidates,
     finished: snapshot.finished,
     paused: snapshot.paused,
+    minerPaused: snapshot.minerPaused,
+    minerCanPause:
+      snapshot.kind === "miner" &&
+      snapshot.playing &&
+      snapshot.canManage &&
+      snapshot.config.humans === 1,
     turnDeadline: snapshot.turnDeadline,
     serverTime: snapshot.serverTime,
   };

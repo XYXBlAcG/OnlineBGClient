@@ -1,5 +1,5 @@
-import type { PoolBall } from "../../domain/pool/types";
-import type { PoolPoint, PoolTableLayout } from "../../domain/pool/table";
+import type { PoolBall } from "./types";
+import type { PoolPoint, PoolTableLayout } from "./table";
 
 export const CUE_TILT = 0.14;
 export const CUE_BUTT_LENGTH = 0.78;
@@ -41,9 +41,7 @@ export function requiredCueElevation(
   if (Math.abs(back.x) > 0.0001)
     limit = Math.min(
       limit,
-      back.x > 0
-        ? (halfWidth - cue.x) / back.x
-        : (-halfWidth - cue.x) / back.x,
+      back.x > 0 ? (halfWidth - cue.x) / back.x : (-halfWidth - cue.x) / back.x,
     );
   if (Math.abs(back.y) > 0.0001)
     limit = Math.min(
@@ -65,10 +63,7 @@ export function requiredCueElevation(
     if (along <= ballRadius * 0.4 || along >= reach) continue;
     const lateral = Math.abs(dx * back.y - dy * back.x);
     if (lateral > ballRadius * 2.3) continue;
-    required = Math.max(
-      required,
-      nextAngle(ballRadius * 2 + 0.004, along),
-    );
+    required = Math.max(required, nextAngle(ballRadius * 2 + 0.004, along));
   }
   const angle = Math.min(required, Math.PI / 2 - 0.01);
   return clamp01((angle - CUE_TILT) / (Math.PI / 2 - CUE_TILT));

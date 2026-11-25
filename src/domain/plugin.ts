@@ -15,6 +15,7 @@ export interface GameRules {
   actionDelay(state: GameState): number;
   actionWindow(state: GameState, action: Action): string | undefined;
   acceptsLateActions?(state: GameState): boolean;
+  keepsDeadline?(state: GameState, action: Action): boolean;
 }
 export interface Rules<K extends GameState["kind"]> {
   create(players: number, team: boolean, options?: GameOptions): State<K>;

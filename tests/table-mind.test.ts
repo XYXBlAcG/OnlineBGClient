@@ -1,5 +1,10 @@
+import { defaultAiProviderSettings } from "../src/domain/companion";
 import { describe, expect, it, vi } from "vitest";
-import type { GameState, DecisionCandidate, AiResult } from "../src/domain/types";
+import type {
+  GameState,
+  DecisionCandidate,
+  AiResult,
+} from "../src/domain/types";
 import type { TableEvent } from "../src/domain/table-mind/model";
 import { defaultCompanionConfig } from "../src/domain/companion";
 import {
@@ -63,6 +68,7 @@ const request = {
   seed: "seed",
   version: 1,
   audit: true,
+  choices: true,
   tradeEnabled: false,
 } satisfies TableAiRequest;
 
@@ -71,6 +77,7 @@ const result: AiResult = {
   chosen: candidates[0]!.action,
   difficulty: "normal",
   simulations: 0,
+  choices: candidates,
   audit: {
     version: "test",
     actor: 0,
@@ -87,6 +94,8 @@ const result: AiResult = {
 const room = {
   id: "room-1",
   hasEnded: false,
+  paused: false,
+  version: 1,
   playId: "play-1",
   config: { companion: defaultCompanionConfig },
   companionProfile: () => null,
@@ -102,6 +111,8 @@ const room = {
 
 const runner = (): TableMindRunner => ({
   configured: true,
+  settings: { ...defaultAiProviderSettings, model: "test" },
+  clear: vi.fn(),
   configure: vi.fn(),
   complete: vi.fn(async () => "1"),
 });
@@ -142,7 +153,9 @@ describe("TableMind", () => {
     r.complete = vi.fn(async () => "not a number");
     const log = vi.fn();
     const mind = new TableMind(r, { log });
-    expect(await mind.onDecision(room, request, result)).toEqual(result);
+    expect(await mind.onDecision(room, request, result)).toMatchObject({
+      chosen: result.chosen,
+    });
     expect(log).not.toHaveBeenCalled();
   });
 
@@ -171,25 +184,29 @@ describe("TableMind", () => {
       expect.stringContaining("只输出候选编号"),
       expect.stringContaining("我的手牌"),
       24,
-      6000,
+      undefined,
+      expect.any(AbortSignal),
     );
-    expect((r.complete as ReturnType<typeof vi.fn>).mock.calls[0]![1]).toContain(
-      "先出红牌",
-    );
+    expect(
+      (r.complete as ReturnType<typeof vi.fn>).mock.calls[0]![1],
+    ).toContain("先出红牌");
   });
 
   it("skips LLM calls for search seats or provider failure", async () => {
     const r = runner();
     const mind = new TableMind(r, { log: vi.fn() });
     const searchRequest = { ...request, driver: "search" as const };
-    expect(await mind.onDecision(room, searchRequest, result)).toEqual(result);
+    expect(await mind.onDecision(room, searchRequest, result)).toMatchObject({
+      chosen: result.chosen,
+    });
     expect(r.complete).not.toHaveBeenCalled();
 
     const disabled = { ...runner(), configured: false };
     const disabledMind = new TableMind(disabled, { log: vi.fn() });
-    expect(await disabledMind.onDecision(room, request, result)).toEqual(
-      result,
-    );
+    expect(await disabledMind.onDecision(room, request, result)).toMatchObject({
+      chosen: result.chosen,
+      source: "search-fallback",
+      fallbackReason: "unconfigured",
+    });
   });
-
 });

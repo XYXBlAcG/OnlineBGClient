@@ -79,3 +79,37 @@ describe("local room configuration", () => {
     ).toHaveLength(1);
   });
 });
+it("preserves selected mobile pool and mahjong modes", () => {
+  expect(
+    localRoomConfig("pool", {
+      gameOptions: {
+        pool: { mode: "nine-ball", shotSeconds: 45, assist: false },
+      },
+    }).pool.mode,
+  ).toBe("nine-ball");
+  expect(
+    localRoomConfig("scmj", {
+      gameOptions: { mahjong: { mode: "washizu", cap: 3, selfDraw: "base" } },
+    }).mahjong.mode,
+  ).toBe("washizu");
+});
+it("preserves expedition difficulty and advanced options with the journal loadout", () => {
+  const config = localRoomConfig("expedition", {
+    gameOptions: {
+      expedition: {
+        difficulty: "story",
+        ascension: 7,
+        endless: true,
+        advanced: true,
+      },
+    },
+    expeditionLegacy: ["supply1"],
+  });
+  expect(config.expedition).toMatchObject({
+    difficulty: "story",
+    ascension: 7,
+    endless: true,
+    advanced: true,
+    legacy: ["supply1"],
+  });
+});

@@ -1,3 +1,5 @@
+import type { AiProviderSettings } from "../companion";
+import { estimateTokens } from "companion-core";
 import { compilePrompt } from "companion-core";
 import type { TableSituation } from "./model";
 
@@ -10,6 +12,7 @@ export interface TableDecisionPrompt {
 
 export function buildDecisionPrompt(
   situation: TableSituation,
+  settings: AiProviderSettings,
 ): TableDecisionPrompt {
   const system = [
     `你是《${situation.scene.game}》牌桌上的 AI 玩家，正在以「${situation.scene.actor}」的身份行动。`,
@@ -80,10 +83,21 @@ export function buildDecisionPrompt(
       content: situation.memory.join("\n"),
     },
   ];
+  for (const section of sections) {
+    if (section.id === "self" || section.id === "candidates") {
+      section.minTokens = estimateTokens(section.content);
+      section.maxTokens = section.minTokens;
+      section.trim = "drop";
+    }
+  }
   const plan = compilePrompt(sections, {
-    model: "table-mind",
-    contextWindow: 8192,
-    reservedOutput: 32,
+    model: settings.model,
+    contextWindow:
+      settings.contextWindow -
+      estimateTokens(system) -
+      estimateTokens(situation.task) -
+      32,
+    reservedOutput: Math.min(24, settings.maxOutputTokens),
   });
   const user = plan.sections
     .filter((section) => section.included && section.content)

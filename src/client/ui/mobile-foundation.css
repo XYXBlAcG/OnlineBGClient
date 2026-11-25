@@ -1,0 +1,431 @@
+.mobile-shell {
+  --mobile-touch-target: 44px;
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  scroll-padding-block: 12px;
+}
+.mobile-shell
+  :is(.app-toolbar, .room-toolbar, .scmj-actions, .exp-table-controls)
+  button {
+  min-height: var(--mobile-touch-target);
+  touch-action: manipulation;
+}
+.mobile-shell :is(input, textarea, select) {
+  font-size: max(16px, 1em);
+}
+.mobile-shell .room-toolbar {
+  gap: 8px;
+  align-content: start;
+}
+.mobile-shell .room-toolbar button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.mobile-shell .room-sidebar {
+  max-height: min(var(--mobile-chat-height, 85dvh), calc(100dvh - 44px));
+  overscroll-behavior: contain;
+}
+:root[data-mobile-orientation] .mobile-shell.mobile-immersive,
+:root[data-mobile-orientation="landscape"] .mobile-shell:has(.playing-room) {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
+}
+.mobile-shell .original-game[data-game="scmj"] .scmj-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (orientation: portrait) and (max-width: 640px) {
+  .mobile-shell .original-game[data-game="scmj"] .scmj-hand {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px 2px;
+    overflow: visible;
+    padding: 12px 4px 4px;
+    min-height: 0;
+  }
+  .mobile-shell .original-game[data-game="scmj"] button.scmj-tile {
+    width: 100%;
+    min-height: 44px;
+  }
+  .mobile-shell .exp-intent-strip details {
+    flex-basis: 160px;
+  }
+  .mobile-shell .exp-intent-strip summary {
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .mobile-shell .exp-intent-strip summary span {
+    display: inline;
+  }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .mobile-shell .original-game[data-game="scmj"] .scmj-own {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+  .mobile-shell .original-game[data-game="scmj"] .scmj-hand {
+    gap: 2px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+  .mobile-shell .original-game[data-game="scmj"] button.scmj-tile {
+    width: clamp(32px, calc((100vw - 140px) / 14), 48px);
+    min-height: 44px;
+  }
+  .mobile-shell .expedition-table:has(.exp-battle) {
+    grid-template-columns: minmax(160px, 28%) minmax(0, 1fr);
+  }
+  .mobile-shell .exp-intent-strip summary {
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .mobile-shell .exp-intent-strip summary span {
+    display: inline;
+  }
+  .mobile-shell .exp-table-controls button {
+    min-height: 44px;
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-shell :is(.room-sidebar, .scene-surface) {
+    animation: none;
+    transition: none;
+  }
+}
+.mobile-shell:has(.playing-room) {
+  height: var(--mobile-height, 100dvh);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.mobile-shell .original-game .scmj-heading button {
+  min-height: 44px;
+}
+.mobile-shell .table-collection-toggle {
+  width: 100%;
+  min-height: 44px;
+}
+.table-collection-panel.ui-panel {
+  width: min(640px, calc(100vw - 24px));
+  max-height: min(85dvh, calc(var(--mobile-height, 100dvh) - 24px));
+  overflow: auto;
+}
+.table-collection-panel.ui-panel > div:not(.ui-panel-heading) {
+  min-width: 0;
+  justify-content: flex-start;
+}
+.mobile-shell .original-game[data-game="fxq"] > .flex.justify-evenly {
+  padding: 10px 8px 8px;
+  box-sizing: border-box;
+}
+.mobile-shell
+  .original-game[data-game="ccbs"]
+  .table-actions
+  > div:has([data-guide-target="ccbs.confirm"]) {
+  background: var(--field);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mobile-shell
+  .original-game[data-game="ccbs"]
+  .table-actions
+  > div:has([data-guide-target="ccbs.confirm"])
+  > div:empty {
+  display: none;
+}
+.mobile-shell
+  .original-game[data-game="ccbs"]
+  .table-actions
+  > div:has([data-guide-target="ccbs.confirm"])
+  > div:last-child {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+.mobile-shell
+  .original-game[data-game="ccbs"]
+  [data-guide-target="ccbs.confirm"]
+  + button {
+  margin-left: 0;
+}
+.mobile-shell
+  .original-game[data-game="ccbs"]
+  .table-actions
+  > div:has([data-guide-target="ccbs.bank"]) {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 0;
+  padding-block: 8px;
+}
+.mobile-shell
+  .original-game[data-game="ccbs"]
+  .table-actions
+  > div:has([data-guide-target="ccbs.bank"])
+  > div {
+  margin: 0;
+}
+.mobile-shell .original-game[data-game="ccbs"] .table-actions .ccbs-circle {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  line-height: 42px;
+  box-sizing: border-box;
+  transform: none;
+}
+.mobile-shell
+  .original-game[data-game="ccbs"]
+  .table-actions
+  > div:has([data-guide-target="ccbs.take"]) {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.mobile-shell
+  .original-game[data-game="ccbs"]
+  .table-actions
+  > div:last-child
+  > .h-6 {
+  height: auto;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .mobile-shell .exp-professions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .mobile-shell .exp-professions > button {
+    min-height: 76px;
+    padding: 8px 12px;
+  }
+  .mobile-shell .exp-professions > button > span {
+    font-size: 24px;
+  }
+}
+.mobile-shell .pool-touch-shot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.mobile-shell .pool-touch-shot > :first-child {
+  flex: 1;
+  min-width: 80px;
+}
+.mobile-shell .pool-touch-shot button {
+  min-height: 44px;
+  min-width: 80px;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .mobile-shell .pool-table {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "heading controls" "table controls";
+    min-height: 0;
+  }
+  .mobile-shell .pool-heading {
+    grid-area: heading;
+  }
+  .mobile-shell .pool-canvas {
+    grid-area: table;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  .mobile-shell .pool-hud {
+    grid-area: controls;
+    overflow-y: auto;
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
+  .mobile-shell .pool-controls {
+    align-content: start;
+  }
+}
+.mobile-shell .original-game[data-game="sgs"] > .text-center:has(.sgs-hero) {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mobile-shell
+  .original-game[data-game="sgs"]
+  > .text-center:has(.sgs-hero)
+  > div:has(> button) {
+  position: sticky;
+  bottom: 0;
+  min-height: 44px;
+  z-index: 2;
+  padding-block: 4px;
+  background: var(--board-surface);
+}
+.mobile-shell
+  .original-game[data-game="sgs"]
+  > .text-center
+  > .flex.items-center:has(.sgs-hero) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-items: center;
+  gap: 4px;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .mobile-shell
+    .original-game[data-game="sgs"]
+    > .text-center
+    > .flex.items-center:has(.sgs-hero) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .mobile-shell .original-game[data-game="sgs"] .game-avatar {
+    min-width: 44px;
+    min-height: 44px;
+    margin: 4px;
+  }
+}
+
+.mobile-shell
+  .original-game[data-game="sgs"]
+  > .text-center:has(.sgs-hero)
+  > div
+  > button {
+  min-height: 44px;
+  margin-block: 0;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-public-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.mobile-shell
+  .original-game[data-game="sgs"]
+  .sgs-public-panel
+  > :nth-child(2) {
+  min-height: 0;
+  overflow: auto;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hand-panel {
+  min-height: 0;
+  align-items: end;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hand-panel > .mr-2 {
+  flex: 0 0 116px;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hand-panel > .flex-grow {
+  min-width: 0;
+}
+.mobile-shell .original-game[data-game="sgs"] .sgs-hand-panel .sgs-card-list {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .mobile-shell .original-game[data-game="sgs"] .sgs-public-panel {
+    grid-template-columns: 190px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .mobile-shell
+    .original-game[data-game="sgs"]
+    .sgs-public-panel
+    > :first-child {
+    grid-area: 1 / 1 / 3 / 2;
+    overflow: auto;
+    min-height: 0;
+  }
+  .mobile-shell .original-game[data-game="sgs"] .sgs-hand-panel {
+    grid-area: 2 / 2;
+  }
+  .mobile-shell .original-game[data-game="sgs"] .sgs-hand-panel > .mr-2 {
+    flex-basis: 104px;
+  }
+  .mobile-shell .original-game[data-game="fxq"] > .map-viewport,
+  .mobile-shell .original-game[data-game="tq"] > div:has(> .map-viewport) {
+    grid-area: 1 / 1 / 4 / 2;
+    min-height: 0;
+    height: 100%;
+  }
+  .mobile-shell
+    .original-game:is([data-game="fxq"], [data-game="tq"])
+    .map-viewport {
+    min-height: 0;
+    height: 100%;
+  }
+  .mobile-shell
+    .original-game:is([data-game="fxq"], [data-game="tq"])
+    .map-scroll {
+    min-height: 0;
+  }
+  .mobile-shell .original-game[data-game="fxq"] > .flight-status-panel {
+    grid-area: 1 / 2;
+  }
+  .mobile-shell .original-game[data-game="fxq"] > .flex.justify-evenly,
+  .mobile-shell .original-game[data-game="tq"] > .flex.justify-evenly {
+    grid-area: 2 / 2;
+    overflow-y: auto;
+    min-height: 0;
+    align-content: start;
+    margin: 0;
+  }
+  .mobile-shell .original-game[data-game="fxq"] > .text-center {
+    grid-area: 3 / 2;
+  }
+  .mobile-shell .original-game[data-game="tq"] > .text-center {
+    grid-area: 1 / 2;
+  }
+}
+
+.mobile-shell
+  .original-game[data-game="graphwar"]
+  .gw-input-row
+  .math-formula-field {
+  flex: 1 1 calc(100% - 56px);
+  min-width: 0;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="graphwar"]
+  .gw-soldier
+  .game-avatar {
+  min-width: var(--mobile-touch-target, 44px);
+}
+.mobile-shell
+  .original-game[data-game="scmj"]
+  .scmj-player
+  .game-avatar {
+  min-height: 30px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="ktd"]
+  .catan-player-strip {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="ktd"]
+  .catan-player-strip
+  .game-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  margin-bottom: 14px;
+}
+:root[data-mobile-orientation="landscape"]
+  .mobile-shell
+  .original-game[data-game="ktd"]
+  .catan-player-strip
+  .game-avatar-face {
+  font-size: 20px;
+}

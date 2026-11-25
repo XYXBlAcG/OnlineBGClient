@@ -1,0 +1,84 @@
+.arcade-table {
+  flex: 1;
+  min-block-size: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4, 16px);
+  padding: clamp(12px, 3vw, 28px);
+  border-radius: var(--radius-xl, 18px);
+  background: var(--surface);
+}
+
+.arcade-table-header,
+.arcade-progress,
+.arcade-actions,
+.arcade-results li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+}
+
+.arcade-table-header {
+  justify-content: space-between;
+}
+
+.arcade-table-header h2 {
+  margin: 0;
+  color: var(--text);
+}
+
+.arcade-progress {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-control);
+}
+
+.arcade-route {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr));
+  gap: var(--space-3, 12px);
+}
+
+.arcade-route-choice {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+  text-align: start;
+  white-space: normal;
+}
+
+.arcade-route-choice[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.arcade-route-copy,
+.arcade-reward {
+  display: grid;
+  gap: var(--space-2, 8px);
+}
+
+.arcade-route-copy small,
+.arcade-results span {
+  color: var(--muted);
+}
+
+.arcade-results {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2, 8px);
+  margin: 0;
+  padding: 0;
+}
+
+.arcade-results li {
+  padding-block: var(--space-2, 8px);
+  border-block-end: 1px solid var(--line);
+}
+
+.arcade-results li button {
+  margin-inline-start: auto;
+}

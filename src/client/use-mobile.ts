@@ -23,7 +23,10 @@ export function useMobile(): boolean {
   return (
     capabilities.mobileUi ||
     coarse ||
-    phonePreviewEnabled(location.search, window.parent !== window)
+    phonePreviewEnabled(
+      typeof location === "undefined" ? "" : location.search,
+      typeof window !== "undefined" && window.parent !== window,
+    )
   );
 }
 

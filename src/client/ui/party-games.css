@@ -1,0 +1,243 @@
+@layer games {
+  .party-game {
+    display: grid;
+    grid-template:
+      "heading heading" auto
+      "board scores" minmax(0, 1fr)
+      "controls controls" auto / minmax(0, 1fr) clamp(7rem, 16%, 12rem);
+    flex: 1 0 auto;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: min(30rem, 65dvh);
+    gap: var(--space-2);
+    padding: var(--space-2);
+    color: var(--text);
+  }
+  .party-game-head,
+  .party-game-tags,
+  .party-game-controls {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .party-game-head {
+    grid-area: heading;
+    justify-content: space-between;
+  }
+  .party-game-head h2 {
+    margin: 0;
+  }
+  .party-game-head small,
+  .party-game-scores small {
+    color: var(--muted);
+  }
+  .party-game-tags strong,
+  .party-clock {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--field);
+  }
+  .party-clock,
+  .party-game-scores strong {
+    font-variant-numeric: tabular-nums;
+  }
+  .party-game-controls {
+    grid-area: controls;
+    min-block-size: var(--control-height);
+  }
+  .party-board {
+    grid-area: board;
+    container-type: size;
+    display: grid;
+    place-items: center;
+    min-inline-size: 0;
+    min-block-size: min(15rem, 42dvh);
+  }
+  .draw-paper,
+  .golf-field {
+    display: block;
+    inline-size: 100%;
+    max-inline-size: calc(100cqh * var(--board-ratio));
+    aspect-ratio: var(--board-ratio);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+  .draw-paper {
+    --draw-paper: rgb(255 250 241);
+    background: var(--draw-paper);
+    box-shadow: var(--shadow-low);
+  }
+  .draw-paper[data-draw-active="true"],
+  .golf-field[data-golf-ready="true"] {
+    touch-action: none;
+    cursor: crosshair;
+  }
+  [data-ink="ink"] {
+    --ink: rgb(37 41 54);
+  }
+  [data-ink="blue"] {
+    --ink: rgb(36 90 170);
+  }
+  [data-ink="red"] {
+    --ink: rgb(192 55 82);
+  }
+  [data-ink="green"] {
+    --ink: rgb(22 124 87);
+  }
+  [data-ink="gold"] {
+    --ink: rgb(175 114 12);
+  }
+  [data-ink="erase"] {
+    --ink: var(--draw-paper);
+  }
+  .draw-line {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .draw-line[data-ink="erase"] {
+    stroke-width: 30;
+  }
+  .draw-dot {
+    fill: var(--ink);
+  }
+  .draw-ink-button {
+    min-inline-size: var(--touch-target);
+    min-block-size: var(--touch-target);
+    display: inline-grid;
+    place-items: center;
+  }
+  .draw-ink-button[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 2px var(--focus);
+    background: var(--interactive-pressed);
+  }
+  .draw-ink-button i,
+  .golf-score-dot {
+    inline-size: 1rem;
+    block-size: 1rem;
+    border-radius: 50%;
+    background: var(--ink);
+    flex: none;
+  }
+  .party-game-scores {
+    grid-area: scores;
+    display: grid;
+    align-content: start;
+    overflow: auto;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .party-game-scores li {
+    display: flex;
+    gap: var(--space-1);
+    align-items: center;
+    padding: var(--space-2);
+    border-radius: var(--radius-control);
+    background: var(--surface-soft);
+    min-inline-size: 0;
+  }
+  .party-game-scores li[aria-current="true"] {
+    background: var(--field);
+  }
+  .party-game-scores li span {
+    overflow-wrap: anywhere;
+  }
+  .party-game-scores li strong {
+    margin-inline-start: auto;
+    white-space: nowrap;
+  }
+  .golf-score-dot {
+    box-shadow: 0 0 0 1px rgb(48 67 59);
+  }
+  .golf-grass {
+    fill: rgb(55 115 79);
+  }
+  .golf-grass-band {
+    fill: rgb(61 123 86);
+  }
+  .golf-rails {
+    fill: none;
+    stroke: rgb(34 72 53);
+    stroke-width: 0.2;
+  }
+  .golf-sand {
+    fill: rgb(222 180 123);
+  }
+  .golf-water {
+    fill: rgb(35 125 143);
+  }
+  .golf-banks {
+    fill: rgb(189 170 147);
+  }
+  .golf-green-ring {
+    fill: rgb(128 170 101);
+  }
+  .golf-tee,
+  .golf-aim {
+    fill: none;
+    stroke: rgb(255 255 255 / 0.77);
+    stroke-width: 0.045;
+    stroke-dasharray: 0.14 0.1;
+  }
+  .golf-cup {
+    fill: rgb(19 45 36);
+  }
+  .golf-pole,
+  .golf-player-ring {
+    fill: none;
+    stroke: white;
+    stroke-width: 0.04;
+  }
+  .golf-flag {
+    fill: rgb(243 190 83);
+  }
+  .golf-ball {
+    stroke: rgb(35 55 45);
+    stroke-width: 0.032;
+  }
+  .golf-controls label {
+    flex: 1 1 7rem;
+    min-inline-size: 0;
+  }
+  .golf-controls label .ui-slider {
+    inline-size: 100%;
+  }
+  @media (max-width: 640px) and (orientation: portrait) {
+    .party-game {
+      grid-template: "heading" "board" "controls" "scores" / minmax(0, 1fr);
+      min-block-size: 0;
+      align-content: start;
+    }
+    .party-board {
+      container-type: normal;
+      min-block-size: 0;
+      aspect-ratio: var(--board-ratio);
+    }
+    .draw-paper,
+    .golf-field {
+      max-inline-size: 100%;
+    }
+    .party-game-scores {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .party-game-controls input {
+      flex: 1 1 8rem;
+      min-inline-size: 0;
+    }
+  }
+  @media (orientation: landscape) and (max-height: 540px) {
+    .party-game {
+      gap: var(--space-1);
+      padding: var(--space-1);
+    }
+    .party-game-head h2 {
+      font-size: var(--font-size-group);
+    }
+  }
+}

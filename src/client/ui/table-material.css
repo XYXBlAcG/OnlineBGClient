@@ -20,13 +20,3 @@
 .original-game .dominion-card {
   --dom-face: var(--raised);
 }
-.exp-resource {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
-.exp-resource strong {
-  font-size: 18px;
-  font-variant-numeric: tabular-nums;
-}

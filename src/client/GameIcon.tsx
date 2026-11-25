@@ -230,6 +230,17 @@ export function GameIcon({ kind }: { kind: GameKind }) {
           />
           <circle cx="24" cy="24" r="3" fill="currentColor" />
         </svg>
+      ) : kind === "drawguess" ? (
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <rect x="7" y="9" width="26" height="33" rx="5" stroke="currentColor" strokeWidth="2.5" />
+          <path d="M13 33q5-11 10-4t10-2M24 22 37 9l4 4-13 13-5 1Z" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : kind === "golf" ? (
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <ellipse cx="27" cy="37" rx="15" ry="5" stroke="currentColor" strokeWidth="2.4" />
+          <path d="M27 37V7l13 6-13 6" stroke="currentColor" strokeWidth="2.7" strokeLinejoin="round" />
+          <circle cx="9" cy="28" r="4" fill="currentColor" />
+        </svg>
       ) : kind === "pool" ? (
         <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
           <circle

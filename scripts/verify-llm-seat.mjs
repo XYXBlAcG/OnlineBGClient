@@ -27,7 +27,9 @@ const ready = await new Promise((resolve, reject) => {
   );
   child.stdout.on("data", (chunk) => {
     buffer += chunk.toString();
-    const line = buffer.split("\n").find((item) => item.startsWith("ROOM_READY "));
+    const line = buffer
+      .split("\n")
+      .find((item) => item.startsWith("ROOM_READY "));
     if (!line) return;
     clearTimeout(timer);
     resolve(JSON.parse(line.slice("ROOM_READY ".length)));
@@ -39,6 +41,7 @@ const ws = new WebSocket(`ws://127.0.0.1:${ready.port}/connect`);
 let session;
 let snapshot;
 let actions = 0;
+const aiMoves = new Set();
 const errors = [];
 
 const apply = (update) => {
@@ -53,7 +56,8 @@ const apply = (update) => {
 
 const done = new Promise((resolve, reject) => {
   const timer = setTimeout(
-    () => reject(new Error(`timeout actions=${actions} aiMoves=${aiMoves}`)),
+    () =>
+      reject(new Error(`timeout actions=${actions} aiMoves=${aiMoves.size}`)),
     15000,
   );
   ws.on("message", (raw) => {
@@ -69,12 +73,17 @@ const done = new Promise((resolve, reject) => {
     if (response.type !== "snapshot" && response.type !== "patch") return;
     apply(response);
     if (!session || !snapshot) return;
+    if (
+      snapshot.computation?.status === "completed" &&
+      snapshot.computation.source === "llm"
+    )
+      aiMoves.add(snapshot.computation.version);
     if (snapshot.actor < 0) return;
-    if (actions >= 5) {
+    if (actions >= 5 && aiMoves.size > 0) {
       clearTimeout(timer);
       resolve({
         actions,
-        aiMoves: Math.max(0, snapshot.version - actions),
+        aiMoves: aiMoves.size,
         version: snapshot.version,
         errors,
       });
@@ -133,7 +142,7 @@ try {
       ok: false,
       error: error instanceof Error ? error.message : String(error),
       actions,
-      aiMoves,
+      aiMoves: aiMoves.size,
       version: snapshot?.version,
       errors,
     }),

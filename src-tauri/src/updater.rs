@@ -174,6 +174,7 @@ pub async fn updater_check(
     let result = async {
         let mut builder = app
             .updater_builder()
+            .version_comparator(|current, release| stable_update(&current, &release.version))
             .timeout(Duration::from_secs(30))
             .restart_after_install(true);
         #[cfg(windows)]
@@ -348,6 +349,10 @@ pub struct Completed {
     executable: std::path::PathBuf,
     expected_executable: Option<std::path::PathBuf>,
 }
+fn stable_update(current: &semver::Version, target: &semver::Version) -> bool {
+    target.pre.is_empty() && target > current
+}
+
 fn completed(current: &str, target: &str) -> Result<bool, String> {
     let current = semver::Version::parse(current).map_err(|e| e.to_string())?;
     let target = semver::Version::parse(target).map_err(|e| e.to_string())?;
@@ -392,6 +397,16 @@ fn install_directory_arg(executable: &std::path::Path) -> Result<std::ffi::OsStr
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_offers_newer_stable_releases_even_from_a_preview() {
+        let stable = semver::Version::parse("0.6.1").unwrap();
+        let preview = semver::Version::parse("0.6.2-preview.1").unwrap();
+        let next = semver::Version::parse("0.6.2").unwrap();
+        assert!(!stable_update(&stable, &preview));
+        assert!(!stable_update(&preview, &stable));
+        assert!(stable_update(&preview, &next));
+    }
 
     #[test]
     fn installer_targets_the_running_directory_without_quoting_or_splitting_spaces() {

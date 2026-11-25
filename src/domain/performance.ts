@@ -1,3 +1,4 @@
+import type { AiDecisionSource, AiFallbackReason } from "./types";
 import { z } from "zod";
 export const performanceSchema = z.object({
   mode: z.enum(["auto", "single", "multi"]).default("auto"),
@@ -24,6 +25,8 @@ export interface ComputeProgress {
   status: "computing" | "completed";
 }
 export interface AiComputation extends ComputeProgress {
+  source?: AiDecisionSource;
+  fallbackReason?: AiFallbackReason;
   actor: number;
   version: number;
   completedDecisions: number;

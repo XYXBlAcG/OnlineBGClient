@@ -144,7 +144,7 @@ export function GameCommands({
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <Button
-          variant="primary"
+          variant="secondary"
           aria-pressed={open}
           disabled={!snapshot.state || snapshot.finished}
         >

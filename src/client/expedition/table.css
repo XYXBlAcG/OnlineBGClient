@@ -102,21 +102,59 @@
 .exp-relic-choices {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 .exp-professions > button,
 .exp-relic-choices > button {
-  min-height: 200px;
+  min-height: 0;
   white-space: normal;
   padding: 22px;
   text-align: left;
   background: var(--canvas);
-  border-radius: 18px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  transition:
+    border-color var(--motion-control),
+    background-color var(--motion-control),
+    transform var(--motion-control);
+}
+.exp-professions > button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: clamp(180px, 24vh, 240px);
+  background:
+    radial-gradient(110% 90% at 50% 8%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%),
+    var(--canvas);
 }
 .exp-professions > button > span,
 .exp-relic-choices > button > span {
   font-size: 42px;
   color: var(--accent);
+}
+.exp-professions > button > span {
+  font-size: clamp(56px, 6vw, 82px);
+  line-height: 1;
+}
+.exp-professions > button h2 {
+  margin: 0;
+  font-size: clamp(20px, 2vw, 26px);
+}
+.exp-professions > button[data-selected="true"] {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  background:
+    radial-gradient(110% 90% at 50% 8%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 66%),
+    var(--canvas);
+}
+.exp-professions > button:disabled {
+  opacity: 0.55;
+}
+.exp-professions > button[data-selected="true"]:disabled {
+  opacity: 1;
 }
 
 .exp-relic-layer {
@@ -192,27 +230,6 @@
     opacity: 1;
     transform: none;
   }
-}
-.exp-table-status .exp-resource {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-  padding: 3px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--field);
-  color: var(--muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.exp-table-status .exp-resource strong {
-  color: var(--text);
-  font-size: 14px;
-}
-.exp-table-status .exp-health {
-  color: var(--exp-red);
-}
-.exp-table-status .exp-gold {
-  color: var(--exp-gold, #a9771b);
 }
 .exp-companions,
 .exp-recruit {
@@ -1909,10 +1926,6 @@
   .exp-table-status strong {
     font-size: 14px;
   }
-  .exp-table-status .exp-resource {
-    font-size: 10px;
-    padding: 3px 6px;
-  }
   .exp-table-status button {
     min-height: 32px;
     padding: 4px 8px;
@@ -2211,7 +2224,6 @@
   line-height: 1.25;
 }
 
-.exp-table-status .exp-resource,
 .exp-table-status .exp-badge {
   display: inline-flex;
   align-items: center;
@@ -2226,38 +2238,12 @@
   white-space: nowrap;
 }
 
-.exp-resource-label {
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 600;
-}
 
-.exp-table-status .exp-resource strong {
-  color: var(--text);
-  font-size: 13px;
-}
 
-.exp-resource-max {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 500;
-}
 
-.exp-table-status .exp-resource.exp-health strong {
-  color: var(--exp-red);
-}
 
-.exp-table-status .exp-resource.exp-gold strong {
-  color: var(--exp-gold, #a9771b);
-}
 
-.exp-table-status .exp-resource.exp-energy strong {
-  color: var(--exp-blue);
-}
 
-.exp-table-status .exp-resource.exp-compass strong {
-  color: var(--exp-ink);
-}
 
 .exp-table-status .exp-ascension-badge {
   background: color-mix(in srgb, var(--exp-red) 10%, var(--field));
@@ -2528,7 +2514,6 @@
   .exp-table-status .exp-phase-block strong {
     font-size: 13px;
   }
-  .exp-table-status .exp-resource,
   .exp-table-status .exp-badge {
     min-height: 28px;
     padding: 0 8px;

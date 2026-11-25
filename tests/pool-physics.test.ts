@@ -344,3 +344,19 @@ it("never keeps rotating after a ball has stopped moving", () => {
     }
   }
 });
+
+it("does not overlap balls in the four-player party rack", () => {
+  const balls = rackBalls("party", "four-players", 4);
+  expect(balls).toHaveLength(15);
+  expect(new Set(balls.map(({ x, y }) => `${x}:${y}`)).size).toBe(15);
+});
+
+it("keeps outcomes identical when AI trials omit playback frames", () => {
+  const balls = rackBalls("nine-ball", "lightweight-physics");
+  const action = { aim: 0, power: 0.8, spin: { x: 0, y: 0 } };
+  const recorded = simulateShot(balls, action);
+  const trial = simulateShot(balls, action, undefined, false);
+  expect(recorded.frames.length).toBeGreaterThan(1);
+  expect(trial.frames).toEqual([]);
+  expect(trial).toEqual({ ...recorded, frames: [] });
+});

@@ -6,11 +6,7 @@ import {
   type Body,
   type Contact,
 } from "planck";
-import {
-  standardPoolLayout,
-  jawPolygon,
-  type PoolTableLayout,
-} from "./table";
+import { standardPoolLayout, jawPolygon, type PoolTableLayout } from "./table";
 import type {
   PoolBall,
   PoolFrame,
@@ -93,6 +89,7 @@ export function simulateShot(
   balls: PoolBall[],
   shot: PoolShotInput,
   layout: PoolTableLayout = standardPoolLayout,
+  recordFrames = true,
 ): PoolShot {
   Settings.velocityThreshold = 0;
   Settings.linearSlop = 0.0005;
@@ -504,18 +501,12 @@ export function simulateShot(
       }
       const onCloth = height.z <= 1e-4 && height.vz <= 0;
       if (onCloth) {
-        const decay = Math.min(
-          Math.abs(spin.z),
-          CLOTH_SPIN_DECEL * STEP,
-        );
+        const decay = Math.min(Math.abs(spin.z), CLOTH_SPIN_DECEL * STEP);
         spin.z -= Math.sign(spin.z) * decay;
       } else {
         spin.z *= Math.exp(-SPIN_DECAY * STEP);
       }
-      if (
-        distance(velocity.x, velocity.y) <= STOP_SPEED &&
-        onCloth
-      ) {
+      if (distance(velocity.x, velocity.y) <= STOP_SPEED && onCloth) {
         velocity.x = 0;
         velocity.y = 0;
         spin.x = 0;
@@ -536,7 +527,7 @@ export function simulateShot(
     }
     for (const body of pendingRemoval) body.setActive(false);
     pendingRemoval.clear();
-    if (step % SAMPLE_EVERY === 0)
+    if (recordFrames && step % SAMPLE_EVERY === 0)
       frames.push({
         t: Math.round(time * 1000),
         balls: [...bodies.entries()]
@@ -601,9 +592,10 @@ export function simulateShot(
       })),
   };
   if (
-    !frames.length ||
-    frames[frames.length - 1].t !== finalFrame.t ||
-    frames[frames.length - 1].balls.length !== finalFrame.balls.length
+    recordFrames &&
+    (!frames.length ||
+      frames[frames.length - 1].t !== finalFrame.t ||
+      frames[frames.length - 1].balls.length !== finalFrame.balls.length)
   )
     frames.push(finalFrame);
   for (const body of bodies.values()) world.destroyBody(body);

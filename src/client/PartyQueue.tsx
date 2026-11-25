@@ -1,4 +1,5 @@
 import styles from "./PartyQueue.module.css";
+import { llmUiEnabled } from "./llm-ui";
 import { mahjongModeNames } from "../domain/mahjong/types";
 import type { Command, Snapshot } from "../domain/protocol";
 import { gameCatalogue } from "../domain/catalogue";
@@ -76,6 +77,7 @@ export function PartyQueue({
                     <RoomSetup
                       key={item.id}
                       snapshot={snapshot}
+                      showLlm={llmUiEnabled}
                       proposedConfig={item.config}
                       onError={onError}
                       overlayClassName={
@@ -101,6 +103,7 @@ export function PartyQueue({
         <RoomSetup
           snapshot={snapshot}
           purpose="enqueue"
+          showLlm={llmUiEnabled}
           onError={onError}
           overlayClassName={
             nestedDialogs ? "nested-dialog-overlay" : undefined

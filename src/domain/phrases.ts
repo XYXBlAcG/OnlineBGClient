@@ -56,6 +56,8 @@ const gamePhrases: Record<GameKind, string[]> = {
   ddz: ["不要。", "这把我来当地主！", "队友加油！", "你的牌也太整齐了吧。"],
   dy: ["这锅快满啦！", "小心毒药！", "这锅汤有点危险。"],
   pool: ["这杆我先稳住。", "好球！", "高低杆走位。", "差一点就进了。"],
+  drawguess: ["我再添几笔。", "我有点头绪了。", "这张得回看。"],
+  golf: ["小心别落水。", "差一点进洞！", "这杆走外侧。"],
 };
 export function phraseGroups(
   kind: GameKind,

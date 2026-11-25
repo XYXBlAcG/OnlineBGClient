@@ -333,6 +333,13 @@ small,
   flex-direction: column;
   overflow: auto;
 }
+.room-game-scene {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
 .room-toolbar {
   display: flex;
   justify-content: space-between;
@@ -769,8 +776,7 @@ small,
   flex: 1;
   width: 100%;
 }
-.finish-banner,
-.resolution-status {
+.finish-banner {
   margin-top: 12px;
   padding: 12px;
   border-radius: 8px;
@@ -778,9 +784,6 @@ small,
   display: flex;
   gap: 12px;
   align-items: center;
-}
-.resolution-status {
-  font-size: 13px;
 }
 .section-toolbar {
   flex-wrap: wrap;
@@ -1311,7 +1314,7 @@ kbd {
 }
 .mobile-shell {
   min-height: 100dvh;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 .mobile-shell .app-toolbar {
   padding: 8px 12px;
@@ -1698,21 +1701,6 @@ kbd {
   .original-game
   :is(button, .cursor-pointer, [role="button"]) {
   pointer-events: none;
-}
-.action-feedback {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: 90%;
-  padding: 10px 18px;
-  border-radius: 12px;
-  background: var(--text);
-  color: var(--surface);
-  box-shadow: 0 6px 24px #0002;
-  pointer-events: none;
-  z-index: 20;
 }
 .network-latency {
   color: var(--muted);
@@ -2414,13 +2402,18 @@ kbd {
 
 .compute-status {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  min-inline-size: 0;
   font-size: 12px;
   color: var(--muted);
 }
+.compute-status > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .compute-status button {
+  flex: none;
   border: 0;
   padding: 4px 8px;
   border-radius: 6px;
@@ -3358,4 +3351,195 @@ progress::-moz-progress-bar {
 .replay-panel .replay-stage .original-game {
   min-height: 0;
   flex: 1;
+}
+
+.ui-stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+.ui-stepper button {
+  width: 34px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ui-stepper button:hover:not(:disabled) { background: var(--field); }
+.ui-stepper button:disabled { opacity: 0.35; cursor: not-allowed; }
+.ui-stepper input {
+  width: 34px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ui-stepper input:focus { outline: none; background: var(--field); }
+.ui-stepper:focus-within { border-color: var(--accent); }
+
+.game-stage[data-game="ddz"] .original-game > .text-center.text-sm.-mt-4 {
+  display: none;
+}
+
+.original-game[data-game="uno"] .uno-list {
+  transform: scale(var(--card-scale, 1));
+  transform-origin: bottom center;
+}
+.original-game[data-game="uno"] .uno-list > div,
+.original-game[data-game="uno"] .uno-list > button {
+  transition: transform 140ms var(--ease-standard);
+}
+.original-game[data-game="uno"] .uno-list > div:hover,
+.original-game[data-game="uno"] .uno-list > button:hover {
+  transform: translateY(-6px);
+}
+.original-game[data-game="uno"] .uno-list > div:active,
+.original-game[data-game="uno"] .uno-list > button:active {
+  transform: translateY(-10px) scale(1.06);
+}
+.original-game[data-game="ddz"] .table-hand-region {
+  transform: scale(var(--card-scale, 1));
+  transform-origin: bottom center;
+}
+.original-game[data-game="ddz"] .ddz-my-poker {
+  transition:
+    translate 140ms var(--ease-standard),
+    filter 140ms var(--ease-standard);
+}
+.original-game[data-game="ddz"] .ddz-my-poker:hover {
+  translate: 0 -6px;
+  filter: brightness(1.06);
+}
+.original-game[data-game="ddz"] .ddz-my-poker:active {
+  translate: 0 -10px;
+}
+.original-game[data-game="sgs"] .sgs-hand-panel {
+  transform: scale(var(--card-scale, 1));
+  transform-origin: bottom center;
+}
+.original-game[data-game="sgs"] .sgs-hand-panel .sgs-card {
+  transition:
+    translate 140ms var(--ease-standard),
+    filter 140ms var(--ease-standard);
+}
+.original-game[data-game="sgs"] .sgs-hand-panel .sgs-card:hover {
+  translate: 0 -5px;
+  filter: brightness(1.05);
+}
+.original-game[data-game="sgs"] .sgs-hand-panel .sgs-card:active {
+  translate: 0 -9px;
+}
+.card-motion-off .original-game[data-game="uno"] .uno-list > div,
+.card-motion-off .original-game[data-game="uno"] .uno-list > button,
+.card-motion-off .original-game[data-game="ddz"] .ddz-my-poker,
+.card-motion-off .original-game[data-game="sgs"] .sgs-hand-panel .sgs-card {
+  transition: none;
+}
+
+.original-game[data-game="ddz"] {
+  padding-bottom: clamp(88px, 12vh, 132px);
+}
+
+@media (max-width: 900px) {
+  .game-stage[data-game="ddz"] .original-game div {
+    overflow: visible;
+  }
+}
+
+.draw-library-add,
+.draw-library-actions,
+.draw-library-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.draw-library-add input {
+  min-width: 120px;
+}
+.draw-library-list {
+  max-height: 260px;
+  overflow: auto;
+}
+.draw-library-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.draw-library-chip small {
+  color: var(--muted);
+}
+.draw-library-chip button {
+  border: 0;
+  background: transparent;
+  padding: 0 2px;
+  min-height: 0;
+}
+
+.pregame-word-library {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--canvas) 84%, transparent);
+}
+.pregame-word-library > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.draw-table .party-board {
+  grid-area: board;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+.draw-table .party-board .fayu-canvas-wrap {
+  flex: 1;
+  min-height: min(15rem, 42dvh);
+}
+.draw-table .party-board .fayu-canvas {
+  border-radius: var(--radius-card);
+}
+
+@media (max-width: 900px) {
+  .draw-table .party-board {
+    padding-inline-end: 18px;
+    box-sizing: border-box;
+  }
+}
+
+.draw-mobile-scores {
+  display: none;
+}
+@media (max-width: 900px) {
+  .draw-table .party-game-scores {
+    display: none;
+  }
+  .draw-mobile-scores {
+    display: inline;
+    color: var(--muted);
+    font-size: 12px;
+  }
 }

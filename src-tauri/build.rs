@@ -5,6 +5,12 @@ fn main() {
     )
     .expect("cannot build Tauri resources");
 
+    let dist = std::path::PathBuf::from(
+        std::env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"),
+    )
+    .join("../dist");
+    println!("cargo:rerun-if-changed={}", dist.display());
+
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("ios") {
         println!("cargo:rustc-link-arg=-Wl,-undefined,dynamic_lookup");
     }

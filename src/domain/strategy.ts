@@ -224,6 +224,15 @@ export class Strategy {
       difficulty: request.difficulty,
       simulations,
     };
+    if (request.choices)
+      result.choices = candidates
+        .slice(0, 8)
+        .map(({ action, label, score }) => ({
+          action,
+          label,
+          score,
+          features: [],
+        }));
     if (request.audit)
       result.audit = {
         version: this.version,
@@ -287,7 +296,9 @@ export class Strategy {
       observation.kind === "ccbs" ||
       observation.kind === "graphwar" ||
       observation.kind === "pool" ||
-      observation.kind === "miner"
+      observation.kind === "miner" ||
+      observation.kind === "drawguess" ||
+            observation.kind === "golf"
     )
       throw new Error("该游戏 AI 尚未接入");
     const state = structuredClone(observation);
@@ -421,7 +432,9 @@ export class Strategy {
       observation.kind === "ccbs" ||
       observation.kind === "graphwar" ||
       observation.kind === "pool" ||
-      observation.kind === "miner"
+      observation.kind === "miner" ||
+      observation.kind === "drawguess" ||
+            observation.kind === "golf"
     )
       throw new Error("该游戏 AI 尚未接入");
     if (actor === target) return -1;
@@ -458,7 +471,9 @@ export class Strategy {
       observation.kind === "ccbs" ||
       observation.kind === "graphwar" ||
       observation.kind === "pool" ||
-      observation.kind === "miner"
+      observation.kind === "miner" ||
+      observation.kind === "drawguess" ||
+            observation.kind === "golf"
     )
       throw new Error("该游戏 AI 尚未接入");
     const features: Feature[] = [];
@@ -739,7 +754,9 @@ export class Strategy {
       state.kind === "ktd" ||
       state.kind === "scmj" ||
       state.kind === "ccbs" ||
-      state.kind === "graphwar"
+      state.kind === "graphwar" ||
+      state.kind === "drawguess" ||
+            state.kind === "golf"
     )
       throw new Error("该游戏 AI 尚未接入");
     if (state.kind === "dy") {
@@ -811,6 +828,7 @@ export interface SearchRequest {
   difficulty: Difficulty;
   seed: string;
   audit: boolean;
+  choices?: boolean;
   tradeEnabled?: boolean;
   search?: { action: Action; indexes: number[] }[];
 }

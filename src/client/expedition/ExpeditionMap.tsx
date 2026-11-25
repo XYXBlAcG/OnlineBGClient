@@ -368,7 +368,7 @@ export function ExpeditionMap({
       </div>
       <ExpeditionHint
         text={
-          pending ? "正在提交投票…" : "单击选择，双击投票；也可选中后按 Enter"
+          pending ? "正在提交投票…" : mobile ? "点选节点，再点投票；可拖动或缩放地图" : "单击选择，双击投票；也可选中后按 Enter"
         }
       />
       <ExpeditionDrawer

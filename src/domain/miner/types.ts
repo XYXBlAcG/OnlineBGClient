@@ -12,6 +12,8 @@ export const minerObjectKindSchema = z.enum([
   "skull",
   "tnt",
   "critter",
+  "timeTrap",
+  "chargeCrystal",
 ]);
 export type MinerObjectKind = z.infer<typeof minerObjectKindSchema>;
 
@@ -69,6 +71,10 @@ export const minerMechanicIdSchema = z.enum([
   "geyser",
   "batSwarm",
   "goldFever",
+  "crystalVein",
+  "teamRelay",
+  "unstableOre",
+  "chargedVein",
 ]);
 export type MinerMechanicId = z.infer<typeof minerMechanicIdSchema>;
 
@@ -81,6 +87,7 @@ export const minerMoveSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("drop"),
     angle: z.number().min(-85).max(85),
+    offer: z.string().min(1).max(40).nullable().optional(),
   }),
   z.object({
     type: z.literal("use-item"),
@@ -88,7 +95,7 @@ export const minerMoveSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("special") }),
   z.object({ type: z.literal("haul") }),
-  z.object({ type: z.literal("buy"), itemId: minerItemIdSchema }),
+  z.object({ type: z.literal("refresh-shop") }),
   z.object({ type: z.literal("spin") }),
   z.object({
     type: z.literal("buy-perk"),
@@ -132,6 +139,7 @@ export interface MinerObject {
   removed: boolean;
   frozen: boolean;
   phantom: boolean;
+  offerItem?: MinerItemId;
 }
 
 export interface MinerHook {
@@ -142,6 +150,7 @@ export interface MinerHook {
   length: number;
   targetId: string | null;
   nextBeatTick: number;
+  offerId?: string | null;
 }
 
 export interface MinerPlayerView {
@@ -173,6 +182,7 @@ export interface MinerMineNode {
   waterLevel: number;
   crittersStoppedTicks: number;
   freezeTicks: number;
+  relayCatch?: Partial<Record<0 | 1, { seat: number; tick: number }>>;
 }
 
 export interface MinerResult {
@@ -197,8 +207,18 @@ export type MinerPhase =
   | "won"
   | "lost";
 
+export interface MinerShopOffer {
+  id: string;
+  slot: number;
+  itemId: MinerItemId;
+  price: number;
+}
+
 export interface MinerView {
+  untimed?: true;
   phase: MinerPhase;
+  shopOffers: MinerShopOffer[];
+  shopRefreshes: number;
   map: MapNode[][];
   floor: number;
   current: string | null;
@@ -227,6 +247,10 @@ export interface MinerView {
   log: { id: number; text: string }[];
   sequence: number;
   lastAction?: {
+    id: number;
+    value?: number;
+    bonus?: number;
+    point?: { x: number; y: number };
     actor: number;
     kind: string;
     text: string;

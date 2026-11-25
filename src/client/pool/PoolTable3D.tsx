@@ -10,7 +10,6 @@ import { Button } from "../ui/Controls";
 import { POOL_PLAYBACK_RATE } from "./frames";
 import { poolAudio } from "./audio";
 import { poolBallCursor, type PoolCursor } from "./aim";
-import { ballAtPoint } from "./hit-ball";
 import { poolBallLabel } from "./labels";
 import {
   PoolScene3D,
@@ -19,10 +18,10 @@ import {
 } from "./render3d/PoolScene3D";
 import { PoolTableShell } from "./PoolTableShell";
 import { poolLayout } from "../../domain/pool/table";
-import { requiredCueElevation } from "./cue";
+import { requiredCueElevation } from "../../domain/pool/cue";
 import { predictShot } from "./prediction";
 import { usePoolAim } from "./use-pool-aim";
-import { usePoolClock } from "./use-pool-clock";
+import { useTurnClock } from "../use-turn-clock";
 import type { PoolPlayback } from "./use-pool-playback";
 import { useLayoutEffectSafe } from "../use-layout-effect";
 import "./pool.css";
@@ -50,6 +49,8 @@ export function PoolTable3D({
   onUnavailable,
   soundEnabled = true,
   soundVolume = 0.5,
+  environment = "midnight",
+  quality = "balanced",
 }: {
   view: PoolView;
   act: (action: Action) => void;
@@ -64,6 +65,8 @@ export function PoolTable3D({
   onUnavailable: () => void;
   soundEnabled?: boolean;
   soundVolume?: number;
+  environment?: import("../scene3d/environment").PoolEnvironment;
+  quality?: import("../scene3d/environment").Scene3dQuality;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<PoolScene3D>();
@@ -105,7 +108,7 @@ export function PoolTable3D({
         )
       : 0;
   const effectiveElevation = Math.max(aim.elevation, requiredElevation);
-  const remaining = usePoolClock(turnDeadline, serverTime, paused);
+  const remaining = useTurnClock(turnDeadline, serverTime, paused);
   useEffect(() => {
     poolAudio.configure(soundEnabled, soundVolume);
   }, [soundEnabled, soundVolume]);
@@ -134,6 +137,8 @@ export function PoolTable3D({
       onPocket: () => poolAudio.pocket(),
       onImpact: (kind, intensity) => poolAudio.impact(kind, intensity),
       onCueStrike: (power) => poolAudio.strike(power),
+      environment,
+      quality,
     });
     scene.current = current;
     if (playback.startedAt > 0 && playback.shot) {
@@ -149,7 +154,7 @@ export function PoolTable3D({
       current.destroy();
       scene.current = undefined;
     };
-  }, [attempt]);
+  }, [attempt, environment, quality]);
   useLayoutEffectSafe(() => {
     scene.current?.setInputMode(cameraMode);
   }, [cameraMode, attempt]);
@@ -230,13 +235,8 @@ export function PoolTable3D({
   };
   const move = (event: ReactPointerEvent<HTMLDivElement>) => {
     const hostRect = host.current?.getBoundingClientRect();
-    if (
-      hostRect &&
-      status.phase === "ready" &&
-      !playbackActive(playback)
-    ) {
-      const point = scene.current?.pointAt(event.clientX, event.clientY);
-      const id = point ? ballAtPoint(view.balls, point) : null;
+    if (hostRect && status.phase === "ready" && !playbackActive(playback)) {
+      const id = scene.current?.ballAt(event.clientX, event.clientY) ?? null;
       setHoverBall(
         id === null
           ? null
@@ -313,6 +313,12 @@ export function PoolTable3D({
       view={view}
       remaining={remaining}
       power={aim.power}
+      onPower={aim.setShotPower}
+      shotReady={!view.ballInHand || !!aim.placement}
+      onShoot={() => {
+        const shot = aim.shoot();
+        if (shot) act({ type: "pool-shot", ...shot });
+      }}
       spin={aim.spin}
       onSpin={aim.setSpin}
       elevation={aim.elevation}

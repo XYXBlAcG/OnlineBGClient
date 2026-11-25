@@ -24,18 +24,22 @@ const PoolTable3D = lazy(() =>
 type PoolTableProps = Omit<
   ComponentProps<typeof PoolTable>,
   "onRendererToggle" | "playback"
->;
+> & { quality?: import("../scene3d/environment").Scene3dQuality };
 
 export function PoolGame({
   renderer = "auto",
+  environment = "midnight",
+  quality = "balanced",
   onRendererChange,
   ...props
 }: PoolTableProps & {
   renderer?: PoolRenderer;
+  environment?: import("../scene3d/environment").PoolEnvironment;
+  quality?: import("../scene3d/environment").Scene3dQuality;
   onRendererChange?: (renderer: PoolRenderer) => void;
 }) {
   const playback = usePoolPlayback(props.view, props.actor);
-  const [environment] = useState(detectPoolRendererEnvironment);
+  const [rendererEnvironment, setRendererEnvironment] = useState(detectPoolRendererEnvironment);
   const [override, setOverride] = useState<PoolRenderer | null>(null);
   const [fallback, setFallback] = useState(false);
   const preference = override ?? renderer;
@@ -43,7 +47,12 @@ export function PoolGame({
     setOverride(null);
     setFallback(false);
   }, [renderer]);
-  const kind = resolvePoolRenderer(preference, fallback, environment);
+  useEffect(() => {
+    const update = () => setRendererEnvironment(detectPoolRendererEnvironment());
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const kind = resolvePoolRenderer(preference, fallback, rendererEnvironment);
   const change = (next: PoolRenderer) => {
     setOverride(next);
     setFallback(false);
@@ -64,6 +73,8 @@ export function PoolGame({
         <PoolTable3D
           {...props}
           playback={playback}
+          environment={environment}
+          quality={quality}
           onRendererToggle={() => change("2d")}
           onUnavailable={unavailable}
         />
@@ -73,7 +84,7 @@ export function PoolGame({
     <PoolTable
       {...props}
       playback={playback}
-      onRendererToggle={environment.webgl ? () => change("3d") : undefined}
+      onRendererToggle={rendererEnvironment.webgl ? () => change("3d") : undefined}
     />
   );
 }

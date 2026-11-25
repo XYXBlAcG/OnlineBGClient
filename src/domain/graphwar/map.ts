@@ -75,9 +75,9 @@ export function generateBattlefield(
   players: number,
   options: GraphwarOptions,
   random: () => number,
+  teams = Array.from({ length: players }, (_, i) => i % 2),
 ) {
-  const bounds = battlefield({ options }),
-    teams = Array.from({ length: players }, (_, i) => i % 2);
+  const bounds = battlefield({ options });
   const gaussian = () =>
     Math.sqrt(-2 * Math.log(Math.max(Number.EPSILON, random()))) *
     Math.cos(2 * Math.PI * random());

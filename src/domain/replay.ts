@@ -1,3 +1,4 @@
+import { arcadeScenarioSchema } from "./arcade/scenario";
 import { partyEventSchema } from "./party/model";
 import { expeditionMapSchema } from "./expedition/adventure-types";
 import { maxRoomSeats } from "./catalogue";
@@ -9,18 +10,34 @@ import { bannerSchema, chatEventSchema } from "./banner";
 import { avatarSchema } from "./avatar";
 import { z } from "zod";
 import { actionSchema, configSchema } from "./protocol";
+import { drawWordSchema } from "./drawguess/words";
 import { gameCatalogue, gameRulesVersion } from "./catalogue";
 import { GameEngine } from "./engine";
 import { challengeBoardSchema } from "./challenges";
+import { upgradeDrawRecord } from "./drawguess/legacy";
+import { classicGolfCourses, generateLegacyGolfCourses } from "./golf/courses";
+import { golfCourseSchema, golfHoleCount } from "./golf/types";
+
+export const replayEventLimit = 40_000;
 
 export const replaySchema = z.object({
   format: z.literal(1),
+  arcadeScenario: arcadeScenarioSchema.optional(),
+  arcadeRunId: z.uuid().optional(),
   expeditionRunId: z.string().max(150).optional(),
   challenges: challengeBoardSchema.optional(),
   graphwarInitial: graphwarInitialSchema.optional(),
   expeditionMap: expeditionMapSchema.optional(),
   expeditionTuning: z.union([z.literal(1), z.literal(2)]).optional(),
   expeditionCampaign: z.union([z.literal(1), z.literal(2)]).optional(),
+  drawWords: z.array(drawWordSchema).max(1000).optional(),
+  golfCourses: z.array(golfCourseSchema).min(1).max(golfHoleCount).optional(),
+  truncated: z.boolean().optional(),
+  drawStart: z.object({
+    round: z.number().int().min(0).max(999),
+    scores: z.array(z.number().int().nonnegative()).max(maxRoomSeats),
+    sessionStartedAt: z.number().int().optional(),
+  }).optional(),
   room: z.string().min(1).max(12),
   config: configSchema,
   rulesVersion: z.string(),
@@ -32,7 +49,7 @@ export const replaySchema = z.object({
   party: z
     .array(
       z.object({
-        frame: z.number().int().min(0).max(20000),
+        frame: z.number().int().min(0).max(replayEventLimit),
         event: partyEventSchema,
       }),
     )
@@ -42,12 +59,12 @@ export const replaySchema = z.object({
     .array(
       z.union([
         z.object({
-          frame: z.number().int().min(0).max(20000),
+          frame: z.number().int().min(0).max(replayEventLimit),
           banner: bannerSchema,
           name: z.string().max(24),
         }),
         z.object({
-          frame: z.number().int().min(0).max(20000),
+          frame: z.number().int().min(0).max(replayEventLimit),
           message: chatEventSchema,
           name: z.string().max(24),
         }),
@@ -78,7 +95,7 @@ export const replaySchema = z.object({
         }),
       ]),
     )
-    .max(20000),
+    .max(replayEventLimit),
 });
 export type ReplayRecord = z.infer<typeof replaySchema>;
 export class Replay {
@@ -99,17 +116,32 @@ export class Replay {
       throw new Error(
         "该 Graphwar 记录使用旧版规则，请使用对应版本客户端打开；原记录保留",
       );
-    this.record = replaySchema.parse(input);
+    this.record = replaySchema.parse(upgradeDrawRecord(input));
     if (
       this.record.rulesVersion !==
       gameRulesVersion(this.record.config.kind, this.record.config.mahjong.mode)
     )
       throw new Error("该记录需要不同版本的游戏规则");
+    if (this.record.drawStart && (
+      this.record.config.kind !== "drawguess" ||
+      this.record.config.drawguess?.mode !== "fayu" ||
+      this.record.drawStart.scores.length !== this.record.names.length
+    )) throw new Error("法语回放的起始分数无效");
     if (
       this.record.names.length !==
       this.record.config.humans + this.record.config.ai.length
     )
       throw new Error("记录席位不完整");
+  }
+  get golfCourses() {
+    const { golfCourses, arcadeScenario, events, seed } = this.record;
+    if (golfCourses) return golfCourses;
+    if (arcadeScenario?.kind === "golf") return classicGolfCourses.slice(0, 1);
+    const usesFiveHoles = events.some(({ type, ...event }) =>
+      type === "action" && "action" in event && event.action.type === "golf-next" &&
+      event.action.hole >= classicGolfCourses.length - 1,
+    );
+    return usesFiveHoles ? generateLegacyGolfCourses(seed) : classicGolfCourses;
   }
   private checkpoints = new Map<number, import("./types").GameState>();
   private last:
@@ -137,16 +169,31 @@ export class Replay {
           this.record.config.team,
           {
             ...this.record.config,
+            arcadeScenario: this.record.arcadeScenario,
+            golfCourses: this.record.config.kind === "golf" ? this.golfCourses : undefined,
             expeditionMap: this.record.expeditionMap,
             expeditionTuning: this.record.expeditionTuning ?? 1,
             expeditionCampaign: this.record.expeditionCampaign ?? 1,
             expeditionLayout: this.record.expeditionMap ? 2 : 1,
+            drawguess: {
+              mode: this.record.config.drawguess?.mode ?? "classic",
+              ...(this.record.drawWords ? { words: this.record.drawWords } : {}),
+            },
             graphwarInitial:
               this.record.config.kind === "graphwar"
                 ? graphwarInitialSchema.parse(this.record.graphwarInitial)
                 : undefined,
           },
         );
+    if (
+      !cached &&
+      state.kind === "drawguess" &&
+      state.mode === "fayu" &&
+      this.record.drawStart
+    ) {
+      state.view.round = this.record.drawStart.round;
+      state.view.scores = [...this.record.drawStart.scores];
+    }
     while (cursor < index) {
       const event = this.record.events[cursor++];
       state =

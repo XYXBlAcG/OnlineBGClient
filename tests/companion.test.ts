@@ -11,9 +11,7 @@ import { Room } from "../src/domain/room";
 import type { ChatMessage } from "../src/domain/protocol";
 import type { CompanionProfile } from "companion-core";
 
-const enabledCompanion = (
-  mode: "mention-only" | "chatty" = "mention-only",
-) =>
+const enabledCompanion = (mode: "mention-only" | "chatty" = "mention-only") =>
   companionConfigSchema.parse({
     profile: defaultCompanionProfile,
     policy: { ...defaultCompanionConfig.policy, enabled: true, mode },
@@ -110,7 +108,7 @@ describe("room companion", () => {
     expect(room.snapshot(host).companion.name).toBe("青竹");
   });
 
-  it("marks LLM-driven AI seats and requests candidate audit", () => {
+  it("requests lean choices for LLM seats without enabling audit", () => {
     const room = new Room("llm-seat", {
       kind: "uno",
       humans: 1,
@@ -125,7 +123,8 @@ describe("room companion", () => {
       const request = room.aiRequest();
       if (request) {
         expect(request.driver).toBe("llm");
-        expect(request.audit).toBe(true);
+        expect(request.audit).toBe(false);
+        expect(request.choices).toBe(true);
         return;
       }
       const candidates = room.snapshot(token).candidates;
@@ -214,7 +213,9 @@ describe("room companion", () => {
       name: "青竹",
     });
     expect(room.addCompanionMessage("m1", "重复")).toBeUndefined();
-    expect(room.snapshot(host).chat.filter((m) => m.id === "companion:m1")).toHaveLength(1);
+    expect(
+      room.snapshot(host).chat.filter((m) => m.id === "companion:m1"),
+    ).toHaveLength(1);
 
     const human = room.chat(host, "h1", "大家好啊");
     expect(human).toMatchObject({ id: "h1", type: "text", source: "human" });
@@ -234,7 +235,8 @@ describe("room companion", () => {
     });
     const first = room.claim("甲");
     room.claim("乙");
-    for (const seat of room.seats) if (seat.token) room.setReady(seat.token, true);
+    for (const seat of room.seats)
+      if (seat.token) room.setReady(seat.token, true);
     room.start(first);
 
     const context = room.publicContext();

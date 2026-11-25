@@ -1,3 +1,4 @@
+import { RoguelikeHud } from "../ui/RoguelikeHud";
 import { advancedBalance } from "../../domain/expedition/advanced";
 import { ExpeditionHint } from "./ExpeditionHint";
 import { VoteStatus } from "./VoteStatus";
@@ -421,42 +422,12 @@ export function ExpeditionTable({
             </span>
           )}
         </div>
-        <div className="exp-status-resources">
-          {hero && (
-            <span
-              className="exp-resource exp-health"
-              aria-label={`生命 ${hero.hp}/${hero.maxHp}`}
-            >
-              <span className="exp-resource-label">生命</span>
-              <strong>{hero.hp}</strong>
-              <span className="exp-resource-max">/{hero.maxHp}</span>
-            </span>
-          )}
-          {hero && (
-            <span
-              className="exp-resource exp-gold"
-              aria-label={`金币 ${hero.gold}`}
-            >
-              <span className="exp-resource-label">金币</span>
-              <strong>{hero.gold}</strong>
-            </span>
-          )}
-          {hero && run.phase === "battle" && (
-            <span
-              className="exp-resource exp-energy"
-              aria-label={`剩余能量 ${hero.energy}`}
-            >
-              <span className="exp-resource-label">能量</span>
-              <strong>{hero.energy}</strong>
-            </span>
-          )}
-          {hero && (
-            <span className="exp-resource exp-compass">
-              <span className="exp-resource-label">罗盘</span>
-              <strong>{run.compass}</strong>
-            </span>
-          )}
-        </div>
+        <RoguelikeHud className="exp-status-resources" metrics={hero ? [
+          { name: "生命", value: hero.hp, limit: hero.maxHp, tone: "health" },
+          { name: "金币", value: hero.gold, tone: "gold" },
+          ...(run.phase === "battle" ? [{ name: "能量", value: hero.energy, tone: "energy" as const }] : []),
+          { name: "罗盘", value: run.compass },
+        ] : []} />
         <div className="exp-status-actions">{statusActions()}</div>
         <div className="exp-status-triggers">
           <button
@@ -573,6 +544,8 @@ export function ExpeditionTable({
           {heroContent.map((h, i) => (
             <button
               key={h.name}
+              aria-pressed={run.professions[actor] === i}
+              data-selected={run.professions[actor] === i}
               disabled={
                 !moves.some(
                   (c) =>
@@ -585,13 +558,8 @@ export function ExpeditionTable({
             >
               <span>{h.icon}</span>
               <h2>{h.name}</h2>
-              <small>{h.maxHp} 生命 · 10 张起始牌</small>
             </button>
           ))}
-          <p className="muted">
-            {Object.keys(run.professions).length}/{run.combat.heroes.length}{" "}
-            人已选 · 可以选择相同职业
-          </p>
           <details className="exp-profession-browser">
             <summary>查看职业详细信息</summary>
             <div className="exp-profession-tabs" role="tablist">

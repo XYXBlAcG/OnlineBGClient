@@ -238,11 +238,12 @@
     min-height: 0;
   }
   .mobile-shell .original-game[data-game="dominion"] .dominion-supply-grid {
-    grid-template-columns: repeat(5, minmax(132px, 1fr));
+    grid-template-columns: repeat(5, 132px);
     grid-template-rows: none;
     grid-auto-rows: 160px;
     max-height: none;
     overflow: auto;
+    justify-content: start;
   }
   .mobile-shell .original-game[data-game="dominion"] .dominion-card-symbol {
     display: block;
@@ -399,4 +400,12 @@
 }
 .mobile-shell .original-game[data-game="pool"] .pool-controls {
   gap: 4px;
+}
+
+.mobile-shell .original-game[data-draw-mode="fayu"] .fayu-table {
+  min-height: 0;
+  padding: 8px;
+}
+.mobile-shell .original-game[data-draw-mode="fayu"] .fayu-canvas {
+  min-height: 180px;
 }

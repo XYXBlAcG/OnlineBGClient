@@ -43,6 +43,7 @@ async function buildFixtureModules() {
 
 export function seatPlan(definition) {
   const seats = Math.max(2, definition.minPlayers);
+  if (!definition.ai) return { humans: seats, ai: [] };
   return {
     humans: 1,
     ai: Array.from({ length: seats - 1 }, () => ({
@@ -85,6 +86,7 @@ export async function createRoomFixtures({ directory, kinds, catalogue }) {
       fixtures.set(id, {
         kind,
         token: tokens[0],
+        tokens,
         humans: plan.humans,
         seats: room.seats.length,
       });

@@ -5,6 +5,7 @@ import { readFile, writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { createHash } from "node:crypto";
+import { releaseChannel } from "./lib/release-sources.mjs";
 import { prepareRelease } from "./release-assets.mjs";
 await releaseVersion();
 const execute = promisify(execFile);
@@ -20,8 +21,9 @@ const pkg = JSON.parse(await readFile("package.json", "utf8")),
   tauri = JSON.parse(await readFile("src-tauri/tauri.conf.json", "utf8"));
 if (tauri.version !== "../package.json")
   throw new Error("桌面版本必须引用 package.json");
-if (!ref.startsWith("refs/tags/v")) throw new Error("仅正式版本标签可以发布");
+if (!ref?.startsWith("refs/tags/v")) throw new Error("仅版本标签可以发布");
 const tag = ref.slice("refs/tags/".length);
+const { preview } = releaseChannel(pkg.version, tag);
 const { assets, notes } = await prepareRelease(
   "artifacts/release-input",
   "artifacts/release-output",
@@ -37,7 +39,7 @@ try {
 } catch (error) {
   if (!String(error.stderr).includes("HTTP 404")) throw error;
 }
-if (existing && existing.target_commitish !== sha)
+if (existing && (existing.target_commitish !== sha || existing.prerelease !== preview))
   throw new Error("发布标签对应其他构建提交");
 if (existing && !existing.draft) {
   const directory = await mkdtemp(join(tmpdir(), "onlinebg-release-"));
@@ -76,6 +78,7 @@ if (existing && !existing.draft) {
       "--target",
       sha,
       "--draft",
+      ...(preview ? ["--prerelease", "--latest=false"] : []),
       "--title",
       `OnlineBGClient ${pkg.version}`,
       "--notes-file",
@@ -114,7 +117,7 @@ if (existing && !existing.draft) {
     "--repo",
     repo,
     "--draft=false",
-    "--latest",
+    preview ? "--latest=false" : "--latest",
   ]);
   console.log(`Published ${tag}`);
 }

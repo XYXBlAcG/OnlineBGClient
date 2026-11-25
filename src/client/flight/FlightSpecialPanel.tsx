@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GameSnapshot } from "../OriginalGame";
 import type { Action, FlightView, FlightWeather } from "../../domain/types";
 import { flightMovePreviews, flightWeatherEffect } from "../../domain/flight";
+import { useMobile } from "../use-mobile";
 import "./flight.css";
 
 const symbols: Record<FlightWeather, string> = {
@@ -26,11 +27,12 @@ export function FlightSpecialPanel({
   playersCollapsed: boolean;
   onTogglePlayers: () => void;
 }) {
+  const mobile = useMobile();
   const special = view.special;
   const actor = snapshot.actor;
   const candidates = snapshot.candidates ?? [];
   const previews =
-    actor >= 0 ? flightMovePreviews(view, actor, candidates) : [];
+    !mobile && actor >= 0 ? flightMovePreviews(view, actor, candidates) : [];
   const weather = special ? flightWeatherEffect(special.weather) : null;
   const previousWeather = useRef<FlightWeather | undefined>(special?.weather);
   const [change, setChange] = useState<{
@@ -135,66 +137,68 @@ export function FlightSpecialPanel({
           )}
         </>
       )}
-      <div className="flight-forecast" data-guide-target="fxq.forecast">
-        <strong>本回合</strong>
-        {previews.length ? (
-          previews.map((preview) => {
-            const effect = preview.weather
-              ? flightWeatherEffect(preview.weather)
-              : null;
-            return (
-              <div className="flight-forecast-row" key={preview.plane}>
-                <span>
-                  {(preview.plane % 4) + 1} 号：基础 {preview.base}
-                </span>
-                {preview.weatherMove !== 0 && effect && (
-                  <span
-                    className={`flight-delta ${preview.weatherMove < 0 ? "is-down" : "is-up"}`}
-                  >
-                    {effect.label} {preview.weatherMove > 0 ? "+" : ""}
-                    {preview.weatherMove}
+      {!mobile && (
+        <div className="flight-forecast" data-guide-target="fxq.forecast">
+          <strong>本回合</strong>
+          {previews.length ? (
+            previews.map((preview) => {
+              const effect = preview.weather
+                ? flightWeatherEffect(preview.weather)
+                : null;
+              return (
+                <div className="flight-forecast-row" key={preview.plane}>
+                  <span>
+                    {(preview.plane % 4) + 1} 号：基础 {preview.base}
                   </span>
-                )}
-                {preview.shielded && (
-                  <span className="flight-delta is-up">护盾抵消</span>
-                )}
-                {preview.boost > 0 && (
-                  <span className="flight-delta is-up">
-                    加速 +{preview.boost}
-                  </span>
-                )}
-                <strong>
-                  ={" "}
-                  {Math.max(
-                    0,
-                    preview.base + preview.weatherMove + preview.boost,
-                  )}{" "}
-                  格
-                </strong>
-                <span>落点 {preview.to}</span>
-                {preview.jumped && <span>跳飞</span>}
-                {preview.bounced && <span>反弹</span>}
-                {preview.energyGain > 0 && (
-                  <span className="flight-delta is-up">
-                    能量 +{preview.energyGain}
-                    {preview.checkpoint ? " · 补给" : ""}
-                  </span>
-                )}
-                {preview.returned && <span className="is-down">返航</span>}
-                {preview.finish && <span className="is-up">进入终点</span>}
-              </div>
-            );
-          })
-        ) : (
-          <span>
-            {snapshot.finished
-              ? "本局已结束。"
-              : view.lastDice
-                ? "没有可移动的飞机，等待下一位。"
-                : "先掷骰子，再查看预计落点。"}
-          </span>
-        )}
-      </div>
+                  {preview.weatherMove !== 0 && effect && (
+                    <span
+                      className={`flight-delta ${preview.weatherMove < 0 ? "is-down" : "is-up"}`}
+                    >
+                      {effect.label} {preview.weatherMove > 0 ? "+" : ""}
+                      {preview.weatherMove}
+                    </span>
+                  )}
+                  {preview.shielded && (
+                    <span className="flight-delta is-up">护盾抵消</span>
+                  )}
+                  {preview.boost > 0 && (
+                    <span className="flight-delta is-up">
+                      加速 +{preview.boost}
+                    </span>
+                  )}
+                  <strong>
+                    ={" "}
+                    {Math.max(
+                      0,
+                      preview.base + preview.weatherMove + preview.boost,
+                    )}{" "}
+                    格
+                  </strong>
+                  <span>落点 {preview.to}</span>
+                  {preview.jumped && <span>跳飞</span>}
+                  {preview.bounced && <span>反弹</span>}
+                  {preview.energyGain > 0 && (
+                    <span className="flight-delta is-up">
+                      能量 +{preview.energyGain}
+                      {preview.checkpoint ? " · 补给" : ""}
+                    </span>
+                  )}
+                  {preview.returned && <span className="is-down">返航</span>}
+                  {preview.finish && <span className="is-up">进入终点</span>}
+                </div>
+              );
+            })
+          ) : (
+            <span>
+              {snapshot.finished
+                ? "本局已结束。"
+                : view.lastDice
+                  ? "没有可移动的飞机，等待下一位。"
+                  : "先掷骰子，再查看预计落点。"}
+            </span>
+          )}
+        </div>
+      )}
       {special?.lastAbility && (
         <div
           className="flight-feedback"

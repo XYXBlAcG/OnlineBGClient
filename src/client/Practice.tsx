@@ -51,8 +51,11 @@ function PracticeSession({
         return;
       }
       try {
-        session.room.acceptDecision(event.data.result, event.data.version);
-        setSnapshot(session.room.snapshot(session.token));
+        if (
+          session.room.queueDecision(event.data.result, event.data.version) &&
+          session.room.commitIfDue()
+        )
+          setSnapshot(session.room.snapshot(session.token));
       } catch (error) {
         failedVersion = event.data.version;
         setError(String(error));
@@ -65,6 +68,14 @@ function PracticeSession({
       setError(event.message);
     };
     const timer = setInterval(() => {
+      try {
+        const committed = session.room.commitIfDue();
+        if (session.room.resolveIfDue() || committed)
+          setSnapshot(session.room.snapshot(session.token));
+      } catch (error) {
+        failedVersion = session.room.version;
+        setError(String(error));
+      }
       if (
         busy ||
         workerFailed ||

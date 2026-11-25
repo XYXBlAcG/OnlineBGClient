@@ -75,6 +75,9 @@ describe("NativeVoiceTransport", () => {
 
     fake.channel.onmessage?.({ type: "playback", blocked: true });
     expect(listeners.playback).toHaveBeenCalledWith(true);
+    fake.channel.onmessage?.({ type: "playback", blocked: false });
+    expect(listeners.playback).toHaveBeenLastCalledWith(false);
+    expect(listeners.phase).toHaveBeenCalledTimes(1);
 
     fake.channel.onmessage?.({ type: "deviceLost" });
     expect(listeners.deviceLost).toHaveBeenCalled();

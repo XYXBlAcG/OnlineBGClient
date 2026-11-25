@@ -2,10 +2,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { ChatMessageView } from "../src/client/social/ChatMessageView";
-import {
-  AiChatSettings,
-  AiProviderSettings,
-} from "../src/client/AiSettings";
+import { AiChatSettings, AiProviderSettings } from "../src/client/AiSettings";
 import { defaultCompanionConfig } from "../src/domain/companion";
 import type { ChatMessage } from "../src/domain/social";
 
@@ -33,13 +30,14 @@ it("renders the AI settings controls", () => {
     name: "青竹",
     avatar: "🤖",
     configured: true,
+    server: true,
     available: true,
   };
   const html = renderToStaticMarkup(
     <>
       <AiProviderSettings
         status={status}
-        onSaveProvider={() => {}}
+        onSaveProvider={async () => "已保存"}
         onError={() => {}}
       />
       <AiChatSettings
@@ -57,7 +55,7 @@ it("renders the AI settings controls", () => {
   expect(html).toContain("仅 @ 搭话");
 });
 
-it("allows enabling AI chat after saving a provider even if the snapshot has not caught up", () => {
+it("disables model chat until the server confirms its configuration", () => {
   const html = renderToStaticMarkup(
     <AiChatSettings
       config={defaultCompanionConfig}
@@ -72,5 +70,5 @@ it("allows enabling AI chat after saving a provider even if the snapshot has not
     />,
   );
   expect(html).toContain("启用 AI 聊天");
-  expect(html).not.toContain('disabled=""');
+  expect(html).toContain('disabled=""');
 });

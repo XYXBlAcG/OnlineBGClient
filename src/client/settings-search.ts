@@ -8,12 +8,12 @@ export const settingsSearchSections: SettingsSearchSection[] = [
   {
     label: "外观",
     terms:
-      "主题 浅色 深色 跟随系统 界面动画 游戏动画 大厅切换动画 减少动态 动效 表情 Emoji 头像 显示聊天侧栏 显示首页快速上手 显示首页连麦设置入口 连麦入口",
+      "主题 浅色 深色 跟随系统 界面动画 游戏动画 大厅切换动画 减少动态 动效 表情 Emoji 头像 显示聊天侧栏 全屏游玩 全屏 无边框 自动沉浸 隐藏顶栏 沉浸 连麦入口",
   },
   {
     label: "界面显示",
     terms:
-      "界面字体 字号 界面元素 缩放 牌桌元素 牌桌大小 台球渲染 台球 3D 2D 自动 显示帧率 帧率 FPS 预设 标准 舒适 大 恢复默认",
+      "界面字体 字号 界面元素 缩放 牌桌元素 牌桌大小 手牌大小 卡牌大小 卡牌动画 点击动画 高尔夫渲染 高尔夫环境 台球环境 3D 环境 台球渲染 台球 3D 2D 自动 显示帧率 帧率 FPS 预设 标准 舒适 大 恢复默认",
   },
   {
     label: "消息与互动",
@@ -56,7 +56,7 @@ export const settingsSearchSections: SettingsSearchSection[] = [
     terms: "接入 AI AI 聊天 人设 搭话 模式 启用 模型",
   },
   { label: "常用语", terms: "短语 快捷回复 分组 常用语" },
-  { label: "数据", terms: "缓存 清理 媒体 回放 记录 存储 数据" },
+  { label: "数据", terms: "缓存 清理 媒体 回放 记录 存储 数据 词库 你画我猜 法语 别名" },
   { label: "成就", terms: "成就 解锁 稀有度 游戏 进度 测试成就弹窗 搜索" },
   {
     label: "快捷键",
@@ -69,10 +69,12 @@ export function searchSettingsSections(
   query: string,
   desktop: boolean,
   voice = desktop,
+  includeLlm = true,
 ) {
   const search = query.trim().toLowerCase();
   return settingsSearchSections.filter(
     (section) =>
+      (includeLlm || section.label !== "接入 AI") &&
       (!section.requires ||
         (section.requires === "desktop" ? desktop : voice)) &&
       (!search ||

@@ -1,6 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+export function releaseChannel(version, tag = `v${version}`) {
+  const parsed = /^(\d+\.\d+\.\d+)(-preview\.[1-9]\d*)?$/.exec(version);
+  if (!parsed || tag !== `v${version}`) throw Error("发布标签与应用版本不一致");
+  return { preview: !!parsed[2], base: parsed[1] };
+}
+
 export async function readReleaseSources(root = process.cwd()) {
   const read = (path) => readFile(join(root, path), "utf8");
   const [packageSource, tauriSource, cargoSource, iosSource, historySource] =
@@ -34,7 +40,7 @@ export function releaseVersionMismatches(sources) {
       source: "src-tauri/Cargo.toml",
       message: `Cargo 版本 ${sources.cargo.version ?? "缺失"} 与 package.json 的 ${sources.version} 不一致`,
     });
-  if (sources.ios.version !== sources.version)
+  if (!releaseChannel(sources.version).preview && sources.ios.version !== sources.version)
     mismatches.push({
       source: "ios-native/project.yml",
       message: `iOS 短版本 ${sources.ios.version ?? "缺失"} 与 package.json 的 ${sources.version} 不一致`,

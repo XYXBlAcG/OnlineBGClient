@@ -1,3 +1,4 @@
+import { normalizeAiBaseUrl } from "../domain/ai-provider";
 import {
   LlmError,
   OpenAICompatibleProvider,
@@ -8,7 +9,6 @@ import {
 } from "companion-core";
 import { randomUUID } from "node:crypto";
 import {
-  aiProviderFormatInfo,
   aiProviderNeedsKey,
   type AiProviderSettings,
 } from "../domain/companion";
@@ -29,11 +29,7 @@ const toTokenCount = (value: unknown): number =>
     ? Math.floor(value)
     : 0;
 
-function usageOf(
-  input: unknown,
-  output: unknown,
-  startedAt: number,
-): LlmUsage {
+function usageOf(input: unknown, output: unknown, startedAt: number): LlmUsage {
   const inputTokens = toTokenCount(input);
   const outputTokens = toTokenCount(output);
   return {
@@ -48,14 +44,27 @@ function normalizeBaseUrl(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
-function openCodeFetch(apiKey: string): typeof fetch {
+function compatibleFetch(
+  settings: AiProviderSettings,
+  apiKey: string,
+): typeof fetch {
   const session = randomUUID();
   return (input, init) => {
     const headers = new Headers(init?.headers);
-    headers.set("authorization", `Bearer ${apiKey}`);
-    headers.set("user-agent", "OnlineBGClient");
-    headers.set("x-opencode-session", session);
-    return fetch(input, { ...init, headers });
+    if (settings.format === "opencode") {
+      headers.set("authorization", `Bearer ${apiKey}`);
+      headers.set("user-agent", "OnlineBGClient");
+      headers.set("x-opencode-session", session);
+    }
+    let body = init?.body;
+    if (settings.compatibility === "reasoning" && typeof body === "string") {
+      const payload = JSON.parse(body);
+      payload.max_completion_tokens = payload.max_tokens;
+      delete payload.max_tokens;
+      delete payload.temperature;
+      body = JSON.stringify(payload);
+    }
+    return fetch(input, { ...init, headers, body });
   };
 }
 
@@ -141,12 +150,13 @@ class GeminiProvider implements LlmProvider {
 
   async generateText(request: LlmRequest): Promise<LlmTextResult> {
     const startedAt = now();
-    const url = `${this.baseUrl}/models/${encodeURIComponent(
-      request.model ?? this.options.model,
-    )}:generateContent?key=${encodeURIComponent(this.options.apiKey ?? "")}`;
+    const url = `${this.baseUrl}/models/${encodeURIComponent(request.model ?? this.options.model)}:generateContent`;
     const data = (await postJson(url, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-goog-api-key": this.options.apiKey ?? "",
+      },
       body: JSON.stringify({
         contents: request.messages.map((message) => ({
           role: message.role === "assistant" ? "model" : "user",
@@ -157,8 +167,7 @@ class GeminiProvider implements LlmProvider {
           : {}),
         generationConfig: {
           temperature: request.temperature ?? 0.8,
-          maxOutputTokens:
-            request.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
+          maxOutputTokens: request.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
         },
       }),
       signal: request.signal,
@@ -242,17 +251,14 @@ export function createAiProvider(
   const key = apiKey.trim();
   if (aiProviderNeedsKey(settings.format) && !key)
     throw new Error("请填写 API Key");
-  const baseUrl =
-    settings.baseUrl.trim() || aiProviderFormatInfo[settings.format].baseUrl;
+  const baseUrl = normalizeAiBaseUrl(settings.format, settings.baseUrl);
   if (settings.format === "openai" || settings.format === "opencode")
     return new OpenAICompatibleProvider({
       baseUrl,
       apiKey: key,
       model,
       timeoutMs: settings.timeoutMs,
-      ...(settings.format === "opencode"
-        ? { fetch: openCodeFetch(key) }
-        : {}),
+      fetch: compatibleFetch(settings, key),
     });
   if (settings.format === "anthropic")
     return new AnthropicProvider({ baseUrl, apiKey: key, model });

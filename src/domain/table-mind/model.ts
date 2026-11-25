@@ -1,11 +1,7 @@
-import type { Action } from "../types";
+import type { PublicAction } from "./public-action";
 
 export type TableEventKind =
-  | "game-start"
-  | "action"
-  | "chat"
-  | "achievement"
-  | "game-end";
+  "game-start" | "action" | "chat" | "achievement" | "game-end";
 
 export interface TableEvent {
   id: string;
@@ -17,7 +13,7 @@ export interface TableEvent {
   actorName?: string;
   label: string;
   public: boolean;
-  payload?: Action;
+  payload?: PublicAction;
 }
 
 export interface TableSituation {

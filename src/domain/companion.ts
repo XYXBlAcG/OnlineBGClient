@@ -15,63 +15,28 @@ const companionAiProfileSchema = companionProfileSchema.omit({
 });
 export type CompanionAiProfile = z.infer<typeof companionAiProfileSchema>;
 
+export {
+  aiProviderSettingsSchema,
+  aiProviderFormatSchema,
+  aiProviderFormatInfo,
+  aiProviderNeedsKey,
+  defaultAiProviderSettings,
+} from "./ai-provider";
+export type { AiProviderSettings, AiProviderFormat } from "./ai-provider";
+import {
+  aiProviderSettingsSchema,
+  defaultAiProviderSettings,
+} from "./ai-provider";
 
-export const aiProviderFormatSchema = z.enum([
-  "openai",
-  "anthropic",
-  "gemini",
-  "opencode",
-  "ollama",
-]);
-export type AiProviderFormat = z.infer<typeof aiProviderFormatSchema>;
-
-export const aiProviderSettingsSchema = z.object({
-  format: aiProviderFormatSchema.default("openai"),
-  baseUrl: z.string().trim().max(500).default(""),
-  model: z.string().trim().max(120).default(""),
-  temperature: z.number().min(0).max(2).default(0.8),
-  contextWindow: z.number().int().min(1024).max(1_000_000).default(8192),
-  maxOutputTokens: z.number().int().min(16).max(4096).default(160),
-  timeoutMs: z.number().int().min(1000).max(120000).default(20000),
-});
-export type AiProviderSettings = z.infer<typeof aiProviderSettingsSchema>;
-export const defaultAiProviderSettings: AiProviderSettings =
-  aiProviderSettingsSchema.parse({});
-
-export const aiProviderFormatInfo = {
-  openai: {
-    label: "OpenAI 兼容",
-    baseUrl: "https://api.openai.com/v1",
-    needsKey: true,
-  },
-  anthropic: {
-    label: "Anthropic",
-    baseUrl: "https://api.anthropic.com/v1",
-    needsKey: true,
-  },
-  gemini: {
-    label: "Gemini",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-    needsKey: true,
-  },
-  opencode: {
-    label: "OpenCode Go",
-    baseUrl: "https://opencode.ai/inference/go/openai/v1",
-    needsKey: true,
-  },
-  ollama: {
-    label: "Ollama",
-    baseUrl: "http://127.0.0.1:11434",
-    needsKey: false,
-  },
-} as const;
-
-export function aiProviderNeedsKey(format: AiProviderFormat): boolean {
-  return aiProviderFormatInfo[format].needsKey;
+export const llmDecisionKinds = ["uno"] as const;
+export function supportsLlmDecisions(kind: string): boolean {
+  return llmDecisionKinds.some((supported) => supported === kind);
 }
 
 export const aiConfigCommandSchema = z.object({
   type: z.literal("ai-config"),
+  id: z.string().max(80).optional(),
+  requestId: z.string().min(1).max(80).optional(),
   token: z.string(),
   provider: aiProviderSettingsSchema,
   apiKey: z.string().max(500).default(""),
@@ -88,18 +53,18 @@ export const aiTestCommandSchema = z.object({
 });
 export type AiTestCommand = z.infer<typeof aiTestCommandSchema>;
 
+export const aiClearCommandSchema = z.object({
+  type: z.literal("ai-clear"),
+  token: z.string(),
+  requestId: z.string().min(1).max(80),
+});
+
 export const companionConfigSchema = z
   .object({
     profile: companionAiProfileSchema,
     policy: participationPolicySchema,
     provider: aiProviderSettingsSchema.default(defaultAiProviderSettings),
-    aiSeatIndex: z
-      .number()
-      .int()
-      .min(0)
-      .max(63)
-      .nullable()
-      .default(null),
+    aiSeatIndex: z.number().int().min(0).max(63).nullable().default(null),
   })
   .refine(
     (config) => config.profile.source.kind === "local",
@@ -157,7 +122,9 @@ export function buildCompanionView(
       priority: 80,
     },
   ];
-  const history = context.recentChat.filter((message) => message.id !== trigger.id);
+  const history = context.recentChat.filter(
+    (message) => message.id !== trigger.id,
+  );
   if (history.length)
     facts.push({
       id: "chat",

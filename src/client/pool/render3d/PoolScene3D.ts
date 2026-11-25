@@ -12,10 +12,20 @@ import { POOL_PLAYBACK_RATE, interpolateBalls } from "../frames";
 import { poolBallColors } from "../colors";
 import type { PoolCursor } from "../aim";
 import type { PoolPrediction } from "../prediction";
-import { elevationAngle } from "../cue";
+import { elevationAngle } from "../../../domain/pool/cue";
+import {
+  pixelRatioFor,
+  postSettings,
+  scenePalettes,
+  type PoolEnvironment,
+} from "../../scene3d/environment";
+import { applyRepeat, carpetTexture, woodTexture } from "../../scene3d/textures";
+import { applyHdri, placeSceneModel } from "../../scene3d/assets";
+import { createPostPipeline, type PostPipeline } from "../../scene3d/post";
 
 const ballRadius = standardPoolLayout.table.ballRadius;
 const railHeight = 0.065;
+const floorY = -0.74;
 const cueLength = 0.82;
 
 interface BallDrop {
@@ -80,6 +90,8 @@ export interface PoolSceneOptions {
   onImpact?: (kind: "ball" | "rail", intensity: number) => void;
   onCueStrike?: (power: number) => void;
   rendererFactory?: () => THREE.WebGLRenderer;
+  environment?: PoolEnvironment;
+  quality?: import("../../scene3d/environment").Scene3dQuality;
 }
 
 export function sceneSize(
@@ -234,6 +246,16 @@ export class PoolScene3D {
   private resetting = false;
   private homePosition = new THREE.Vector3(0, 2.05, 1.85);
   private homeTarget = new THREE.Vector3(0, 0, 0);
+  private environment: PoolEnvironment = "midnight";
+  private palette = scenePalettes.midnight;
+  private quality: import("../../scene3d/environment").Scene3dQuality = "balanced";
+  private post?: PostPipeline;
+  private degraded = false;
+  private frameSamples = 0;
+  private frameStartedAt = performance.now();
+  private wood = applyRepeat(woodTexture(), 3, 2);
+  private carpet = applyRepeat(carpetTexture(), 5, 4);
+  private felt = applyRepeat(carpetTexture("#126e5d", "#0b4f42"), 4, 2);
 
   constructor(
     private host: HTMLElement,
@@ -241,16 +263,19 @@ export class PoolScene3D {
     private options: PoolSceneOptions = {},
   ) {
     this.latestView = view;
+    this.quality = options.quality ?? "balanced";
     this.layout = poolLayout(view.mode);
     this.tableWidth = this.layout.table.width;
     this.tableHeight = this.layout.table.height;
     const tableScale = this.tableWidth / standardPoolLayout.table.width;
-    this.homePosition.set(0, 2.05 * tableScale, 1.85 * tableScale);
-    this.scene.background = new THREE.Color("#111820");
+    this.homePosition.set(0, 2.05 * tableScale, 1.95 * tableScale);
+    this.environment = options.environment ?? "midnight";
+    this.palette = scenePalettes[this.environment];
+    this.scene.background = new THREE.Color(this.palette.sky);
     this.scene.fog = new THREE.Fog(
-      "#111820",
-      4.5 * tableScale,
-      9 * tableScale,
+      this.palette.fog,
+      7 * tableScale,
+      18 * tableScale,
     );
     this.camera.position.copy(this.homePosition);
     this.ghost.visible = false;
@@ -268,19 +293,17 @@ export class PoolScene3D {
         "webglcontextlost",
         this.handleContextLost,
       );
-      renderer.setPixelRatio(
-        Math.min(devicePixelRatio || 1, this.lowQuality ? 1.25 : 2),
-      );
+      renderer.setPixelRatio(pixelRatioFor(this.quality));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.shadowMap.enabled = !this.lowQuality;
+      renderer.shadowMap.enabled = this.quality !== "performance";
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       this.host.append(renderer.domElement);
       this.controls = new OrbitControls(this.camera, renderer.domElement);
       this.controls.enableDamping = true;
       this.controls.enablePan = false;
-      this.controls.minDistance = 1.15 * (this.tableWidth / standardPoolLayout.table.width);
+      this.controls.minDistance = 1.6 * (this.tableWidth / standardPoolLayout.table.width);
       this.controls.maxDistance = 4.2 * (this.tableWidth / standardPoolLayout.table.width);
-      this.controls.minPolarAngle = 0.22;
+      this.controls.minPolarAngle = 0.3;
       this.controls.maxPolarAngle = 1.34;
       this.controls.target.copy(this.homeTarget);
       this.controls.update();
@@ -293,6 +316,13 @@ export class PoolScene3D {
       }
       this.setupLights();
       this.setupTable();
+      this.setupRoom();
+      const post = postSettings(this.quality);
+      if (post.enabled && this.renderer)
+        this.post = createPostPipeline(this.renderer, this.scene, this.camera, post);
+      void applyHdri(this.renderer, this.scene, "studio", {
+        intensity: 0.16,
+      });
       this.setupBalls(view.balls);
       this.setupCue();
       this.scene.add(this.aimLine, this.ghost);
@@ -352,6 +382,32 @@ export class PoolScene3D {
     this.resizeFrame = 0;
   }
 
+  private clampCamera() {
+    if (!this.camera) return;
+    const scale = this.tableWidth / standardPoolLayout.table.width;
+    const limitX = 4.4 * scale;
+    const limitZ = 3.1 * scale;
+    this.camera.position.x = Math.max(-limitX, Math.min(limitX, this.camera.position.x));
+    this.camera.position.z = Math.max(-limitZ, Math.min(limitZ, this.camera.position.z));
+    this.camera.position.y = Math.max(0.45, Math.min(2.95, this.camera.position.y));
+  }
+
+  private adaptQuality(now: number) {
+    if (this.frameSamples < 30) return;
+    const average = (now - this.frameStartedAt) / this.frameSamples;
+    if (average > 26 && !this.degraded && this.renderer) {
+      this.degraded = true;
+      this.post?.dispose();
+      this.post = undefined;
+      this.renderer.setPixelRatio(1);
+      this.renderer.setSize(this.width, this.height, false);
+      this.camera.aspect = this.width / Math.max(1, this.height);
+      this.camera.updateProjectionMatrix();
+    }
+    this.frameSamples = 0;
+    this.frameStartedAt = now;
+  }
+
   private resize(): boolean {
     if (!this.renderer) return false;
     const size = sceneSize(this.host.clientWidth, this.host.clientHeight);
@@ -365,12 +421,15 @@ export class PoolScene3D {
     this.height = size.height;
     try {
       this.renderer.setPixelRatio(
-        Math.min(devicePixelRatio || 1, this.lowQuality ? 1.25 : 2),
+        Math.min(1.6, Math.max(1, devicePixelRatio || 1)),
       );
       this.renderer.setSize(size.width, size.height, false);
+      this.post?.resize(size.width, size.height);
       this.camera.aspect = size.width / size.height;
+      this.camera.fov = 46;
       this.camera.updateProjectionMatrix();
-      this.renderer.render(this.scene, this.camera);
+      if (this.post) this.post.render();
+      else this.renderer.render(this.scene, this.camera);
     } catch (error) {
       this.fail(error);
       return false;
@@ -385,53 +444,114 @@ export class PoolScene3D {
   }
 
   private setupLights() {
-    this.scene.add(new THREE.HemisphereLight("#dff3ff", "#18202a", 1.1));
-    const key = new THREE.DirectionalLight("#fff3d6", 2.4);
+    this.scene.add(new THREE.HemisphereLight("#e4eff7", this.palette.ambient, 1.55));
+    const key = new THREE.DirectionalLight(this.palette.sun, 2.3);
     key.position.set(1.8, 3.4, 1.5);
-    key.castShadow = !this.lowQuality;
-    key.shadow.mapSize.set(
-      this.lowQuality ? 512 : 1024,
-      this.lowQuality ? 512 : 1024,
-    );
-    key.shadow.camera.left = -1.8;
-    key.shadow.camera.right = 1.8;
-    key.shadow.camera.top = 1.4;
-    key.shadow.camera.bottom = -1.4;
+    key.castShadow = this.quality !== "performance" && !this.lowQuality;
+    const shadowSize = this.quality === "high" ? 2048 : this.quality === "balanced" ? 1024 : 512;
+    key.shadow.mapSize.set(shadowSize, shadowSize);
+    key.shadow.camera.left = -this.tableWidth * 0.74;
+    key.shadow.camera.right = this.tableWidth * 0.74;
+    key.shadow.camera.top = this.tableHeight * 1.35;
+    key.shadow.camera.bottom = -this.tableHeight * 1.35;
+    key.shadow.normalBias = 0.009;
+    key.shadow.radius = 2;
     this.scene.add(key);
-    const rim = new THREE.PointLight("#8fd8ff", 1.2, 4);
+    const rim = new THREE.PointLight(this.palette.fill, 0.85, 4);
     rim.position.set(-1.6, 1.1, -1.2);
     this.scene.add(rim);
   }
 
   private setupTable() {
     const wood = new THREE.MeshStandardMaterial({
-      color: "#4b2d22",
-      roughness: 0.42,
-      metalness: 0.08,
+      map: this.wood,
+      color: "#8d5a34",
+      roughness: 0.38,
+      metalness: 0.06,
     });
+    const bodyWood = new THREE.MeshStandardMaterial({
+      map: this.wood,
+      color: "#6b3f22",
+      roughness: 0.46,
+    });
+    const clothColor = this.environment === "midnight" ? "#238765" : "#2c7294";
     const cloth = new THREE.MeshStandardMaterial({
-      color: "#126e5d",
-      roughness: 0.92,
+      color: clothColor,
+      roughness: 0.95,
       metalness: 0,
     });
-    const frame = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        this.tableWidth + 0.16,
-        0.1,
-        this.tableHeight + 0.16,
-      ),
-      wood,
-    );
-    frame.position.y = -0.075;
-    frame.receiveShadow = true;
-    this.scene.add(frame);
-    const felt = new THREE.Mesh(
-      new THREE.BoxGeometry(this.tableWidth, 0.035, this.tableHeight),
+    const bed = new THREE.Mesh(
+      new THREE.BoxGeometry(this.tableWidth, 0.03, this.tableHeight),
       cloth,
     );
-    felt.position.y = -0.0175;
-    felt.receiveShadow = true;
-    this.scene.add(felt);
+    bed.position.y = -0.015;
+    bed.receiveShadow = true;
+    this.scene.add(bed);
+    const slate = new THREE.Mesh(
+      new THREE.BoxGeometry(this.tableWidth + 0.06, 0.05, this.tableHeight + 0.06),
+      new THREE.MeshStandardMaterial({ color: "#24282c", roughness: 0.9 }),
+    );
+    slate.position.y = -0.055;
+    this.scene.add(slate);
+    const apronHeight = 0.18;
+    const apronTop = -0.07;
+    const apron = new THREE.Mesh(
+      new THREE.BoxGeometry(this.tableWidth + 0.2, apronHeight, this.tableHeight + 0.2),
+      bodyWood,
+    );
+    apron.position.y = apronTop - apronHeight / 2;
+    apron.castShadow = true;
+    apron.receiveShadow = true;
+    this.scene.add(apron);
+    const apronInset = new THREE.Mesh(
+      new THREE.BoxGeometry(this.tableWidth + 0.16, apronHeight * 0.22, this.tableHeight + 0.16),
+      new THREE.MeshStandardMaterial({
+        color: "#c9a25f",
+        roughness: 0.42,
+        metalness: 0.25,
+      }),
+    );
+    apronInset.position.y = apronTop - apronHeight * 0.62;
+    this.scene.add(apronInset);
+    const legTop = apronTop - apronHeight + 0.02;
+    const legHeight = legTop - floorY;
+    const profile = [
+      [0.082, 0], [0.082, 0.05], [0.058, 0.08], [0.088, 0.14], [0.088, 0.2],
+      [0.052, 0.25], [0.052, 0.34], [0.096, 0.41], [0.096, 0.5], [0.072, 0.56],
+    ].map(([radius, height]) => new THREE.Vector2(radius, (height / 0.56) * legHeight));
+    const legGeometry = new THREE.LatheGeometry(profile, 20);
+    const legPositions: [number, number][] = [
+      [-this.tableWidth / 2 + 0.24, -this.tableHeight / 2 + 0.24],
+      [this.tableWidth / 2 - 0.24, -this.tableHeight / 2 + 0.24],
+      [-this.tableWidth / 2 + 0.24, this.tableHeight / 2 - 0.24],
+      [this.tableWidth / 2 - 0.24, this.tableHeight / 2 - 0.24],
+    ];
+    for (const [x, z] of legPositions) {
+      const leg = new THREE.Mesh(legGeometry, wood);
+      leg.position.set(x, floorY, z);
+      leg.castShadow = true;
+      leg.receiveShadow = true;
+      this.scene.add(leg);
+      const capital = new THREE.Mesh(
+        new THREE.BoxGeometry(0.2, 0.06, 0.2),
+        bodyWood,
+      );
+      capital.position.set(x, legTop + 0.02, z);
+      capital.castShadow = true;
+      this.scene.add(capital);
+      const foot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.11, 0.035, 18),
+        new THREE.MeshStandardMaterial({ color: "#221208", roughness: 0.6 }),
+      );
+      foot.position.set(x, floorY + 0.0175, z);
+      this.scene.add(foot);
+    }
+    const railWood = new THREE.MeshStandardMaterial({
+      map: this.wood,
+      color: "#5d3418",
+      roughness: 0.5,
+      metalness: 0.04,
+    });
     const railMesh = (points: PoolPoint[], height = railHeight) => {
       const shape = new THREE.Shape(
         points.map((point) => new THREE.Vector2(point.x, -point.y)),
@@ -441,7 +561,7 @@ export class PoolScene3D {
           depth: height,
           bevelEnabled: false,
         }),
-        wood,
+        railWood,
       );
       mesh.rotation.x = -Math.PI / 2;
       mesh.castShadow = true;
@@ -451,9 +571,35 @@ export class PoolScene3D {
     for (const rail of this.layout.rails) railMesh(rail.points);
     for (const jaw of this.layout.jaws)
       railMesh(jawPolygon(jaw), railHeight * 0.94);
+    const sightMaterial = new THREE.MeshStandardMaterial({
+      color: "#f3e6c4",
+      roughness: 0.45,
+      metalness: 0.2,
+    });
+    const sight = (x: number, z: number, alongX: boolean) => {
+      const marker = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.014, 0.014, 0.006, 4),
+        sightMaterial,
+      );
+      marker.position.set(x, railHeight + 0.003, z);
+      marker.rotation.y = alongX ? Math.PI / 4 : 0;
+      this.scene.add(marker);
+    };
+    for (let index = 1; index <= 7; index++) {
+      if (index === 4) continue;
+      const x = (-this.tableWidth / 2) + (this.tableWidth * index) / 8;
+      sight(x, -this.tableHeight / 2 - 0.0225, true);
+      sight(x, this.tableHeight / 2 + 0.0225, true);
+    }
+    for (let index = 1; index <= 3; index++) {
+      if (index === 2) continue;
+      const z = (-this.tableHeight / 2) + (this.tableHeight * index) / 4;
+      sight(-this.tableWidth / 2 - 0.0225, z, false);
+      sight(this.tableWidth / 2 + 0.0225, z, false);
+    }
     const pocketMaterial = new THREE.MeshStandardMaterial({
-      color: "#05090c",
-      roughness: 0.9,
+      color: "#06080a",
+      roughness: 0.95,
     });
     for (const pocket of this.layout.pockets) {
       const hole = new THREE.Mesh(
@@ -469,13 +615,288 @@ export class PoolScene3D {
       this.scene.add(hole);
     }
     const floor = new THREE.Mesh(
-      new THREE.CircleGeometry(3.2 * (this.tableWidth / standardPoolLayout.table.width), 64),
-      new THREE.MeshStandardMaterial({ color: "#0a1117", roughness: 1 }),
+      new THREE.PlaneGeometry(13, 11),
+      new THREE.MeshStandardMaterial({
+        map: this.carpet,
+        color: this.environment === "midnight" ? "#8a7361" : "#7d8899",
+        roughness: 0.97,
+      }),
     );
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.13;
+    floor.position.y = floorY;
     floor.receiveShadow = true;
     this.scene.add(floor);
+  }
+
+  private setupRoom() {
+    const tableScale = this.tableWidth / standardPoolLayout.table.width;
+    const midnight = this.environment === "midnight";
+    const wallColor = midnight ? "#7d5537" : "#333c4d";
+    const trimColor = midnight ? "#b1814a" : "#c3a05a";
+    const panel = new THREE.MeshStandardMaterial({
+      map: this.wood,
+      color: wallColor,
+      roughness: 0.9,
+    });
+    const trim = new THREE.MeshStandardMaterial({
+      color: trimColor,
+      roughness: 0.6,
+      metalness: 0.18,
+    });
+    const width = 5.2 * tableScale;
+    const depth = 3.5 * tableScale;
+    const ceiling = floorY + 3.25;
+    for (const [x, z, sx, sz] of [
+      [-width, 0, 0.18, depth * 2],
+      [width, 0, 0.18, depth * 2],
+      [0, -depth, width * 2, 0.18],
+      [0, depth, width * 2, 0.18],
+    ]) {
+      const wall = new THREE.Mesh(
+        new THREE.BoxGeometry(sx, ceiling - floorY, sz),
+        panel,
+      );
+      wall.position.set(x, (ceiling + floorY) / 2, z);
+      wall.receiveShadow = true;
+      this.scene.add(wall);
+      const baseboard = new THREE.Mesh(
+        new THREE.BoxGeometry(sx * 1.01, 0.12, sz * 1.01),
+        trim,
+      );
+      baseboard.position.set(x, floorY + 0.06, z);
+      this.scene.add(baseboard);
+      const beam = new THREE.Mesh(
+        new THREE.BoxGeometry(sx * 1.02, 0.08, sz * 1.02),
+        trim,
+      );
+      beam.position.set(x, ceiling - 0.06, z);
+      this.scene.add(beam);
+    }
+    const ceilingMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(width * 2.4, depth * 2.4),
+      new THREE.MeshStandardMaterial({
+        color: this.environment === "midnight" ? "#2b1c12" : "#1a2029",
+        roughness: 1,
+      }),
+    );
+    ceilingMesh.rotation.x = Math.PI / 2;
+    ceilingMesh.position.y = ceiling;
+    this.scene.add(ceilingMesh);
+    for (const z of [-1.8, 0, 1.8]) {
+      const bulb = new THREE.PointLight(
+        "#ffd59b",
+        midnight ? 1.2 : 1.5,
+        5.2 * tableScale,
+      );
+      bulb.position.set(0, ceiling - 0.5, z * tableScale);
+      this.scene.add(bulb);
+    }
+    const backdrop = new THREE.Mesh(
+      new THREE.BoxGeometry(7.4, 2.35, 0.12),
+      new THREE.MeshStandardMaterial({
+        map: this.wood,
+        color: midnight ? "#61351f" : "#2a3340",
+        roughness: 0.86,
+      }),
+    );
+    backdrop.position.set(0, floorY + 1.2, -depth + 0.1);
+    backdrop.receiveShadow = true;
+    this.scene.add(backdrop);
+    const neon = new THREE.Mesh(
+      new THREE.BoxGeometry(3.6, 0.06, 0.05),
+      new THREE.MeshBasicMaterial({ color: midnight ? "#ffb45e" : "#8fe4ff" }),
+    );
+    neon.position.set(0, floorY + 2.2, -depth + 0.18);
+    this.scene.add(neon);
+    const screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.4, 1.05),
+      new THREE.MeshBasicMaterial({ color: midnight ? "#5d3d22" : "#1b2f3a" }),
+    );
+    screen.position.set(0, floorY + 1.55, -depth + 0.17);
+    this.scene.add(screen);
+    const galleryFrame = new THREE.MeshStandardMaterial({
+      color: midnight ? "#cb9859" : "#8296ab", metalness: 0.42, roughness: 0.42,
+    });
+    const galleryGlass = new THREE.MeshStandardMaterial({
+      color: midnight ? "#405a6c" : "#21445c",
+      emissive: midnight ? "#182735" : "#15344b", emissiveIntensity: 0.55, metalness: 0.15, roughness: 0.35,
+    });
+    for (const x of [-3.3, -2.22, 2.22, 3.3]) {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.86 * tableScale, 1.55, 0.052), galleryFrame);
+      frame.position.set(x * tableScale, floorY + 1.7, -depth + 0.14);
+      const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.79 * tableScale, 1.48), galleryGlass);
+      glass.position.copy(frame.position).z += 0.028;
+      this.scene.add(frame, glass);
+    }
+    const shelfLight = new THREE.PointLight(
+      midnight ? "#ffb86b" : "#b7e8ff",
+      0.9,
+      4,
+    );
+    shelfLight.position.set(0, floorY + 1.6, -depth + 0.8);
+    this.scene.add(shelfLight);
+    const artMaterial = new THREE.MeshStandardMaterial({
+      color: midnight ? "#8c5c32" : "#3c4657",
+      roughness: 0.7,
+    });
+    for (const x of [-1.5, 1.5]) {
+      const art = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.66, 0.05), artMaterial);
+      art.position.set(x * tableScale, floorY + 1.75, -depth + 0.16);
+      this.scene.add(art);
+    }
+    const bar = new THREE.Mesh(
+      new THREE.BoxGeometry(6.4, 0.95, 0.5),
+      new THREE.MeshStandardMaterial({
+        map: this.wood,
+        color: midnight ? "#6b4228" : "#2a3038",
+        roughness: 0.55,
+        metalness: 0.15,
+      }),
+    );
+    bar.position.set(0, floorY + 0.475, -depth + 0.4);
+    bar.castShadow = true;
+    this.scene.add(bar);
+    const barTop = new THREE.Mesh(
+      new THREE.BoxGeometry(6.6, 0.07, 0.6),
+      new THREE.MeshStandardMaterial({
+        color: midnight ? "#d2a25d" : "#8c98a8",
+        roughness: 0.3,
+        metalness: 0.35,
+      }),
+    );
+    barTop.position.set(0, floorY + 0.985, -depth + 0.4);
+    this.scene.add(barTop);
+    for (const x of [-2.3, -0.8, 0.8, 2.3]) {
+      const bottle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.065, 0.075, 0.34, 12),
+        new THREE.MeshStandardMaterial({
+          color: x < 0 ? "#7c9c6a" : "#b67447",
+          roughness: 0.32,
+          metalness: 0.12,
+        }),
+      );
+      bottle.position.set(x, floorY + 1.19, -depth + 0.42);
+      this.scene.add(bottle);
+    }
+    void placeSceneModel(
+      this.scene,
+      "lamp",
+      [(width - 1.0) * tableScale, floorY, -depth + 1.25],
+      1.55,
+      0.2,
+    );
+    void placeSceneModel(
+      this.scene,
+      "cactus",
+      [(-width + 1.1) * tableScale, floorY, -depth + 1.35],
+      0.85,
+      0.4,
+    );
+    for (const x of [-1.65, 1.65]) {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.72, 0.05), trim);
+      frame.position.set(x, floorY + 1.9, -depth + 0.14);
+      this.scene.add(frame);
+      const poster = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.88, 0.56),
+        new THREE.MeshBasicMaterial({ color: midnight ? "#8b6234" : "#3c5968" }),
+      );
+      poster.position.set(x, floorY + 1.9, -depth + 0.17);
+      this.scene.add(poster);
+    }
+    for (const x of [-width + 0.12, width - 0.12]) {
+      for (const z of [-1.8, 1.4]) {
+        const sconce = new THREE.Mesh(
+          new THREE.SphereGeometry(0.08, 12, 10),
+          new THREE.MeshStandardMaterial({
+            color: "#ffe0a8",
+            emissive: "#ffb968",
+            emissiveIntensity: 0.9,
+            roughness: 0.4,
+          }),
+        );
+        sconce.position.set(x, floorY + 2.05, z);
+        this.scene.add(sconce);
+      }
+    }
+    for (const x of [-2.3, -0.8, 0.8, 2.3]) {
+      const lamp = new THREE.Mesh(
+        new THREE.ConeGeometry(0.26, 0.2, 18),
+        new THREE.MeshStandardMaterial({
+          color: "#e3c489",
+          roughness: 0.5,
+          emissive: "#6b4a20",
+          emissiveIntensity: 0.4,
+        }),
+      );
+      lamp.position.set(x, ceiling - 0.28, -1.2);
+      this.scene.add(lamp);
+      const glow = new THREE.PointLight(
+        "#ffd49a",
+        midnight ? 0.4 : 0.55,
+        2.6,
+      );
+      glow.position.set(x, ceiling - 0.5, -1.2);
+      this.scene.add(glow);
+    }
+    for (let index = 0; index < 4; index++) {
+      const cue = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.011, 0.018, 1.5, 8),
+        new THREE.MeshStandardMaterial({
+          color: "#d4ad74",
+          roughness: 0.35,
+          metalness: 0.1,
+        }),
+      );
+      cue.position.set(-width + 0.3, floorY + 0.78, -1.3 + index * 0.16);
+      cue.rotation.z = 0.12;
+      cue.rotation.x = 0.1;
+      this.scene.add(cue);
+    }
+    for (const [x, z] of [
+      [-2.7, 1.25],
+      [2.7, 1.25],
+      [-3.5, -0.8],
+      [3.5, -0.8],
+    ]) {
+      const stool = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.24, 0.2, 0.5, 16),
+        new THREE.MeshStandardMaterial({
+          color: midnight ? "#563a28" : "#2d3741",
+          roughness: 0.6,
+        }),
+      );
+      stool.position.set(x * tableScale, floorY + 0.25, z);
+      stool.castShadow = true;
+      this.scene.add(stool);
+      const cushion = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.26, 0.26, 0.07, 16),
+        new THREE.MeshStandardMaterial({
+          color: midnight ? "#9b5f37" : "#445c70",
+          roughness: 0.8,
+        }),
+      );
+      cushion.position.set(x * tableScale, floorY + 0.535, z);
+      this.scene.add(cushion);
+    }
+    if (this.environment === "arena") {
+      for (const z of [-2.4, 2.4])
+        for (const x of [-2.6, 2.6]) {
+          const spot = new THREE.SpotLight("#fff3d6", 4.5, 9, 0.45, 0.6);
+          spot.position.set(x * tableScale, ceiling - 0.2, z * tableScale);
+          spot.target.position.set(0, 0, 0);
+          this.scene.add(spot, spot.target);
+        }
+    } else {
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.05, 2.1), trim);
+      shelf.position.set(-width + 0.42, floorY + 0.525, -1.4);
+      this.scene.add(shelf);
+      const plant = new THREE.Mesh(
+        new THREE.ConeGeometry(0.32, 0.85, 12),
+        new THREE.MeshStandardMaterial({ color: "#3d6a4c", roughness: 1 }),
+      );
+      plant.position.set(width - 0.6, floorY + 0.425, 1.6);
+      this.scene.add(plant);
+    }
   }
 
   private setupBalls(balls: PoolBall[]) {
@@ -494,11 +915,12 @@ export class PoolScene3D {
       );
       const material = new THREE.MeshPhysicalMaterial({
         map: texture,
-        color: "#ffffff",
-        roughness: 0.26,
+        color: "#f2f2f2",
+        roughness: 0.32,
         metalness: 0,
-        clearcoat: 1,
-        clearcoatRoughness: 0.08,
+        clearcoat: 0.5,
+        clearcoatRoughness: 0.22,
+        envMapIntensity: 0.55,
       });
       const mesh = new THREE.Mesh(this.ballGeometry, material);
       mesh.castShadow = true;
@@ -755,7 +1177,7 @@ export class PoolScene3D {
     this.applyCuePose(lead.cue, lead.aim, lead.power, progress, lead.elevation);
   }
 
-  pointAt(clientX: number, clientY: number): PoolPoint | null {
+  private pointerRay(clientX: number, clientY: number) {
     const canvas = this.renderer?.domElement;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
@@ -766,8 +1188,22 @@ export class PoolScene3D {
     );
     this.camera.updateMatrixWorld();
     this.raycaster.setFromCamera(pointer, this.camera);
+    return this.raycaster;
+  }
+
+  ballAt(clientX: number, clientY: number): number | null {
+    const ray = this.pointerRay(clientX, clientY);
+    if (!ray) return null;
+    const visible = [...this.balls.values()].filter((mesh) => mesh.visible);
+    for (const mesh of visible) mesh.updateWorldMatrix(true, false);
+    const hit = ray.intersectObjects(visible, false)[0];
+    if (hit) for (const [id, mesh] of this.balls) if (mesh === hit.object) return id;
+    return null;
+  }
+
+  pointAt(clientX: number, clientY: number): PoolPoint | null {
     const point = new THREE.Vector3();
-    return this.raycaster.ray.intersectPlane(this.plane, point)
+    return this.pointerRay(clientX, clientY)?.ray.intersectPlane(this.plane, point)
       ? { x: point.x, y: point.z }
       : null;
   }
@@ -841,7 +1277,11 @@ export class PoolScene3D {
       this.followCamera();
       this.applyCueTransform(now);
       this.controls?.update();
-      this.renderer.render(this.scene, this.camera);
+      this.clampCamera();
+      this.frameSamples += 1;
+      if (!this.playing) this.adaptQuality(now);
+      if (this.post) this.post.render();
+      else this.renderer.render(this.scene, this.camera);
     } catch (error) {
       this.fail(error);
     }
@@ -944,6 +1384,8 @@ export class PoolScene3D {
       "webglcontextlost",
       this.handleContextLost,
     );
+    this.post?.dispose();
+    this.post = undefined;
     this.renderer?.dispose();
     this.renderer?.domElement.remove();
     this.renderer = undefined;

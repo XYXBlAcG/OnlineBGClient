@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import {
   elevationDegrees,
   requiredCueElevation,
-} from "../src/client/pool/cue";
+} from "../src/domain/pool/cue";
 import { standardPoolLayout } from "../src/domain/pool/table";
 
 it("maps the continuous elevation slider onto cue angles", () => {

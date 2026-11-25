@@ -17,6 +17,9 @@
 | 卡坦岛地图、交易、发展卡、强盗与回放           | [规则测试](../tests/catan.test.ts)、[事务与回放](../tests/catan-transactions.test.ts)、[三个真实浏览器牌桌](../scripts/verify-catan.mjs)                                                                                                              |
 | 常用语与扩展特效契约                           | [偏好和互动目录](../tests/social-preferences.test.ts)                                                                                                                                                                                                 |
 | 毒药完整对局与手牌隔离                         | [毒药测试](../tests/poison.test.ts)                                                                                                                                                                                                                   |
+| 3D 渲染选择、台球后处理与上下文丢失 | [场景测试](../tests/scene3d.test.ts)、[台球场景测试](../tests/pool-3d.test.tsx) |
+| 你画我猜房主词库与可见性 | [词库测试](../tests/drawguess-words.test.ts) |
+| 法语模式长局回放、观战房主与画板同步 | [房间测试](../tests/fayu-canvas-sync.test.ts)、[画板编辑测试](../tests/canvas-edits.test.ts)、[坏档隔离测试](../tests/storage.test.ts) |
 | 黄金矿脉实时钩子、共享路线、AI 与联机                   | [规则测试](../tests/miner.test.ts)、[UI 测试](../tests/miner-ui.test.tsx)、[双人烟测](../scripts/verify-miner.mjs)、[AI 烟测](../scripts/verify-miner.mjs)                                                                                            |
 | 并行、取消与审核记录控制                       | [真实线程测试](../tests/compute.test.ts)、[记录开关](../tests/audit-recording.test.ts)、[性能基准](../scripts/benchmark-ai.mjs)                                                                                                                       |
 | 八游戏回放只读与头像契约                       | [牌桌测试](../tests/game-surface.test.tsx)                                                                                                                                                                                                            |
@@ -168,7 +171,7 @@ N0–N10 与三档难度扫描使用 `python3 scripts/run_expedition_difficulty.
 
 专注模式、变化宽度路线、动效生命周期和语音控件结构的验证入口见 [体验清单](expedition-experience.md)。
 
-首次使用的偏好默认值、大厅设置直达与连麦配置指引由 [入口测试](../tests/quick-start.test.tsx) 覆盖；实际操作见 [使用指南](getting-started.md) 和 [语音人工验收](client-voice.md#手动审核)。测试不启动麦克风或打开系统浏览器。
+偏好默认值与大厅设置入口由 [房间体验测试](../tests/room-experience.test.tsx) 覆盖；语音配置指引入口见 [设置](../src/client/Settings.tsx)，实际操作见 [使用指南](getting-started.md) 和 [语音人工验收](client-voice.md#手动审核)。测试不启动麦克风或打开系统浏览器。
 
 变声算法的实际离线样本、输出路由、组合键录入和横幅颜色见 [使用与验证入口](voice-effects-and-input.md#实现与非界面检查)。
 

@@ -1,3 +1,4 @@
+import { poolModeChoices, poolTimeChoices } from "../../domain/setup-choices";
 import type { PoolOptions } from "../../domain/pool/types";
 import { Select } from "../ui/Controls";
 
@@ -19,9 +20,11 @@ export function PoolOptionsControl({
             onChange({ ...value, mode: mode as PoolOptions["mode"] })
           }
         >
-          <option value="eight-ball">8 球</option>
-          <option value="nine-ball">9 球</option>
-          <option value="party">派对台球（3–4 人）</option>
+          {poolModeChoices.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
         </Select>
       </label>
       <label className="setting-row">
@@ -36,10 +39,11 @@ export function PoolOptionsControl({
             })
           }
         >
-          <option value="0">不限时</option>
-          <option value="45">45 秒</option>
-          <option value="60">60 秒</option>
-          <option value="90">90 秒</option>
+          {poolTimeChoices.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
         </Select>
       </label>
     </>

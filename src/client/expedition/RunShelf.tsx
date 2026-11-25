@@ -6,14 +6,15 @@ export function RunShelf({
   onRestore,
   busy = false,
   onAbandon,
+  showEmpty = false,
 }: {
+  showEmpty?: boolean;
   busy?: boolean;
   onRestore: (link: RunLink) => void;
   onAbandon: (link: RunLink) => Promise<void>;
 }) {
   const [store] = useState(() => new ClientStore()),
-    [links, setLinks] = useState<RunLink[]>([]),
-    [visible, setVisible] = useState(false),
+    [links, setLinks] = useState<RunLink[] | null>(null),
     [errors, setErrors] = useState<Record<string, string>>({});
   const pending = useRef(new Set<string>());
   const [, refresh] = useState(0);
@@ -24,7 +25,6 @@ export function RunShelf({
       .then((next) => {
         if (active) {
           setLinks(next);
-          setVisible(next.length > 0);
         }
       })
       .catch((error) => {
@@ -34,15 +34,20 @@ export function RunShelf({
       active = false;
     };
   }, [store]);
-  if (!visible && !Object.keys(errors).length) return null;
+  if (!showEmpty && !links?.length && !Object.keys(errors).length) return null;
   return (
     <section className="run-shelf">
       <h3>秘塔远征</h3>
       {errors.load && <p role="alert">{errors.load}</p>}
-      {!links.length && visible && (
+      {links === null && !errors.load && (
+        <div className="run-shelf-status muted" role="status">
+          正在读取远征…
+        </div>
+      )}
+      {links?.length === 0 && (
         <div className="run-shelf-status muted">没有待继续的远征</div>
       )}
-      {[...links]
+      {[...(links ?? [])]
         .sort((a, b) => b.updated - a.updated)
         .map((link) => (
           <div className="run-shelf-entry" key={link.id}>
@@ -73,7 +78,7 @@ export function RunShelf({
                     ) {
                       await onAbandon(link);
                       setLinks((current) =>
-                        current.filter((item) => item.id !== link.id),
+                        (current ?? []).filter((item) => item.id !== link.id),
                       );
                       setErrors((current) => {
                         const next = { ...current };

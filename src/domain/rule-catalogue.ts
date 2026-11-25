@@ -1,6 +1,9 @@
 import type { GameKind } from "./catalogue";
 import type { GameRules } from "./plugin";
+import { GameAdapter } from "./plugin";
 import type { UpstreamRuntime } from "../upstream/runtime";
+import { DrawGameRules } from "./drawguess/game-rules";
+import { GolfRules } from "./golf/rules";
 import {
   catanPlugin,
   checkersPlugin,
@@ -36,4 +39,7 @@ export const gameRules: Record<
   tq: checkersPlugin,
   fxq: flightPlugin,
   pool: poolPlugin,
+  drawguess: (runtime) =>
+    new GameAdapter("drawguess", new DrawGameRules(() => runtime.random())),
+  golf: () => new GameAdapter("golf", new GolfRules()),
 };

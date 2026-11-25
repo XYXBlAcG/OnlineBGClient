@@ -1,9 +1,9 @@
 import { useState } from "react";
 import {
-  gameCatalogue,
-  gameKinds,
-  type GameKind,
-} from "../../domain/catalogue";
+  libraryCatalogue,
+  libraryEntries,
+  type LibraryEntry,
+} from "./library-entries";
 import { GameCover } from "./GameCover";
 import { SearchField } from "../ui/Controls";
 export function GameLibrary({
@@ -14,22 +14,22 @@ export function GameLibrary({
   onFavorite,
   disabled = false,
 }: {
-  selected: GameKind;
+  selected: LibraryEntry;
   favorites: readonly string[];
   recent: readonly string[];
-  onSelect: (kind: GameKind) => void;
-  onFavorite: (kind: GameKind) => void;
+  onSelect: (kind: LibraryEntry) => void;
+  onFavorite: (kind: LibraryEntry) => void;
   disabled?: boolean;
 }) {
   const [query, setQuery] = useState(""),
     [category, setCategory] = useState("全部");
-  const kinds = gameKinds.filter(
+  const kinds = libraryEntries.filter(
     (kind) =>
       (category === "全部" ||
-        gameCatalogue[kind].category === category ||
+        libraryCatalogue[kind].category === category ||
         (category === "收藏" && favorites.includes(kind)) ||
         (category === "常玩" && recent.includes(kind))) &&
-      gameCatalogue[kind].name
+      libraryCatalogue[kind].name
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
   );
@@ -45,7 +45,7 @@ export function GameLibrary({
     <section className="game-library" aria-disabled={disabled}>
       <div className="library-heading">
         <div>
-          <h1>今晚玩什么？</h1>
+          <h1>今天玩什么？</h1>
         </div>
         <SearchField
           label="搜索游戏"
@@ -60,7 +60,9 @@ export function GameLibrary({
           "全部",
           "常玩",
           "收藏",
-          ...new Set(gameKinds.map((kind) => gameCatalogue[kind].category)),
+          ...new Set(
+            libraryEntries.map((kind) => libraryCatalogue[kind].category),
+          ),
         ].map((value) => (
           <button
             key={value}
@@ -80,24 +82,23 @@ export function GameLibrary({
           >
             <button
               className="game-card-main"
-              aria-label={`选择${gameCatalogue[kind].name}`}
+              aria-label={`选择${libraryCatalogue[kind].name}`}
               aria-pressed={kind === selected}
               disabled={disabled}
               onClick={() => onSelect(kind)}
             >
               <GameCover kind={kind} />
               <span className="club-card-copy">
-                <strong>{gameCatalogue[kind].name}</strong>
-                <span>{gameCatalogue[kind].description}</span>
+                <strong>{libraryCatalogue[kind].name}</strong>
                 <small>
-                  {gameCatalogue[kind].minPlayers}–
-                  {gameCatalogue[kind].maxPlayers} 人
+                  {libraryCatalogue[kind].minPlayers}–
+                  {libraryCatalogue[kind].maxPlayers} 人
                 </small>
               </span>
             </button>
             <button
               className="game-favorite"
-              aria-label={`${favorites.includes(kind) ? "取消收藏" : "收藏"}${gameCatalogue[kind].name}`}
+              aria-label={`${favorites.includes(kind) ? "取消收藏" : "收藏"}${libraryCatalogue[kind].name}`}
               aria-pressed={favorites.includes(kind)}
               onClick={() => onFavorite(kind)}
             >
@@ -109,13 +110,6 @@ export function GameLibrary({
       {!kinds.length && (
         <div className="club-empty" role="status">
           <strong>没有找到游戏</strong>
-          <p>
-            {category === "收藏"
-              ? "点游戏卡片上的星标，收藏喜欢的游戏。"
-              : category === "常玩"
-                ? "开始过的游戏会按游玩次数排在这里。"
-                : "试试其他关键词或分类。"}
-          </p>
           <button
             onClick={() => {
               setQuery("");

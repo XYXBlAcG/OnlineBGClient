@@ -278,15 +278,20 @@
 .game-status-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex: 0 0 22px;
-  min-height: 22px;
+  gap: var(--space-2);
+  padding-inline: var(--space-2);
+  flex: 0 0 var(--game-status-height, 26px);
+  min-inline-size: 0;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .game-turn-indicator {
   position: static;
   color: var(--accent);
   font-size: 12px;
   pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .game-turn-indicator[hidden] {
   display: none;
@@ -474,8 +479,7 @@
 
 @media (max-height: 540px) and (orientation: landscape) {
   .game-status-row {
-    flex-basis: 18px;
-    min-height: 18px;
+    --game-status-height: 22px;
   }
 }
 

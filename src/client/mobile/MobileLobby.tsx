@@ -1,3 +1,18 @@
+import { GolfDifficultyControl } from "../golf/GolfDifficultyControl";
+import { DrawModeControl } from "../drawguess/DrawModeControl";
+import type { DrawMode } from "../../domain/drawguess/types";
+import { PoolOptionsControl } from "../pool/PoolOptionsControl";
+import { MahjongOptionsControl } from "../mahjong/MahjongOptionsControl";
+import { poolOptionsSchema } from "../../domain/pool/types";
+import { mahjongOptionsSchema } from "../../domain/mahjong/types";
+import { ExpeditionOptionsControl } from "../expedition/ExpeditionOptionsControl";
+import { expeditionOptionsSchema } from "../../domain/expedition/adventure-types";
+import { DominionOptionsControl } from "../dominion/DominionOptionsControl";
+import { dominionOptionsSchema } from "../../domain/dominion/types";
+import { FlightOptionsControl } from "../flight/FlightOptionsControl";
+import { flightOptionsSchema } from "../../domain/flight";
+import { CheckersOptionsControl } from "../checkers/CheckersOptionsControl";
+import { checkersOptionsSchema } from "../../domain/checkers";
 import { useState } from "react";
 import {
   gameCatalogue,
@@ -24,20 +39,31 @@ export function MobileLobby({
   onStart: (config: RoomConfig) => void;
   onBack: () => void;
 }) {
+  const [drawMode, setDrawMode] = useState<DrawMode>("classic");
+  const [golfDifficulty, setGolfDifficulty] = useState<Parameters<typeof GolfDifficultyControl>[0]["value"]>("standard");
+  const [pool, setPool] = useState(() => poolOptionsSchema.parse({}));
+  const [mahjong, setMahjong] = useState(() => mahjongOptionsSchema.parse({}));
+  const [expeditionOptions, setExpeditionOptions] = useState(() =>
+    expeditionOptionsSchema.parse({}),
+  );
+  const [dominion, setDominion] = useState(() =>
+    dominionOptionsSchema.parse({}),
+  );
+  const [flight, setFlight] = useState(() => flightOptionsSchema.parse({}));
+  const [checkers, setCheckers] = useState(() =>
+    checkersOptionsSchema.parse({}),
+  );
   const [kind, setKind] = useState<GameKind>(initialKind ?? "uno");
   const [humans, setHumans] = useState(() =>
     defaultLocalHumans(initialKind ?? "uno"),
   );
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [aiDelayMs, setAiDelayMs] = useState(1500);
-  const [expeditionDifficulty, setExpeditionDifficulty] = useState<
-    "story" | "standard" | "challenge"
-  >("standard");
   const [requestedAi, setRequestedAi] = useState<number | null>(null);
   const game = gameCatalogue[kind];
   const expedition = kind === "expedition";
   const expeditionJournal = useExpeditionJournal(expedition);
-  const humanFloor = game.ai ? 1 : game.minPlayers;
+  const humanFloor = defaultLocalHumans(kind, drawMode);
   const aiRange = localAiRange(kind, humans);
   const aiCount =
     requestedAi === null
@@ -45,7 +71,7 @@ export function MobileLobby({
       : Math.min(Math.max(requestedAi, aiRange.min), aiRange.max);
   const changeKind = (next: GameKind) => {
     setKind(next);
-    setHumans(defaultLocalHumans(next));
+    setHumans(defaultLocalHumans(next, drawMode));
     setRequestedAi(null);
   };
   const changeHumans = (next: number) => {
@@ -77,7 +103,7 @@ export function MobileLobby({
             </span>
             <strong>{gameCatalogue[item].name}</strong>
             <small>
-              {gameCatalogue[item].minPlayers}–{gameCatalogue[item].maxPlayers}{" "}
+              {item === "drawguess" ? defaultLocalHumans(item, "fayu") : gameCatalogue[item].minPlayers}–{gameCatalogue[item].maxPlayers}{" "}
               人
             </small>
           </button>
@@ -97,6 +123,28 @@ export function MobileLobby({
               : "同屏轮流"}
           </span>
         </div>
+        {kind === "drawguess" && (
+          <DrawModeControl value={drawMode} onChange={(mode) => {
+            setHumans(Math.max(defaultLocalHumans(kind, mode), humans === humanFloor ? 0 : humans));
+            setDrawMode(mode);
+          }} />
+        )}
+        {kind === "golf" && <GolfDifficultyControl value={golfDifficulty} onChange={setGolfDifficulty} />}
+        {kind === "pool" && (
+          <PoolOptionsControl value={pool} onChange={setPool} />
+        )}
+        {kind === "scmj" && (
+          <MahjongOptionsControl value={mahjong} onChange={setMahjong} />
+        )}
+        {kind === "dominion" && (
+          <DominionOptionsControl value={dominion} onChange={setDominion} />
+        )}
+        {kind === "fxq" && (
+          <FlightOptionsControl value={flight} onChange={setFlight} />
+        )}
+        {kind === "tq" && (
+          <CheckersOptionsControl value={checkers} onChange={setCheckers} />
+        )}
         <label className="mobile-local-field">
           <span>真人玩家</span>
           <Select
@@ -158,22 +206,13 @@ export function MobileLobby({
           />
         )}
         {expedition && (
-          <label className="mobile-local-field">
-            <span>远征难度</span>
-            <Select
-              aria-label="远征难度"
-              value={expeditionDifficulty}
-              onValueChange={(value) =>
-                setExpeditionDifficulty(
-                  value as "story" | "standard" | "challenge",
-                )
-              }
-            >
-              <option value="story">剧情</option>
-              <option value="standard">标准</option>
-              <option value="challenge">挑战</option>
-            </Select>
-          </label>
+          <ExpeditionOptionsControl
+            value={expeditionOptions}
+            onChange={(value) =>
+              setExpeditionOptions(expeditionOptionsSchema.parse(value))
+            }
+            journal={expeditionJournal.journal}
+          />
         )}
         {game.ai && (
           <label className="mobile-local-field">
@@ -205,11 +244,19 @@ export function MobileLobby({
           onClick={() =>
             onStart(
               localRoomConfig(kind, {
+                gameOptions: {
+                  golf: { difficulty: golfDifficulty },
+                  pool,
+                  mahjong,
+                  expedition: expeditionOptions,
+                  dominion,
+                  flight,
+                  checkers,
+                },
                 humans,
                 difficulty,
                 requestedAi: aiCount,
                 aiDelayMs,
-                expeditionDifficulty,
                 expeditionLegacy: expeditionJournal.journal.legacy,
               }),
             )

@@ -5,12 +5,14 @@ export function replayPlaylist(
 ): ReplayRecord[] {
   return records
     .filter((record) =>
-      selected.config.kind === "expedition"
+      selected.arcadeRunId
+        ? record.arcadeRunId === selected.arcadeRunId
+        : selected.config.kind === "expedition"
         ? record.config.kind === "expedition" &&
           (record.expeditionRunId && selected.expeditionRunId
             ? record.expeditionRunId === selected.expeditionRunId
             : record.seed === selected.seed)
-        : record.room === selected.room,
+        : !record.arcadeRunId && record.room === selected.room,
     )
     .sort((a, b) => a.startedAt - b.startedAt);
 }

@@ -79,3 +79,32 @@ it("keeps the aimed direction when the player drags backward to charge", () => {
   expect(action!.aim).toBeCloseTo(-Math.PI / 2, 5);
   act(() => tree.unmount());
 });
+it("supports explicit touch power and shoot without a pull gesture", () => {
+  let aim!: ReturnType<typeof usePoolAim>;
+  let tree!: ReactTestRenderer;
+  function Harness() {
+    aim = usePoolAim({
+      balls,
+      cue: { x: -0.5, y: 0 },
+      own: true,
+      ballInHand: false,
+      resetKey: "touch",
+    });
+    return null;
+  }
+  act(() => {
+    tree = create(<Harness />);
+  });
+  act(() => {
+    aim.hover({ x: 0, y: 0.3 });
+    aim.setShotPower(0.6);
+  });
+  let shot: ReturnType<typeof aim.shoot>;
+  act(() => {
+    shot = aim.shoot();
+  });
+  expect(shot!).toMatchObject({ power: 0.6 });
+  expect(shot!.aim).toBeGreaterThan(0);
+  expect(aim.power).toBe(0);
+  act(() => tree.unmount());
+});
