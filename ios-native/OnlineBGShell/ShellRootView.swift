@@ -2,10 +2,6 @@ import SwiftUI
 
 @main
 struct OnlineBGShellApp: App {
-    init() {
-        LocalWebServer.shared.start()
-    }
-
     var body: some Scene {
         WindowGroup {
             ShellRootView()
@@ -263,7 +259,11 @@ struct LobbyView: View {
     @State private var tableRoute: ShellTableRoute?
     @State private var pendingRoute: ShellTableRoute?
 
-    private let categories = ["全部", "合作", "策略", "纸牌", "棋盘"]
+    private var categories: [String] {
+        ["全部"] + shellGames.filter(\.mobile).map(\.category).reduce(into: [String]()) { result, category in
+            if !result.contains(category) { result.append(category) }
+        }
+    }
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12),
@@ -366,157 +366,6 @@ struct LobbyView: View {
                 WebTableScreen(game: route.game, setup: route.setup)
             }
         }
-    }
-}
-
-struct GameSetupSheet: View {
-    let game: ShellGame
-    let onStart: (ShellTableSetup) -> Void
-    @State private var aiCount: Int
-    @State private var difficulty = "normal"
-    @State private var aiDelayMs = 1500
-    @State private var expeditionDifficulty = "standard"
-
-    init(game: ShellGame, onStart: @escaping (ShellTableSetup) -> Void) {
-        self.game = game
-        self.onStart = onStart
-        _aiCount = State(
-            initialValue: game.ai ? max(0, game.minPlayers - 1) : 0
-        )
-    }
-
-    private var humans: Int {
-        game.ai ? 1 : game.minPlayers
-    }
-
-    private var aiRange: ClosedRange<Int> {
-        let minimum = game.ai ? max(0, game.minPlayers - 1) : 0
-        let maximum = game.ai ? max(0, game.maxPlayers - 1) : 0
-        return minimum...maximum
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
-                GameCoverView(game: game, size: 58)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(game.name)
-                        .font(.title3.weight(.semibold))
-                    Text(game.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-
-            VStack(spacing: 0) {
-                settingsRow("真人玩家", "\(humans) 人")
-                if game.ai {
-                    Stepper(value: $aiCount, in: aiRange) {
-                        HStack {
-                            Text(game.id == "expedition" ? "AI 朋友" : "AI 对手")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(aiCount) 个")
-                                .fontWeight(.medium)
-                        }
-                        .font(.subheadline)
-                        .padding(.horizontal, 14)
-                        .frame(height: 44)
-                    }
-                    HStack {
-                        Text(game.id == "expedition" ? "AI 能力" : "AI 难度")
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Picker("AI 难度", selection: $difficulty) {
-                            Text("简单").tag("easy")
-                            Text("普通").tag("normal")
-                            Text("困难").tag("hard")
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 190)
-                    }
-                    .font(.subheadline)
-                    .padding(.horizontal, 14)
-                    .frame(height: 52)
-                    HStack {
-                        Text("AI 响应")
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Picker("AI 响应", selection: $aiDelayMs) {
-                            Text("0.5 秒").tag(500)
-                            Text("1 秒").tag(1000)
-                            Text("1.5 秒").tag(1500)
-                            Text("2 秒").tag(2000)
-                            Text("3 秒").tag(3000)
-                        }
-                        .pickerStyle(.menu)
-                    }
-                    .font(.subheadline)
-                    .padding(.horizontal, 14)
-                    .frame(height: 44)
-                    if game.id == "expedition" {
-                        HStack {
-                            Text("远征难度")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Picker(
-                                "远征难度",
-                                selection: $expeditionDifficulty
-                            ) {
-                                Text("剧情").tag("story")
-                                Text("标准").tag("standard")
-                                Text("挑战").tag("challenge")
-                            }
-                            .pickerStyle(.menu)
-                        }
-                        .font(.subheadline)
-                        .padding(.horizontal, 14)
-                        .frame(height: 44)
-                    }
-                } else {
-                    settingsRow("操作", "同屏轮流")
-                }
-                settingsRow("总人数", "\(humans + (game.ai ? aiCount : 0)) 人")
-            }
-            .background(ShellTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            Button {
-                onStart(
-                    ShellTableSetup(
-                        humans: humans,
-                        ai: game.ai ? aiCount : 0,
-                        difficulty: difficulty,
-                        aiDelayMs: aiDelayMs,
-                        expeditionDifficulty: expeditionDifficulty
-                    )
-                )
-            } label: {
-                Text("开始本地对局")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(ShellTheme.accent)
-            .controlSize(.large)
-
-            Spacer(minLength: 0)
-        }
-        .padding(20)
-        .background(ShellTheme.canvas)
-    }
-
-    private func settingsRow(_ title: String, _ value: String) -> some View {
-        HStack {
-            Text(title)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .fontWeight(.medium)
-        }
-        .font(.subheadline)
-        .padding(.horizontal, 14)
-        .frame(height: 44)
     }
 }
 

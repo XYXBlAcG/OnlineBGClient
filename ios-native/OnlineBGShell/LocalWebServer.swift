@@ -1,64 +1,106 @@
 import Foundation
 import Network
 
-final class LocalWebServer {
+actor LocalWebServer {
     static let shared = LocalWebServer()
 
-    let port: UInt16 = 17878
+    nonisolated let port: UInt16
     private let queue = DispatchQueue(
         label: "onlinebg.local-web",
-        qos: .userInitiated,
-        attributes: .concurrent
+        qos: .userInitiated
     )
     private var listener: NWListener?
+    private var waiting: [CheckedContinuation<URL, Error>] = []
+    nonisolated private let rootURL: URL
 
-    var baseURL: URL {
+    nonisolated var baseURL: URL {
         URL(string: "http://127.0.0.1:\(port)")!
     }
 
-    var hasBundledWeb: Bool {
+    nonisolated var hasBundledWeb: Bool {
         FileManager.default.fileExists(
             atPath: rootURL.appendingPathComponent("index.html").path
         )
     }
 
-    private var rootURL: URL {
-        Bundle.main.resourceURL!.appendingPathComponent("web", isDirectory: true)
+    init(rootURL: URL = Bundle.main.resourceURL!.appendingPathComponent("web", isDirectory: true), port: UInt16 = 17878) {
+        self.rootURL = rootURL
+        self.port = port
     }
 
-    func start() {
-        guard listener == nil, hasBundledWeb else { return }
-        guard let port = NWEndpoint.Port(rawValue: port) else { return }
-        let parameters = NWParameters.tcp
-        parameters.allowLocalEndpointReuse = true
-        parameters.requiredLocalEndpoint = .hostPort(
-            host: "127.0.0.1",
-            port: port
-        )
-        guard let listener = try? NWListener(using: parameters) else { return }
-        let ready = DispatchSemaphore(value: 0)
-        listener.stateUpdateHandler = { state in
-            switch state {
-            case .ready, .failed, .cancelled:
-                ready.signal()
-            default:
-                break
+    func start() async throws -> URL {
+        guard hasBundledWeb else {
+            throw NSError(domain: "onlinebg.local-web", code: 1, userInfo: [NSLocalizedDescriptionKey: "缺少内置牌桌资源，请重新安装完整客户端。"])
+        }
+        if let listener, case .ready = listener.state {
+            return URL(string: "http://127.0.0.1:\(listener.port!.rawValue)")!
+        }
+        return try await withCheckedThrowingContinuation { continuation in
+            waiting.append(continuation)
+            guard listener == nil else { return }
+            do {
+                let parameters = NWParameters.tcp
+                parameters.allowLocalEndpointReuse = true
+                parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: port)!)
+                let listener = try NWListener(using: parameters)
+                self.listener = listener
+                listener.stateUpdateHandler = { [weak self, weak listener] state in
+                    guard let listener else { return }
+                    Task { await self?.update(state, listener: listener) }
+                }
+                listener.newConnectionHandler = { [weak self] connection in
+                    self?.handle(connection)
+                }
+                listener.start(queue: queue)
+            } catch {
+                finishStartup(.failure(error))
             }
         }
-        listener.newConnectionHandler = { [weak self] connection in
-            self?.handle(connection)
-        }
-        self.listener = listener
-        listener.start(queue: queue)
-        _ = ready.wait(timeout: .now() + 1)
     }
 
-    private func handle(_ connection: NWConnection) {
+    func restart() async throws -> URL {
+        stop()
+        return try await start()
+    }
+
+    func stop() {
+        let previous = listener
+        listener = nil
+        previous?.cancel()
+        finishStartup(.failure(CancellationError()))
+    }
+
+    private func update(_ state: NWListener.State, listener: NWListener) {
+        guard self.listener === listener else { return }
+        switch state {
+        case .ready:
+            finishStartup(.success(URL(string: "http://127.0.0.1:\(listener.port!.rawValue)")!))
+        case .failed(let error), .waiting(let error):
+            self.listener = nil
+            listener.cancel()
+            finishStartup(.failure(error))
+        case .cancelled:
+            self.listener = nil
+            finishStartup(.failure(CancellationError()))
+        default:
+            break
+        }
+    }
+
+    private func finishStartup(_ result: Result<URL, Error>) {
+        let pending = waiting
+        waiting.removeAll()
+        for continuation in pending {
+            continuation.resume(with: result)
+        }
+    }
+
+    nonisolated private func handle(_ connection: NWConnection) {
         connection.start(queue: queue)
         receive(connection, buffer: Data())
     }
 
-    private func receive(_ connection: NWConnection, buffer: Data) {
+    nonisolated private func receive(_ connection: NWConnection, buffer: Data) {
         connection.receive(
             minimumIncompleteLength: 1,
             maximumLength: 64 * 1024
@@ -83,7 +125,7 @@ final class LocalWebServer {
         }
     }
 
-    private func respond(_ connection: NWConnection, request: Data) {
+    nonisolated private func respond(_ connection: NWConnection, request: Data) {
         guard
             let text = String(data: request, encoding: .utf8),
             let first = text.components(separatedBy: "\r\n").first
@@ -149,7 +191,7 @@ final class LocalWebServer {
         )
     }
 
-    private func respond(
+    nonisolated private func respond(
         _ connection: NWConnection,
         status: String,
         contentType: String,
@@ -168,7 +210,7 @@ final class LocalWebServer {
         )
     }
 
-    private func mimeType(_ ext: String) -> String {
+    nonisolated private func mimeType(_ ext: String) -> String {
         switch ext.lowercased() {
         case "html":
             return "text/html; charset=utf-8"

@@ -10,6 +10,8 @@
 		3509902BC20A3D7E1F308C34 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 327F7276C9FB8BB54F2609C9 /* LaunchScreen.storyboard */; };
 		39B5B1DF0F47C2CEAA9BF2B3 /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FA06485A47B32182E2647A0 /* libapp.a */; };
 		3A7CB043018D9CBC38CE57A5 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 777BD5C34B0CBDD182D22CE4 /* CoreGraphics.framework */; };
+		40B1D6B1F2BEF05CD5C423CD /* tauri-plugin-barcode-scanner in Frameworks */ = {isa = PBXBuildFile; productRef = 740006D80961710902C40F17 /* tauri-plugin-barcode-scanner */; };
+		42BAD2622EFF75FB47255180 /* Tauri in Frameworks */ = {isa = PBXBuildFile; productRef = 28C87FDBDD1931CA4D806B7B /* Tauri */; };
 		4CEF034364B51D6CE92F8CF2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6D0A6795C9D9A631FB3A05A /* QuartzCore.framework */; };
 		4F6E3736BA87DA096B7B5EB6 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B305A99297C1458AA7243ADC /* MetalKit.framework */; };
 		6136138F13E6265B4A9A83B5 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = D93C7E4274462D96AAF39FEF /* main.mm */; };
@@ -17,14 +19,16 @@
 		93EEE523E8FB2A4884D0DFA6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D46ACCB29E65F541FC50F00 /* Assets.xcassets */; };
 		978431CA0B4554A0746C2F3A /* VoiceNativePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46973BC92E16A6ACE15AB87D /* VoiceNativePlugin.swift */; };
 		CE436070A634348E33B86ED0 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A12310614A0FB7727A8689ED /* Security.framework */; };
-		D38C070003651DA3A7BF19D6 /* Tauri in Frameworks */ = {isa = PBXBuildFile; productRef = 28C87FDBDD1931CA4D806B7B /* Tauri */; };
+		D38C070003651DA3A7BF19D6 /* tauri-plugin-dialog in Frameworks */ = {isa = PBXBuildFile; productRef = 4D43204D9CF13EAB67E09F88 /* tauri-plugin-dialog */; };
 		E1B7743CB562387C525BEDB8 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D5462C8E6289A94F998C62F /* Metal.framework */; };
 		E50F8EE7338F1E6236E218C1 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 648B8DFDF64861F38AB6A8A3 /* WebKit.framework */; };
-		F58E51F3C57491F2BC371E90 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 06F6681EA7AFE78813B83E50 /* LiveKit */; };
+		E5DDCF4A7EC98683EFE4B75D /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 06F6681EA7AFE78813B83E50 /* LiveKit */; };
+		F58E51F3C57491F2BC371E90 /* tauri-plugin-notification in Frameworks */ = {isa = PBXBuildFile; productRef = 36F8594173B6CE5CD1584934 /* tauri-plugin-notification */; };
 		FD1D930426C21A0885E090C1 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 483C65F4B6AFFD9E309D106F /* assets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		09A477E66724575EF71E0783 /* barcode-scanner */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "barcode-scanner"; path = ".tauri/barcode-scanner"; sourceTree = SOURCE_ROOT; };
 		09ACDE5C4388A7363BDE9473 /* windows.rs */ = {isa = PBXFileReference; path = windows.rs; sourceTree = "<group>"; };
 		2DDDFB4673AFB4B4BA05E235 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
 		327F7276C9FB8BB54F2609C9 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -33,6 +37,7 @@
 		483C65F4B6AFFD9E309D106F /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
 		4D5462C8E6289A94F998C62F /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		5A9709C383A26868EB18F452 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		5C29B158342025C713109E41 /* dialog */ = {isa = PBXFileReference; lastKnownFileType = folder; name = dialog; path = .tauri/dialog; sourceTree = SOURCE_ROOT; };
 		648B8DFDF64861F38AB6A8A3 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		6AE3DCA7BB71365ABCAC0C0D /* voice.rs */ = {isa = PBXFileReference; path = voice.rs; sourceTree = "<group>"; };
 		777BD5C34B0CBDD182D22CE4 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -45,6 +50,7 @@
 		8498DE7EB8A8840670688825 /* identity.rs */ = {isa = PBXFileReference; path = identity.rs; sourceTree = "<group>"; };
 		8FA06485A47B32182E2647A0 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		922B3DAA1B8574A5BBC062DC /* mobile.rs */ = {isa = PBXFileReference; path = mobile.rs; sourceTree = "<group>"; };
+		929AE83751C9D4D48F3D8014 /* notification */ = {isa = PBXFileReference; lastKnownFileType = folder; name = notification; path = .tauri/notification; sourceTree = SOURCE_ROOT; };
 		9534807137B8B405DD4C3DC1 /* hosting_retry.rs */ = {isa = PBXFileReference; path = hosting_retry.rs; sourceTree = "<group>"; };
 		9EF9D672D1CCF4CD5D67F539 /* quick_api.rs */ = {isa = PBXFileReference; path = quick_api.rs; sourceTree = "<group>"; };
 		A12310614A0FB7727A8689ED /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
@@ -70,8 +76,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D38C070003651DA3A7BF19D6 /* Tauri in Frameworks */,
-				F58E51F3C57491F2BC371E90 /* LiveKit in Frameworks */,
+				D38C070003651DA3A7BF19D6 /* tauri-plugin-dialog in Frameworks */,
+				F58E51F3C57491F2BC371E90 /* tauri-plugin-notification in Frameworks */,
+				40B1D6B1F2BEF05CD5C423CD /* tauri-plugin-barcode-scanner in Frameworks */,
+				42BAD2622EFF75FB47255180 /* Tauri in Frameworks */,
+				E5DDCF4A7EC98683EFE4B75D /* LiveKit in Frameworks */,
 				39B5B1DF0F47C2CEAA9BF2B3 /* libapp.a in Frameworks */,
 				3A7CB043018D9CBC38CE57A5 /* CoreGraphics.framework in Frameworks */,
 				E1B7743CB562387C525BEDB8 /* Metal.framework in Frameworks */,
@@ -174,7 +183,10 @@
 		905FAC6E963D74D86636C0EF /* Packages */ = {
 			isa = PBXGroup;
 			children = (
+				09A477E66724575EF71E0783 /* barcode-scanner */,
 				DF333D84A5B2F8371FEF2A44 /* client-sdk-swift */,
+				5C29B158342025C713109E41 /* dialog */,
+				929AE83751C9D4D48F3D8014 /* notification */,
 				82852CD4789A2E21293FC49A /* tauri-api */,
 			);
 			name = Packages;
@@ -212,6 +224,20 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		"TEMP_18DAFAB5-706D-4AE6-93DD-E09B7F4DF4EF" /* arm64 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = arm64;
+			sourceTree = "<group>";
+		};
+		"TEMP_5DFB6A9A-BB26-4DFF-87EA-715B8DCD11A5" /* x86_64 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = x86_64;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -219,6 +245,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = F7E8D124A8B5F3A6D4EA4597 /* Build configuration list for PBXNativeTarget "onlinebg-client_iOS" */;
 			buildPhases = (
+				0DCCEB124FD2A0B0A7CE94C3 /* Build Web Assets */,
 				9FD673E44B6B4A07DAEC680F /* Build Rust Code */,
 				A7A288B4405890A001DFCEAC /* Sources */,
 				024DFB6C2D6F0E407E739351 /* Resources */,
@@ -230,6 +257,9 @@
 			);
 			name = "onlinebg-client_iOS";
 			packageProductDependencies = (
+				4D43204D9CF13EAB67E09F88 /* tauri-plugin-dialog */,
+				36F8594173B6CE5CD1584934 /* tauri-plugin-notification */,
+				740006D80961710902C40F17 /* tauri-plugin-barcode-scanner */,
 				28C87FDBDD1931CA4D806B7B /* Tauri */,
 				06F6681EA7AFE78813B83E50 /* LiveKit */,
 			);
@@ -258,7 +288,10 @@
 			mainGroup = 66D894CAC4BD50D7B2CEF810;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				DC9C7BB15932323CDFC3BC8F /* XCLocalSwiftPackageReference ".tauri/barcode-scanner" */,
+				5CE7A7698A05F69F63B92A58 /* XCLocalSwiftPackageReference ".tauri/dialog" */,
 				EEFEF1430CD26F41AE173D38 /* XCLocalSwiftPackageReference ".livekit/client-sdk-swift" */,
+				F400450874D2B894A05BE24F /* XCLocalSwiftPackageReference ".tauri/notification" */,
 				324F088536D13F0F3B9CC872 /* XCLocalSwiftPackageReference ".tauri/tauri-api" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -285,6 +318,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		0DCCEB124FD2A0B0A7CE94C3 /* Build Web Assets */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Web Assets";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "REPO_ROOT=\"$SRCROOT/../../..\" \"$SRCROOT/../../../scripts/xcode-web-build.sh\"\n";
+		};
 		9FD673E44B6B4A07DAEC680F /* Build Rust Code */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -532,9 +584,21 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ".tauri/tauri-api";
 		};
+		5CE7A7698A05F69F63B92A58 /* XCLocalSwiftPackageReference ".tauri/dialog" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .tauri/dialog;
+		};
+		DC9C7BB15932323CDFC3BC8F /* XCLocalSwiftPackageReference ".tauri/barcode-scanner" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ".tauri/barcode-scanner";
+		};
 		EEFEF1430CD26F41AE173D38 /* XCLocalSwiftPackageReference ".livekit/client-sdk-swift" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ".livekit/client-sdk-swift";
+		};
+		F400450874D2B894A05BE24F /* XCLocalSwiftPackageReference ".tauri/notification" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .tauri/notification;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -546,6 +610,18 @@
 		28C87FDBDD1931CA4D806B7B /* Tauri */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Tauri;
+		};
+		36F8594173B6CE5CD1584934 /* tauri-plugin-notification */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = "tauri-plugin-notification";
+		};
+		4D43204D9CF13EAB67E09F88 /* tauri-plugin-dialog */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = "tauri-plugin-dialog";
+		};
+		740006D80961710902C40F17 /* tauri-plugin-barcode-scanner */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = "tauri-plugin-barcode-scanner";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

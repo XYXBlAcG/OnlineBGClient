@@ -36,6 +36,8 @@ class VoiceNativePlugin: Plugin, RoomDelegate, @unchecked Sendable {
     DispatchQueue.main.async {
       self.events = args.onEvent
       self.closing = false
+      NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
+      NotificationCenter.default.addObserver(self, selector: #selector(self.audioInterrupted(_:)), name: AVAudioSession.interruptionNotification, object: nil)
       UIApplication.shared.isIdleTimerDisabled = true
       AudioManager.shared.isSpeakerOutputPreferred = true
       let room = Room(delegate: self)
@@ -61,6 +63,7 @@ class VoiceNativePlugin: Plugin, RoomDelegate, @unchecked Sendable {
 
   @objc func disconnect(_ invoke: Invoke) {
     closing = true
+    NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
     events = nil
     DispatchQueue.main.async {
       UIApplication.shared.isIdleTimerDisabled = false
@@ -122,7 +125,36 @@ class VoiceNativePlugin: Plugin, RoomDelegate, @unchecked Sendable {
   }
 
   @objc func playback(_ invoke: Invoke) {
-    invoke.resolve()
+    do {
+      try restoreAudio()
+      invoke.resolve()
+    } catch {
+      invoke.reject(error.localizedDescription)
+    }
+  }
+
+  @objc private func audioInterrupted(_ notification: Notification) {
+    guard room != nil, !closing,
+          let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+          let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+    if type == .began {
+      emit(["type": "playback", "blocked": true])
+      return
+    }
+    let rawOptions = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+    if AVAudioSession.InterruptionOptions(rawValue: rawOptions).contains(.shouldResume) {
+      do {
+        try restoreAudio()
+      } catch {
+        emit(["type": "playback", "blocked": true])
+      }
+    }
+  }
+
+  private func restoreAudio() throws {
+    guard room != nil, !closing else { return }
+    try AVAudioSession.sharedInstance().setActive(true)
+    emit(["type": "playback", "blocked": false])
   }
 
   private func requestMicrophonePermission() async -> Bool {

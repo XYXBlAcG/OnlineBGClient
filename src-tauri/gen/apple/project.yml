@@ -7,6 +7,12 @@ fileGroups: [../../src]
 packages:
   Tauri:
     path: .tauri/tauri-api
+  Dialog:
+    path: .tauri/dialog
+  Notification:
+    path: .tauri/notification
+  Barcode:
+    path: .tauri/barcode-scanner
   LiveKit:
     path: .livekit/client-sdk-swift
 configs:
@@ -62,8 +68,6 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        CFBundleShortVersionString: 0.4.1
-        CFBundleVersion: "0.4.1"
     entitlements:
       path: onlinebg-client_iOS/onlinebg-client_iOS.entitlements
     scheme:
@@ -82,6 +86,12 @@ targets:
         EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
       groups: [app]
     dependencies:
+      - package: Dialog
+        product: tauri-plugin-dialog
+      - package: Notification
+        product: tauri-plugin-notification
+      - package: Barcode
+        product: tauri-plugin-barcode-scanner
       - package: Tauri
         product: Tauri
       - package: LiveKit
@@ -96,6 +106,10 @@ targets:
       - sdk: UIKit.framework
       - sdk: WebKit.framework
     preBuildScripts:
+      - name: Build Web Assets
+        script: |
+          REPO_ROOT="$SRCROOT/../../.." "$SRCROOT/../../../scripts/xcode-web-build.sh"
+        basedOnDependencyAnalysis: false
       - script: |
           npm run -- tauri ios xcode-script -v --platform "${PLATFORM_DISPLAY_NAME:?}" --sdk-root "${SDKROOT:?}" --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration "${CONFIGURATION:?}" ${FORCE_COLOR} ${ARCHS:?}
         name: Build Rust Code

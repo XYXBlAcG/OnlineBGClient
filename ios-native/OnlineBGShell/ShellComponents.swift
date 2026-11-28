@@ -1,5 +1,47 @@
 import SwiftUI
 
+struct ShellMenuOption<Value: Hashable>: Identifiable {
+    let value: Value
+    let title: String
+    var id: Value { value }
+}
+
+struct ShellMenuPicker<Value: Hashable>: View {
+    let title: String
+    @Binding var selection: Value
+    let options: [ShellMenuOption<Value>]
+
+    init(_ title: String, selection: Binding<Value>, options: [ShellMenuOption<Value>]) {
+        self.title = title
+        _selection = selection
+        self.options = options
+    }
+
+    var body: some View {
+        Menu {
+            Picker(title, selection: $selection) {
+                ForEach(options) { option in
+                    Text(option.title).tag(option.value)
+                }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Text(options.first { $0.value == selection }?.title ?? title)
+                    .fontWeight(.medium)
+                    .foregroundStyle(ShellTheme.text)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ShellTheme.accent)
+            }
+            .frame(minWidth: 104, minHeight: 44, alignment: .trailing)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityValue(options.first { $0.value == selection }?.title ?? "")
+    }
+}
+
 struct GameCoverView: View {
     let game: ShellGame
     var size: CGFloat = 72

@@ -6,6 +6,15 @@
   <string>用于在桌游房间中与其他玩家语音交流。只有你主动开启麦克风时才采集声音。</string>
   <key>NSCameraUsageDescription</key>
   <string>用于扫描房间邀请二维码。</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>用于连接同一局域网内由电脑开启的桌游房间。</string>
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+    <key>NSAllowsArbitraryLoadsInWebContent</key>
+    <true/>
+  </dict>
   <key>UIBackgroundModes</key>
   <array>
     <string>audio</string>

@@ -1,12 +1,7 @@
+import { exposeSwiftEntryPoints } from "./ios-swift-exports.mjs";
+import { configureIosInfo } from "./ios-info.mjs";
 import { execFileSync } from "node:child_process";
-import {
-  access,
-  cp,
-  mkdir,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { access, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -94,6 +89,26 @@ await cp(source, target, {
   filter: (path) =>
     !path.includes("/.build") && !path.endsWith("Package.resolved"),
 });
+await exposeSwiftEntryPoints(resolve(target, "Sources"));
+for (const name of ["dialog", "notification", "barcode-scanner"]) {
+  const pkg = metadata.packages.find(
+    (pkg) => pkg.name === `tauri-plugin-${name}`,
+  );
+  if (!pkg) throw new Error(`Missing iOS plugin ${name}`);
+  const destination = resolve(`src-tauri/gen/apple/.tauri/${name}`);
+  await rm(destination, { recursive: true, force: true });
+  await cp(resolve(dirname(pkg.manifest_path), "ios"), destination, {
+    recursive: true,
+    filter: (path) => !path.includes("/.build"),
+  });
+  const manifestPath = resolve(destination, "Package.swift");
+  const manifest = await readFile(manifestPath, "utf8");
+  await writeFile(
+    manifestPath,
+    manifest.replace("../.tauri/tauri-api", "../tauri-api"),
+  );
+  await exposeSwiftEntryPoints(resolve(destination, "Sources"));
+}
 await mkdir(resolve("src-tauri/gen/apple/Externals"), { recursive: true });
 
 const livekitRoot = resolve("src-tauri/gen/apple/.livekit");
@@ -138,11 +153,21 @@ let package = Package(
 
 const livekitPackage = resolve(livekit, "Package.swift");
 let manifest = await readFile(livekitPackage, "utf8");
-manifest = manifest
-  .replace(
-    '.package(url: "https://github.com/livekit/webrtc-xcframework.git", exact: "137.7151.10"),',
-    '.package(path: "../webrtc-xcframework"),',
-  );
+manifest = manifest.replace(
+  '.package(url: "https://github.com/livekit/webrtc-xcframework.git", exact: "137.7151.10"),',
+  '.package(path: "../webrtc-xcframework"),',
+);
 if (!manifest.includes('path: "../webrtc-xcframework"'))
   throw new Error("LiveKit Package.swift 依赖替换失败");
 await writeFile(livekitPackage, manifest);
+
+execFileSync("xcodegen", ["generate"], {
+  cwd: resolve("src-tauri/gen/apple"),
+  stdio: "inherit",
+});
+const { version } = JSON.parse(await readFile("package.json", "utf8"));
+await configureIosInfo(
+  "src-tauri/gen/apple/onlinebg-client_iOS/Info.plist",
+  "src-tauri/Info.ios.plist",
+  version,
+);

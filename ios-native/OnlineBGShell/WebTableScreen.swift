@@ -8,8 +8,7 @@ struct ShellWebScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @StateObject private var bridge = ShellWebHandle()
-    @State private var loading = true
-    @State private var error: String?
+    @State private var reloadID = 0
     @State private var alert: ShellAlert?
     @State private var closeRequested = false
 
@@ -20,16 +19,13 @@ struct ShellWebScreen: View {
     var body: some View {
         ZStack {
             WebTableView(
-                url: url,
                 bridge: bridge,
                 alert: $alert,
-                closeRequested: $closeRequested,
-                loading: $loading,
-                error: $error
+                closeRequested: $closeRequested
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .ignoresSafeArea(edges: landscape ? .all : Edge.Set())
-            if loading {
+            if bridge.state.phase == .loading {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.large)
@@ -42,13 +38,19 @@ struct ShellWebScreen: View {
                 .background(ShellTheme.canvas)
                 .ignoresSafeArea(edges: landscape ? .all : Edge.Set())
             }
-            if let error {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(ShellTheme.text)
-                    .padding(10)
-                    .background(ShellTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .padding(20)
+            if case .failed(let message) = bridge.state.phase {
+                ContentUnavailableView {
+                    Label("牌桌暂时无法打开", systemImage: "wifi.exclamationmark")
+                } description: {
+                    Text(message)
+                } actions: {
+                    Button("重试") { reloadID += 1 }
+                        .buttonStyle(.borderedProminent)
+                    Button("返回") { close() }
+                        .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(ShellTheme.canvas)
             }
         }
         .background(ShellTheme.canvas)
@@ -104,6 +106,10 @@ struct ShellWebScreen: View {
                 dismiss()
             }
         }
+        .task(id: reloadID) {
+            await bridge.load(url, restartLocal: reloadID > 0)
+        }
+        .onDisappear { bridge.cancelLoading() }
     }
 
     private func finishAlert(_ confirmed: Bool?) {
@@ -117,7 +123,7 @@ struct ShellWebScreen: View {
     }
 
     private func close() {
-        if leavesRoom {
+        if leavesRoom && bridge.state.requiresRoomLeave {
             bridge.dispatch(
                 "window.dispatchEvent(new Event('onlinebg-native-leave'))"
             )
@@ -163,9 +169,57 @@ private struct ShellAlert: Identifiable {
 @MainActor
 final class ShellWebHandle: ObservableObject {
     weak var webView: WKWebView?
+    @Published private(set) var state = ShellWebState()
+    private var readinessDeadline: Task<Void, Never>?
+
+    func load(_ url: URL, restartLocal: Bool) async {
+        cancelLoading()
+        state.begin()
+        readinessDeadline = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(20)) }
+            catch { return }
+            self?.fail("牌桌加载超时，请重试或返回。")
+        }
+        do {
+            if url.host == "127.0.0.1" && url.port == Int(LocalWebServer.shared.port) {
+                if restartLocal {
+                    _ = try await LocalWebServer.shared.restart()
+                } else {
+                    _ = try await LocalWebServer.shared.start()
+                }
+            }
+            try Task.checkCancellation()
+            guard state.phase == .loading else { return }
+            webView?.load(URLRequest(url: url))
+        } catch is CancellationError {
+            return
+        } catch {
+            fail(error.localizedDescription)
+        }
+    }
+
+    func ready(room: String) {
+        readinessDeadline?.cancel()
+        readinessDeadline = nil
+        state.ready(room: room)
+    }
+
+    func fail(_ message: String) {
+        readinessDeadline?.cancel()
+        readinessDeadline = nil
+        state.fail(message)
+    }
+
+    func cancelLoading() {
+        readinessDeadline?.cancel()
+        readinessDeadline = nil
+        webView?.stopLoading()
+    }
 
     func dispatch(_ script: String) {
-        webView?.evaluateJavaScript(script)
+        webView?.evaluateJavaScript(script) { [weak self] _, error in
+            if let error { self?.fail(error.localizedDescription) }
+        }
     }
 }
 
@@ -194,8 +248,8 @@ struct WebTableScreen: View {
             URLQueryItem(name: "difficulty", value: setup.difficulty),
             URLQueryItem(name: "aiDelayMs", value: "\(setup.aiDelayMs)"),
             URLQueryItem(
-                name: "expeditionDifficulty",
-                value: setup.expeditionDifficulty
+                name: "gameOptions",
+                value: setup.gameOptions
             ),
             URLQueryItem(
                 name: "motion",
@@ -247,12 +301,9 @@ struct ShellRunsScreen: View {
 }
 
 private struct WebTableView: UIViewRepresentable {
-    let url: URL
     let bridge: ShellWebHandle
     @Binding var alert: ShellAlert?
     @Binding var closeRequested: Bool
-    @Binding var loading: Bool
-    @Binding var error: String?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -279,18 +330,12 @@ private struct WebTableView: UIViewRepresentable {
         webView.backgroundColor = .clear
         webView.isInspectable = true
         bridge.webView = webView
-        context.coordinator.loadedURL = url
-        webView.load(URLRequest(url: url))
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         context.coordinator.parent = self
         bridge.webView = webView
-        if context.coordinator.loadedURL != url {
-            context.coordinator.loadedURL = url
-            webView.load(URLRequest(url: url))
-        }
     }
 
     static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
@@ -301,29 +346,9 @@ private struct WebTableView: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var parent: WebTableView
-        var loadedURL: URL?
-        private var loadingFallback: DispatchWorkItem?
 
         init(_ parent: WebTableView) {
             self.parent = parent
-        }
-
-        deinit {
-            loadingFallback?.cancel()
-        }
-
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            loadingFallback?.cancel()
-            let fallback = DispatchWorkItem {
-                DispatchQueue.main.async {
-                    self.parent.loading = false
-                }
-            }
-            loadingFallback = fallback
-            DispatchQueue.main.asyncAfter(
-                deadline: .now() + 15,
-                execute: fallback
-            )
         }
 
         func webView(
@@ -331,9 +356,10 @@ private struct WebTableView: UIViewRepresentable {
             didFail navigation: WKNavigation!,
             withError error: Error
         ) {
+            let failure = error as NSError
+            guard failure.domain != NSURLErrorDomain || failure.code != NSURLErrorCancelled else { return }
             DispatchQueue.main.async {
-                self.parent.loading = false
-                self.parent.error = error.localizedDescription
+                self.parent.bridge.fail(error.localizedDescription)
             }
         }
 
@@ -342,10 +368,15 @@ private struct WebTableView: UIViewRepresentable {
             didFailProvisionalNavigation navigation: WKNavigation!,
             withError error: Error
         ) {
+            let failure = error as NSError
+            guard failure.domain != NSURLErrorDomain || failure.code != NSURLErrorCancelled else { return }
             DispatchQueue.main.async {
-                self.parent.loading = false
-                self.parent.error = error.localizedDescription
+                self.parent.bridge.fail(error.localizedDescription)
             }
+        }
+
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            parent.bridge.fail("牌桌进程已中断，请重试。")
         }
 
         func userContentController(
@@ -391,9 +422,9 @@ private struct WebTableView: UIViewRepresentable {
                 return
             }
             if type == "ready" {
-                loadingFallback?.cancel()
+                let room = payload["room"] as? String ?? ""
                 DispatchQueue.main.async {
-                    self.parent.loading = false
+                    self.parent.bridge.ready(room: room)
                 }
             }
         }

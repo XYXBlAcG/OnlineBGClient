@@ -16,6 +16,10 @@ targets:
     sources:
       - path: OnlineBGShell
     preBuildScripts:
+      - name: Build Web
+        script: |
+          REPO_ROOT="$SRCROOT/.." "$SRCROOT/../scripts/xcode-web-build.sh"
+        basedOnDependencyAnalysis: false
       - name: Bundle Web
         script: |
           set -e
