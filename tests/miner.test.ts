@@ -960,30 +960,64 @@ it("罚时石与充能晶体在收回时影响当前关卡", () => {
   }
 });
 
-it("矿工 AI 只在钩子当前摆动方向附近挑选落点", () => {
+it("矿工 AI 只在摆动范围内瞄准真实目标，不会盲目空挥", () => {
   const engine = new GameEngine();
   const state = enterMine(engine);
-  state.view.players[0].hook.angle = 24;
+  const hook = state.view.players[0].hook;
+  const object = state.view.node!.objects.find(
+    (item) => minerObjects[item.kind].value > 0,
+  )!;
+  const angle = Math.round(aimAt(object, hook.pivotX));
+  hook.angle = angle;
+  state.view.node!.objects = [object];
   const strategy = new MinerStrategy();
-  for (const [difficulty, spread, count] of [
-    ["easy", 0, 1],
-    ["normal", 5, 3],
-    ["hard", 14, 5],
-  ] as const) {
-    const angles = strategy
-      .candidates({
-        observation: state,
-        actor: 0,
-        difficulty,
-        seed: "swing",
-        audit: false,
-      })
+  const drops = (observation: GameState, difficulty: "easy" | "normal" | "hard") =>
+    strategy
+      .candidates({ observation, actor: 0, difficulty, seed: "swing", audit: false })
       .flatMap(({ action }) =>
         action.type === "miner-action" && action.move.type === "drop"
           ? [action.move.angle]
           : [],
       );
-    expect(angles).toHaveLength(count);
-    expect(angles.every((angle) => Math.abs(angle - 24) <= spread)).toBe(true);
+  for (const [difficulty, spread] of [
+    ["easy", 7],
+    ["normal", 8],
+    ["hard", 14],
+  ] as const) {
+    const angles = drops(state, difficulty);
+    expect(angles).toContain(angle);
+    expect(angles.every((value) => Math.abs(value - angle) <= spread)).toBe(true);
   }
+  const swept: GameState = structuredClone(state);
+  swept.view.node!.objects = [];
+  for (const difficulty of ["easy", "normal", "hard"] as const)
+    expect(drops(swept, difficulty)).toHaveLength(0);
+});
+
+it("矿工 AI 在实时矿区持续摆动钩子并得分", () => {
+  const engine = new GameEngine();
+  const strategy = new MinerStrategy();
+  let state = enterMine(engine) as MinerGameState;
+  const angles = new Set<number>();
+  let drops = 0;
+  for (let step = 0; step < 900 && state.view.phase === "live"; step++) {
+    state = engine.resolve(state, `tick:${step}`) as MinerGameState;
+    angles.add(Math.round(state.view.players[0].hook.angle));
+    const observation = engine.project(state, 0);
+    const legal = strategy.candidates({
+      observation,
+      actor: 0,
+      difficulty: "normal",
+      seed: `ai:${step}`,
+      audit: false,
+    });
+    if (!legal.length) continue;
+    const decision = strategy.decide(observation, 0, "normal", `ai:${step}`);
+    if (decision.chosen.type === "miner-action" && decision.chosen.move.type === "drop")
+      drops++;
+    state = engine.apply(state, 0, decision.chosen, `move:${step}`) as MinerGameState;
+  }
+  expect(angles.size).toBeGreaterThan(20);
+  expect(drops).toBeGreaterThan(2);
+  expect(state.view.teamScore).toBeGreaterThan(0);
 });

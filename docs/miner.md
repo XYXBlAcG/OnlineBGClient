@@ -129,7 +129,7 @@
 ## AI 与实时循环
 
 - AI 策略：[strategy.ts](../src/domain/miner/strategy.ts)
-- AI 与房间调度共用合法候选。商店收钩时等待，买完或没有合适商品时准备下一关。
+- AI 与房间调度共用合法候选。实时矿区只在摆动范围内出现可命中目标时下钩，没有目标就继续摆钩，避免连续空钩把摆动锁死；商店收钩时等待，买完或没有合适商品时准备下一关。
 - 权威时钟：[房间调度](../src/domain/room.ts)累积实时矿洞到期步数，[规则](../src/domain/miner/rules.ts)统一推进钩子、物体、机制和倒计时
 - 下钩和节拍默认用空格，单人暂停／继续默认用 P。可在快捷键设置中修改，键盘和按钮共用 [矿洞命令](../src/client/miner/MinerLive.tsx) 与 [阶段命令](../src/client/miner/MinerTable.tsx)。
 - 单人房可以带 AI 一起暂停。恢复重新开始下一物理步。权限与时钟见 [房间控制](../src/domain/room.ts)。
@@ -145,7 +145,7 @@
 
 ## 验证
 
-- [规则测试](../tests/miner.test.ts)：模式/队伍/无尽、复用路线拓扑、角色选择、Special、机制、六关/关间商店、天赋、实时下钩/抓取/计分、房间 tick、AI 商店续局
+- [规则测试](../tests/miner.test.ts)：模式/队伍/无尽、复用路线拓扑、角色选择、Special、机制、六关/关间商店、天赋、实时下钩/抓取/计分、房间 tick、AI 商店续局、AI 摆动命中与持续得分
 - 本地档案/称号/外观：`src/client/miner/profile.ts`、`MinerProfilePanel.tsx`
 - [UI 测试](../tests/miner-ui.test.tsx)：角色选择、共享路线图、HUD
 - [双人烟测](../scripts/verify-miner.mjs)：两台 WebSocket 客户端进入实时矿洞并下钩得分

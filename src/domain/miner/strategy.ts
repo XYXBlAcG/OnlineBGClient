@@ -33,6 +33,26 @@ const kindValue: Record<NodeKind, number> = {
   empty: 10,
 };
 
+function dropValue(
+  observation: MinerGameState,
+  actor: number,
+  angle: number,
+): number {
+  const view = observation.view;
+  if (!view.node) return 0;
+  const player = view.players[actor]!;
+  const hook = { angle, pivotX: player.hook.pivotX };
+  const target = firstHookContact(hook, 0, hookReach(hook), view.node)?.object;
+  if (!target) return 0;
+  const definition = minerObjects[target.kind];
+  return (
+    target.value / (1 + target.weight * 0.5) +
+    (definition.charge ?? 0) * 34 +
+    (definition.timeChangeMs ?? 0) / 60 -
+    Math.abs(player.hook.angle - angle) * 1.5
+  );
+}
+
 function moveScore(
   observation: MinerGameState,
   actor: number,
@@ -52,24 +72,9 @@ function moveScore(
     return node ? kindValue[node.kind] : 0;
   }
   if (move.type === "drop") {
-    const player = view.players[actor]!;
     if (isMinerShop(view.phase)) return move.offer ? 48 : -100;
     if (!view.node) return 0;
-    const hook = { angle: move.angle, pivotX: player.hook.pivotX };
-    const target = firstHookContact(
-      hook,
-      0,
-      hookReach(hook),
-      view.node,
-    )?.object;
-    if (!target) return 5;
-    const definition = minerObjects[target.kind];
-    return (
-      target.value / (1 + target.weight * 0.5) +
-      (definition.charge ?? 0) * 34 +
-      (definition.timeChangeMs ?? 0) / 60 -
-      Math.abs(player.hook.angle - move.angle) * 1.5
-    );
+    return Math.max(0, dropValue(observation, actor, move.angle));
   }
   if (move.type === "special") return 70;
   if (move.type === "haul") return 45;
@@ -107,20 +112,27 @@ export class MinerStrategy extends Strategy {
         action.type === "miner-action" && action.move.type === "drop",
     );
     if (view.phase !== "live" || !drop) return candidates;
-    const angle = view.players[request.actor].hook.angle;
+    const player = view.players[request.actor]!;
+    if (player.hook.phase !== "swing") return candidates;
+    const angle = player.hook.angle;
     const offsets = {
-      easy: [0],
-      normal: [0, -5, 5],
-      hard: [0, -7, 7, -14, 14],
+      easy: [0, -7, 7],
+      normal: [0, -4, 4, -8, 8],
+      hard: [0, -3, 3, -6, 6, -10, 10, -14, 14],
     }[request.difficulty];
     const angles = new Set(
       offsets.map((offset) =>
         Math.max(-MAX_SWING, Math.min(MAX_SWING, Math.round(angle + offset))),
       ),
     );
+    const aimed = Array.from(angles)
+      .map((value) => ({ angle: value, value: dropValue(request.observation as MinerGameState, request.actor, value) }))
+      .filter(({ value }) => value >= 8)
+      .sort((a, b) => b.value - a.value);
+    if (!aimed.length) return candidates.filter((candidate) => candidate !== drop);
     return [
       ...candidates.filter((candidate) => candidate !== drop),
-      ...Array.from(angles, (angle): Candidate => ({
+      ...aimed.map(({ angle }): Candidate => ({
         action: { type: "miner-action", move: { type: "drop", angle } },
         label: `${angle}°`,
       })),
