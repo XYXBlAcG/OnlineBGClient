@@ -1,6 +1,6 @@
 [package]
 name = "onlinebg-client"
-version = "0.7.0-preview.1"
+version = "0.7.0"
 edition = "2021"
 
 [lib]
