@@ -53,6 +53,7 @@ export const checkUpdate = (
   invoke<UpdateStatus>("updater_check", {
     proxy: proxyOption(preferences),
     background,
+    channel: preferences.channel,
   });
 export const downloadUpdate = (
   preferences: UpdatePreferences,

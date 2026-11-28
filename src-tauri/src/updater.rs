@@ -154,8 +154,10 @@ pub async fn updater_check(
     state: tauri::State<'_, Updates>,
     proxy: Option<String>,
     background: bool,
+    channel: Option<String>,
 ) -> Result<Status, String> {
     client_window(&window)?;
+    let channel = UpdateChannel::parse(channel.as_deref())?;
     let _operation = state.acquire()?;
     if state.pending.lock().unwrap().status.phase == "downloaded" {
         return Ok(state.pending.lock().unwrap().status.clone());
@@ -174,9 +176,16 @@ pub async fn updater_check(
     let result = async {
         let mut builder = app
             .updater_builder()
-            .version_comparator(|current, release| stable_update(&current, &release.version))
+            .version_comparator(move |current, release| {
+                channel.accepts(&current, &release.version)
+            })
             .timeout(Duration::from_secs(30))
             .restart_after_install(true);
+        if matches!(channel, UpdateChannel::Preview) {
+            builder = builder
+                .endpoints(vec![preview_endpoint(&app)?])
+                .map_err(|error| error.to_string())?;
+        }
         #[cfg(windows)]
         {
             builder = builder.installer_arg(install_directory_arg(
@@ -349,8 +358,44 @@ pub struct Completed {
     executable: std::path::PathBuf,
     expected_executable: Option<std::path::PathBuf>,
 }
-fn stable_update(current: &semver::Version, target: &semver::Version) -> bool {
-    target.pre.is_empty() && target > current
+#[derive(Clone, Copy)]
+enum UpdateChannel {
+    Stable,
+    Preview,
+}
+impl UpdateChannel {
+    fn parse(value: Option<&str>) -> Result<Self, String> {
+        match value.unwrap_or("stable") {
+            "stable" => Ok(Self::Stable),
+            "preview" => Ok(Self::Preview),
+            _ => Err("未知的更新通道".into()),
+        }
+    }
+    fn accepts(self, current: &semver::Version, target: &semver::Version) -> bool {
+        (matches!(self, Self::Preview) || target.pre.is_empty()) && target > current
+    }
+}
+fn preview_endpoint(app: &tauri::AppHandle) -> Result<tauri::Url, String> {
+    let configured = app
+        .config()
+        .plugins
+        .0
+        .get("updater")
+        .and_then(|value| value.get("endpoints"))
+        .and_then(|value| value.as_array())
+        .and_then(|value| value.first())
+        .and_then(|value| value.as_str())
+        .ok_or("缺少更新地址")?;
+    let url = tauri::Url::parse(configured).map_err(|error| error.to_string())?;
+    let path = url
+        .path()
+        .replace("latest/download/latest.json", "download/preview/latest-preview.json");
+    if path == url.path() {
+        return Err("更新地址不支持预览通道".into());
+    }
+    let mut endpoint = url.clone();
+    endpoint.set_path(&path);
+    Ok(endpoint)
 }
 
 fn completed(current: &str, target: &str) -> Result<bool, String> {
@@ -399,13 +444,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn only_offers_newer_stable_releases_even_from_a_preview() {
+    fn stable_channel_only_offers_newer_stable_releases_even_from_a_preview() {
         let stable = semver::Version::parse("0.6.1").unwrap();
         let preview = semver::Version::parse("0.6.2-preview.1").unwrap();
         let next = semver::Version::parse("0.6.2").unwrap();
-        assert!(!stable_update(&stable, &preview));
-        assert!(!stable_update(&preview, &stable));
-        assert!(stable_update(&preview, &next));
+        assert!(!UpdateChannel::Stable.accepts(&stable, &preview));
+        assert!(!UpdateChannel::Stable.accepts(&preview, &stable));
+        assert!(UpdateChannel::Stable.accepts(&preview, &next));
+    }
+
+    #[test]
+    fn preview_channel_offers_newer_previews_and_stable_releases() {
+        let current = semver::Version::parse("0.7.0-preview.1").unwrap();
+        let preview = semver::Version::parse("0.7.0-preview.2").unwrap();
+        let stable = semver::Version::parse("0.7.0").unwrap();
+        assert!(UpdateChannel::Preview.accepts(&current, &preview));
+        assert!(UpdateChannel::Preview.accepts(&current, &stable));
+        assert!(!UpdateChannel::Preview.accepts(&preview, &current));
+        assert!(!UpdateChannel::Preview.accepts(&stable, &preview));
+        assert_eq!(UpdateChannel::parse(Some("stable")).unwrap().accepts(&current, &preview), false);
+        assert_eq!(UpdateChannel::parse(Some("preview")).unwrap().accepts(&current, &preview), true);
+        assert!(UpdateChannel::parse(Some("beta")).is_err());
+        assert!(matches!(
+            UpdateChannel::parse(None).unwrap(),
+            UpdateChannel::Stable
+        ));
     }
 
     #[test]

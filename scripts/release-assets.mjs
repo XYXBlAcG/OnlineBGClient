@@ -87,23 +87,21 @@ export async function prepareRelease(input, output, version, tag, repo) {
     checks.push(`${createHash("sha256").update(bytes).digest("hex")}  ${name}`);
     downloads.push(`| 共享字体（可选） | \`${name}\` | 按需下载 |`);
   }
-  if (!preview) {
-    const latest = join(out, "latest.json");
-    await writeFile(
-      latest,
-      JSON.stringify(
-        {
-          version,
-          notes: release.changes.join("\n"),
-          pub_date: `${release.date}T00:00:00Z`,
-          platforms: targets,
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    assets.push(latest);
-  }
+  const latest = join(out, preview ? "latest-preview.json" : "latest.json");
+  await writeFile(
+    latest,
+    JSON.stringify(
+      {
+        version,
+        notes: release.changes.join("\n"),
+        pub_date: `${release.date}T00:00:00Z`,
+        platforms: targets,
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  assets.push(latest);
   const sums = join(out, "SHA256SUMS.txt");
   await writeFile(sums, checks.join("\n") + "\n");
   assets.push(sums);
@@ -113,6 +111,6 @@ export async function prepareRelease(input, output, version, tag, repo) {
       "\n",
     )}\n\n## 下载\n\n| 平台 | 文件 | 安装 |\n| --- | --- | --- |\n${downloads.join(
     "\n",
-  )}\n\n${preview ? "预览版请手动安装。SHA256SUMS.txt 用于校验下载文件。" : "`latest.json`、`.sig` 和 `SHA256SUMS.txt` 用于自动更新与完整性校验。"}\n`;
+  )}\n\n${preview ? "预览版通过「预览版」更新通道自动更新，`.sig` 与 `SHA256SUMS.txt` 用于完整性校验。" : "`latest.json`、`.sig` 和 `SHA256SUMS.txt` 用于自动更新与完整性校验。"}\n`;
   return { assets, notes, tag, version };
 }

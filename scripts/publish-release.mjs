@@ -24,6 +24,34 @@ if (tauri.version !== "../package.json")
 if (!ref?.startsWith("refs/tags/v")) throw new Error("仅版本标签可以发布");
 const tag = ref.slice("refs/tags/".length);
 const { preview } = releaseChannel(pkg.version, tag);
+async function publishPreviewChannel(repo, sha) {
+  const tag = "preview",
+    manifest = join("artifacts/release-output", "latest-preview.json"),
+    notes = "预览版更新通道清单，由发布流程自动维护。";
+  let existing;
+  try {
+    existing = JSON.parse(
+      (await execute("gh", ["api", `repos/${repo}/releases/tags/${tag}`])).stdout,
+    );
+  } catch (error) {
+    if (!String(error.stderr).includes("HTTP 404")) throw error;
+  }
+  if (existing) {
+    await execute("gh", [
+      "release", "edit", tag, "--repo", repo, "--prerelease", "--latest=false",
+      "--title", "预览版更新通道", "--target", sha, "--notes", notes,
+    ]);
+  } else {
+    await execute("gh", [
+      "release", "create", tag, "--repo", repo, "--target", sha,
+      "--prerelease", "--latest=false", "--title", "预览版更新通道",
+      "--notes", notes,
+    ]);
+  }
+  await execute("gh", [
+    "release", "upload", tag, manifest, "--repo", repo, "--clobber",
+  ]);
+}
 const { assets, notes } = await prepareRelease(
   "artifacts/release-input",
   "artifacts/release-output",
@@ -119,5 +147,6 @@ if (existing && !existing.draft) {
     "--draft=false",
     preview ? "--latest=false" : "--latest",
   ]);
+  if (preview) await publishPreviewChannel(repo, sha);
   console.log(`Published ${tag}`);
 }

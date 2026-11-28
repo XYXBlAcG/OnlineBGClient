@@ -97,7 +97,7 @@ it("keeps the native, application and published version on the same source", asy
   expect(await releaseVersion()).toBe(version);
 });
 
-it("builds preview installers without an updater manifest", async () => {
+it("builds preview installers with a preview updater manifest", async () => {
   const root = await mkdtemp(join(tmpdir(), "onlinebg-preview-"));
   try {
     for (const [name, bytes] of [
@@ -114,8 +114,17 @@ it("builds preview installers without an updater manifest", async () => {
       `OnlineBGClient-${version}-Windows-x64.exe.sig`,
       `OnlineBGClient-${version}-macOS-arm64.app.tar.gz`,
       `OnlineBGClient-${version}-macOS-arm64.app.tar.gz.sig`,
+      "latest-preview.json",
       "SHA256SUMS.txt",
     ]);
+    const manifest = JSON.parse(
+      await readFile(join(root, "out", "latest-preview.json"), "utf8"),
+    );
+    expect(manifest.version).toBe(version);
+    expect(manifest.platforms["darwin-aarch64"].url).toContain(
+      `/v${version}/OnlineBGClient-${version}-macOS-arm64.app.tar.gz`,
+    );
+    expect(result.notes).toContain("预览版");
   } finally {
     await rm(root, { recursive: true, force: true });
   }

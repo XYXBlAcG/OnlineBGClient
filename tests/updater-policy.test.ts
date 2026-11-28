@@ -17,12 +17,24 @@ it("checks and asks by default, without requiring every player to run a proxy", 
     automatic: false,
     useProxy: false,
     proxy: "http://127.0.0.1:7897",
+    channel: "stable",
   });
   expect(proxyOption(prefs)).toBe(null);
   expect(proxyOption({ ...prefs, useProxy: true })).toBe(
     "http://127.0.0.1:7897",
   );
 });
+it("lets players pick the stable or preview update channel", () => {
+  const prefs = updatePreferencesSchema.parse({});
+  expect(prefs.channel).toBe("stable");
+  expect(updatePreferencesSchema.parse({ channel: "preview" }).channel).toBe(
+    "preview",
+  );
+  expect(updatePreferencesSchema.safeParse({ channel: "beta" }).success).toBe(
+    false,
+  );
+});
+
 it("never silently installs without consent and defers reminders and installation during a session", () => {
   const prefs = updatePreferencesSchema.parse({}),
     available = {

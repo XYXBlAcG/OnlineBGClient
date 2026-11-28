@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { Switch } from "../ui/Controls";
+import { Select, Switch } from "../ui/Controls";
 import { useUpdater, checkUpdate, downloadUpdate } from "./client";
 import {
   downloadPercent,
@@ -88,6 +88,22 @@ export function UpdateSettings({
     <section className="settings-section">
       <h3>软件更新</h3>
       <p>当前版本 {status.currentVersion}</p>
+      <label className="setting-row">
+        更新通道
+        <Select
+          aria-label="更新通道"
+          value={preferences.channel}
+          onValueChange={(value) =>
+            onChange({
+              ...preferences,
+              channel: value === "preview" ? "preview" : "stable",
+            })
+          }
+        >
+          <option value="stable">正式版</option>
+          <option value="preview">预览版</option>
+        </Select>
+      </label>
       <Switch
         label="启动时检查更新"
         checked={preferences.checkOnLaunch}

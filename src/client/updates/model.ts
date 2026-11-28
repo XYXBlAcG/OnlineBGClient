@@ -6,6 +6,7 @@ export const updatePreferencesSchema = z.object({
   automatic: z.boolean().default(false),
   useProxy: z.boolean().default(false),
   proxy: z.string().default("http://127.0.0.1:7897"),
+  channel: z.enum(["stable", "preview"]).default("stable"),
 });
 export type UpdatePreferences = z.infer<typeof updatePreferencesSchema>;
 export const updateStatusSchema = z.object({
@@ -69,7 +70,7 @@ export function updateAction(
 export const updateLabels: Record<UpdateStatus["phase"], string> = {
   idle: "尚未检查",
   checking: "正在检查更新…",
-  current: "当前已是最新正式版",
+  current: "当前已是最新版本",
   available: "发现新版本",
   downloading: "正在下载并校验…",
   downloaded: "下载完成，退出房间和连麦后将自动安装并重启",

@@ -58,7 +58,13 @@ gh push origin vX.Y.Z
 
 ## 桌面预览版
 
-预览标签格式为 `vX.Y.Z-preview.N`，对应版本规则和发布标记见[版本校验](../scripts/lib/release-sources.mjs)及[发布脚本](../scripts/publish-release.mjs)。客户端的稳定版过滤见[原生更新服务](../src-tauri/src/updater.rs)，安装包清单见[发布资产脚本](../scripts/release-assets.mjs)。
+预览标签格式为 `vX.Y.Z-preview.N`，对应版本规则和发布标记见[版本校验](../scripts/lib/release-sources.mjs)及[发布脚本](../scripts/publish-release.mjs)。
+
+预览版发布包含 `latest-preview.json` 更新清单；发布脚本同时维护滚动标签 `preview` 的 Release，清单上传到该 Release：
+
+- `https://github.com/XYXBlAcG/OnlineBGClient/releases/download/preview/latest-preview.json`
+
+客户端设置中的「更新通道」选择正式版或预览版，选择逻辑见[更新模型](../src/client/updates/model.ts)与[原生更新服务](../src-tauri/src/updater.rs)：正式通道只接受比当前版本更新的正式版；预览通道除正式版外还接受更新的预览版。安装包清单与通道清单见[发布资产脚本](../scripts/release-assets.mjs)。
 
 ## 共享字体包
 
