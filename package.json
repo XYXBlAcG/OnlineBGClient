@@ -1,7 +1,7 @@
 {
   "name": "online-bg-client",
   "private": true,
-  "version": "0.6.2-preview.2",
+  "version": "0.7.0-preview.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -32,6 +32,7 @@
     "ios:dev": "tauri ios dev",
     "ios:prepare": "node scripts/prepare-ios.mjs && npm run upstream:build && npm run build",
     "ios:build": "tauri ios build --no-sign --ci --target aarch64 --export-method debugging",
+    "ios:xcode": "npm run ios:shell",
     "upstream:build": "node scripts/build-upstream.mjs",
     "hosting:build": "node scripts/build-hosting.mjs",
     "fonts:pack": "node scripts/build-font-pack.mjs",
@@ -57,7 +58,8 @@
     "verify:expedition-chapter": "node --experimental-strip-types scripts/smoke-expedition.mjs",
     "verify:expedition-dev-scope": "node scripts/verify-expedition-dev-scope.mjs",
     "assets:emoji:apple": "swift -module-cache-path .tmp/swift-module-cache scripts/render-apple-emoji.swift",
-    "workshop:pack": "tsx scripts/build-workshop-pack.ts"
+    "workshop:pack": "tsx scripts/build-workshop-pack.ts",
+    "ios:shell": "cd ios-native && xcodegen generate && open OnlineBGShell.xcodeproj"
   },
   "dependencies": {
     "@kobalab/majiang-core": "^1.4.1",
