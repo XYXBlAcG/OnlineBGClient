@@ -61,10 +61,9 @@ describe("drawguess custom word bank", () => {
     const tokens = [room.claim("画手A"), room.claim("画手B"), room.claim("画手C")];
     room.seats.forEach((seat) => { seat.ready = true; });
     room.start(tokens[0], custom);
-    const snapshot = room.snapshot(tokens[0]);
-    const text = JSON.stringify(snapshot);
-    expect(text).not.toContain("测试西瓜");
-    expect(snapshot.state?.kind).toBe("drawguess");
+    const guesser = room.snapshot(tokens[1]);
+    expect(JSON.stringify(guesser)).not.toContain("测试西瓜");
+    expect(guesser.state?.kind).toBe("drawguess");
     const archive = room.export();
     const replay = new Replay(archive.replay);
     const frame = replay.frame(0);

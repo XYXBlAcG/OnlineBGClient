@@ -48,14 +48,13 @@ export class GolfStrategy extends Strategy {
       const angle = Math.atan2(dy, dx);
       const power = Math.sqrt(Math.max(0, range) / fullPowerRange);
       const precision = range < 2.4 || player.strokes >= 2;
-      for (const offset of precision ? [0, accuracy, -0.14, 0.14, ...terrainOffsets] : [accuracy, accuracy - 0.12, accuracy + 0.12, ...terrainOffsets])
-        for (const factor of [0.72, 0.94, 1.03, 1.17])
-          add(angle + offset, power * factor);
+      for (const offset of precision ? [0, accuracy, -0.14, 0.14] : [accuracy, accuracy - 0.12, accuracy + 0.12, ...terrainOffsets])
+        for (const factor of [0.84, 1, 1.14]) add(angle + offset, power * factor);
     }
     if (!targets.length || player.strokes > 0) {
       const aim = Math.atan2(course.cup.y - player.position.y, course.cup.x - player.position.x);
-      for (let i = 0; i < 8; i++)
-        for (const power of [0.3, 0.52, maxPower]) add(aim + i * Math.PI / 4, power);
+      for (let i = 0; i < 6; i++)
+        for (const power of [0.45, maxPower]) add(aim + i * Math.PI / 3, power);
     }
     return [...candidates.values()];
   }

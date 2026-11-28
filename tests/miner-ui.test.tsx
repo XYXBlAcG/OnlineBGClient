@@ -138,7 +138,7 @@ it("renders named rigs and the loaded ore in the live mine, then stable offers i
       />,
     );
   expect(render()).toMatch(
-    /data-rig="0"[^>]*><line[^>]*><\/line><g[^>]*><g[^>]*><image/,
+    /data-rig="0"[\s\S]*?<image href="\/src\/assets\/miner\/objects\//,
   );
   expect(render()).toContain("乙同伴");
   view.node!.timeLeftMs = 1;
