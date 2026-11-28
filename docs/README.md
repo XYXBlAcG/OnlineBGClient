@@ -24,6 +24,7 @@
 - [黄金矿脉：共享矿图、偷矿与商店](miner.md)
 - [多游戏远征](arcade.md)
 - [你画我猜、迷你高尔夫与共享画板](party-games.md)
+- [UI 设计技能](ui-skills.md)
 
 - [界面、游戏动效与自选头像](ui-motion-plan.md)
 - [样式系统标准化计划](style-system-plan.md)
@@ -32,6 +33,7 @@
 - [台球 3D 物理引擎计划](pool-3d-physics-plan.md)
 - [社交舞台、成就与 LLM 桌搭子计划](social-stage-llm-plan.md)
 - [AI 运行、凭据与验收](ai-runtime.md)
+- [AI 审查、数据存储与 ChatBot 联动计划](ai-review-and-integration-plan.md)
 - [社交符号与差异化计划](social-differentiation-plan.md)
 
 - [游戏动画方案演示](game-motion-demo.md)

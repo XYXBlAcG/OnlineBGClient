@@ -16,3 +16,5 @@ src-tauri/resources/hosting/
 OnlineBGClient-*.zip
 
 .secrets/
+
+.agents/

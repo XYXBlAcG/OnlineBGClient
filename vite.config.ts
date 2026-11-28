@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { developmentPorts } from "./src/shared/development";
 export default defineConfig(({ mode }) => ({
@@ -8,4 +8,7 @@ export default defineConfig(({ mode }) => ({
     strictPort: true,
   },
   clearScreen: false,
+  test: {
+    exclude: ["**/node_modules/**", "**/dist/**", ".tmp/**"],
+  },
 }));

@@ -112,6 +112,8 @@
 
 第一版原生外壳原型位于 [ios-native](../ios-native/)，独立于 Tauri 工程。它用 SwiftUI 渲染首页、大厅、加入、设置，牌桌和房间在 WKWebView 中复用 Web 引擎。加入房间由原生解析邀请链接，再用 [Web 房间壳](../ios-native/OnlineBGShell/WebTableScreen.swift) 载入；本地牌桌不显示聊天，联机房间使用 Web 右下角聊天；远征支持「继续远征」存档和 AI 响应设置。Web 构建产物随 App 打包，由 [本地静态服务器](../ios-native/OnlineBGShell/LocalWebServer.swift) 在 `127.0.0.1` 提供，单机游玩不依赖电脑；联机房间只连接邀请链接中的房间服务。生成与启动见 `npm run native:preview`；界面审核规则见 [界面评审](ui-review-workflow.md)。原型通过前不替换现有 Tauri 外壳，也不触发 iOS Release。
 
+原生开局抽屉见 [GameSetupSheet](../ios-native/OnlineBGShell/GameSetupSheet.swift)，共享选择控件见 [ShellComponents](../ios-native/OnlineBGShell/ShellComponents.swift)。加载、重试与离房边界由 [ShellWebState](../ios-native/OnlineBGShell/ShellWebState.swift) 定义；本地 HTTP 与状态验证见 [原生生命周期测试](../tests/native-shell-lifecycle.test.ts)。抽屉缩放、系统菜单和真机返回由用户手动验收。
+
 原型阶段使用静态 Swift 游戏目录；正式接入时由 TypeScript 目录生成 JSON 和图标资源，避免长期维护两套数据源。SwiftUI 外壳颜色以 [主题注册](../src/client/themes.ts) 为唯一来源，不在 Swift 维护第二套色板。原生图标统一使用 SF Symbols，emoji 只作为玩家头像和游戏内容。手机大厅只展示 [游戏目录](../src/domain/catalogue.ts) 中 `mobile` 为 `true` 的游戏。房间内只显示本局游戏成就，应用级成就仅在房间外展示。iOS 首次加载自动开启界面动画、增强游戏动画和大厅过渡，之后尊重用户在设置中的关闭选择。
 
 ### 构建与分发
@@ -374,3 +376,29 @@ M0 只验证路线 B，不再比较 A／C：
 | iOS 构建与 GitHub IPA | [准备脚本](../scripts/prepare-ios.mjs)、[包脚本](../package.json)、[iOS 工作流](../.github/workflows/ios.yml)、[统一发布](../.github/workflows/desktop.yml) |
 | SwiftUI 外壳原型 | [原生工程](../ios-native/)、[启动脚本](../scripts/run-native-shell.mjs)、[界面评审](ui-review-workflow.md) |
 | 验证 | [平台测试](../tests/platform.test.ts)、[原生传输测试](../tests/voice-native-transport.test.ts)、[本地配置测试](../tests/mobile-local-room.test.ts)、真机清单见本页 |
+
+## 在 Xcode 里直接构建
+
+原型外壳（`ios-native/OnlineBGShell.xcodeproj`）可以直接在 Xcode 打开后 Build / Run：工程内的 `Build Web` 阶段会先调用[前端预构建脚本](../scripts/xcode-web-build.mjs)，在 `src/` 比 `dist/` 新或 `dist/` 缺失时自动执行上游构建与 `vite build`，随后才把 `dist` 打包进 app。脚本按 [.node-version](../.node-version) 选择 Node 24+（Xcode 自带的 PATH 可能先命中旧版 `/usr/local/bin/node`），找不到可用版本时会给出明确报错；需要跳过自动构建时设置环境变量 `SKIP_XCODE_WEB_BUILD=1`。`npm run ios:shell` 需要本机安装 `xcodegen`，会重新生成工程并打开。
+
+正式 Tauri 工程（`src-tauri/gen/apple/onlinebg-client.xcodeproj`）的 Rust 构建阶段依赖 Tauri CLI 生成的 `.tauri/cli-options-server.json`，因此不能单独打开 Xcode 构建：调试用 `npm run ios:dev`（CLI 打开 Xcode 并注入该文件），出包用 `npm run ios:build`。两条路径都会执行 `beforeBuildCommand`（见 [iOS 配置](../src-tauri/tauri.ios.conf.json)）生成最新前端；Rust 侧由[构建脚本](../src-tauri/build.rs)对 `dist` 登记 `rerun-if-changed`，前端内容变化会重新内嵌。
+
+验证：[Xcode 构建接线](../tests/ios-xcode-build.test.ts)。
+
+## 手机布局底座与牌桌样板
+
+正式构建继续使用本页的 Tauri iOS 入口，不迁移存储来源。共享布局见 [手机基础样式](../src/client/ui/mobile-foundation.css)、[视窗模型](../src/client/mobile-viewport.ts)和[视窗订阅](../src/client/use-mobile-viewport.ts)。安全区由外层统一消费，邀请与聊天／引导面板互斥。麻将竖屏双排、横屏单排及远征意图／操作区作为首批样板；视觉仍需真机审核。
+
+定向检查：[视窗与样板](../tests/ios-layout-foundation.test.ts)、[横屏与键盘](../tests/landscape-social-policy.test.ts)。测试不验证真实触控、语音或视觉效果。
+
+手机玩法设置复用各游戏的 `OptionsControl`，入口为[移动大厅](../src/client/mobile/MobileLobby.tsx)，配置传递见[本地开局](../src/client/mobile/local-room.ts)。横屏棋盘、三国杀和台球的布局在[共享手机样式](../src/client/ui/mobile-foundation.css)和[横屏样式](../src/client/ui/mobile-landscape.css)维护。
+
+前台与页面恢复由[连接](../src/client/connection.ts)获取权威快照后开放动作；语音音频中断由[原生插件](../src-tauri/mobile/ios/VoiceNativePlugin.swift)上报。构建时在 Xcode 工程生成后，由[配置合并](../scripts/ios-info.mjs)读取[平台权限](../src-tauri/Info.ios.plist)及 `package.json` 版本，校验见[原生配置测试](../tests/ios-info.test.ts)。
+
+## 原生大厅目录与开局配置
+
+游戏事实来自[共享目录](../src/domain/catalogue.ts)，选项名称复用[共享选择项](../src/domain/setup-choices.ts)和各领域定义。[构建生成器](../scripts/native-catalogue.ts)生成随 Web 资源打包的原生目录，[Swift 目录模型](../ios-native/OnlineBGShell/ShellCatalogue.swift)读取；原生仅维护符号与配色。分类和可选人数随共享规则派生。
+
+[原生开局设置](../ios-native/OnlineBGShell/GameSetupSheet.swift)复用[选项视图](../ios-native/OnlineBGShell/GameSetupFieldView.swift)，通过[Web 入口](../ios-native/OnlineBGShell/WebTableScreen.swift)传给[本地房间配置](../src/client/mobile/local-room.ts)校验。目录与 Swift 编码、模式开局验证见[定向测试](../tests/native-catalogue.test.ts)。
+
+真机验收：检查本地大厅的体育分类和台球入口、斗地主 AI 开局；分别切换麻将模式、台球 8/9 球与派对模式、飞行棋和跳棋玩法；远征选择 N0/N10；领土自选十种卡。检查抽屉缩放时菜单稳定、加减键边距，继续远征失败后可返回或重试。已有存档、设置和连麦配置应保留。
