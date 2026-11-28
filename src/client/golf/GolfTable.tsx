@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useLayoutEffect,
   useId,
   useRef,
@@ -54,6 +55,7 @@ export function GolfTable({
   onRendererToggle?: () => void;
 }) {
   const course = view.courses[view.hole]!;
+
   const width = course.width;
   const height = course.height;
   const nextIn = useTurnClock(
@@ -76,6 +78,7 @@ export function GolfTable({
   const [power, setPower] = useState(0.42);
   const [pull, setPull] = useState<{ aim: number; power: number }>();
   const drag = useRef<number>();
+  const dragStart = useRef<GolfPoint | null>(null);
   const [followBall, setFollowBall] = useState(false);
   const [moving, setMoving] = useState<Record<number, GolfPoint>>({});
   const lastStrokes = useRef(view.players.map((player) => player.strokes));
@@ -137,6 +140,18 @@ export function GolfTable({
   }, [movementKey, animate]);
 
   const canPutt = ready && interactive && moving[actor] === undefined;
+  useEffect(() => {
+    if (!canPutt) return;
+    const reset = (event: KeyboardEvent) => {
+      if (event.key !== "r" && event.key !== "R") return;
+      const target = event.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      event.preventDefault();
+      act({ type: "golf-reset", hole: view.hole });
+    };
+    window.addEventListener("keydown", reset);
+    return () => window.removeEventListener("keydown", reset);
+  }, [act, canPutt, view.hole]);
   function shoot(angle: number, strength: number) {
     if (!canPutt || strength < minPower) return;
     const action: GolfPutt = {
@@ -204,6 +219,13 @@ export function GolfTable({
           )}
           {me?.sunk && !moving[actor] && <strong role="status">已进洞</strong>}
           <Button type="button" aria-pressed={followBall} onClick={() => setFollowBall((value) => !value)}>{followBall ? "全景" : "跟球"}</Button>
+          <Button
+            type="button"
+            disabled={!canPutt}
+            onClick={() => act({ type: "golf-reset", hole: view.hole })}
+          >
+            重置球位 R
+          </Button>
           {onRendererToggle && <Button type="button" onClick={onRendererToggle}>3D</Button>}
         </div>
       </header>
@@ -227,6 +249,7 @@ export function GolfTable({
               return;
             }
             drag.current = event.pointerId;
+            dragStart.current = cursor;
             setPull({ aim, power: 0 });
             event.currentTarget.setPointerCapture(event.pointerId);
           }}
@@ -236,9 +259,14 @@ export function GolfTable({
           }}
           onPointerUp={(event) => {
             if (drag.current !== event.pointerId) return;
-            const shot = pullFrom(point(event));
+            const cursor = point(event);
+            const start = dragStart.current;
+            dragStart.current = null;
+            const shot = pullFrom(cursor);
             drag.current = undefined;
             setPull(undefined);
+            if (!start || Math.hypot(cursor.x - start.x, cursor.y - start.y) <= 0.16)
+              return;
             if (shot.power >= minPower) {
               setAim(shot.aim);
               setPower(shot.power);

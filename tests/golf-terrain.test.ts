@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { generateGolfCourses, classicGolfCourses } from "../src/domain/golf/courses";
 import { sampleGolfSurface } from "../src/domain/golf/terrain";
+import type { GolfCourse } from "../src/domain/golf/types";
 import { golfSegmentClear } from "../src/domain/golf/routing";
 import { putt } from "../src/domain/golf/physics";
 import { Room } from "../src/domain/room";
@@ -24,7 +25,12 @@ it("curves a rolling ball downhill while the old flat course still runs straight
   const original = classicGolfCourses[0]!;
   const start = { x: 2, y: 4 };
   const flat = { ...original, banks: [], sand: [], water: [] };
-  const sloped = { ...flat, terrain: [{ x: 4, y: 3, radiusX: 4, radiusY: 3, elevation: 0.85 }] };
+  const sloped: GolfCourse = {
+    ...flat,
+    tee: { x: 12, y: 7 },
+    cup: { x: 13, y: 7.4 },
+    terrain: [{ x: 4, y: 3, radiusX: 4, radiusY: 3, elevation: 0.85, kind: "hills" }],
+  };
   expect(sampleGolfSurface(flat, start)).toEqual({ height: 0, dx: 0, dy: 0 });
   expect(sampleGolfSurface(sloped, start).dy).toBeLessThan(0);
   expect(putt(flat, start, 0, 0.48).position.y).toBe(4);

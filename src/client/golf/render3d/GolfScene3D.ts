@@ -48,6 +48,11 @@ export class GolfScene3D {
   private running = true;
   private post?: PostPipeline;
   private follow: GolfPoint | null = null;
+  private keys = new Set<string>();
+  private cameraYaw = 0;
+  private panOffset = new THREE.Vector3();
+  private lastTick = 0;
+  private detachKeyboard?: () => void;
   private grass = applyRepeat(grassTexture(), 8, 5);
   private water = applyRepeat(waterTexture(), 3);
 
@@ -96,6 +101,7 @@ export class GolfScene3D {
       this.controls.maxPolarAngle = 1.35;
       this.controls.update();
       this.setInputMode("aim");
+      this.attachKeyboard();
       this.frameCourse();
       this.setupLights();
       this.buildHole();
@@ -158,6 +164,66 @@ export class GolfScene3D {
     if (!point) this.resetCamera();
   }
 
+  private attachKeyboard() {
+    const blocked = (target: EventTarget | null) => {
+      const element = target as HTMLElement | null;
+      if (!element) return false;
+      return /^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName) || element.isContentEditable;
+    };
+    const down = (event: KeyboardEvent) => {
+      if (blocked(event.target)) return;
+      const key = event.key.toLowerCase();
+      if (key === "w" || key === "a" || key === "s" || key === "d" || key === "q" || key === "e") {
+        this.keys.add(key);
+        event.preventDefault();
+      }
+    };
+    const up = (event: KeyboardEvent) => {
+      this.keys.delete(event.key.toLowerCase());
+    };
+    const blur = () => this.keys.clear();
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    this.detachKeyboard = () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", blur);
+    };
+  }
+
+  private applyCameraInput(delta: number) {
+    if (!this.controls || this.keys.size === 0) return;
+    const span = Math.max(this.course.width, this.course.height);
+    const panSpeed = span * 0.42 * delta;
+    const rotateSpeed = 1.3 * delta;
+    const forward = new THREE.Vector3()
+      .subVectors(this.controls.target, this.camera.position);
+    forward.y = 0;
+    if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
+    forward.normalize();
+    const right = new THREE.Vector3(-forward.z, 0, forward.x);
+    const move = new THREE.Vector3();
+    if (this.keys.has("w")) move.add(forward);
+    if (this.keys.has("s")) move.sub(forward);
+    if (this.keys.has("d")) move.add(right);
+    if (this.keys.has("a")) move.sub(right);
+    if (move.lengthSq() > 0) {
+      move.normalize().multiplyScalar(panSpeed);
+      this.camera.position.add(move);
+      this.controls.target.add(move);
+      this.panOffset.add(move);
+    }
+    const rotate = (this.keys.has("q") ? 1 : 0) - (this.keys.has("e") ? 1 : 0);
+    if (rotate) {
+      const pivot = this.controls.target;
+      const offset = new THREE.Vector3().subVectors(this.camera.position, pivot);
+      offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotateSpeed * rotate);
+      this.camera.position.copy(pivot).add(offset);
+      this.cameraYaw += rotateSpeed * rotate;
+    }
+  }
+
   private frameCourse() {
     const span = Math.max(this.course.width, this.course.height);
     const aspect = this.host.clientWidth / Math.max(1, this.host.clientHeight);
@@ -169,6 +235,8 @@ export class GolfScene3D {
     this.camera.updateProjectionMatrix();
     this.camera.position.set(0, distance * 0.6, distance * 0.78);
     this.controls?.target.set(0, 0.2, 0);
+    this.panOffset.set(0, 0, 0);
+    this.cameraYaw = 0;
     if (this.controls) {
       this.controls.minDistance = span * 0.32;
       this.controls.maxDistance = Math.max(span * 1.8 + 10, distance * 1.2);
@@ -234,6 +302,51 @@ export class GolfScene3D {
     return sampleGolfSurface(this.course, { x, y }).height;
   }
 
+  private drapedZone(
+    zone: { x: number; y: number; width: number; height: number },
+    color: string,
+    lift: number,
+    opacity = 1,
+  ) {
+    const geometry = new THREE.PlaneGeometry(
+      zone.width,
+      zone.height,
+      Math.max(2, Math.ceil(zone.width * 4)),
+      Math.max(2, Math.ceil(zone.height * 4)),
+    );
+    geometry.rotateX(-Math.PI / 2);
+    const vertices = geometry.attributes.position!;
+    const center = this.heightAt(zone.x, zone.y);
+    for (let vertex = 0; vertex < vertices.count; vertex++) {
+      const worldX = zone.x + vertices.getX(vertex);
+      const worldY = zone.y + vertices.getZ(vertex);
+      const level = this.heightAt(worldX, worldY);
+      vertices.setY(
+        vertex,
+        Math.max(center - 0.1, Math.min(center + 0.1, level)) + lift,
+      );
+    }
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.55,
+        metalness: 0.05,
+        transparent: opacity < 1,
+        opacity,
+      }),
+    );
+    mesh.position.set(
+      zone.x - this.course.width / 2,
+      0,
+      zone.y - this.course.height / 2,
+    );
+    mesh.receiveShadow = true;
+    this.group.add(mesh);
+    return mesh;
+  }
+
   private surfaceBox(width: number, thickness: number, depth: number, x: number, y: number) {
     if (!this.course.terrain) return new THREE.BoxGeometry(width, thickness, depth);
     const geometry = new THREE.BoxGeometry(width, thickness, depth, Math.ceil(width * 2), 1, Math.ceil(depth * 2));
@@ -281,6 +394,10 @@ export class GolfScene3D {
       );
       mesh.position.set(bank.x - this.course.width / 2, 0.1, bank.y - this.course.height / 2);
     }
+    for (const zone of course.sand)
+      this.drapedZone(zone, "#f2e2b8", 0.012);
+    for (const zone of course.water)
+      this.drapedZone(zone, "#3f8fc4", 0.02, 0.92);
     const teeElevation = this.heightAt(course.tee.x, course.tee.y);
     const cupElevation = this.heightAt(course.cup.x, course.cup.y);
     const sign = this.mesh(
@@ -329,17 +446,17 @@ export class GolfScene3D {
     }
   }
 
-  private tree(x: number, z: number, scale = 1) {
+  private tree(x: number, z: number, scale = 1, base = 0) {
     const trunk = this.mesh(
       new THREE.CylinderGeometry(0.12 * scale, 0.17 * scale, 1.2 * scale, 8),
       this.material("#6f4f34", 1),
     );
-    trunk.position.set(x, 0.6 * scale, z);
+    trunk.position.set(x, base + 0.6 * scale, z);
     const crown = this.mesh(
       new THREE.ConeGeometry(0.85 * scale, 1.8 * scale, 10),
       this.material(this.environment === "coast" ? "#3f7758" : "#2f6345", 1),
     );
-    crown.position.set(x, 1.7 * scale, z);
+    crown.position.set(x, base + 1.7 * scale, z);
     const crown2 = this.mesh(
       new THREE.ConeGeometry(0.62 * scale, 1.3 * scale, 10),
       this.material(this.environment === "coast" ? "#4a8862" : "#3d7651", 1),
@@ -431,16 +548,24 @@ export class GolfScene3D {
 
   private tick = () => {
     if (!this.running) return;
+    const now = performance.now();
+    const delta = this.lastTick ? Math.min(0.05, (now - this.lastTick) / 1000) : 0;
+    this.lastTick = now;
+    this.applyCameraInput(delta);
     this.controls?.update();
     if (this.follow) {
       const target = new THREE.Vector3(
         this.follow.x - this.course.width / 2,
         0.35 + this.heightAt(this.follow.x, this.follow.y),
         this.follow.y - this.course.height / 2,
+      ).add(this.panOffset);
+      const base = new THREE.Vector3(1.8, 4.0, 5.5).applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        this.cameraYaw,
       );
       this.controls?.target.lerp(target, 0.08);
       this.camera.position.lerp(
-        new THREE.Vector3(target.x + 1.8, target.y + 4.0, target.z + 5.5),
+        new THREE.Vector3(target.x + base.x, target.y + base.y, target.z + base.z),
         0.04,
       );
     }
@@ -514,6 +639,7 @@ export class GolfScene3D {
 
   dispose() {
     this.running = false;
+    this.detachKeyboard?.();
     this.observer?.disconnect();
     this.controls?.dispose();
     this.clearGroup();

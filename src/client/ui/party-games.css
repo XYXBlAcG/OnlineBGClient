@@ -241,3 +241,9 @@
     }
   }
 }
+
+.golf-camera-hint {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}

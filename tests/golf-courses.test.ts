@@ -18,8 +18,9 @@ describe("golf course generation", () => {
 
   it("keeps five holes with a long hard course in the middle", () => {
     const courses = generateGolfCourses("room-seed");
-    expect(courses).toHaveLength(5);
-    expect(courses[2]).toMatchObject({ name: "丘陵长征", par: 7 });
+    expect(courses).toHaveLength(6);
+    expect(courses[2]).toMatchObject({ par: 8 });
+    expect(courses[2]!.name).toContain("长征");
     expect(courses[2]!.width).toBeGreaterThan(longGolfCourse.width);
     expect(longGolfCourse.width).toBeGreaterThan(30);
     expect(longGolfCourse.par).toBe(6);

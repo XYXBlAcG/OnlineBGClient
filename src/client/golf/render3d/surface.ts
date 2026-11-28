@@ -1,11 +1,8 @@
 import { Color, Float32BufferAttribute, MathUtils, PlaneGeometry } from "three";
 import { sampleGolfSurface } from "../../../domain/golf/terrain";
-import type { GolfCourse, GolfPoint, GolfRect } from "../../../domain/golf/types";
+import type { GolfCourse, GolfPoint } from "../../../domain/golf/types";
 
 const border = 9;
-const hazardDistance = (x: number, y: number, zone: GolfRect) =>
-  Math.max(Math.abs(x - zone.x) - zone.width / 2, Math.abs(y - zone.y) - zone.height / 2);
-
 function segmentDistance(x: number, y: number, from: GolfPoint, to: GolfPoint) {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
@@ -23,9 +20,7 @@ export function golfSurfaceGeometry(course: GolfCourse, accent: string) {
   const grass = new Color("#ffffff");
   const edge = new Color(accent);
   const fairway = new Color("#e3ffbf");
-  const sand = new Color("#f3dcac").multiplyScalar(1.35);
-  const water = new Color("#74aacc").multiplyScalar(1.35);
-  const tee = new Color("#e0cf9e");
+  const tee = new Color("#efe6c4");
   const shade = new Color();
   const lanes = [course.line, ...(course.branches ?? [])];
   for (let i = 0; i < positions.count; i++) {
@@ -33,7 +28,9 @@ export function golfSurfaceGeometry(course: GolfCourse, accent: string) {
     const y = positions.getZ(i) + course.height / 2;
     const outside = Math.max(0, -x, -y, x - course.width, y - course.height);
     const at = { x: MathUtils.clamp(x, 0, course.width), y: MathUtils.clamp(y, 0, course.height) };
-    const level = sampleGolfSurface(course, at).height;
+    const surface = sampleGolfSurface(course, at);
+    const level = surface.height;
+    const steepness = Math.hypot(surface.dx, surface.dy);
     positions.setY(i, MathUtils.lerp(level, -0.055, MathUtils.smoothstep(outside, 0, 2)));
     shade.copy(grass);
     if (outside === 0) {
@@ -45,14 +42,12 @@ export function golfSurfaceGeometry(course: GolfCourse, accent: string) {
           from = to;
         }
       }
-      shade.lerp(edge, 1 - MathUtils.smoothstep(distance, 1.05, 1.38));
-      shade.lerp(fairway, 1 - MathUtils.smoothstep(distance, 0.65, 1.01));
-      shade.lerp(fairway, 1 - MathUtils.smoothstep(Math.hypot(x - course.cup.x, y - course.cup.y), 0.78, 1));
-      shade.lerp(tee, 1 - MathUtils.smoothstep(Math.hypot(x - course.tee.x, y - course.tee.y), 0.32, 0.55));
-      for (const zone of course.sand)
-        shade.lerp(sand, 1 - MathUtils.smoothstep(hazardDistance(x, y, zone), -0.2, 0.16));
-      for (const zone of course.water)
-        shade.lerp(water, 1 - MathUtils.smoothstep(hazardDistance(x, y, zone), -0.2, 0.16));
+      const flat = 1 - MathUtils.smoothstep(steepness, 0.32, 0.7);
+      shade.lerp(edge, (1 - MathUtils.smoothstep(distance, 1.05, 1.38)) * flat);
+      shade.lerp(fairway, (1 - MathUtils.smoothstep(distance, 0.65, 1.01)) * flat);
+      shade.lerp(fairway, (1 - MathUtils.smoothstep(Math.hypot(x - course.cup.x, y - course.cup.y), 0.78, 1)) * flat);
+      shade.lerp(tee, (1 - MathUtils.smoothstep(Math.hypot(x - course.tee.x, y - course.tee.y), 0.26, 0.48)) * flat);
+
     }
     shade.toArray(colors, i * 3);
   }

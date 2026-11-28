@@ -3,7 +3,7 @@ import { z } from "zod";
 export const golfDifficulties = ["standard", "challenge"] as const;
 export type GolfDifficulty = (typeof golfDifficulties)[number];
 
-export const golfHoleCount = 5;
+export const golfHoleCount = 6;
 
 export const golfPuttSchema = z.object({
   type: z.literal("golf-putt"),
@@ -16,6 +16,10 @@ export const golfNextSchema = z.object({
   type: z.literal("golf-next"),
   hole: golfPuttSchema.shape.hole,
 });
+export const golfResetSchema = z.object({
+  type: z.literal("golf-reset"),
+  hole: golfPuttSchema.shape.hole,
+});
 
 export type GolfPutt = z.infer<typeof golfPuttSchema>;
 const golfPointSchema = z.object({ x: z.number().finite(), y: z.number().finite() });
@@ -23,10 +27,14 @@ const golfRectSchema = golfPointSchema.extend({
   width: z.number().positive(),
   height: z.number().positive(),
 });
+export const golfTerrainKinds = ["mountain", "hills", "plateau", "basin"] as const;
+export type GolfTerrainKind = (typeof golfTerrainKinds)[number];
 const golfHillSchema = golfPointSchema.extend({
   radiusX: z.number().min(1.5).max(18),
   radiusY: z.number().min(1.5).max(18),
-  elevation: z.number().min(-1.25).max(1.25),
+  elevation: z.number().min(-2.7).max(2.7),
+  kind: z.enum(golfTerrainKinds).default("hills"),
+  flat: z.number().min(0).max(0.95).optional(),
 });
 export const golfCourseSchema = z.object({
   name: z.string().min(1).max(48),
@@ -40,7 +48,7 @@ export const golfCourseSchema = z.object({
   water: z.array(golfRectSchema).max(32),
   line: z.array(golfPointSchema).min(1).max(24),
   branches: z.array(z.array(golfPointSchema).min(2).max(24)).max(2).optional(),
-  terrain: z.array(golfHillSchema).min(1).max(14).optional(),
+  terrain: z.array(golfHillSchema).min(1).max(28).optional(),
 });
 export type GolfPoint = z.infer<typeof golfPointSchema>;
 export type GolfRect = z.infer<typeof golfRectSchema>;

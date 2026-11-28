@@ -29,7 +29,7 @@ export class GolfRules implements Rules<"golf"> {
           lastShot: null,
         })),
         phase: "putting",
-        strokeCap: arcade?.noActionCap ? null : 12,
+        strokeCap: arcade?.noActionCap ? null : 10,
       },
     };
   }
@@ -66,11 +66,32 @@ export class GolfRules implements Rules<"golf"> {
   apply(state: GolfState, actor: number, action: Action): GolfState {
     const { view } = state;
     if (
-      (action.type !== "golf-next" && action.type !== "golf-putt") ||
-      action.hole !== view.hole ||
-      !this.actors(state).includes(actor)
+      action.type !== "golf-next" &&
+      action.type !== "golf-putt" &&
+      action.type !== "golf-reset"
     )
+      throw new Error("不支持的球洞操作");
+    if (action.hole !== view.hole || !this.actors(state).includes(actor))
       throw new Error("球洞已更新，或当前不能击球");
+    if (action.type === "golf-reset") {
+      if (view.phase !== "putting") throw new Error("现在不能重置球位");
+      return {
+        kind: "golf",
+        view: {
+          ...view,
+          players: view.players.map((player, index) =>
+            index === actor
+              ? {
+                  ...player,
+                  position: view.courses[view.hole]!.tee,
+                  sunk: false,
+                  lastShot: null,
+                }
+              : player,
+          ),
+        },
+      };
+    }
     if (action.type === "golf-next" && view.phase === "scorecard") {
       const hole = view.hole + 1;
       return {
@@ -147,7 +168,8 @@ export class GolfRules implements Rules<"golf"> {
   }
 
   actionWindow({ view }: GolfState, action: Action) {
-    return view.phase === "putting" && action.type === "golf-putt"
+    return view.phase === "putting" &&
+      (action.type === "golf-putt" || action.type === "golf-reset")
       ? `golf:${view.hole}`
       : undefined;
   }

@@ -1,7 +1,15 @@
 import seedrandom from "seedrandom";
 import { golfHeight, golfWidth } from "./physics";
 import { golfSegmentClear } from "./routing";
-import { golfHoleCount, type GolfCourse, type GolfDifficulty, type GolfPoint, type GolfRect } from "./types";
+import { sampleGolfSurface } from "./terrain";
+import {
+  golfHoleCount,
+  type GolfCourse,
+  type GolfDifficulty,
+  type GolfPoint,
+  type GolfRect,
+  type GolfTerrainKind,
+} from "./types";
 
 const round = (value: number) => +value.toFixed(2);
 
@@ -91,7 +99,7 @@ interface CourseSpec {
   width: number;
   height: number;
   bends: number;
-  terrain?: "ridge" | "fork" | "basin";
+  terrain?: "ridge" | "fork" | "basin" | "hills";
   walls: number;
   sand: number;
   water: number;
@@ -206,35 +214,87 @@ function buildCourse(
   };
   scatter(water, spec.water, [0.9, 1.6], [1.2, 2.4]);
   scatter(sand, spec.sand, [1.4, 2.6], [1, 1.8]);
+  const landformKinds: GolfTerrainKind[] = ["mountain", "hills", "plateau", "basin"];
   const terrain: GolfCourse["terrain"] = spec.terrain ? Array.from({
-    length: Math.min(9, Math.ceil(width / 5)),
-  }, (_, index) => ({
-    x: round((index + 0.5) * width / Math.ceil(width / 5) + (random() - 0.5) * 2.2),
-    y: round(routeCenter + (random() - 0.5) * height * 0.86),
-    radiusX: round(3.6 + random() * 3.2),
-    radiusY: round(2.5 + random() * Math.min(3.5, height / 3)),
-    elevation: round((0.25 + random() * (width > 30 ? 0.67 : 0.42)) * (random() < 0.34 ? -1 : 1)),
-  })) : undefined;
+    length: Math.min(12, Math.ceil(width / 4)),
+  }, (_, index) => {
+    const kind = landformKinds[Math.floor(random() * landformKinds.length)]!;
+    const large = width > 30;
+    const magnitude =
+      kind === "mountain"
+        ? 2 + random() * 0.7
+        : kind === "plateau"
+          ? 1.15 + random() * 0.65
+          : kind === "basin"
+            ? -(1.4 + random() * 1.3)
+            : 0.55 + random() * 0.7;
+    return {
+      x: round((index + 0.5) * width / Math.ceil(width / 5) + (random() - 0.5) * 2.2),
+      y: round(routeCenter + (random() - 0.5) * height * 0.9),
+      radiusX: round((kind === "mountain" ? 3.2 : 3.8) + random() * (large ? 3.6 : 2.4)),
+      radiusY: round(2.4 + random() * Math.min(3.6, height / 2.8)),
+      elevation: round(magnitude),
+      kind,
+      ...(kind === "plateau" ? { flat: round(0.58 + random() * 0.2) } : {}),
+    };
+  }) : undefined;
   if (challenge && terrain && fork) {
     for (const t of [0.27, 0.51, 0.74])
-      terrain.push({ x: round(width * t), y: round(routeCenter - height * 0.18), radiusX: 4.2, radiusY: 3.1, elevation: t === 0.51 ? -0.72 : 1.15 });
+      terrain.push({ x: round(width * t), y: round(routeCenter - height * 0.18), radiusX: 4.2, radiusY: 3.1, elevation: t === 0.51 ? -0.72 : 1.15, kind: t === 0.51 ? "basin" : "mountain" });
   }
   if (spec.terrain === "basin" && terrain) {
     const cup = points.at(-1)!;
-    terrain.push({ ...cup, radiusX: 4.2, radiusY: 3.2, elevation: -0.75 });
+    terrain.push({ ...cup, radiusX: 4.2, radiusY: 3.2, elevation: -0.75, kind: "basin" });
   } else if (spec.terrain === "ridge" && terrain) {
-    terrain.push({ x: round(width * 0.53), y: round(routeCenter), radiusX: 5.1, radiusY: 5, elevation: 0.83 });
+    terrain.push({ x: round(width * 0.53), y: round(routeCenter), radiusX: 5.1, radiusY: 5, elevation: 0.83, kind: "hills" });
   }
+  const dominant = terrain
+    ? landformKinds
+        .map((kind) => ({ kind, count: terrain.filter((hill) => hill.kind === kind).length }))
+        .sort((a, b) => b.count - a.count)[0]?.kind
+    : undefined;
+  const landformName =
+    dominant === "mountain"
+      ? "山地"
+      : dominant === "plateau"
+        ? "高原"
+        : dominant === "basin"
+          ? "盆地"
+          : dominant === "hills"
+            ? "丘陵"
+            : "";
+  const preview = {
+    terrain,
+    width,
+    height,
+    tee: points[0]!,
+    cup: points.at(-1)!,
+  };
+  const gentle = (zone: GolfRect) => {
+    const corners = [
+      { x: zone.x - zone.width / 2, y: zone.y - zone.height / 2 },
+      { x: zone.x + zone.width / 2, y: zone.y - zone.height / 2 },
+      { x: zone.x - zone.width / 2, y: zone.y + zone.height / 2 },
+      { x: zone.x + zone.width / 2, y: zone.y + zone.height / 2 },
+      { x: zone.x, y: zone.y },
+    ];
+    return corners.every((point) => {
+      const sample = sampleGolfSurface(preview, point);
+      return Math.hypot(sample.dx, sample.dy) < 0.42;
+    });
+  };
+  const flatSand = sand.filter(gentle);
+  const flatWater = water.filter(gentle);
   return {
-    name,
+    name: landformName ? `${landformName}·${name}` : name,
     par: spec.par,
     width,
     height,
     tee: points[0]!,
     cup: points.at(-1)!,
     banks,
-    sand,
-    water,
+    sand: flatSand,
+    water: flatWater,
     line: points.slice(1),
     ...(branch ? { branches: [branch] } : {}),
     ...(terrain ? { terrain } : {}),
@@ -283,23 +343,87 @@ export function generateGolfCourses(seed: string, difficulty: GolfDifficulty = "
   const random = seedrandom(`${seed}:golf:rolling-terrain${challenge ? ":challenge" : ""}`);
   const names = [...courseNames];
   return Array.from({ length: golfHoleCount }, (_, index) => {
-    const long = index === 2;
+    const long = index === 2 || index === 4;
     const later = index >= 3;
-    const name = long ? "丘陵长征" : index === 4 ? "盆地果岭" :
-      names.splice(Math.floor(random() * names.length), 1)[0]!;
-    const width = (long ? 44 + Math.floor(random() * 5) :
-      later ? 24 + (index - 3) * 4 + Math.floor(random() * 4) : 13 + index * 3 + Math.floor(random() * 3)) +
-      (challenge ? long ? 12 : 4 + index : 0);
-    return buildCourse(name, {
+    const name = long
+      ? index === 2 ? "山地长征" : "盆地长征"
+      : index === 5 ? "高原果岭"
+        : names.splice(Math.floor(random() * names.length), 1)[0]!;
+    const width =
+      (long
+        ? (index === 2 ? 46 : 52) + Math.floor(random() * 10)
+        : later
+          ? 26 + (index - 3) * 5 + Math.floor(random() * 5)
+          : 15 + index * 4 + Math.floor(random() * 4)) +
+      (challenge ? (long ? 16 : 6 + index * 2) : 0);
+    const course = buildCourse(name, {
       width,
-      height: (long ? 14 + Math.floor(random() * 3) : 9 + Number(later) * 3 + Math.floor(random() * 2)) + (challenge ? 2 : 0),
-      terrain: index === 4 ? "basin" : long || index === 3 ? "fork" : "ridge",
-      bends: long ? 7 : later ? 4 : index + 1,
-      walls: long ? 10 : 2 + index,
-      sand: long ? 3 : 1 + Number(later),
-      water: (long ? 4 : index) + (challenge ? 3 : 0),
-      par: (long ? 7 : index + 2) + Number(challenge),
+      height:
+        (long
+          ? 15 + Math.floor(random() * 4)
+          : 10 + Number(later) * 4 + Math.floor(random() * 3)) +
+        (challenge ? 3 : 0),
+      terrain:
+        index === 2 ? "fork" : index === 4 ? "basin" : later ? "ridge" : "hills",
+      bends: long ? 11 : later ? 6 : index + 2,
+      walls: long ? 21 : 6 + index * 2,
+      sand: long ? 7 : 3 + Number(later) * 2,
+      water: (long ? 9 : 3 + index) + (challenge ? 5 : 0),
+      par: (long ? 8 : index + 3) + Number(challenge),
       challenge,
     }, random);
+    return signatureLandform(course, index, random);
   });
+}
+
+function signatureLandform(
+  course: GolfCourse,
+  index: number,
+  random: () => number,
+): GolfCourse {
+  const terrain = [...(course.terrain ?? [])];
+  const mid = { x: course.width / 2, y: course.height / 2 };
+  const spreadY = course.height * 0.3;
+  if (index === 2) {
+    for (let step = 0; step < 4; step += 1) {
+      terrain.push({
+        x: round(course.width * (0.22 + step * 0.16)),
+        y: round(mid.y + (random() - 0.5) * spreadY * 2),
+        radiusX: round(3.4 + random() * 1.8),
+        radiusY: round(2.6 + random() * 1.4),
+        elevation: round(2.1 + random() * 0.55),
+        kind: "mountain",
+      });
+    }
+  } else if (index === 4) {
+    terrain.push({
+      x: round(course.cup.x - 2.4),
+      y: round(course.cup.y),
+      radiusX: 4.8,
+      radiusY: 3.6,
+      elevation: -2.45,
+      kind: "basin",
+    });
+    terrain.push({
+      x: round(mid.x),
+      y: round(mid.y - spreadY),
+      radiusX: 3.2,
+      radiusY: 2.4,
+      elevation: 1.9,
+      kind: "mountain",
+    });
+  } else if (index === 5) {
+    for (let step = 0; step < 3; step += 1) {
+      terrain.push({
+        x: round(course.width * (0.3 + step * 0.18)),
+        y: round(mid.y),
+        radiusX: 4.2,
+        radiusY: 3.4,
+        elevation: 1.5,
+        kind: "plateau",
+        flat: 0.66,
+      });
+    }
+  }
+  return { ...course, terrain };
 }

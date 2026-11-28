@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { Room } from "../src/domain/room";
 import { Replay } from "../src/domain/replay";
+import { golfHoleCount } from "../src/domain/golf/types";
 import { classicGolfCourses } from "../src/domain/golf/courses";
 import { gameSeatMinimum } from "../src/domain/catalogue";
 
@@ -63,6 +64,6 @@ it("restores old golf checkpoints and plays their original three-hole course", (
 it("pins a new golf match to the exact course recorded by the room", () => {
   const { room } = start("golf");
   const record = room.export().replay!;
-  expect(record.golfCourses).toHaveLength(5);
+  expect(record.golfCourses).toHaveLength(golfHoleCount);
   expect(new Replay(record).frame(0)).toEqual(room.state);
 });

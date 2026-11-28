@@ -5,10 +5,11 @@ import { putt } from "./physics";
 import { golfRoute } from "./routing";
 
 const playStyle = {
-  easy: { openingPower: 0.51, maxPower: 0.65, error: 0.18, targetCount: 3 },
-  normal: { openingPower: 0.57, maxPower: 0.73, error: 0.11, targetCount: 4 },
-  hard: { openingPower: 0.81, maxPower: 0.81, error: 0.06, targetCount: 5 },
+  easy: { openingPower: 0.7, maxPower: 0.88, error: 0.12, targetCount: 4 },
+  normal: { openingPower: 0.9, maxPower: 0.92, error: 0.09, targetCount: 4 },
+  hard: { openingPower: 0.95, maxPower: 0.95, error: 0.04, targetCount: 5 },
 };
+const fullPowerRange = 11.8;
 
 export class GolfStrategy extends Strategy {
   static readonly version = "5";
@@ -45,7 +46,7 @@ export class GolfStrategy extends Strategy {
       const dy = point.y - player.position.y;
       const range = Math.hypot(dx, dy);
       const angle = Math.atan2(dy, dx);
-      const power = Math.sqrt(10.2 * range) / 14.8;
+      const power = Math.sqrt(Math.max(0, range) / fullPowerRange);
       const precision = range < 2.4 || player.strokes >= 2;
       for (const offset of precision ? [0, accuracy, -0.14, 0.14, ...terrainOffsets] : [accuracy, accuracy - 0.12, accuracy + 0.12, ...terrainOffsets])
         for (const factor of [0.72, 0.94, 1.03, 1.17])
@@ -53,8 +54,8 @@ export class GolfStrategy extends Strategy {
     }
     if (!targets.length || player.strokes > 0) {
       const aim = Math.atan2(course.cup.y - player.position.y, course.cup.x - player.position.x);
-      for (let i = 0; i < 12; i++)
-        for (const power of [0.19, 0.36]) add(aim + i * Math.PI / 6, power);
+      for (let i = 0; i < 8; i++)
+        for (const power of [0.3, 0.52, maxPower]) add(aim + i * Math.PI / 4, power);
     }
     return [...candidates.values()];
   }
@@ -75,7 +76,7 @@ export class GolfStrategy extends Strategy {
         ["进洞", Number(shot.sunk), 1000],
         ["安全路线进展", progress, 4],
         ["落水", Number(shot.water), -90],
-        ["停在原地", Number(Math.hypot(shot.position.x - player.position.x, shot.position.y - player.position.y) < 0.14), -2],
+        ["停在原地", Number(Math.hypot(shot.position.x - player.position.x, shot.position.y - player.position.y) < 0.5), -5],
       ] as const;
       const features = scores.map(([name, value, weight]) => ({ name, value, weight, contribution: value * weight }));
       return { ...candidate, score: features.reduce((sum, item) => sum + item.contribution, 0), features };

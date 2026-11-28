@@ -43,35 +43,60 @@ export function putt(
     friction: 0,
   });
   ball.setLinearVelocity(
-    Vec2(Math.cos(aim) * power * 14.8, Math.sin(aim) * power * 14.8),
+    Vec2(Math.cos(aim) * power * 10.2, Math.sin(aim) * power * 10.2),
   );
   const frames = [start];
   let position = start;
   let sunk = false;
   let water = false;
-  for (let step = 1; step <= 440; step++) {
-    world.step(0.01);
+  const dt = 0.01;
+  const gravity = 7.4;
+  const grassRoll = 0.55;
+  const sandRoll = 3.2;
+  const grassDecel = 1.15;
+  const sandDecel = 3.6;
+  const stillSpeed = 0.06;
+  const stillSlope = 0.2;
+  for (let step = 1; step <= 1300; step++) {
+    world.step(dt);
     const point = ball.getPosition();
     position = { x: +point.x.toFixed(4), y: +point.y.toFixed(4) };
-    const velocity = ball.getLinearVelocity();
-    const speed = velocity.length();
-    if (step % 4 === 0) frames.push(position);
+    let velocity = ball.getLinearVelocity();
+    let speed = velocity.length();
+    if (step % 6 === 0) frames.push(position);
     water = course.water.some((zone) => inside(position, zone));
     sunk =
       !water &&
       speed < 6.6 &&
       Math.hypot(position.x - course.cup.x, position.y - course.cup.y) <=
         golfCupRadius;
-    if (water || sunk || speed < 0.075) break;
-    const drag = course.sand.some((zone) => inside(position, zone)) ? 7.2 : 5.1;
-    const next = Vec2.mul(Math.max(0, 1 - (0.01 * drag) / speed), velocity);
-    if (course.terrain) {
-      const { dx, dy } = sampleGolfSurface(course, position);
-      const slopeScale = 0.09 / Math.max(1, Math.hypot(dx, dy) / 0.32);
-      next.x -= dx * slopeScale;
-      next.y -= dy * slopeScale;
+    if (water || sunk) break;
+    const surface = course.terrain
+      ? sampleGolfSurface(course, position)
+      : { dx: 0, dy: 0 };
+    const slope = Math.hypot(surface.dx, surface.dy);
+    const accel = Math.min(6.4, slope * gravity);
+    const direction = slope > 1e-4 ? 1 / slope : 0;
+    let vx = velocity.x - surface.dx * direction * accel * dt;
+    let vy = velocity.y - surface.dy * direction * accel * dt;
+    speed = Math.hypot(vx, vy);
+    const sand = course.sand.some((zone) => inside(position, zone));
+    const steep = slope > 0.55 && speed < 2;
+    const roll = steep ? 0.12 : sand ? sandRoll : grassRoll;
+    const decay = Math.max(0, 1 - roll * dt);
+    vx *= decay;
+    vy *= decay;
+    speed = Math.hypot(vx, vy);
+    if (speed > 0) {
+      const decel = (sand ? sandDecel : grassDecel) * dt;
+      const factor = Math.max(0, speed - decel) / speed;
+      vx *= factor;
+      vy *= factor;
+      speed = Math.hypot(vx, vy);
     }
-    ball.setLinearVelocity(next);
+    if (speed < stillSpeed && slope < stillSlope) break;
+    velocity = Vec2(vx, vy);
+    ball.setLinearVelocity(velocity);
   }
   if (frames.at(-1) !== position) frames.push(position);
   return {

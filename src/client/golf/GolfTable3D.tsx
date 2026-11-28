@@ -52,6 +52,7 @@ export function GolfTable3D({
   const [status, setStatus] = useState<GolfSceneStatus>({ phase: "loading" });
   const [followBall, setFollowBall] = useState(false);
   const [cameraMode, setCameraMode] = useState<GolfSceneInputMode>("aim");
+  const dragStart = useRef<GolfPoint | null>(null);
   const [aim, setAim] = useState(() => {
     const me = view.players[snapshot.actor];
     return me ? (aimFromPointer(me.position, view.courses[view.hole]!.cup, 0) ?? 0) : 0;
@@ -98,6 +99,19 @@ export function GolfTable3D({
   useEffect(() => {
     if (status.phase === "error") onUnavailable();
   }, [status.phase, onUnavailable]);
+
+  useEffect(() => {
+    if (!canPutt) return;
+    const reset = (event: KeyboardEvent) => {
+      if (event.key !== "r" && event.key !== "R") return;
+      const target = event.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      event.preventDefault();
+      act({ type: "golf-reset", hole: view.hole });
+    };
+    window.addEventListener("keydown", reset);
+    return () => window.removeEventListener("keydown", reset);
+  }, [act, canPutt, view.hole]);
 
   useEffect(() => {
     scene.current?.update(view, moving);
@@ -194,11 +208,13 @@ export function GolfTable3D({
           <span>标准杆 {course.par}</span>
           {me?.lastShot?.water && !moving[actor] && <strong role="status">落水罚一杆</strong>}
           {me?.sunk && !moving[actor] && <strong role="status">已进洞</strong>}
+          <span className="golf-camera-hint">WASD 移动镜头 · QE 旋转</span>
           <Button type="button" onClick={() => setCameraMode(cameraMode === "aim" ? "orbit" : "aim")}>
             {cameraMode === "aim" ? "转动视角" : "击球视角"}
           </Button>
           <Button type="button" aria-pressed={followBall} onClick={() => setFollowBall((value) => !value)}>{followBall ? "全景" : "跟球"}</Button>
           <Button type="button" onClick={() => { setFollowBall(false); scene.current?.resetCamera(); }}>视角复位</Button>
+          <Button type="button" disabled={!canPutt} onClick={() => act({ type: "golf-reset", hole: view.hole })}>重置球位 R</Button>
           <Button type="button" onClick={onRendererToggle}>2D</Button>
         </div>
       </header>
@@ -216,6 +232,7 @@ export function GolfTable3D({
             return;
           }
           drag.current = event.pointerId;
+          dragStart.current = cursor;
           setPull({ aim, power: 0 });
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
@@ -230,8 +247,12 @@ export function GolfTable3D({
           drag.current = undefined;
           setPull(undefined);
           if (!cursor) return;
+          const start = dragStart.current;
+          dragStart.current = null;
+          const dragged =
+            !!start && Math.hypot(cursor.x - start.x, cursor.y - start.y) > 0.16;
           const shot = pullFrom(cursor);
-          if (shot.power >= minPower) {
+          if (dragged && shot.power >= minPower) {
             setAim(shot.aim);
             setPower(shot.power);
             shoot(shot.aim, shot.power);
@@ -239,6 +260,7 @@ export function GolfTable3D({
         }}
         onLostPointerCapture={() => {
           drag.current = undefined;
+          dragStart.current = null;
           setPull(undefined);
         }}
       >
