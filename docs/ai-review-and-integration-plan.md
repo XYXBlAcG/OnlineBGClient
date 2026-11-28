@@ -75,7 +75,7 @@
 
 ### P1：ChatBot secret 边界没有覆盖后台流水线
 
-ChatBot [检索器](../../../ChatBot/packages/memory/src/retriever.ts)过滤 secret，但[抽取器](../../../ChatBot/packages/memory/src/extraction.ts)会把已有 secret 放入“已有记忆”提示词，并把新 secret 交给 embedding 适配器。合成探针已复现；当前未启用实际 embedding，不应描述为已发生向量服务泄漏。
+ChatBot 的检索器模块过滤 secret，但抽取模块会把已有 secret 放入“已有记忆”提示词，并把新 secret 交给 embedding 适配器。合成探针已复现；当前未启用实际 embedding，不应描述为已发生向量服务泄漏。
 
 处理：在模型外发前统一执行用途与可见性校验，覆盖聊天、抽取、巩固、reflection、embedding 和群聊。secret 不自动外发，去重优先用本地指纹；用户纠正、删除后的旧向量与衍生摘要需要失效或重建。默认禁止私人记忆进入牌桌群聊。
 
