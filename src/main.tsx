@@ -55,7 +55,7 @@ import { guideFor } from "./client/beginner-guides";
 import { BeginnerGuide } from "./client/BeginnerGuide";
 import { Notices } from "./client/Notices";
 import { MotionProvider } from "./client/motion";
-import { loadDrawWordLibrary } from "./client/drawguess/library";
+import { drawWordStart, loadDrawWordLibrary } from "./client/drawguess/library";
 import { llmUiEnabled } from "./client/llm-ui";
 import { HeroDescription } from "./client/HeroSurface";
 import { HeroGuides } from "./domain/hero-guide";
@@ -770,14 +770,10 @@ function App() {
           token: response.token,
           ready: true,
         });
-        const words =
-          nativeTableKind === "drawguess"
-            ? loadDrawWordLibrary().words
-            : [];
         connection.current?.send({
           type: "start",
           token: response.token,
-          ...(words.length ? { drawWords: words } : {}),
+          ...(nativeTableKind === "drawguess" ? drawWordStart(loadDrawWordLibrary()) : {}),
         });
       }
     }
@@ -1238,7 +1234,7 @@ function App() {
         connection.current!.send({
           type: "action",
           token: session.current.token,
-          id: randomId(),
+          id: action.type === "draw-edit" ? action.id : randomId(),
           version: snapshot.version,
           action,
         });
@@ -1260,12 +1256,15 @@ function App() {
   }, []);
   const restart = useCallback(() => {
     if (session.current && operation.begin("start", session.current.room)) {
-      const words =
-        snapshot?.kind === "drawguess" ? loadDrawWordLibrary().words : [];
       connection.current?.send({
         type: "start",
         token: session.current.token,
-        ...(words.length ? { drawWords: words } : {}),
+        ...(snapshot?.kind === "drawguess"
+          ? drawWordStart(
+              loadDrawWordLibrary(),
+              snapshot.config?.drawguess.wordSource ?? "all",
+            )
+          : {}),
       });
     }
   }, [snapshot?.kind]);

@@ -247,3 +247,20 @@ describe("fayu rules", () => {
     expect(guessingView.challenges[0]).toBeDefined();
   });
 });
+
+it("keeps layer edits private during simultaneous drawing and preserves legacy fills through undo", () => {
+  const engine = new GameEngine();
+  let state = submitPrompts(engine, create(engine));
+  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aetsAAAAASUVORK5CYII=";
+  state = fayu(engine.apply(state, 0, { type: "draw-fill", round: 0, layer: 1, data: png }, "legacy-fill"));
+  state = fayu(engine.apply(state, 0, { type: "draw-layer", round: 0, move: { type: "remove", layer: 1 } }, "remove-layer"));
+  expect(state.view.fills[0]).toEqual([]);
+  state = fayu(engine.apply(state, 0, { type: "draw-history", round: 0, direction: "undo" }, "undo-remove"));
+  state = fayu(engine.apply(state, 0, { type: "draw-layer", round: 0, move: { type: "rename", layer: 1, name: "线稿" } }, "rename-layer"));
+  const artist = fayu(engine.project(state, 0));
+  const opponent = fayu(engine.project(state, 1));
+  expect(artist.view.layers?.[0]).toContainEqual({ id: 1, name: "线稿" });
+  expect(artist.view.fills[0]).toEqual([expect.objectContaining({ data: png })]);
+  expect(opponent.view.layers?.[0]).toBeUndefined();
+  expect(opponent.view.fills[0]).toBeUndefined();
+});

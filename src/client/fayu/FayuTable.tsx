@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { GameSnapshot } from "../OriginalGame";
 import type { Action } from "../../domain/types";
 import type { FayuState, FayuSentence } from "../../domain/fayu/types";
@@ -8,7 +8,6 @@ import { pickFayuSentence } from "../../domain/fayu/generator";
 import { fayuPoolComplete } from "../../domain/fayu/words";
 import { useTurnClock } from "../use-turn-clock";
 import { Button } from "../ui/Controls";
-import { CanvasEdits } from "./canvas-edits";
 import { FayuCanvas } from "./FayuCanvas";
 import { DrawingPreview } from "./DrawingPreview";
 import { setClozeSlot, type ClozeDraft } from "./cloze-draft";
@@ -160,16 +159,8 @@ export function FayuTable({
   const [draft, setDraft] = useState<FayuSentence | null>(null);
   const [rerolls, setRerolls] = useState(0);
   const actor = snapshot.actor;
-  const canvasId = `${snapshot.room}:${view.round}`;
-  const seatKey = snapshot.seats[actor]?.id ?? String(actor);
-  const canvases = useRef({ id: canvasId, edits: new Map<string, CanvasEdits>() });
-  if (canvases.current.id !== canvasId)
-    canvases.current = { id: canvasId, edits: new Map() };
-  let edits = canvases.current.edits.get(seatKey);
-  if (!edits) {
-    edits = new CanvasEdits();
-    canvases.current.edits.set(seatKey, edits);
-  }
+  const draftKey = `${snapshot.room}:${snapshot.seats[actor]?.id ?? actor}`;
+  const draftGame = `${snapshot.playId ?? snapshot.room}:${view.round}`;
 
   const ownPrompt = view.prompts[actor];
   const submitted = view.submitted.includes(actor);
@@ -243,23 +234,25 @@ export function FayuTable({
             <strong>{ownPrompt?.text ?? ""}</strong>
             <span>{view.finished.length} / {view.players} 已完成</span>
           </div>
-          <FayuCanvas
-            key={`${canvasId}:${seatKey}`}
+          {replay || actor < 0 ? <FayuDrawing strokes={view.canvases[actor] ?? []} fills={view.fills[actor] ?? []} layers={view.layers?.[actor]} /> : <FayuCanvas
+            key={`${draftKey}:${draftGame}:${replay}`}
+            draftKey={draftKey}
+            draftGame={draftGame}
             history={view.history}
-            edits={edits}
+            completed={view.finished.includes(actor)}
             strokes={view.canvases[actor] ?? []}
-            fills={view.fills[actor] ?? []}
-            enabled={!replay && !snapshot.paused && !view.finished.includes(actor)}
+            fills={view.fills[actor] ?? []} layers={view.layers?.[actor]}
+            enabled={!replay && actor >= 0 && !snapshot.paused && !view.finished.includes(actor)}
             pending={pending}
             round={view.round}
             act={act}
             limits={fayuLimits}
-            showTools={!replay && !view.finished.includes(actor)}
-            finish={!replay && !view.finished.includes(actor) ? {
+            showTools={!replay && actor >= 0 && !view.finished.includes(actor)}
+            finish={!replay && actor >= 0 && !view.finished.includes(actor) ? {
               action: { type: "draw-finish", round: view.round },
               label: "画完了",
             } : undefined}
-          />
+          />}
         </div>
       )}
 
@@ -268,13 +261,13 @@ export function FayuTable({
           <div className="fayu-gallery">
             {drawings.map((item) => (
               <button key={item.index} type="button" className="fayu-thumb" data-active={activeDrawing === item.index} onClick={() => setSelectedDrawing(item.index)}>
-                <FayuDrawing strokes={item.canvas} fills={view.fills[item.index] ?? []} />
+                <FayuDrawing strokes={item.canvas} fills={view.fills[item.index] ?? []} layers={view.layers?.[item.index]} />
                 <span>{labels[item.index]}{view.guesses[actor]?.[item.index]?.correct ? " ✓" : ""}</span>
               </button>
             ))}
           </div>
           <div className="fayu-guess-panel">
-            <DrawingPreview strokes={view.canvases[activeDrawing] ?? []} fills={view.fills[activeDrawing] ?? []} />
+            <DrawingPreview strokes={view.canvases[activeDrawing] ?? []} fills={view.fills[activeDrawing] ?? []} layers={view.layers?.[activeDrawing]} />
             {view.players > 2 && (
               <div className="fayu-vote-row">
                 <Button
@@ -314,7 +307,7 @@ export function FayuTable({
           <div className="fayu-reveal-grid">
             {view.canvases.map((canvas, index) => (
               <article key={index}>
-                <FayuDrawing strokes={canvas} fills={view.fills[index] ?? []} />
+                <FayuDrawing strokes={canvas} fills={view.fills[index] ?? []} layers={view.layers?.[index]} />
                 <small>{labels[index]} ·
                   {seatName(index)} ·{" "}
                   {Object.values(view.votes).filter((drawing) => drawing === index).length} 票 ·{" "}

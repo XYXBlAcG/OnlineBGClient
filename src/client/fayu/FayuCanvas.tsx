@@ -2,41 +2,50 @@ import type { DrawingHistoryStatus } from "../../domain/drawguess/canvas-history
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { v4 as randomId } from "uuid";
 import type { Action } from "../../domain/types";
-import { drawFillLimit, drawLayerLimit, drawPointLimit, drawStrokeLimit, type DrawPoint, type DrawStroke } from "../../domain/drawguess/types";
+import { drawFillLimit, drawPointLimit, drawStrokeLimit, type DrawLayer, type DrawPoint, type DrawStroke } from "../../domain/drawguess/types";
 import { nextCanvasOrder } from "../../domain/drawguess/canvas-order";
 import { Button, Slider } from "../ui/Controls";
-import { CanvasEdits, strokePackets } from "./canvas-edits";
-import { FayuLayers } from "./FayuDrawing";
+import { openCanvasDraft } from "./canvas-edits";
+import { CanvasSurface, canvasPoint, surfaceHeight, surfaceWidth } from "./canvas-surface";
 import type { FayuFill } from "../../domain/fayu/types";
+import { drawingLayers } from "../../domain/drawguess/canvas-document";
+import { lassoHits, selectionBounds, selectionDelta } from "../../domain/drawguess/canvas-selection";
+import { DrawingLayersControl } from "./DrawingLayersControl";
 
 const colors = ["#2f2a24", "#3778c2", "#c94b45", "#3f8a5b", "#c58a2e", "#7a5bb5", "#e67e22", "#fbf6ea"];
 type Finish = Extract<Action, { type: "draw-finish" | "draw-next" }>;
-type Tool = "brush" | "eraser" | "line" | "rect" | "ellipse" | "text" | "sticker" | "select" | "fill";
-const toolNames: Record<Tool, string> = { brush: "画笔", eraser: "橡皮", line: "直线", rect: "矩形", ellipse: "椭圆", text: "文字", sticker: "贴纸", select: "套索", fill: "油漆桶" };
-const toolIcons: Record<Tool, string> = { brush: "✎", eraser: "✧", line: "╱", rect: "▭", ellipse: "◯", text: "T", sticker: "⭐", select: "◌", fill: "▨" };
+type Tool = "brush" | "eraser" | "line" | "rect" | "ellipse" | "sticker" | "select" | "fill";
+const toolNames: Record<Tool, string> = { brush: "画笔", eraser: "橡皮", line: "直线", rect: "矩形", ellipse: "椭圆", sticker: "贴纸", select: "套索", fill: "油漆桶" };
+const toolIcons: Record<Tool, string> = { brush: "✎", eraser: "✧", line: "╱", rect: "▭", ellipse: "◯", sticker: "⭐", select: "◌", fill: "▨" };
 
 export function FayuCanvas({
   strokes,
   fills = [],
+  layers: savedLayers,
   enabled,
   showTools = true,
   pending,
   round,
   act,
   finish,
-  edits: providedEdits,
+  draftKey,
+  draftGame,
+  completed = false,
   history,
   limits = { maxFills: drawFillLimit, maxPoints: drawPointLimit, maxStrokes: drawStrokeLimit },
 }: {
   strokes: DrawStroke[];
   fills?: FayuFill[];
+  layers?: DrawLayer[];
   enabled: boolean;
   showTools?: boolean;
   pending: boolean;
   round: number;
   act: (action: Action) => void;
   finish?: { action: Finish; label: string };
-  edits?: CanvasEdits;
+  draftKey: string;
+  draftGame: string;
+  completed?: boolean;
   history?: DrawingHistoryStatus;
   limits?: { maxFills: number; maxPoints: number; maxStrokes: number };
 }) {
@@ -44,32 +53,39 @@ export function FayuCanvas({
   const [color, setColor] = useState(colors[0]!);
   const [width, setWidth] = useState(6);
   const [opacity, setOpacity] = useState(1);
-  const [layer, setLayer] = useState(0);
-  const [visibleLayers, setLayerCount] = useState(3);
-  const layerCount = Math.max(visibleLayers, ...strokes.map(({ layer }) => (layer ?? 0) + 1), ...fills.map(({ layer }) => layer + 1));
-  const [layerNames, setLayerNames] = useState(["底层", "中层", "顶层"]);
-  const [edits] = useState(() => providedEdits ?? new CanvasEdits());
+  const [selectedLayer, setLayer] = useState(0);
+  const layers = drawingLayers({ strokes, fills, layers: savedLayers });
+  const activeLayer = layers.find(({ id }) => id === selectedLayer) ?? layers.at(-1)!;
+  const layer = activeLayer.id;
+  const [edits] = useState(() => openCanvasDraft(draftKey, draftGame));
   const [, refresh] = useState(0);
   const [rasterizing, setRasterizing] = useState(false);
   const [warning, setWarning] = useState("");
   const [sticker, setSticker] = useState("⭐");
-  const [draft, setDraft] = useState<{ points: DrawPoint[]; tool: Tool; color: string; width: number; opacity: number; layer: number } | null>(null);
-  const draftRef = useRef<typeof draft>(null);
+  const [drawing, setDrawing] = useState(false);
+  const draftRef = useRef<DrawStroke | null>(null);
   const [lasso, setLasso] = useState<DrawPoint[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [moving, setMoving] = useState<{ start: DrawPoint; current: DrawPoint } | null>(null);
+  const [localStrokes, setLocalStrokes] = useState<DrawStroke[]>([]);
   const active = useRef<number>();
-  const svg = useRef<SVGSVGElement>(null);
-  const latest = useRef({ strokes, fills, history, pending, enabled, act });
-  latest.current = { strokes, fills, history, pending, enabled, act };
-  const synchronizing = enabled && (edits.busy || edits.finishing);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const surface = useRef<CanvasSurface>();
+  const fillJob = useRef<{ worker?: Worker }>();
+  const latest = useRef({ strokes, fills, layers: savedLayers, history, pending, enabled, act });
+  latest.current = { strokes, fills, layers: savedLayers, history, pending, enabled, act };
+  const synchronizing = !completed && edits.busy;
+  useEffect(() => {
+    if (completed) edits.complete();
+  }, [completed, edits]);
   useEffect(() => {
     if (!synchronizing) return;
     const timer = window.setInterval(() => {
       const snapshot = latest.current;
       const update = edits.step(snapshot, snapshot.enabled && !snapshot.pending, performance.now());
       if (!update) return;
-      if (update.failed) setWarning("画板同步失败，请检查最后几笔后再提交。");
+      if (update.failed) setWarning("墨迹已保留，正在重试同步。");
+      else setWarning((message) => message === "墨迹已保留，正在重试同步。" ? "" : message);
       if (update.action) snapshot.act(update.action);
       refresh((value) => value + 1);
     }, 35);
@@ -79,121 +95,186 @@ export function FayuCanvas({
     setWarning("");
     refresh((value) => value + 1);
   };
-  const editingBlocked = !enabled || pending || edits.busy || edits.finishing || rasterizing || !!draft;
-  const preview = edits.preview(strokes, fills);
+  const editingBlocked = !enabled || pending || edits.busy || edits.finishing || rasterizing || drawing;
+  const serverIds = new Set(strokes.map(({ id }) => id));
+  const staged = edits.preview(strokes, fills, history?.lastEdit);
+  const stagedIds = new Set(staged.map(({ id }) => id));
+  const keptLocal = localStrokes.filter(({ id }) => !serverIds.has(id) && !stagedIds.has(id));
+  const preview = keptLocal.length ? [...staged, ...keptLocal] : staged;
+  useEffect(() => {
+    setLocalStrokes((current) => {
+      const live = current.filter(({ id }) => !serverIds.has(id));
+      return live.length === current.length ? current : live;
+    });
+  }, [strokes]);
+  useEffect(() => {
+    if (!canvas.current) return;
+    const painter = new CanvasSurface(canvas.current);
+    surface.current = painter;
+    return () => {
+      fillJob.current?.worker?.terminate();
+      fillJob.current = undefined;
+      painter.dispose();
+      surface.current = undefined;
+    };
+  }, []);
+  useEffect(() => {
+    surface.current?.schedule({
+      strokes: preview,
+      fills,
+      layers: savedLayers,
+      draft: draftRef.current,
+      lasso,
+      moving,
+      selected,
+    });
+  }, [preview, fills, savedLayers, lasso, moving, selected, drawing]);
 
-  const point = (event: PointerEvent<SVGSVGElement>): DrawPoint => {
-    const matrix = event.currentTarget.getScreenCTM();
-    if (!matrix) return [0, 0];
-    const local = new DOMPoint(event.clientX, event.clientY).matrixTransform(
-      matrix.inverse(),
-    );
+  const localPoint = (event: PointerEvent<HTMLCanvasElement>) =>
+    canvasPoint(event.currentTarget.getBoundingClientRect(), event.clientX, event.clientY);
+  const point = (event: PointerEvent<HTMLCanvasElement>): DrawPoint => {
+    const [x, y] = localPoint(event);
     return [
-      Math.min(1000, Math.max(0, Math.round(local.x))),
-      Math.min(625, Math.max(0, Math.round(local.y))),
+      Math.min(surfaceWidth, Math.max(0, Math.round(x))),
+      Math.min(surfaceHeight, Math.max(0, Math.round(y))),
     ];
   };
 
-  const insidePaper = (event: PointerEvent<SVGSVGElement>) => {
-    const matrix = event.currentTarget.getScreenCTM();
-    if (!matrix) return false;
-    const local = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
-    return local.x >= 0 && local.x <= 1000 && local.y >= 0 && local.y <= 625;
+  const commitDraft = (end?: DrawPoint) => {
+    const current = draftRef.current;
+    draftRef.current = null;
+    surface.current?.setDraft(null);
+    setDrawing(false);
+    if (!current) return;
+    const freehand = current.tool === "brush" || current.tool === "eraser";
+    const last = current.points.at(-1)!;
+    const points = end
+      ? freehand
+        ? last[0] === end[0] && last[1] === end[1]
+          ? current.points
+          : [...current.points, end]
+        : [current.points[0]!, end]
+      : current.points;
+    const rounded = points.map(([x, y]) => [Math.round(x), Math.round(y)] as DrawPoint);
+    setLocalStrokes((items) => [...items, { ...current, points: rounded }]);
+    enqueue({ ...current, points: rounded });
   };
 
-  const floodFill = (start: DrawPoint) => {
-    const source = svg.current;
-    if (!source) return;
-    const clone = source.cloneNode(true) as SVGSVGElement;
-    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    const data = new XMLSerializer().serializeToString(clone);
-    const image = new Image();
+  const cancelPointer = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (active.current !== event.pointerId) return;
+    active.current = undefined;
+    if (draftRef.current) {
+      commitDraft();
+      return;
+    }
+    surface.current?.setDraft(null);
+    setDrawing(false);
+    setMoving(null);
+    setLasso([]);
+  };
+
+  const floodFill = async (start: DrawPoint) => {
+    const painter = surface.current;
+    if (!painter) return;
+    const snapshot = latest.current;
+    const job: { worker?: Worker } = {};
+    fillJob.current = job;
     setRasterizing(true);
-    image.onerror = () => {
+    const end = (warning?: string) => {
+      if (fillJob.current !== job) return;
+      job.worker?.terminate();
+      fillJob.current = undefined;
       setRasterizing(false);
-      setWarning("填充失败，请重试。");
+      if (warning) setWarning(warning);
     };
-    image.onload = () => {
-      setRasterizing(false);
-      const canvas = document.createElement("canvas");
-      canvas.width = 500;
-      canvas.height = 312;
-      const context = canvas.getContext("2d");
-      if (!context) return;
-      context.drawImage(image, 0, 0, 500, 312);
-      const frame = context.getImageData(0, 0, 500, 312);
-      const pixels = frame.data;
-      const { width, height } = canvas;
-      const sx = Math.min(width - 1, Math.floor((start[0] * width) / 1000));
-      const sy = Math.min(height - 1, Math.floor((start[1] * height) / 625));
-      const index = (sy * width + sx) * 4;
-      const base = [pixels[index]!, pixels[index + 1]!, pixels[index + 2]!, pixels[index + 3]!];
-      if (base[3] === 0) return;
-      const replacement = [...parseColor(color), 255];
-      const filled = context.createImageData(width, height);
-      const tolerance = 28;
-      const stack = [[sx, sy] as [number, number]];
-      const visited = new Uint8Array(width * height);
-      while (stack.length) {
-        const [x, y] = stack.pop()!;
-        if (x < 0 || y < 0 || x >= width || y >= height) continue;
-        const at = y * width + x;
-        if (visited[at]) continue;
-        visited[at] = 1;
-        const offset = at * 4;
-        if (
-          Math.abs(pixels[offset]! - base[0]!) > tolerance ||
-          Math.abs(pixels[offset + 1]! - base[1]!) > tolerance ||
-          Math.abs(pixels[offset + 2]! - base[2]!) > tolerance
-        )
-          continue;
-        filled.data.set(replacement, offset);
-        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-      }
-      context.putImageData(filled, 0, 0);
-      edits.add([{
-        type: "draw-fill",
-        round,
-        layer,
-        data: canvas.toDataURL("image/png"),
-      }]);
-      sync();
-    };
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data)}`;
+    try {
+      const frame = await painter.pixels(snapshot);
+      if (fillJob.current !== job) return;
+      if (!frame) return end("无法读取画布，请重试。");
+      const worker = new Worker(new URL("./canvas-fill-worker.ts", import.meta.url), { type: "module" });
+      job.worker = worker;
+      worker.onmessage = ({ data }: MessageEvent<number[] | null>) => {
+        if (fillJob.current !== job) return;
+        const current = latest.current;
+        if (!current.enabled || current.history?.revision !== snapshot.history?.revision) {
+          return end("画布已变化，请重新填充。");
+        }
+        if (!data) return end("填充区域过于复杂，请缩小范围后重试。");
+        if (data.length) {
+          edits.add({ type: "draw-region", round, layer, region: { color, runs: data } });
+          sync();
+        }
+        end();
+      };
+      worker.onerror = () => end("填充失败，请重试。");
+      worker.postMessage({
+        rgba: frame.data,
+        width: frame.width,
+        height: frame.height,
+        start: [Math.min(frame.width - 1, start[0]), Math.min(frame.height - 1, start[1])],
+      }, [frame.data.buffer]);
+    } catch {
+      end("填充失败，请重试。");
+    }
   };
 
   const enqueue = (stroke: Omit<DrawStroke, "nextPart">) => {
-    const staged = edits.preview(latest.current.strokes, latest.current.fills);
+    const staged = edits.preview(latest.current.strokes, latest.current.fills, latest.current.history?.lastEdit);
     const remaining = limits.maxPoints - staged.reduce((sum, item) => sum + item.points.length, 0);
     if (staged.length >= limits.maxStrokes || remaining <= 0) {
       setWarning("画布已满，可以撤销或清空一层。");
       return;
     }
-    edits.add(strokePackets(round, { ...stroke, points: stroke.points.slice(0, remaining) }));
+    const points = stroke.points.length > remaining
+      ? Array.from({ length: remaining }, (_, index) => stroke.points[Math.round(index * (stroke.points.length - 1) / Math.max(1, remaining - 1))]!)
+      : stroke.points;
+    edits.add({ ...stroke, type: "draw-stroke", round, part: 0, points });
     sync();
-    if (stroke.points.length > remaining) setWarning("画布已满，最后一笔已达到可保存长度。");
+    if (stroke.points.length > remaining) setWarning("画布已满，最后一笔已压缩采样。");
   };
 
+  const canUndo = enabled && !rasterizing && !drawing && !edits.finishing && (!!history?.undo || edits.undoQueued);
+  const canRedo = !editingBlocked && !!history?.redo;
+
   return (
-    <div className="fayu-canvas-wrap">
-      <svg
-        ref={svg}
+    <div className="fayu-canvas-wrap" onKeyDown={(event) => {
+      if (event.target instanceof HTMLInputElement || (!event.metaKey && !event.ctrlKey)) return;
+      const key = event.key.toLowerCase();
+      const redo = key === "y" || (key === "z" && event.shiftKey);
+      if ((key === "z" || redo) && (redo ? canRedo : canUndo)) {
+        event.preventDefault();
+        event.stopPropagation();
+        edits.restore(redo ? "redo" : "undo", round);
+        sync();
+      }
+    }}>
+      <canvas
+        ref={canvas}
         className="fayu-canvas"
-        viewBox="0 0 1000 625"
+        width={surfaceWidth}
+        height={surfaceHeight}
         role="img"
+        tabIndex={enabled ? 0 : undefined}
         aria-label="绘画画布"
         data-draw-active={enabled}
         onPointerDown={(event) => {
-          if (!enabled || edits.finishing || rasterizing || active.current !== undefined || event.button !== 0)
+          if (!enabled || edits.finishing || fillJob.current || edits.changingLayers || active.current !== undefined || event.button !== 0)
             return;
-          if (!insidePaper(event)) return;
+          if (activeLayer.hidden) {
+            setWarning("请先显示当前图层。");
+            return;
+          }
+          const [x, y] = localPoint(event);
+          if (x < 0 || x > surfaceWidth || y < 0 || y > surfaceHeight) return;
           const start = point(event);
+          event.currentTarget.focus({ preventScroll: true });
           if (tool === "select") {
             if (editingBlocked) return;
-            if (selected.length && lasso.length >= 3 && insidePolygon(start, lasso)) {
-              active.current = event.pointerId;
+            active.current = event.pointerId;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            const bounds = selectionBounds(preview, selected);
+            if (bounds && x >= bounds.left - 9 && x <= bounds.right + 9 && y >= bounds.top - 9 && y <= bounds.bottom + 9) {
               setMoving({ start, current: start });
-              event.currentTarget.setPointerCapture(event.pointerId);
             } else {
               setLasso([start]);
               setSelected([]);
@@ -207,23 +288,6 @@ export function FayuCanvas({
               return;
             }
             floodFill(start);
-            return;
-          }
-          if (tool === "text") {
-            const text = window.prompt("输入文字");
-            if (text?.trim()) {
-              enqueue({
-                id: randomId(),
-                ink: "ink",
-                points: [start],
-                tool: "text",
-                text: text.trim().slice(0, 40),
-                color,
-                width,
-                opacity,
-                layer,
-              });
-            }
             return;
           }
           if (tool === "sticker") {
@@ -242,141 +306,82 @@ export function FayuCanvas({
           }
           active.current = event.pointerId;
           event.currentTarget.setPointerCapture(event.pointerId);
-          draftRef.current = { points: [start], tool, color, width, opacity, layer };
-          setDraft(draftRef.current);
+          draftRef.current = { id: randomId(), nextPart: 1, order: nextCanvasOrder(preview, fills), ink: tool === "eraser" ? "erase" : "ink", points: [start], tool, color, width, opacity, layer };
+          surface.current?.setDraft(draftRef.current);
+          setDrawing(true);
         }}
         onPointerMove={(event) => {
+          if (active.current !== event.pointerId) return;
           if (tool === "select") {
             if (moving) setMoving({ ...moving, current: point(event) });
-            else if (lasso.length) setLasso([...lasso, point(event)]);
+            else {
+              const target = point(event);
+              setLasso((path) => {
+                const last = path.at(-1);
+                return last && Math.hypot(target[0] - last[0], target[1] - last[1]) >= 3 ? [...path, target] : path;
+              });
+            }
             return;
           }
           const current = draftRef.current;
-          if (active.current !== event.pointerId || !current) return;
-          const raw = event.nativeEvent.getCoalescedEvents?.() ?? [];
-          const samples = raw.length ? raw : [event.nativeEvent];
+          if (!current) return;
           if (current.tool === "brush" || current.tool === "eraser") {
-            const points = [...current.points];
+            const raw = event.nativeEvent.getCoalescedEvents?.() ?? [];
+            const samples = raw.length ? raw : [event.nativeEvent];
+            const rect = event.currentTarget.getBoundingClientRect();
             for (const sample of samples) {
-              const matrix = event.currentTarget.getScreenCTM();
-              if (!matrix) break;
-              const local = new DOMPoint(sample.clientX, sample.clientY).matrixTransform(matrix.inverse());
+              const [x, y] = canvasPoint(rect, sample.clientX, sample.clientY);
               const target: DrawPoint = [
-                Math.min(1000, Math.max(0, local.x)),
-                Math.min(625, Math.max(0, local.y)),
+                Math.min(surfaceWidth, Math.max(0, x)),
+                Math.min(surfaceHeight, Math.max(0, y)),
               ];
-              const last = points.at(-1)!;
-              const smoothed: DrawPoint = [
-                last[0] + (target[0] - last[0]) * 0.62,
-                last[1] + (target[1] - last[1]) * 0.62,
-              ];
-              if (Math.hypot(smoothed[0] - last[0], smoothed[1] - last[1]) < 1.2) continue;
-              if (points.length >= limits.maxPoints) break;
-              points.push(smoothed);
+              const last = current.points.at(-1)!;
+              if (Math.hypot(target[0] - last[0], target[1] - last[1]) >= 1.2 &&
+                  current.points.length < limits.maxPoints) current.points.push(target);
             }
-            if (points.length === current.points.length) return;
-            draftRef.current = { ...current, points };
-          } else {
-            draftRef.current = { ...current, points: [current.points[0]!, point(event)] };
-          }
-          setDraft(draftRef.current);
+          } else current.points = [current.points[0]!, point(event)];
+          surface.current?.setDraft(current);
         }}
         onPointerUp={(event) => {
+          if (active.current !== event.pointerId) return;
+          active.current = undefined;
           if (tool === "select") {
             if (moving) {
-              active.current = undefined;
               const [x, y] = point(event);
-              const dx = x - moving.start[0];
-              const dy = y - moving.start[1];
-              if (strokes.some((stroke) => selected.includes(stroke.id) && stroke.points.some(([px, py]) =>
-                Math.min(1000, Math.max(0, px + dx)) !== px || Math.min(625, Math.max(0, py + dy)) !== py
-              ))) {
-                edits.add([{ type: "draw-transform", round, ids: selected, dx, dy }]);
+              const [dx, dy] = selectionDelta(preview, selected, x - moving.start[0], y - moving.start[1]);
+              if (dx || dy) {
+                edits.add({ type: "draw-move-selection", round, ids: selected, dx, dy });
                 sync();
               }
               setMoving(null);
               return;
             }
-            if (lasso.length >= 3) {
-              const hit = strokes
-                .filter((stroke) => stroke.points.some((sample) => insidePolygon(sample, lasso)))
-                .map((stroke) => stroke.id);
-              setSelected(hit);
-            } else setLasso([]);
+            const polygon = [...lasso, point(event)];
+            setSelected(polygon.length >= 3 ? preview
+              .filter((stroke) => (stroke.layer ?? 0) === layer && lassoHits(stroke, polygon))
+              .map((stroke) => stroke.id) : []);
+            setLasso([]);
             return;
           }
-          if (active.current !== event.pointerId) return;
-          active.current = undefined;
-          const current = draftRef.current;
-          draftRef.current = null;
-          setDraft(null);
-          if (!current) return;
-          const end = point(event);
-          const freehand = current.tool === "brush" || current.tool === "eraser";
-          const last = current.points.at(-1)!;
-          const points = freehand
-            ? last[0] === end[0] && last[1] === end[1]
-              ? current.points
-              : [...current.points, end]
-            : [current.points[0]!, end];
-          enqueue({
-            ...current,
-            id: randomId(),
-            ink: current.tool === "eraser" ? "erase" : "ink",
-            points: points.map(([x, y]) => [
-              Math.round(x),
-              Math.round(y),
-            ]),
-          });
+          commitDraft(point(event));
         }}
-        onLostPointerCapture={(event) => {
-          if (active.current !== event.pointerId) return;
-          active.current = undefined;
-          draftRef.current = null;
-          setDraft(null);
-          setMoving(null);
-        }}
-      >
-        <rect width="1000" height="625" fill="#fbf6ea" />
-        <FayuLayers
-          fills={fills}
-          strokes={[
-            ...(moving ? preview.map((stroke) => selected.includes(stroke.id)
-              ? { ...stroke, points: stroke.points.map(([x, y]) => [
-                x + moving.current[0] - moving.start[0],
-                y + moving.current[1] - moving.start[1],
-              ] as DrawPoint) }
-              : stroke) : preview),
-            ...(draft ? [{
-              ...draft,
-              id: "draft",
-              ink: (draft.tool === "eraser" ? "erase" : "ink") as "erase" | "ink",
-              nextPart: 1,
-              order: nextCanvasOrder(preview, fills),
-            }] : []),
-          ]}
-        />
-        {lasso.length > 1 && (
-          <polyline
-            points={lasso.map((sample) => sample.join(",")).join(" ")}
-            fill="rgb(255 255 255 / 0.08)"
-            stroke="var(--accent)"
-            strokeWidth="2"
-            strokeDasharray="8 6"
-            pointerEvents="none"
-          />
-        )}
-      </svg>
+        onPointerCancel={cancelPointer}
+        onLostPointerCapture={cancelPointer}
+      />
       {showTools && (
         <div className="fayu-tools" aria-label="画板工具">
           <div className="fayu-tool-group" data-label="工具">
-            {(["brush", "eraser", "line", "rect", "ellipse", "text", "sticker", "select", "fill"] as Tool[]).map((item) => (
+            {(["brush", "eraser"] as const).map((item) => (
               <button key={item} type="button" className="fayu-tool" data-active={tool === item} aria-pressed={tool === item} aria-label={toolNames[item]} title={toolNames[item]} onClick={() => { setTool(item); setLasso([]); setSelected([]); }}>
                 <span aria-hidden="true">{toolIcons[item]}</span>
               </button>
             ))}
           </div>
-          <div className="fayu-tool-group" data-label="颜色">
+          <div className="fayu-tool-group" data-label="操作">
+            <button type="button" disabled={!canUndo} onClick={() => { edits.restore("undo", round); sync(); }}>撤销</button>
+            <button type="button" disabled={!canRedo} onClick={() => { edits.restore("redo", round); sync(); }}>重做</button>
+          </div>
+          <div className="fayu-tool-group fayu-colors" data-label="颜色">
             {colors.map((item, index) => (
               <button key={item} type="button" className="fayu-color" style={{ backgroundColor: item }} aria-label={`颜色 ${index + 1}`} data-active={color === item} aria-pressed={color === item} onClick={() => { setColor(item); if (tool === "eraser") setTool("brush"); }} />
             ))}
@@ -384,7 +389,7 @@ export function FayuCanvas({
           </div>
           <div className="fayu-tool-group" data-label="笔刷">
             <div className="fayu-range">
-              <span>笔宽 <output>{width}</output></span>
+              <span>粗细 <output>{width}</output></span>
               <Slider aria-label="笔宽" min={2} max={40} step={1} value={width} onValueChange={setWidth} />
             </div>
             <div className="fayu-range">
@@ -392,9 +397,19 @@ export function FayuCanvas({
               <Slider aria-label="透明度" min={0.15} max={1} step={0.05} value={opacity} onValueChange={setOpacity} />
             </div>
             <svg className="fayu-brush-preview" width="48" height="44" aria-label="笔刷预览">
-              <line x1="10" x2="38" y1="22" y2="22" stroke={tool === "eraser" ? "#a19a8a" : color} strokeWidth={width * 0.66} strokeOpacity={opacity} strokeLinecap="round" />
+              <line x1="10" x2="38" y1="22" y2="22" stroke={tool === "eraser" ? "#a19a8a" : color} strokeWidth={width} strokeOpacity={tool === "eraser" ? 1 : opacity} strokeLinecap="round" />
             </svg>
           </div>
+          <details className="fayu-advanced">
+            <summary>{tool === "brush" || tool === "eraser" ? "更多工具" : `更多工具 · ${toolNames[tool]}`}</summary>
+            <div className="fayu-advanced-controls">
+              <div className="fayu-tool-group" data-label="工具">
+                {(["line", "rect", "ellipse", "sticker", "select", "fill"] as const).map((item) => (
+                  <button key={item} type="button" className="fayu-tool" data-active={tool === item} aria-pressed={tool === item} aria-label={toolNames[item]} title={toolNames[item]} onClick={() => { setTool(item); setLasso([]); setSelected([]); }}>
+                    <span aria-hidden="true">{toolIcons[item]}</span>
+                  </button>
+                ))}
+              </div>
           {tool === "sticker" && (
             <div className="fayu-tool-group" data-label="贴纸">
               {["⭐", "❤️", "😂", "🔥", "🌈", "🍀", "💩", "🐱", "🍕", "🎈"].map((item) => (
@@ -402,30 +417,32 @@ export function FayuCanvas({
               ))}
             </div>
           )}
-          <div className="fayu-tool-group" data-label="图层">
-            {Array.from({ length: layerCount }, (_, item) => item).map((item) => (
-              <button key={item} type="button" className="fayu-layer" data-active={layer === item} aria-pressed={layer === item} aria-label={`图层 ${(layerNames[item] ?? `图层 ${item + 1}`)}`} title={`${(layerNames[item] ?? `图层 ${item + 1}`)}（双击重命名）`} onClick={() => setLayer(item)} onDoubleClick={() => { const name = window.prompt("图层名称", (layerNames[item] ?? `图层 ${item + 1}`)); if (name?.trim()) { const next = [...layerNames]; next[item] = name.trim().slice(0, 8); setLayerNames(next); } }}>{item + 1}</button>
-            ))}
-            <button type="button" aria-label="新增图层" disabled={layerCount >= drawLayerLimit} onClick={() => { setLayerCount(layerCount + 1); setLayer(layerCount); }}>+</button>
-            <button type="button" aria-label="删除图层" disabled={editingBlocked || layerCount <= 1 || layer !== layerCount - 1 || strokes.some((stroke) => (stroke.layer ?? 0) === layer) || fills.some((fill) => fill.layer === layer)} onClick={() => { const next = layerNames.filter((_, index) => index !== layer); setLayerCount(layerCount - 1); setLayerNames(next.length ? next : ["底层"]); setLayer(Math.max(0, layer - 1)); }}>−</button>
-          </div>
+          <DrawingLayersControl
+            layers={layers}
+            active={activeLayer}
+            select={(id) => { setLayer(id); setSelected([]); setLasso([]); }}
+            change={(move) => { edits.add({ type: "draw-layer", round, move }); setSelected([]); sync(); }}
+            clear={() => { edits.add({ type: "draw-clear", round, layer }); setSelected([]); sync(); }}
+            disabled={editingBlocked}
+            canClear={strokes.some((stroke) => (stroke.layer ?? 0) === layer) || fills.some((fill) => fill.layer === layer)}
+          />
           <div className="fayu-tool-group" data-label="操作">
-            <button type="button" disabled={!enabled || rasterizing || !!draft || edits.finishing || (!history?.undo && !edits.busy)} onClick={() => { edits.restore("undo", round); sync(); }}>撤销</button>
-            <button type="button" disabled={editingBlocked || !history?.redo} onClick={() => { edits.restore("redo", round); sync(); }}>重做</button>
-            <button type="button" disabled={editingBlocked || (!strokes.some((stroke) => (stroke.layer ?? 0) === layer) && !fills.some((fill) => fill.layer === layer))} onClick={() => { if (window.confirm("清空当前层？")) { edits.add([{ type: "draw-clear", round, layer }]); setSelected([]); setLasso([]); sync(); } }}>清空层</button>
             {selected.length > 0 && (
-              <button type="button" disabled={editingBlocked} onClick={() => { edits.add([{ type: "draw-delete", round, ids: selected }]); setSelected([]); setLasso([]); sync(); }}>删除所选</button>
+              <button type="button" disabled={editingBlocked} onClick={() => { edits.add({ type: "draw-delete", round, ids: selected }); setSelected([]); setLasso([]); sync(); }}>删除所选</button>
             )}
-            <button type="button" disabled={editingBlocked} onClick={() => downloadDrawing(strokes, svg.current)}>导出</button>
+            <button type="button" disabled={editingBlocked} onClick={() => downloadDrawing(surface.current)}>导出</button>
           </div>
+            </div>
+          </details>
         </div>
       )}
       {warning && <small role="status">{warning}</small>}
+      {edits.needsRetry && enabled && <Button type="button" onClick={() => { edits.retry(); sync(); }}>重试同步</Button>}
       {finish && (
         <div className="fayu-actions">
           <Button
             type="button"
-            disabled={!enabled || (pending && !edits.busy) || edits.finishing || rasterizing || !!draft}
+            disabled={!enabled || (pending && !edits.busy) || edits.finishing || rasterizing || drawing || active.current !== undefined}
             onClick={() => { edits.finish(finish.action); sync(); }}
           >{edits.finishing ? "正在同步墨迹…" : finish.label}</Button>
         </div>
@@ -434,40 +451,10 @@ export function FayuCanvas({
   );
 }
 
-function parseColor(value: string): [number, number, number] {
-  const match = /^#([0-9a-f]{6})$/i.exec(value);
-  if (!match) return [47, 42, 36];
-  const number = parseInt(match[1]!, 16);
-  return [(number >> 16) & 255, (number >> 8) & 255, number & 255];
-}
-
-function insidePolygon(point: DrawPoint, polygon: DrawPoint[]) {
-  let inside = false;
-  for (let index = 0, previous = polygon.length - 1; index < polygon.length; previous = index++) {
-    const [xi, yi] = polygon[index]!;
-    const [xj, yj] = polygon[previous]!;
-    if ((yi > point[1]) !== (yj > point[1]) && point[0] < ((xj - xi) * (point[1] - yi)) / (yj - yi) + xi)
-      inside = !inside;
-  }
-  return inside;
-}
-
-function downloadDrawing(strokes: DrawStroke[], svg: SVGSVGElement | null) {
-  if (!svg) return;
-  const clone = svg.cloneNode(true) as SVGSVGElement;
-  clone.querySelectorAll(".fayu-tools").forEach((node) => node.remove());
-  const data = new XMLSerializer().serializeToString(clone);
-  const image = new Image();
-  image.onload = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1000;
-    canvas.height = 625;
-    canvas.getContext("2d")!.drawImage(image, 0, 0);
-    const anchor = document.createElement("a");
-    anchor.download = "fayu-drawing.png";
-    anchor.href = canvas.toDataURL("image/png");
-    anchor.click();
-  };
-  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data)}`;
-  void strokes;
+function downloadDrawing(surface: CanvasSurface | undefined) {
+  if (!surface) return;
+  const anchor = document.createElement("a");
+  anchor.download = "drawing.png";
+  anchor.href = surface.toDataURL();
+  anchor.click();
 }

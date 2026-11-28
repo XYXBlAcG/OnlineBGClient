@@ -1,3 +1,4 @@
+import { applyDrawingDocument } from "./canvas-document";
 import { drawingHistoryStatus, editDrawingHistory } from "./canvas-history";
 import { nextCanvasOrder } from "./canvas-order";
 import type { Action } from "../actions";
@@ -14,6 +15,7 @@ import {
 } from "./types";
 import {
   drawguessBuiltinWords,
+  drawWordBank,
   uniqueDrawWords,
   type DrawWord,
 } from "./words";
@@ -58,10 +60,31 @@ export class DrawRules {
   create(
     players: number,
     _team = false,
-    options?: { drawguess?: { words?: DrawWord[] } },
+    options?: {
+      drawguess?: {
+        words?: DrawWord[];
+        pool?: DrawWord[];
+        drawingSeconds?: number;
+        wordSource?: "all" | "custom";
+      };
+    },
   ): DrawState {
-    const custom = uniqueDrawWords(options?.drawguess?.words ?? []);
-    const bank = uniqueDrawWords([...custom, ...drawguessBuiltinWords]);
+    const customOnly = options?.drawguess?.wordSource === "custom";
+    const bank = customOnly
+      ? uniqueDrawWords(options?.drawguess?.pool ?? options?.drawguess?.words ?? [])
+      : options?.drawguess?.pool
+        ? uniqueDrawWords(options.drawguess.pool)
+        : drawWordBank(options?.drawguess?.words);
+    if (bank.length < players)
+      throw new Error(
+        customOnly
+          ? "自定义词库不足，至少需要与玩家人数相同的词"
+          : "可用题词少于玩家人数",
+      );
+    const drawingMs = Math.min(
+      300_000,
+      Math.max(15_000, Math.round((options?.drawguess?.drawingSeconds ?? 75) * 1000)),
+    );
     const choices = bank.map((_, index) => index);
     const words = Array.from(
       { length: players },
@@ -72,6 +95,7 @@ export class DrawRules {
       mode: "classic",
       words,
       bank,
+      drawingMs,
       view: this.round(0, words[0]!, Array<number>(players).fill(0), bank),
     };
   }
@@ -89,11 +113,11 @@ export class DrawRules {
   }
 
   candidates({ view }: DrawState, actor: number) {
-    return actor === view.artist && view.phase !== "finished"
+    return actor === view.artist && view.phase === "reveal"
       ? [
           {
             action: { type: "draw-next" as const, round: view.round },
-            label: view.phase === "drawing" ? "揭晓答案" : "继续",
+            label: "继续",
           },
         ]
       : [];
@@ -157,10 +181,10 @@ export class DrawRules {
     if (actor !== view.artist) throw new Error("只有画手可以操作画布");
     let next = state;
     const edit = editDrawingHistory(state.drawingHistory, view.round, action, {
-      strokes: view.strokes, fills: view.fills ?? [],
+      strokes: view.strokes, fills: view.fills ?? [], layers: view.layers,
     }, () => {
       next = this.applyDrawing(state, action);
-      return { strokes: next.view.strokes, fills: next.view.fills ?? [] };
+      return { strokes: next.view.strokes, fills: next.view.fills ?? [], layers: next.view.layers };
     });
     if (!edit) throw new Error("画布操作无效");
     if (action.type === "draw-history") {
@@ -174,6 +198,10 @@ export class DrawRules {
 
   private applyDrawing(state: DrawState, action: Action): DrawState {
     const { view } = state;
+    const drawing = applyDrawingDocument({ strokes: view.strokes, fills: view.fills ?? [], layers: view.layers }, action, drawFillLimit, () => `fill-${this.random()}`);
+    if (drawing) return { ...state, view: {
+      ...view, ...drawing, pointsUsed: drawing.strokes.reduce((sum, { points }) => sum + points.length, 0),
+    } };
     if (action.type === "draw-restore") {
       if (view.phase !== "drawing") throw new Error("现在不能恢复");
       const pointsUsed = action.strokes.reduce((sum, stroke) => sum + stroke.points.length, 0);
@@ -300,8 +328,10 @@ export class DrawRules {
     return !this.finished(state);
   }
 
-  resolutionDelay({ view }: DrawState) {
-    return view.phase === "drawing" ? drawRoundMs : drawRevealMs;
+  resolutionDelay(state: DrawState) {
+    return state.view.phase === "drawing"
+      ? state.drawingMs ?? drawRoundMs
+      : drawRevealMs;
   }
 
   resolve(state: DrawState): DrawState {
@@ -334,6 +364,9 @@ export class DrawRules {
         "draw-stroke",
         "draw-guess",
         "draw-fill",
+        "draw-layer",
+        "draw-region",
+        "draw-move-selection",
         "draw-clear",
         "draw-transform",
         "draw-delete",

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { enabledSystemWords, type WordPreferences } from "../../domain/drawguess/word-preferences";
 import {
   fayuBuiltinPool,
   fayuPoolComplete,
@@ -16,7 +17,7 @@ export const fayuWordKey = (word: FayuWord) => `${word.pos}:${word.word.normaliz
 export interface FayuLibrary {
   version: 1;
   words: FayuWord[];
-  builtin?: Record<string, z.infer<typeof builtinPreferenceSchema>>;
+  builtin?: WordPreferences<FayuWord>;
 }
 
 export function loadFayuLibrary(): FayuLibrary {
@@ -45,11 +46,7 @@ export function saveFayuLibrary(library: FayuLibrary) {
 }
 
 export function fayuCombinedPool(library: FayuLibrary): FayuPool {
-  const builtin = fayuBuiltinPool.words.flatMap((word) => {
-    const preference = library.builtin?.[fayuWordKey(word)];
-    return preference?.disabled ? [] : [preference?.word ?? word];
-  });
-  return { words: mergeFayuWords([...library.words, ...builtin]) };
+  return { words: mergeFayuWords([...library.words, ...enabledSystemWords(fayuBuiltinPool.words, library.builtin, fayuWordKey)]) };
 }
 
 export function fayuLibraryReady(library: FayuLibrary) {
@@ -79,7 +76,7 @@ function parseBuiltinPreferences(value: unknown): FayuLibrary["builtin"] {
   return Object.fromEntries(fayuBuiltinPool.words.flatMap((word) => {
     const key = fayuWordKey(word);
     const parsed = builtinPreferenceSchema.safeParse(entries[key]);
-    return parsed.success ? [[key, parsed.data]] : [];
+    return parsed.success && (parsed.data.disabled || parsed.data.word) ? [[key, parsed.data]] : [];
   }));
 }
 

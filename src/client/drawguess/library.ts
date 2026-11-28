@@ -1,4 +1,4 @@
-import { drawWordSchema, type DrawWord, type DrawWordLibrary } from "../../domain/drawguess/words";
+import { drawWordBank, drawguessBuiltinWords, drawWordPreferenceSchema, drawWordSchema, normalizeDrawWord, type DrawWord, type DrawWordLibrary } from "../../domain/drawguess/words";
 
 const storageKey = "onlinebg.drawguess.library.v1";
 
@@ -6,9 +6,10 @@ export function loadDrawWordLibrary(): DrawWordLibrary {
   try {
     const raw = localStorage.getItem(storageKey);
     if (!raw) return { version: 1, words: [] };
-    const parsed = JSON.parse(raw) as { words?: unknown };
+    const parsed = JSON.parse(raw) as { words?: unknown; builtin?: unknown };
     return {
       version: 1,
+      builtin: parsePreferences(parsed.builtin),
       words: Array.isArray(parsed.words)
         ? parsed.words.flatMap((word) => {
             const result = drawWordSchema.safeParse(word);
@@ -23,6 +24,7 @@ export function loadDrawWordLibrary(): DrawWordLibrary {
 
 export function saveDrawWordLibrary(library: DrawWordLibrary) {
   localStorage.setItem(storageKey, JSON.stringify(library));
+  window.dispatchEvent(new Event(storageKey));
 }
 
 export function mergeDrawWords(words: DrawWord[]) {
@@ -53,7 +55,7 @@ export function parseDrawWords(text: string) {
       if (result.success) words.push(result.data);
       else invalid++;
     }
-    return { words, invalid };
+    return { words, invalid, builtin: "builtin" in json ? parsePreferences(json.builtin) : undefined };
   }
   const words: DrawWord[] = [];
   let invalid = 0;
@@ -72,13 +74,46 @@ export function parseDrawWords(text: string) {
     if (parsed.success) words.push(parsed.data);
     else invalid++;
   }
-  return { words, invalid };
+  return { words, invalid, builtin: undefined };
 }
 
 export function serializeDrawWordLibrary(library: DrawWordLibrary) {
   return JSON.stringify(
-    { format: "onlinebg.drawguess.library", version: 1, words: library.words },
+    { format: "onlinebg.drawguess.library", version: 1, words: library.words, builtin: library.builtin },
     null,
     2,
   );
+}
+
+function parsePreferences(value: unknown): DrawWordLibrary["builtin"] {
+  if (!value || typeof value !== "object") return undefined;
+  const entries = value as Record<string, unknown>;
+  return Object.fromEntries(drawguessBuiltinWords.flatMap((word) => {
+    const key = normalizeDrawWord(word.word);
+    const parsed = drawWordPreferenceSchema.safeParse(entries[key]);
+    return parsed.success && (parsed.data.disabled || parsed.data.word) ? [[key, parsed.data]] : [];
+  }));
+}
+
+export function drawWordStart(
+  library: DrawWordLibrary,
+  wordSource: "all" | "custom" = "all",
+) {
+  if (wordSource === "custom")
+    return library.words.length ? { drawWords: library.words } : {};
+  return Object.keys(library.builtin ?? {}).length
+    ? { drawWordPool: drawWordBank(library.words, library.builtin) }
+    : library.words.length ? { drawWords: library.words } : {};
+}
+
+export function subscribeDrawWordLibrary(listener: () => void) {
+  const external = (event: StorageEvent) => {
+    if (event.key === storageKey || event.key === null) listener();
+  };
+  window.addEventListener("storage", external);
+  window.addEventListener(storageKey, listener);
+  return () => {
+    window.removeEventListener("storage", external);
+    window.removeEventListener(storageKey, listener);
+  };
 }

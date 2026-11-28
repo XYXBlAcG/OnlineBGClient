@@ -24,6 +24,9 @@ export interface GameOptions {
   pool?: import("./pool/types").PoolOptions;
   drawguess?: {
     mode?: import("./drawguess/types").DrawMode;
+    drawingSeconds?: number;
+    wordSource?: "all" | "custom";
     words?: import("./drawguess/words").DrawWord[];
+    pool?: import("./drawguess/words").DrawWord[];
   };
 }

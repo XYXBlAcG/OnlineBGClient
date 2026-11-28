@@ -1,92 +1,53 @@
-import { useRef, useState } from "react";
-import { drawWordSchema, type DrawWord, type DrawWordLibrary } from "../../domain/drawguess/words";
+import { useState } from "react";
+import { drawWordBank, drawguessBuiltinWords, drawWordSchema, normalizeDrawWord, type DrawWordLibrary } from "../../domain/drawguess/words";
 import { loadDrawWordLibrary, mergeDrawWords, parseDrawWords, saveDrawWordLibrary, serializeDrawWordLibrary } from "./library";
+import { makeWordRows, setSystemWords } from "./word-library-model";
+import { WordLibraryWorkspace } from "./WordLibraryWorkspace";
 
 export function DrawWordLibraryPanel() {
-  const [library, setLibrary] = useState<DrawWordLibrary>(() => loadDrawWordLibrary());
-  const [word, setWord] = useState("");
-  const [category, setCategory] = useState("物件");
-  const [aliases, setAliases] = useState("");
-  const [editing, setEditing] = useState<DrawWord | null>(null);
-  const [query, setQuery] = useState("");
-  const [notice, setNotice] = useState("");
-  const file = useRef<HTMLInputElement>(null);
+  const [library, setLibrary] = useState(loadDrawWordLibrary);
   const change = (next: DrawWordLibrary) => {
-    setLibrary(next);
     saveDrawWordLibrary(next);
+    setLibrary(next);
   };
-  const edit = (entry: DrawWord | null) => {
-    setEditing(entry);
-    setWord(entry?.word ?? "");
-    setCategory(entry?.category ?? "物件");
-    setAliases(entry?.aliases.join("、") ?? "");
-  };
-  const add = () => {
-    const entry = drawWordSchema.safeParse({
-      word: word.trim(),
-      aliases: aliases.split(/[、,，/]/).map((value) => value.trim()).filter(Boolean),
-      category: category.trim() || "物件",
-    });
-    if (!entry.success) {
-      setNotice("请检查词语、分类和别名的长度。");
-      return;
-    }
-    if (library.words.some((item) => item !== editing && item.word.normalize("NFKC") === entry.data.word.normalize("NFKC"))) {
-      setNotice("词库已有这个词语。");
-      return;
-    }
-    change({
-      version: 1,
-      words: editing ? library.words.map((item) => item === editing ? entry.data : item) : [...library.words, entry.data],
-    });
-    edit(null);
-    setNotice("词条已保存");
-  };
-  const importFile = async (selected: File) => {
-    try {
-      const parsed = parseDrawWords(await selected.text());
-      change({ version: 1, words: mergeDrawWords([...library.words, ...parsed.words]) });
-      setNotice(`导入 ${parsed.words.length} 个，忽略 ${parsed.invalid} 个`);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "导入失败");
-    }
-  };
-  const download = (text: string, type: string, name: string) => {
-    const blob = new Blob([text], { type });
-    const anchor = document.createElement("a");
-    anchor.href = URL.createObjectURL(blob);
-    anchor.download = name;
-    anchor.click();
-    URL.revokeObjectURL(anchor.href);
-  };
-  return (
-    <section className="settings-section draw-library">
-      <h3>经典词库</h3>
-      <div className="draw-library-add">
-        <input aria-label="新词语" placeholder="词语" value={word} onChange={(event) => setWord(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") add(); }} />
-        <input aria-label="分类" placeholder="分类" value={category} onChange={(event) => setCategory(event.target.value)} />
-        <input aria-label="别名" placeholder="别名，用顿号分开" value={aliases} onChange={(event) => setAliases(event.target.value)} />
-        <button type="button" onClick={add}>{editing ? "保存修改" : "加入"}</button>
-        {editing && <button type="button" onClick={() => edit(null)}>取消</button>}
-      </div>
-      <div className="draw-library-actions">
-        <button type="button" onClick={() => file.current?.click()}>导入</button>
-        <button type="button" onClick={() => download(serializeDrawWordLibrary(library), "application/json", "drawguess-library.json")}>导出 JSON</button>
-        <button type="button" onClick={() => download(library.words.map((item) => `${item.word},${item.aliases.join("、")},${item.category}`).join("\n"), "text/plain", "drawguess-library.txt")}>导出 TXT</button>
-        <input ref={file} type="file" accept="application/json,.json,text/plain,.txt,.csv" hidden onChange={(event) => { const selected = event.target.files?.[0]; if (selected) void importFile(selected); event.target.value = ""; }} />
-      </div>
-      {notice && <small role="status">{notice}</small>}
-      <input aria-label="搜索经典词库" placeholder="搜索词语、分类或别名" value={query} onChange={(event) => setQuery(event.target.value)} />
-      <div className="draw-library-list">
-        {library.words.filter((item) => [item.word, item.category, ...item.aliases].some((part) => part.normalize("NFKC").includes(query.trim().normalize("NFKC")))).map((item) => (
-          <span key={item.word} className="draw-library-chip">
-            {item.word}
-            <small>{item.category}</small>
-            <button type="button" aria-label={`编辑 ${item.word}`} onClick={() => edit(item)}>编辑</button>
-            <button type="button" aria-label={`删除 ${item.word}`} onClick={() => { if (editing === item) edit(null); change({ version: 1, words: library.words.filter((candidate) => candidate !== item) }); }}>×</button>
-          </span>
-        ))}
-      </div>
-    </section>
-  );
+  const rows = makeWordRows(library.words, drawguessBuiltinWords, library.builtin, normalizeDrawWord);
+  return <WordLibraryWorkspace rows={rows} operations={{
+    add: () => ({ word: "", category: "物件", aliases: [] }),
+    canReset: Object.keys(library.builtin ?? {}).length > 0,
+    save: (row, input) => {
+      const parsed = drawWordSchema.safeParse(input);
+      if (!parsed.success) throw new Error("词语和别名最多 20 字，别名最多 3 个");
+      const word = parsed.data;
+      const key = normalizeDrawWord(word.word);
+      if (!key || rows.some((entry) => entry.id !== row?.id && normalizeDrawWord(entry.word.word) === key))
+        throw new Error("这个词语已存在或没有可搜索的内容");
+      if (row?.original) {
+        change({ ...library, builtin: { ...library.builtin, [row.key]: { ...library.builtin?.[row.key], word } } });
+        return row.id;
+      }
+      const words = row ? library.words.map((entry) => normalizeDrawWord(entry.word) === row.key ? word : entry) : [...library.words, word];
+      if (words.length > 1000) throw new Error("自定义词最多 1000 条");
+      change({ ...library, words });
+      return `custom:${key}`;
+    },
+    remove: (row) => change({ ...library, words: library.words.filter((word) => normalizeDrawWord(word.word) !== row.key) }),
+    system: (items, operation) => change({ ...library, builtin: setSystemWords(library.builtin, items, operation) }),
+    import: async (file) => {
+      const parsed = parseDrawWords(await file.text());
+      const words = mergeDrawWords([...library.words, ...parsed.words]);
+      if (words.length > 1000) throw new Error("导入后超过 1000 条自定义词");
+      change({ ...library, words, ...(parsed.builtin ? { builtin: { ...library.builtin, ...parsed.builtin } } : {}) });
+      return `新增 ${words.length - library.words.length} 条，格式无效 ${parsed.invalid} 条`;
+    },
+    export: (format) => ({
+      filename: `drawguess-library.${format}`,
+      contents: format === "json" ? serializeDrawWordLibrary(library) : library.words.map((word) => `${word.word},${word.aliases.join("、")},${word.category}`).join("\n"),
+    }),
+    sample: () => {
+      const pool = drawWordBank(library.words, library.builtin);
+      const word = pool[Math.floor(Math.random() * pool.length)];
+      if (!word) throw new Error("请先启用或新增词条");
+      return word.word;
+    },
+  }} />;
 }

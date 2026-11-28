@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { DrawingHistory, DrawingHistoryStatus } from "../drawguess/canvas-history";
 import { drawFillLimit, drawLayerLimit, drawPointLimit, drawPointSchema, drawOrderSchema, drawStrokeLimit, drawStrokeSchema } from "../drawguess/types";
-import type { DrawFill, DrawStroke } from "../drawguess/types";
+import type { DrawFill, DrawLayer, DrawStroke } from "../drawguess/types";
 
 export const fayuPromptSchema = z.object({
   type: z.literal("draw-prompt"),
@@ -123,6 +123,7 @@ export interface FayuView {
   prompts: (FayuSentence | null)[];
   canvases: DrawStroke[][];
   fills: Record<number, FayuFill[]>;
+  layers?: Record<number, DrawLayer[]>;
   finished: number[];
   history?: DrawingHistoryStatus;
   challenges: Record<number, FayuChallenge>;

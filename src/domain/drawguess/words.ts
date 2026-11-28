@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { enabledSystemWords, type WordPreferences } from "./word-preferences";
 import { fayuBuiltinWords } from "../fayu/words";
 
 export const drawWordSchema = z.object({
@@ -7,10 +8,14 @@ export const drawWordSchema = z.object({
   category: z.string().trim().max(12).default("物件"),
 });
 export type DrawWord = z.infer<typeof drawWordSchema>;
+export const drawWordPoolSchema = z.array(drawWordSchema).max(1500);
+
+export const drawWordPreferenceSchema = z.object({ disabled: z.boolean().optional(), word: drawWordSchema.optional() });
 
 export const drawWordLibrarySchema = z.object({
   version: z.literal(1).default(1),
   words: z.array(drawWordSchema).max(1000),
+  builtin: z.record(z.string(), drawWordPreferenceSchema).optional(),
 });
 export type DrawWordLibrary = z.infer<typeof drawWordLibrarySchema>;
 
@@ -62,4 +67,8 @@ export function uniqueDrawWords(words: DrawWord[]) {
     seen.add(key);
     return true;
   });
+}
+
+export function drawWordBank(custom: readonly DrawWord[] = [], builtin?: WordPreferences<DrawWord>) {
+  return uniqueDrawWords([...custom, ...enabledSystemWords(drawguessBuiltinWords, builtin, (word) => normalizeDrawWord(word.word))]);
 }

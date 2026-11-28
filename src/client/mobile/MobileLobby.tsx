@@ -40,6 +40,8 @@ export function MobileLobby({
   onBack: () => void;
 }) {
   const [drawMode, setDrawMode] = useState<DrawMode>("classic");
+  const [drawSeconds, setDrawSeconds] = useState(75);
+  const [drawWordSource, setDrawWordSource] = useState<"all" | "custom">("all");
   const [golfDifficulty, setGolfDifficulty] = useState<Parameters<typeof GolfDifficultyControl>[0]["value"]>("standard");
   const [pool, setPool] = useState(() => poolOptionsSchema.parse({}));
   const [mahjong, setMahjong] = useState(() => mahjongOptionsSchema.parse({}));
@@ -124,7 +126,7 @@ export function MobileLobby({
           </span>
         </div>
         {kind === "drawguess" && (
-          <DrawModeControl value={drawMode} onChange={(mode) => {
+          <DrawModeControl value={drawMode} drawingSeconds={drawSeconds} wordSource={drawWordSource} onDrawingSecondsChange={setDrawSeconds} onWordSourceChange={setDrawWordSource} onChange={(mode) => {
             setHumans(Math.max(defaultLocalHumans(kind, mode), humans === humanFloor ? 0 : humans));
             setDrawMode(mode);
           }} />
@@ -252,6 +254,11 @@ export function MobileLobby({
                   dominion,
                   flight,
                   checkers,
+                  drawguess: {
+                    mode: drawMode,
+                    drawingSeconds: drawSeconds,
+                    wordSource: drawWordSource,
+                  },
                 },
                 humans,
                 difficulty,

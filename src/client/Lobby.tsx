@@ -116,6 +116,8 @@ export function Lobby({
   );
   const [dominion, setDominion] = useState(dominionOptionsSchema.parse({}));
   const [drawMode, setDrawMode] = useState<DrawMode>("classic");
+  const [drawSeconds, setDrawSeconds] = useState(75);
+  const [drawWordSource, setDrawWordSource] = useState<"all" | "custom">("all");
   const [golfDifficulty, setGolfDifficulty] = useState<Parameters<typeof GolfDifficultyControl>[0]["value"]>("standard");
   const [pool, setPool] = useState(poolOptionsSchema.parse({}));
   const [mahjong, setMahjong] = useState(mahjongOptionsSchema.parse({}));
@@ -524,10 +526,17 @@ export function Lobby({
                         />
                       )}
                       {kind === "drawguess" && (
-                        <DrawModeControl value={drawMode} onChange={(mode) => {
-                          setHumans(Math.max(gameSeatMinimum(kind, mode), displayHumans === minSeats ? 0 : displayHumans));
-                          setDrawMode(mode);
-                        }} />
+                        <DrawModeControl
+                          value={drawMode}
+                          drawingSeconds={drawSeconds}
+                          wordSource={drawWordSource}
+                          onChange={(mode) => {
+                            setHumans(Math.max(gameSeatMinimum(kind, mode), displayHumans === minSeats ? 0 : displayHumans));
+                            setDrawMode(mode);
+                          }}
+                          onDrawingSecondsChange={setDrawSeconds}
+                          onWordSourceChange={setDrawWordSource}
+                        />
                       )}
                       {kind === "golf" && <GolfDifficultyControl value={golfDifficulty} onChange={setGolfDifficulty} />}
                       {kind === "pool" && (
@@ -708,7 +717,11 @@ export function Lobby({
                         legacy: expeditionJournal.journal.legacy,
                       },
                       dominion,
-                      drawguess: { mode: drawMode },
+                      drawguess: {
+                        mode: drawMode,
+                        drawingSeconds: drawSeconds,
+                        wordSource: drawWordSource,
+                      },
                       golf: { difficulty: golfDifficulty },
                       pool,
                       mahjong,

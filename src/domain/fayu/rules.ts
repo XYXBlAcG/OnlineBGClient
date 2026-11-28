@@ -1,3 +1,4 @@
+import { applyDrawingDocument } from "../drawguess/canvas-document";
 import { drawingHistoryStatus, editDrawingHistory } from "../drawguess/canvas-history";
 import { nextCanvasOrder } from "../drawguess/canvas-order";
 import seedrandom from "seedrandom";
@@ -35,6 +36,7 @@ export class FayuRules {
         prompts: Array<FayuSentence | null>(players).fill(null),
         canvases: Array.from({ length: players }, () => []),
         fills: {},
+        layers: undefined,
         finished: [],
         challenges: {},
         guesses: {},
@@ -75,6 +77,9 @@ export class FayuRules {
         "draw-transform",
         "draw-delete",
         "draw-fill",
+        "draw-layer",
+        "draw-region",
+        "draw-move-selection",
         "draw-restore",
         "draw-history",
       ].includes(action.type)
@@ -100,6 +105,9 @@ export class FayuRules {
       action.type === "draw-transform" ||
       action.type === "draw-delete" ||
       action.type === "draw-fill" ||
+      action.type === "draw-layer" ||
+      action.type === "draw-region" ||
+      action.type === "draw-move-selection" ||
       action.type === "draw-restore" ||
       action.type === "draw-history" ||
       action.type === "draw-cloze" ||
@@ -117,6 +125,7 @@ export class FayuRules {
         submitted: prompts.map((_, index) => index),
         canvases: Array.from({ length: state.view.players }, () => []),
         fills: {},
+        layers: undefined,
         finished: [],
       },
     };
@@ -226,16 +235,20 @@ export class FayuRules {
     if (view.phase === "drawing" && !view.finished.includes(actor)) {
       let next = state;
       const edit = editDrawingHistory(state.drawingHistory?.[actor], view.round, action, {
-        strokes: view.canvases[actor]!, fills: view.fills[actor] ?? [],
+        strokes: view.canvases[actor]!, fills: view.fills[actor] ?? [], layers: view.layers?.[actor],
       }, () => {
         next = this.applyAction(state, actor, action);
-        return { strokes: next.view.canvases[actor]!, fills: next.view.fills[actor] ?? [] };
+        return { strokes: next.view.canvases[actor]!, fills: next.view.fills[actor] ?? [], layers: next.view.layers?.[actor] };
       });
       if (edit) {
         if (action.type === "draw-history") {
           const canvases = [...view.canvases];
           canvases[actor] = edit.drawing.strokes;
-          next = { ...state, view: { ...view, canvases, fills: { ...view.fills, [actor]: edit.drawing.fills } } };
+          const layers = { ...view.layers };
+          if (edit.drawing.layers) layers[actor] = edit.drawing.layers;
+          else delete layers[actor];
+          next = { ...state, view: { ...view, canvases, fills: { ...view.fills, [actor]: edit.drawing.fills },
+            ...(view.layers || edit.drawing.layers ? { layers } : {}) } };
         }
         return { ...next, drawingHistory: { ...state.drawingHistory, [actor]: edit.history } };
       }
@@ -245,6 +258,15 @@ export class FayuRules {
 
   private applyAction(state: FayuState, actor: number, action: Action): FayuState {
     const { view } = state;
+    if (view.phase === "drawing" && !view.finished.includes(actor)) {
+      const drawing = applyDrawingDocument({ strokes: view.canvases[actor]!, fills: view.fills[actor] ?? [], layers: view.layers?.[actor] }, action, fayuLimits.maxFills, () => `fill-${this.random()}`);
+      if (drawing) {
+        const canvases = [...view.canvases];
+        canvases[actor] = drawing.strokes;
+        return { ...state, view: { ...view, canvases, fills: { ...view.fills, [actor]: drawing.fills },
+          ...(drawing.layers ? { layers: { ...view.layers, [actor]: drawing.layers } } : {}) } };
+      }
+    }
     if (action.type === "draw-restore") {
       if (view.phase !== "drawing") throw new Error("现在不能恢复");
       if (view.finished.includes(actor)) throw new Error("你已经完成作画");
@@ -444,6 +466,7 @@ export class FayuRules {
           prompts: Array<FayuSentence | null>(view.players).fill(null),
           canvases: Array.from({ length: view.players }, () => []),
           fills: {},
+          layers: undefined,
           finished: [],
           challenges: {},
           guesses: {},
@@ -471,6 +494,7 @@ export class FayuRules {
           history: view.phase === "drawing" ? drawingHistoryStatus(drawingHistory?.[actor], view.round) : undefined,
           prompts: view.prompts.map((prompt, index) => (index === actor ? prompt : null)),
           canvases: view.canvases.map((canvas, index) => (index === actor ? canvas : [])),
+          ...(view.layers ? { layers: view.layers[actor] ? { [actor]: view.layers[actor] } : {} } : {}),
           fills: Object.fromEntries(
             Object.entries(view.fills).filter(([index]) => Number(index) === actor),
           ) as FayuState["view"]["fills"],

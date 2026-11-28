@@ -1,114 +1,124 @@
+import { v4 as randomId } from "uuid";
+import { drawEditPayloadSchema, drawEditSchema, type Action, type DrawEdit } from "../../domain/actions";
+import type { Drawing, DrawingHistoryStatus } from "../../domain/drawguess/canvas-history";
+import { moveSelection } from "../../domain/drawguess/canvas-selection";
 import { nextCanvasOrder } from "../../domain/drawguess/canvas-order";
-import type { Action } from "../../domain/types";
-import { drawBatchSize, type DrawStroke } from "../../domain/drawguess/types";
-import type { FayuFill } from "../../domain/fayu/types";
-import type { DrawingHistoryStatus } from "../../domain/drawguess/canvas-history";
 
-type Canvas = { strokes: DrawStroke[]; fills: FayuFill[]; history?: DrawingHistoryStatus };
-type StrokeAction = Extract<Action, { type: "draw-stroke" }>;
-type EditAction = Extract<Action, {
-  type: "draw-stroke" | "draw-clear" | "draw-delete" | "draw-fill" | "draw-history" | "draw-transform";
-}>;
-type Finish = Extract<Action, { type: "draw-next" | "draw-finish" }>;
-type History = "undo" | "redo";
-type Edit = { actions: EditAction[] };
-
-export function strokePackets(round: number, stroke: Omit<DrawStroke, "nextPart">): StrokeAction[] {
-  return Array.from({ length: Math.ceil(stroke.points.length / drawBatchSize) }, (_, part) => ({
-    ...stroke,
-    type: "draw-stroke",
-    round,
-    part,
-    points: stroke.points.slice(part * drawBatchSize, (part + 1) * drawBatchSize),
-  }));
-}
+type Snapshot = Drawing & { history?: DrawingHistoryStatus };
+type Envelope = Extract<Action, { type: "draw-edit" }>;
+type Finish = Extract<DrawEdit, { type: "draw-finish" | "draw-next" }>;
+type Queued = { id: string; edit: DrawEdit; revision?: number };
 
 export class CanvasEdits {
-  private queue: Edit[] = [];
-  private inflight?: { action: EditAction; sentAt: number; revision: number };
-  private completion?: Finish;
-  private completionSentAt?: number;
+  private queue: Queued[];
+  private sentAt: number | undefined;
+  private stalled = false;
+
+  constructor(initial?: unknown, private readonly save?: (state: Queued[]) => void) {
+    this.queue = Array.isArray(initial) ? initial.flatMap((entry) => {
+      if (!entry || typeof entry.id !== "string" || !entry.id || entry.id.length > 36) return [];
+      const data = drawEditPayloadSchema.safeParse(entry.edit);
+      if (!data.success) return [];
+      const revision = drawEditSchema.shape.revision.safeParse(entry.revision);
+      return [{ id: entry.id, edit: data.data, ...(revision.success ? { revision: revision.data } : {}) }];
+    }) : [];
+  }
 
   get busy() { return this.queue.length > 0; }
-  get finishing() { return !!this.completion || this.completionSentAt !== undefined; }
+  get finishing() {
+    const type = this.queue.at(-1)?.edit.type;
+    return type === "draw-finish" || type === "draw-next";
+  }
+  get needsRetry() { return this.stalled; }
+  get undoQueued() { return this.queue.some(({ edit }) => edit.type !== "draw-history" && edit.type !== "draw-next" && edit.type !== "draw-finish"); }
 
-  add(actions: EditAction[]) {
-    if (actions.length && !this.finishing) this.queue.push({ actions: [...actions] });
+  add(edit: DrawEdit) {
+    if (this.finishing) return;
+    this.queue.push({ id: randomId(), edit });
+    this.save?.(this.queue);
   }
 
-  finish(action: Finish) {
-    if (!this.finishing) this.completion = action;
+  finish(edit: Finish) { this.add(edit); }
+
+  restore(direction: "undo" | "redo", round: number) {
+    this.add({ type: "draw-history", direction, round });
   }
 
-  restore(direction: History, round: number) {
-    this.add([{ type: "draw-history", direction, round }]);
+  retry() {
+    this.sentAt = undefined;
   }
 
-  preview(current: DrawStroke[], fills: FayuFill[] = []): DrawStroke[] {
-    let order = nextCanvasOrder(current, fills);
-    const staged = new Map<string, DrawStroke>();
-    for (const edit of this.queue) {
-      const actions = [
-        ...(edit === this.queue[0] && this.inflight ? [this.inflight.action] : []),
-        ...edit.actions,
-      ];
-      for (const action of actions) {
-        if (action.type !== "draw-stroke") continue;
-        const stroke = staged.get(action.id) ?? current.find(({ id }) => id === action.id);
-        if (stroke && stroke.nextPart > action.part) continue;
-        staged.set(action.id, {
-          ...action,
-          points: [...(stroke?.points ?? []), ...action.points],
-          nextPart: action.part + 1,
-          order: stroke?.order ?? order++,
-        });
+  complete() {
+    if (!this.busy) return;
+    this.queue = [];
+    this.save?.(this.queue);
+  }
+
+  get changingLayers() { return this.queue.some(({ edit }) => edit.type === "draw-layer"); }
+
+  preview(strokes: Drawing["strokes"], fills: Drawing["fills"] = [], lastEdit?: string): Drawing["strokes"] {
+    const known = new Set(strokes.map(({ id }) => id));
+    let order = nextCanvasOrder(strokes, fills);
+    let result = strokes;
+    for (const { id, edit } of this.queue) {
+      if (id === lastEdit) continue;
+      if (edit.type === "draw-move-selection") {
+        result = moveSelection(result, edit.ids, edit.dx, edit.dy);
       }
+      if (edit.type !== "draw-stroke" || known.has(edit.id)) continue;
+      const { type: _type, round: _round, part: _part, ...stroke } = edit;
+      result = [...result, { ...stroke, nextPart: 1, order: order++ }];
+      known.add(edit.id);
     }
-    return [...current.filter(({ id }) => !staged.has(id)), ...staged.values()];
+    return result;
   }
 
-  step(current: Canvas, canSend: boolean, now: number): { action?: Action; failed?: boolean } | undefined {
-    if (this.completionSentAt !== undefined && canSend && now - this.completionSentAt >= 8_000) {
-      this.completionSentAt = undefined;
-      return { failed: true };
+  step(snapshot: Snapshot, canSend: boolean, now: number): { action?: Envelope; failed?: boolean } | undefined {
+    let changed = false;
+    if (this.queue[0]?.id === snapshot.history?.lastEdit && this.queue.length) {
+      this.queue.shift();
+      this.save?.(this.queue);
+      this.sentAt = undefined;
+      this.stalled = false;
+      changed = true;
     }
-    const edit = this.queue[0];
-    let updated = false;
-    if (edit && this.inflight) {
-      const { action, sentAt, revision } = this.inflight;
-      const confirmed = action.type === "draw-stroke"
-        ? current.strokes.some(({ id, nextPart }) => id === action.id && nextPart > action.part)
-        : (current.history?.revision ?? 0) > revision;
-      if (!confirmed) {
-        if (!canSend || now - sentAt < 8_000) return;
-        this.inflight = undefined;
-        this.queue = [];
-        this.completion = undefined;
-        return { failed: true };
+    if (!canSend) return changed ? {} : undefined;
+    while (this.queue.length) {
+      const next = this.queue[0]!;
+      if (next.revision === undefined && next.edit.type === "draw-history" && !snapshot.history?.[next.edit.direction]) {
+        this.queue.shift();
+        this.save?.(this.queue);
+        changed = true;
+        continue;
       }
-      this.inflight = undefined;
-      updated = true;
-      if (!edit.actions.length) this.queue.shift();
+      if (this.sentAt !== undefined) {
+        if (now - this.sentAt < 8_000) return changed ? {} : undefined;
+        this.stalled = true;
+      }
+      next.revision ??= snapshot.history?.revision ?? 0;
+      this.sentAt = now;
+      this.save?.(this.queue);
+      return {
+        action: { type: "draw-edit", id: next.id, revision: next.revision, edit: next.edit },
+        ...(this.stalled ? { failed: true } : {}),
+      };
     }
-    if (canSend) {
-      while (this.queue.length) {
-        const next = this.queue[0]!;
-        const action = next.actions.shift();
-        if (!action || (action.type === "draw-history" && !current.history?.[action.direction])) {
-          if (!next.actions.length) this.queue.shift();
-          updated = true;
-          continue;
-        }
-        this.inflight = { action, sentAt: now, revision: current.history?.revision ?? 0 };
-        return { action };
-      }
-      if (this.completion) {
-        const action = this.completion;
-        this.completion = undefined;
-        this.completionSentAt = now;
-        return { action };
-      }
-    }
-    return updated ? {} : undefined;
+    return changed ? {} : undefined;
   }
+}
+
+export function openCanvasDraft(key: string, game: string) {
+  const storageKey = `onlinebg.drawing.draft:${key}`;
+  let edits: unknown;
+  try {
+    const value = sessionStorage.getItem(storageKey);
+    const draft = value ? JSON.parse(value) : null;
+    if (draft?.game === game) edits = draft.edits;
+  } catch {}
+  return new CanvasEdits(edits, (next) => {
+    try {
+      if (next.length) sessionStorage.setItem(storageKey, JSON.stringify({ game, edits: next }));
+      else sessionStorage.removeItem(storageKey);
+    } catch {}
+  });
 }

@@ -329,13 +329,24 @@ export function RoomSetup({
               />
             )}
             {config.kind === "drawguess" && (
-              <DrawModeControl value={config.drawguess.mode} onChange={(mode) =>
-                setConfig({
-                  ...config,
-                  drawguess: { mode },
-                  humans: Math.max(config.humans, gameSeatMinimum(config.kind, mode)),
-                })
-              } />
+              <DrawModeControl
+                value={config.drawguess.mode}
+                drawingSeconds={config.drawguess.drawingSeconds}
+                wordSource={config.drawguess.wordSource}
+                onChange={(mode) =>
+                  setConfig({
+                    ...config,
+                    drawguess: { ...config.drawguess, mode },
+                    humans: Math.max(config.humans, gameSeatMinimum(config.kind, mode)),
+                  })
+                }
+                onDrawingSecondsChange={(drawingSeconds) =>
+                  setConfig({ ...config, drawguess: { ...config.drawguess, drawingSeconds } })
+                }
+                onWordSourceChange={(wordSource) =>
+                  setConfig({ ...config, drawguess: { ...config.drawguess, wordSource } })
+                }
+              />
             )}
             {config.kind === "tq" && (
               <CheckersOptionsControl

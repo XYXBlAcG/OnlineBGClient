@@ -41,7 +41,19 @@ export function describePublicAction(action: Action): PublicActionDescription {
       return { label: "完成了推杆" };
     case "golf-next":
       return { label: "进入下一洞" };
+    case "draw-edit":
+      return describePublicAction(action.edit);
+    case "draw-finish":
+      return { label: "完成了画作" };
     case "draw-stroke":
+    case "draw-history":
+    case "draw-clear":
+    case "draw-fill":
+    case "draw-transform":
+    case "draw-move-selection":
+    case "draw-layer":
+    case "draw-region":
+    case "draw-delete":
     case "draw-undo":
       return { label: "更新了画布" };
     case "draw-guess":

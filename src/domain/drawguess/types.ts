@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { DrawRegion } from "./canvas-region";
 import type { DrawingHistory, DrawingHistoryStatus } from "./canvas-history";
 
 export const drawModes = ["classic", "fayu"] as const;
@@ -72,12 +73,19 @@ export interface DrawStroke {
   opacity?: number;
 }
 
-export interface DrawFill {
+export interface DrawLayer {
+  id: number;
+  name: string;
+  hidden?: boolean;
+}
+
+type DrawFillBase = {
   order?: number;
   id: string;
   layer: number;
-  data: string;
-}
+};
+
+export type DrawFill = DrawFillBase & ({ data: string; region?: never } | { region: DrawRegion; data?: never });
 
 export interface DrawView {
   phase: "drawing" | "reveal" | "finished";
@@ -86,6 +94,7 @@ export interface DrawView {
   round: number;
   strokes: DrawStroke[];
   fills?: DrawFill[];
+  layers?: DrawLayer[];
   pointsUsed: number;
   history?: DrawingHistoryStatus;
   scores: number[];
@@ -98,6 +107,7 @@ export interface DrawView {
 export interface DrawState {
   kind: "drawguess";
   mode: "classic";
+  drawingMs?: number;
   view: DrawView;
   drawingHistory?: DrawingHistory;
   words?: number[];

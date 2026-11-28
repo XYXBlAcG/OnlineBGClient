@@ -1,4 +1,5 @@
 import { expeditionMoveSchema } from "./expedition/adventure-types";
+import { drawLayerSchema, drawMoveSelectionSchema, drawRegionActionSchema } from "./drawguess/canvas-document";
 import { dominionMoveSchema } from "./dominion/types";
 import {
   graphwarFireSchema,
@@ -8,9 +9,15 @@ import {
 } from "./graphwar/types";
 import { mahjongMoveSchema } from "./mahjong/types";
 import { poolShotActionSchema } from "./pool/types";
-import { golfNextSchema, golfPuttSchema } from "./golf/types";
+import {
+  golfNextSchema,
+  golfPuttSchema,
+  golfResetSchema,
+} from "./golf/types";
 import {
   drawGuessSchema,
+  drawPointLimit,
+  drawPointSchema,
   drawNextSchema,
   drawStrokeSchema,
   drawHistorySchema,
@@ -34,6 +41,28 @@ import { splendorMoveSchema } from "./splendor-actions";
 import { catanMoveSchema } from "./catan-actions";
 import { z } from "zod";
 const ids = z.array(z.number().int().min(-160).max(160)).max(160);
+export const drawEditPayloadSchema = z.discriminatedUnion("type", [
+  drawStrokeSchema.extend({ part: z.literal(0), points: z.array(drawPointSchema).min(1).max(drawPointLimit) }),
+  drawHistorySchema,
+  fayuClearSchema,
+  fayuTransformSchema,
+  fayuDeleteSchema,
+  fayuFillSchema,
+  drawLayerSchema,
+  drawMoveSelectionSchema,
+  drawRegionActionSchema,
+  drawNextSchema,
+  fayuFinishSchema,
+]);
+export type DrawEdit = z.infer<typeof drawEditPayloadSchema>;
+
+export const drawEditSchema = z.object({
+  type: z.literal("draw-edit"),
+  id: z.string().min(1).max(36),
+  revision: z.number().int().min(0),
+  edit: drawEditPayloadSchema,
+});
+
 export const actionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("expedition-action"),
@@ -47,7 +76,12 @@ export const actionSchema = z.discriminatedUnion("type", [
   poolShotActionSchema,
   golfPuttSchema,
   golfNextSchema,
+  golfResetSchema,
   drawStrokeSchema,
+  drawEditSchema,
+  drawLayerSchema,
+  drawMoveSelectionSchema,
+  drawRegionActionSchema,
   drawHistorySchema,
   drawUndoSchema,
   drawGuessSchema,

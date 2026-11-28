@@ -1,3 +1,4 @@
+import { uniqueDrawWords } from "./drawguess/words";
 import { fayuDuelGuessingComplete } from "./fayu/types";
 import {
   advanceArcade,
@@ -195,6 +196,7 @@ export class Room {
   private records: ReplayRecord[] = [];
   private queued: { decision: AiResult; version: number } | null = null;
   private drawWords?: import("./drawguess/words").DrawWord[];
+  private drawWordPool?: import("./drawguess/words").DrawWord[];
   private appendReplayEvent(event: ReplayRecord["events"][number]) {
     if (!this.replay) return;
     if (this.replay.events.length >= replayEventLimit) {
@@ -321,7 +323,7 @@ export class Room {
     this.member(token).online = false;
   }
 
-  start(token: string, drawWords?: import("./drawguess/words").DrawWord[]): void {
+  start(token: string, drawWords?: import("./drawguess/words").DrawWord[], drawWordPool?: import("./drawguess/words").DrawWord[]): void {
     if (!this.canManage(token)) throw new Error("只有房主可以开始或重开");
     if (this.seats.some((seat) => !seat.difficulty && !seat.token))
       throw new Error("等待真人玩家加入");
@@ -333,6 +335,10 @@ export class Room {
       )
     )
       throw new Error("等待所有真人玩家在线并准备");
+    const classicDrawing = this.config.kind === "drawguess" && drawModeOf(this.config) === "classic";
+    if (classicDrawing && drawWordPool && uniqueDrawWords(drawWordPool).length < this.seats.length)
+      throw new Error("可用题词少于玩家人数，请先启用更多词条");
+    this.drawWordPool = classicDrawing && drawWordPool ? structuredClone(drawWordPool) : undefined;
     this.seats.forEach((seat) => (seat.autoplay = false));
     this.drawWords =
       this.config.kind === "drawguess" && drawWords?.length
@@ -391,7 +397,10 @@ export class Room {
         hostActor: this.seats.findIndex((seat) => seat.id === this.host?.id),
         drawguess: {
           mode: drawModeOf(this.config),
+          drawingSeconds: this.config.drawguess.drawingSeconds,
+          wordSource: this.config.drawguess.wordSource,
           ...(this.drawWords ? { words: this.drawWords } : {}),
+          ...(this.drawWordPool ? { pool: this.drawWordPool } : {}),
         },
         arcadeScenario: scenario,
       },
@@ -426,6 +435,9 @@ export class Room {
         : {}),
       ...(this.state.kind === "drawguess" && this.drawWords
         ? { drawWords: structuredClone(this.drawWords) }
+        : {}),
+      ...(this.state.kind === "drawguess" && this.drawWordPool
+        ? { drawWordPool: structuredClone(this.drawWordPool) }
         : {}),
       ...(this.state.kind === "graphwar"
         ? {
@@ -1899,6 +1911,7 @@ export class Room {
       ...(this.minerPaused ? { minerPaused: true } : {}),
       replay: this.replay,
       drawWords: this.drawWords,
+      drawWordPool: this.drawWordPool,
       records: this.records,
       messageSequence: this.messageSequence,
       messageTotals: this.messageTotals,
@@ -1959,6 +1972,7 @@ export class Room {
       ...(archive.spectators ?? []).map((s) => ({ ...s, online: false })),
     );
     room.host = archive.host ? { ...archive.host, online: false } : null;
+    room.drawWordPool = archive.drawWordPool ? structuredClone(archive.drawWordPool) : undefined;
     room.drawWords = archive.drawWords
       ? structuredClone(archive.drawWords)
       : undefined;
@@ -2100,6 +2114,7 @@ export interface RoomArchive {
   minerPaused?: boolean;
   replay: ReplayRecord | null;
   drawWords?: import("./drawguess/words").DrawWord[];
+  drawWordPool?: import("./drawguess/words").DrawWord[];
   records: ReplayRecord[];
   messageSequence: number;
   messageTotals: Record<string, number>;

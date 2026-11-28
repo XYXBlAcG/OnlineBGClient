@@ -200,7 +200,7 @@ export class Gateway {
       room.setAvatar(command.token, command.avatar);
     if (command.type === "ready") room.setReady(command.token, command.ready);
     if (command.type === "leave") room.leave(command.token);
-    if (command.type === "start") room.start(command.token, command.drawWords);
+    if (command.type === "start") room.start(command.token, command.drawWords, command.drawWordPool);
     if (command.type === "arcade") room.arcadeAction(command.token, command.action);
     if (command.type === "computation")
       room.setComputation(command.token, command.audit, command.performance);

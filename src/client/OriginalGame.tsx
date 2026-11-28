@@ -49,6 +49,7 @@ export type GameSnapshot = Pick<
   Partial<
     Pick<
       Snapshot,
+      | "playId"
       | "turnDeadline"
       | "serverTime"
       | "paused"

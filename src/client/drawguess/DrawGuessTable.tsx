@@ -63,9 +63,12 @@ export function DrawGuessTable({
       </header>
       <div className="party-board" data-merged-canvas="true">
         {drawing && isArtist && !replay ? <FayuCanvas
+          key={`${snapshot.room}:${snapshot.playId}:${snapshot.actor}:${view.round}`}
+          draftKey={`${snapshot.room}:${snapshot.seats[snapshot.actor]?.id ?? snapshot.actor}`}
+          draftGame={`${snapshot.playId ?? snapshot.room}:${view.round}`}
           history={view.history}
           strokes={view.strokes}
-          fills={view.fills ?? []}
+          fills={view.fills ?? []} layers={view.layers}
           enabled={drawing && isArtist && ready}
           pending={pending}
           round={view.round}
@@ -75,7 +78,7 @@ export function DrawGuessTable({
             action: { type: "draw-next", round: view.round },
             label: "揭晓答案",
           } : undefined}
-        /> : <DrawingPreview strokes={view.strokes} fills={view.fills ?? []} />}
+        /> : <DrawingPreview strokes={view.strokes} fills={view.fills ?? []} layers={view.layers} />}
       </div>
       <ol className="party-game-scores" aria-label="分数">
         {view.scores.map((score, index) => (

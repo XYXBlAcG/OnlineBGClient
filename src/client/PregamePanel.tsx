@@ -5,7 +5,7 @@ import { expeditionAiDifficultyNames } from "./expedition/ExpeditionOptionsContr
 import { difficultyNames } from "./game-difficulty";
 import { roomReadiness } from "./room-readiness";
 import { Select, Switch } from "./ui/Controls";
-import { loadDrawWordLibrary } from "./drawguess/library";
+import { DrawWordPreview } from "./drawguess/DrawWordPreview";
 
 export function PregamePanel({
   snapshot,
@@ -103,9 +103,9 @@ export function PregamePanel({
             : "纯真人"}
         </span>
       </div>
-      {snapshot.kind === "drawguess" && snapshot.canManage && (
+      {snapshot.kind === "drawguess" && snapshot.config.drawguess.mode === "classic" && snapshot.canManage && (
         <div className="pregame-word-library">
-          <span>本局词库 · {loadDrawWordLibrary().words.length} 个自定义词</span>
+          <DrawWordPreview />
           {onOpenWordLibrary && (
             <button type="button" onClick={onOpenWordLibrary}>
               管理词库

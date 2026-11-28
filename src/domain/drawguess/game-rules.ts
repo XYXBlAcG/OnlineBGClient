@@ -39,8 +39,27 @@ export class DrawGameRules implements Rules<"drawguess"> {
     return this.rules(state).candidates(state as never, actor);
   }
 
-  apply(state: DrawGameState, actor: number, action: Action) {
-    return this.rules(state).apply(state as never, actor, action);
+  apply(state: DrawGameState, actor: number, action: Action): DrawGameState {
+    const rules = this.rules(state);
+    if (action.type !== "draw-edit") return rules.apply(state as never, actor, action);
+    if (action.edit.round !== state.view.round || state.view.phase !== "drawing")
+      throw new Error("这一轮已经更新");
+    const history = state.mode === "fayu" ? state.drawingHistory?.[actor] : state.drawingHistory;
+    if (history?.lastEdit === action.id) return state;
+    const revision = history?.round === state.view.round ? history.revision : 0;
+    if (action.revision !== revision) throw new Error("画板已更新，请同步后重试");
+    const next = rules.apply(state as never, actor, action.edit);
+    if (next.mode === "classic" && next.drawingHistory) {
+      return { ...next, drawingHistory: { ...next.drawingHistory, lastEdit: action.id } };
+    }
+    if (next.mode === "fayu") {
+      const edited = next.drawingHistory?.[actor];
+      if (edited) return {
+        ...next,
+        drawingHistory: { ...next.drawingHistory, [actor]: { ...edited, lastEdit: action.id } },
+      };
+    }
+    return next;
   }
 
   project(state: DrawGameState, actor: number) {
@@ -69,7 +88,8 @@ export class DrawGameRules implements Rules<"drawguess"> {
     return state.mode === "fayu" ? 0 : 0;
   }
 
-  actionWindow(state: DrawGameState, action: Action) {
+  actionWindow(state: DrawGameState, input: Action) {
+    const action = input.type === "draw-edit" ? input.edit : input;
     return state.mode === "fayu"
       ? this.fayu.actionWindow(state, action)
       : this.classic.actionWindow(state, action);
@@ -81,7 +101,8 @@ export class DrawGameRules implements Rules<"drawguess"> {
       : false;
   }
 
-  keepsDeadline(state: DrawGameState, action: Action) {
+  keepsDeadline(state: DrawGameState, input: Action) {
+    const action = input.type === "draw-edit" ? input.edit : input;
     return state.mode === "fayu" ? this.fayu.keepsDeadline(state, action) : false;
   }
 }

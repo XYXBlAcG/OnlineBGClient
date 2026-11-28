@@ -10,7 +10,7 @@ import { bannerSchema, chatEventSchema } from "./banner";
 import { avatarSchema } from "./avatar";
 import { z } from "zod";
 import { actionSchema, configSchema } from "./protocol";
-import { drawWordSchema } from "./drawguess/words";
+import { drawWordPoolSchema, drawWordSchema } from "./drawguess/words";
 import { gameCatalogue, gameRulesVersion } from "./catalogue";
 import { GameEngine } from "./engine";
 import { challengeBoardSchema } from "./challenges";
@@ -31,6 +31,7 @@ export const replaySchema = z.object({
   expeditionTuning: z.union([z.literal(1), z.literal(2)]).optional(),
   expeditionCampaign: z.union([z.literal(1), z.literal(2)]).optional(),
   drawWords: z.array(drawWordSchema).max(1000).optional(),
+  drawWordPool: drawWordPoolSchema.optional(),
   golfCourses: z.array(golfCourseSchema).min(1).max(golfHoleCount).optional(),
   truncated: z.boolean().optional(),
   drawStart: z.object({
@@ -178,6 +179,7 @@ export class Replay {
             drawguess: {
               mode: this.record.config.drawguess?.mode ?? "classic",
               ...(this.record.drawWords ? { words: this.record.drawWords } : {}),
+              ...(this.record.drawWordPool ? { pool: this.record.drawWordPool } : {}),
             },
             graphwarInitial:
               this.record.config.kind === "graphwar"

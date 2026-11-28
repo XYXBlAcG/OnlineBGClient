@@ -43,7 +43,7 @@ import {
 export type { ChatMessage } from "./social";
 import type { ChatMessage } from "./social";
 import { actionSchema } from "./actions";
-import { drawWordSchema } from "./drawguess/words";
+import { drawWordPoolSchema, drawWordSchema } from "./drawguess/words";
 export { actionSchema } from "./actions";
 import type { ReplayRecord } from "./replay";
 import { z } from "zod";
@@ -63,6 +63,8 @@ import { golfDifficulties } from "./golf/types";
 export const roomIdSchema = z.string().min(1).max(12);
 export const drawguessOptionsSchema = z.object({
   mode: z.enum(["classic", "fayu"]).default("classic"),
+  drawingSeconds: z.number().int().min(15).max(300).default(75),
+  wordSource: z.enum(["all", "custom"]).default("all"),
 });
 
 export const configSchema = z
@@ -296,6 +298,7 @@ export const commandSchema = z.discriminatedUnion("type", [
     type: z.literal("start"),
     token: z.string(),
     drawWords: z.array(drawWordSchema).max(1000).optional(),
+    drawWordPool: drawWordPoolSchema.optional(),
   }),
   z.object({
     type: z.literal("tempo"),

@@ -17,7 +17,7 @@
 .fayu-head h2 { margin: 0; font-size: 24px; }
 .fayu-head small { color: var(--muted); }
 .fayu-tags { display: flex; align-items: center; gap: 8px; }
-.fayu-tags button, .fayu-tool, .fayu-library button, .fayu-cloze button, .fayu-actions button {
+.fayu-tags button, .fayu-tool, .fayu-cloze button, .fayu-actions button {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
@@ -82,7 +82,8 @@
   display: block;
   aspect-ratio: 1.6;
   margin: auto;
-  border: 1px solid var(--line);
+  object-fit: contain;
+  outline: 1px solid var(--line);
   border-radius: 14px;
   background: rgb(251 246 234);
   touch-action: none;
@@ -91,12 +92,15 @@
 .fayu-canvas[data-draw-active="false"] { cursor: default; opacity: 0.92; }
 .fayu-tools {
   display: flex;
+  max-height: 38dvh;
+  overflow: auto;
+  align-content: flex-start;
   align-items: flex-start;
   gap: 8px;
   row-gap: 18px;
   flex-wrap: wrap;
   flex: none;
-  padding: 10px 2px 4px;
+  padding: 10px 2px 8px;
 }
 .fayu-tool-group {
   display: flex;
@@ -134,7 +138,6 @@
 }
 .fayu-tools .fayu-tool[data-active="true"],
 .fayu-tools .fayu-color[data-active="true"],
-.fayu-tools .fayu-layer[data-active="true"],
 .fayu-tools .fayu-sticker[data-active="true"] {
   outline: 2px solid var(--accent);
   box-shadow: inset 0 -3px var(--accent);
@@ -156,12 +159,6 @@
   border: 0;
   background: transparent;
   padding: 0;
-}
-.fayu-tools .fayu-layer {
-  min-width: 30px;
-  min-height: 30px;
-  padding: 2px 6px;
-  font-variant-numeric: tabular-nums;
 }
 .fayu-tools .fayu-sticker {
   min-width: 32px;
@@ -185,11 +182,11 @@
 .fayu-gallery { display: flex; flex-direction: column; gap: 8px; overflow: auto; }
 .fayu-table .fayu-thumb { position: relative; border: 2px solid transparent; border-radius: 10px; overflow: hidden; padding: 0; background: var(--surface); }
 .fayu-table .fayu-thumb[data-active="true"] { border-color: var(--accent); }
-.fayu-thumb svg { display: block; width: 100%; aspect-ratio: 1.6; }
+.fayu-art { display: block; width: 100%; height: auto; aspect-ratio: 1.6; object-fit: contain; }
 .fayu-thumb span { position: absolute; top: 4px; left: 6px; padding: 1px 6px; border-radius: 6px; background: rgb(0 0 0 / 0.45); color: rgb(255 255 255); font-size: 11px; }
 .fayu-guess-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .drawing-preview { display: grid; position: relative; justify-items: end; min-width: 0; width: 100%; gap: 5px; }
-.drawing-preview svg, .drawing-preview-dialog svg {
+.drawing-preview .fayu-art, .drawing-preview-dialog .fayu-art {
   display: block;
   width: 100%;
   max-height: min(52dvh, 440px);
@@ -197,7 +194,7 @@
   border-radius: 12px;
   background: rgb(251 246 234);
 }
-.drawing-preview-dialog svg { max-height: 75dvh; }
+.drawing-preview-dialog .fayu-art { max-height: 75dvh; }
 .drawing-preview button { justify-self: end; }
 .fayu-library[data-inline="true"] { width: 100%; max-height: none; background: transparent; box-shadow: none; padding-inline: 0; }
 .fayu-cloze { display: flex; flex-direction: column; gap: 8px; }
@@ -243,9 +240,9 @@
   .fayu-guess-stage { grid-template-columns: 1fr; overflow: auto; }
   .fayu-gallery { flex-direction: row; overflow-x: auto; height: 96px; flex: 0 0 96px; gap: 6px; }
   .fayu-thumb { min-width: 150px; width: 150px; height: 90px; flex: 0 0 150px; }
-  .fayu-thumb svg { height: 100%; aspect-ratio: auto; }
+  .fayu-thumb .fayu-art { height: 100%; aspect-ratio: auto; }
   .fayu-guess-panel { overflow: auto; min-height: 0; padding-bottom: 48px; }
-  .fayu-guess-panel .drawing-preview svg { max-height: min(33dvh, 220px); }
+  .fayu-guess-panel .drawing-preview .fayu-art { max-height: min(33dvh, 220px); }
   .fayu-cloze-footer {
     position: sticky;
     bottom: 0;
@@ -263,12 +260,9 @@
     overflow: auto;
   }
   .fayu-tools {
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    flex-wrap: wrap;
     padding-bottom: 4px;
-    scrollbar-width: thin;
   }
-  .fayu-tools::-webkit-scrollbar { height: 4px; }
   .fayu-drawing-stage { overflow: hidden; }
   .fayu-canvas { height: 100%; min-height: 0; flex: none; aspect-ratio: auto; }
   .fayu-cloze-line { font-size: 15px; }
@@ -307,34 +301,11 @@
   align-items: start;
 }
 :root[data-mobile-orientation="landscape"] .fayu-guess-panel .drawing-preview { grid-row: span 2; }
-:root[data-mobile-orientation="landscape"] .fayu-guess-panel .drawing-preview svg { max-height: 53dvh; }
+:root[data-mobile-orientation="landscape"] .fayu-guess-panel .drawing-preview .fayu-art { max-height: 53dvh; }
 :root[data-mobile-orientation="landscape"] .fayu-guess-panel {
   overflow: auto;
   min-height: 0;
 }
-
-.fayu-layers,
-.fayu-stickers {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-.fayu-table .fayu-layers button,
-.fayu-table .fayu-stickers button {
-  min-width: 28px;
-  min-height: 28px;
-  padding: 2px 5px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--surface);
-  font-size: 12px;
-}
-.fayu-table .fayu-layers button[data-active="true"],
-.fayu-table .fayu-stickers button[data-active="true"] {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-}
-.fayu-stickers { flex-wrap: nowrap; }
 
 .fayu-library-open {
   display: inline-flex;
@@ -354,44 +325,73 @@
 .fayu-library-state[data-ready="true"] {
   color: var(--accent);
 }
-.fayu-library-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 10px;
-  background: var(--field);
-}
-.fayu-library-tabs button {
-  flex: 1;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  padding: 6px 10px;
-}
-.fayu-library-tabs button[data-active="true"] {
-  background: var(--surface);
-  box-shadow: var(--shadow-soft, none);
-}
-.fayu-library-hint,
-.fayu-library-empty {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-}
-.fayu-library-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fayu-library-search input {
-  flex: 1;
+.fayu-advanced {
   min-width: 0;
 }
-.fayu-library-notice {
-  color: var(--accent);
+
+.fayu-advanced summary {
+  display: inline-block;
+  cursor: pointer;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: var(--radius-control);
+  background: var(--surface);
 }
-.fayu-word-chip[data-pos="noun"] small,
-.fayu-word-chip[data-pos="verb"] small {
-  color: var(--muted);
+
+.fayu-advanced-controls {
+  position: fixed;
+  top: 108px;
+  right: 12px;
+  bottom: 12px;
+  z-index: var(--layer-dialog, 60);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 18px 8px;
+  width: min(360px, 38vw);
+  overflow: auto;
+  padding: 18px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 900px) {
+  .fayu-advanced-controls {
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    max-height: 52dvh;
+  }
+}
+
+.fayu-advanced:not([open]) > .fayu-advanced-controls {
+  display: none;
+}
+
+.fayu-layer-controls {
+  display: grid;
+  gap: 6px;
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.fayu-layer-list, .fayu-layer-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.fayu-layer-name input {
+  width: min(100%, 12rem);
+}
+
+@media (max-width: 640px) {
+  .fayu-tools .fayu-colors {
+    flex-wrap: wrap;
+  }
 }

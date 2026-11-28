@@ -3458,40 +3458,6 @@ progress::-moz-progress-bar {
   }
 }
 
-.draw-library-add,
-.draw-library-actions,
-.draw-library-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.draw-library-add input {
-  min-width: 120px;
-}
-.draw-library-list {
-  max-height: 260px;
-  overflow: auto;
-}
-.draw-library-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-}
-.draw-library-chip small {
-  color: var(--muted);
-}
-.draw-library-chip button {
-  border: 0;
-  background: transparent;
-  padding: 0 2px;
-  min-height: 0;
-}
-
 .pregame-word-library {
   display: flex;
   align-items: center;

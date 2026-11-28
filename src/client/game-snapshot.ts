@@ -4,6 +4,7 @@ import type { GameSnapshot } from "./OriginalGame";
 export function toGameSnapshot(snapshot: Snapshot): GameSnapshot {
   return {
     room: snapshot.room,
+    playId: snapshot.playId,
     kind: snapshot.kind,
     actor: snapshot.actor,
     canManage: snapshot.canManage,

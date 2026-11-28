@@ -1,27 +1,30 @@
 import type { Action } from "../actions";
-import type { DrawFill, DrawStroke } from "./types";
+import type { DrawFill, DrawLayer, DrawStroke } from "./types";
 
 export interface Drawing {
   strokes: DrawStroke[];
   fills: DrawFill[];
+  layers?: DrawLayer[];
 }
 
 export interface DrawingHistoryStatus {
   revision: number;
   undo: number;
   redo: number;
+  lastEdit?: string;
 }
 
 export interface DrawingHistory {
   round: number;
   revision: number;
+  lastEdit?: string;
   undo: Drawing[];
   redo: Drawing[];
 }
 
 export function drawingHistoryStatus(history: DrawingHistory | undefined, round: number): DrawingHistoryStatus {
   return history?.round === round
-    ? { revision: history.revision, undo: history.undo.length, redo: history.redo.length }
+    ? { revision: history.revision, undo: history.undo.length, redo: history.redo.length, ...(history.lastEdit ? { lastEdit: history.lastEdit } : {}) }
     : { revision: 0, undo: 0, redo: 0 };
 }
 
@@ -35,7 +38,8 @@ export function editDrawingHistory(
   if (action.type !== "draw-history" && action.type !== "draw-stroke" &&
       action.type !== "draw-clear" && action.type !== "draw-delete" &&
       action.type !== "draw-transform" && action.type !== "draw-fill" &&
-      action.type !== "draw-restore" && action.type !== "draw-undo") return;
+      action.type !== "draw-restore" && action.type !== "draw-undo" &&
+      action.type !== "draw-layer" && action.type !== "draw-region" && action.type !== "draw-move-selection") return;
   const history = previous?.round === round ? previous : { round, revision: 0, undo: [], redo: [] };
   const revision = history.revision + 1;
   if (action.type === "draw-history") {
@@ -49,7 +53,7 @@ export function editDrawingHistory(
     };
   }
   const drawing = apply();
-  const changed = drawing.strokes.length !== before.strokes.length || drawing.fills.length !== before.fills.length ||
+  const changed = drawing.layers !== before.layers || drawing.strokes.length !== before.strokes.length || drawing.fills.length !== before.fills.length ||
     drawing.strokes.some((stroke, i) => {
       const old = before.strokes[i]!;
       return stroke !== old && (action.type !== "draw-transform" ||

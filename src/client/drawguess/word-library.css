@@ -1,0 +1,198 @@
+.word-workspace {
+  container-type: inline-size;
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.word-toolbar, .word-list-tools, .word-bulk, .word-pagination, .word-editor-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.word-columns {
+  display: grid;
+  grid-template-columns: minmax(7rem, .45fr) minmax(10rem, 1.35fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.word-columns:has(.word-editor) {
+  grid-template-columns: minmax(7rem, .5fr) minmax(9rem, 1.25fr) minmax(10rem, .8fr);
+}
+
+.word-filters, .word-editor, .word-results {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.word-filters, .word-editor {
+  background: var(--field);
+  padding: 10px;
+  border-radius: var(--radius-control);
+}
+
+.word-filters :is(input, textarea),
+.word-editor :is(input, textarea) {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.word-editor label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.word-editor input {
+  min-height: 34px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.word-editor-head strong {
+  font-size: 14px;
+}
+
+.word-sources, .word-editor label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.word-filters input, .word-editor input {
+  min-width: 0;
+  width: 100%;
+}
+
+.word-results .word-list-tools > span {
+  margin-inline-end: auto;
+}
+
+.word-rows {
+  display: grid;
+  align-content: start;
+  max-height: min(48dvh, 27rem);
+  overflow: auto;
+  scrollbar-gutter: stable;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 2px 4px;
+}
+
+.word-rows li {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(2rem, auto) 3.2rem;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+.word-workspace[data-editable="true"] .word-rows li {
+  grid-template-columns: 24px minmax(0, 1fr) minmax(2rem, auto) 3.2rem;
+}
+
+.word-rows li[data-active="true"] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.word-rows .word-row-target {
+  display: grid;
+  justify-items: start;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+.word-rows li small, .word-category, .word-notice {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.word-notice {
+  margin: 0;
+}
+
+.word-sample {
+  justify-self: stretch;
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: var(--field);
+  font-weight: 650;
+}
+
+.word-editor-head {
+  justify-content: space-between;
+}
+
+.word-export {
+  position: relative;
+}
+
+.word-export summary {
+  cursor: pointer;
+  border-radius: var(--radius-control);
+  padding: 6px 10px;
+  background: var(--field);
+}
+
+.word-export > div {
+  position: absolute;
+  z-index: 6;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + 4px);
+  display: grid;
+  gap: 4px;
+  min-width: max-content;
+  padding: 4px;
+  background: var(--surface);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-soft);
+}
+
+@container (max-width: 40rem) {
+  .word-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .word-columns:has(.word-editor) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .word-filters {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .word-filters input, .word-sources {
+    grid-column: 1 / -1;
+  }
+
+  .word-sources {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 25rem) {
+  .word-columns:has(.word-editor) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .word-workspace[data-editing="true"] .word-filters,
+  .word-workspace[data-editing="true"] .word-results {
+    display: none;
+  }
+}
