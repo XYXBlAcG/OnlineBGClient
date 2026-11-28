@@ -59,15 +59,21 @@ actor LocalWebServer {
     }
 
     func restart() async throws -> URL {
-        stop()
+        await stop()
         return try await start()
     }
 
-    func stop() {
+    func stop() async {
         let previous = listener
         listener = nil
-        previous?.cancel()
         finishStartup(.failure(CancellationError()))
+        guard let previous else { return }
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            previous.stateUpdateHandler = { state in
+                if case .cancelled = state { continuation.resume() }
+            }
+            previous.cancel()
+        }
     }
 
     private func update(_ state: NWListener.State, listener: NWListener) {
