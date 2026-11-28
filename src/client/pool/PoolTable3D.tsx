@@ -281,10 +281,11 @@ export function PoolTable3D({
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
-    const input = aim.end();
+    const release = tablePoint(event);
+    const input = aim.end(release ?? undefined);
     setCursor("default");
     if (!input) return;
-    scene.current?.strike(input.power);
+    scene.current?.strike(input.power, input.aim, input.elevation ?? 0);
     poolAudio.strike(input.power);
     act({ type: "pool-shot", ...input, elevation: effectiveElevation });
   };

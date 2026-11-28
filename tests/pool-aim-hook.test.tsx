@@ -67,16 +67,17 @@ it("keeps the aimed direction when the player drags backward to charge", () => {
   act(() => {
     expect(aim.begin({ x: -0.5, y: 0.2 })).toBe("aim");
   });
-  expect(aim.aim).toBeCloseTo(-Math.PI / 2, 5);
+  const pressedAim = aim.aim;
   act(() => {
-    aim.move({ x: -0.5, y: 0.5 });
+    aim.move({ x: -0.5, y: -0.3 });
   });
+  expect(aim.aim).toBeCloseTo(pressedAim, 5);
   let action: ReturnType<typeof aim.end> = null;
   act(() => {
     action = aim.end();
   });
   expect(action!.power).toBeGreaterThan(0.05);
-  expect(action!.aim).toBeCloseTo(-Math.PI / 2, 5);
+  expect(action!.aim).toBeCloseTo(pressedAim, 5);
   act(() => tree.unmount());
 });
 it("supports explicit touch power and shoot without a pull gesture", () => {

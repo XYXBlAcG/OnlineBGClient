@@ -1059,10 +1059,13 @@ export class PoolScene3D {
     this.applyAim();
   }
 
-  strike(power: number) {
+  strike(power: number, aim = this.aim.aim, elevation = this.aim.elevation) {
     if (this.status.phase === "error") return;
     this.strikePower = power;
     this.strikeAt = performance.now();
+    if (this.aim.cue) {
+      this.aim = { ...this.aim, aim, elevation, power };
+    }
     this.applyCueTransform(performance.now());
   }
 

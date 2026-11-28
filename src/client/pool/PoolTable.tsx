@@ -632,7 +632,7 @@ export function PoolTable({
   };
   const end = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!event.isPrimary) return;
-    const input = aim.end();
+    const input = aim.end(pointAt(event));
     setCursor("default");
     if (!input) return;
     setStrike({ at: performance.now(), power: input.power });

@@ -39,6 +39,7 @@ export function usePoolAim({
   const placementRef = useRef<PoolPoint | null>(null);
   const startRef = useRef<PoolPoint | null>(null);
   const hasAimRef = useRef(false);
+  const holdRef = useRef<{ point: PoolPoint; aim: number } | null>(null);
   aimRef.current = aim;
   powerRef.current = power;
   const cuePoint = placement ?? cue;
@@ -69,6 +70,14 @@ export function usePoolAim({
 
   const hover = (point: PoolPoint) => {
     if (!own || pullingRef.current || placingRef.current || !cuePoint) return;
+    const hold = holdRef.current;
+    if (hold) {
+      if (Math.hypot(point.x - hold.point.x, point.y - hold.point.y) < 0.12) {
+        aimRef.current = hold.aim;
+        return;
+      }
+      holdRef.current = null;
+    }
     const next = aimFromPointer(cuePoint, point);
     if (next !== null) {
       aimRef.current = next;
@@ -96,13 +105,12 @@ export function usePoolAim({
       }
     }
     if (!cuePoint) return null;
-    if (!hasAimRef.current) {
-      const next = aimFromPointer(cuePoint, point);
-      if (next !== null) {
-        aimRef.current = next;
-        setAim(next);
-        hasAimRef.current = true;
-      }
+    holdRef.current = null;
+    const next = aimFromPointer(cuePoint, point);
+    if (next !== null) {
+      aimRef.current = next;
+      setAim(next);
+      hasAimRef.current = true;
     }
     startRef.current = { ...point };
     setPulling(true);
@@ -129,10 +137,11 @@ export function usePoolAim({
     hover(point);
   };
 
-  const end = (): PoolShotInput | null => {
+  const end = (releasePoint?: PoolPoint): PoolShotInput | null => {
     setPlacing(false);
     placingRef.current = false;
     if (!pullingRef.current) return null;
+    if (releasePoint) holdRef.current = { point: releasePoint, aim: aimRef.current };
     setPulling(false);
     pullingRef.current = false;
     const strength = powerRef.current;
